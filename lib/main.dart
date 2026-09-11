@@ -36,69 +36,87 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final phoneController = TextEditingController();
-  final codeController = TextEditingController();
-  String countryCode = '+98';
-  bool codeSent = false;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   bool loading = false;
+  bool obscurePassword = true;
 
-  String get phone {
-    var value = phoneController.text.trim().replaceAll(RegExp(r'[^0-9+]'), '');
-    if (value.startsWith('00')) value = '+${value.substring(2)}';
-    if (value.startsWith('0')) value = '$countryCode${value.substring(1)}';
-    if (!value.startsWith('+')) value = '$countryCode$value';
-    return value;
-  }
-
-  Future<void> sendCode() async {
-    if (phoneController.text.trim().length < 8) {
-      _message('شماره تلفن را درست وارد کنید.');
+  Future<void> signIn() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    if (email.isEmpty || !email.contains('@')) {
+      _message('ایمیل را درست وارد کنید.');
+      return;
+    }
+    if (password.length < 6) {
+      _message('رمز عبور باید حداقل ۶ کاراکتر باشد.');
       return;
     }
     setState(() => loading = true);
     try {
-      await Supabase.instance.client.auth.signInWithOtp(phone: phone);
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
       if (mounted) {
-        setState(() => codeSent = true);
-        _message('کد تأیید برای $phone ارسال شد.');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
       }
     } on AuthException catch (e) {
       _message(e.message);
     } catch (_) {
-      _message('ارسال کد انجام نشد. تنظیمات سرویس SMS در Supabase را بررسی کنید.');
+      _message('ورود انجام نشد. اتصال و تنظیمات Supabase را بررسی کنید.');
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
-  Future<void> verifyCode() async {
-    if (codeController.text.trim().length < 4) {
-      _message('کد تأیید را وارد کنید.');
+  Future<void> signUp() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    if (email.isEmpty || !email.contains('@')) {
+      _message('ایمیل را درست وارد کنید.');
+      return;
+    }
+    if (password.length < 6) {
+      _message('رمز عبور باید حداقل ۶ کاراکتر باشد.');
       return;
     }
     setState(() => loading = true);
     try {
-      await Supabase.instance.client.auth.verifyOTP(
-        type: OtpType.sms,
-        phone: phone,
-        token: codeController.text.trim(),
+      final response = await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
       );
-      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      if (mounted) {
+        if (response.session != null) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        } else {
+          _message('حساب ساخته شد. اگر تأیید ایمیل فعال باشد، ایمیل تأیید را بررسی کنید.');
+        }
+      }
     } on AuthException catch (e) {
       _message(e.message);
+    } catch (_) {
+      _message('ساخت حساب انجام نشد.');
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
   void _message(String text) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    }
   }
 
   @override
   void dispose() {
-    phoneController.dispose();
-    codeController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
@@ -116,41 +134,58 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const Icon(Icons.forum_rounded, size: 72),
                   const SizedBox(height: 16),
-                  Text('Arad Messenger', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Arad Messenger',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                   const SizedBox(height: 8),
-                  const Text('ورود با شماره تلفن', textAlign: TextAlign.center),
+                  const Text('ورود یا ثبت‌نام با ایمیل', textAlign: TextAlign.center),
                   const SizedBox(height: 32),
-                  DropdownButtonFormField<String>(
-                    value: countryCode,
-                    decoration: const InputDecoration(labelText: 'کشور', border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: '+98', child: Text('🇮🇷 ایران  +98')),
-                      DropdownMenuItem(value: '+93', child: Text('🇦🇫 افغانستان  +93')),
-                    ],
-                    onChanged: loading ? null : (v) => setState(() => countryCode = v ?? '+98'),
+                  TextField(
+                    controller: emailController,
+                    enabled: !loading,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    decoration: const InputDecoration(
+                      labelText: 'ایمیل',
+                      hintText: 'example@gmail.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: phoneController,
-                    enabled: !codeSent,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'شماره تلفن', hintText: 'مثلاً 09123456789', border: OutlineInputBorder()),
-                  ),
-                  if (codeSent) ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: codeController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      decoration: const InputDecoration(labelText: 'کد تأیید پیامک‌شده', border: OutlineInputBorder()),
+                    controller: passwordController,
+                    enabled: !loading,
+                    obscureText: obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: 'رمز عبور',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                        icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      ),
                     ),
-                    FilledButton(onPressed: loading ? null : verifyCode, child: Text(loading ? 'در حال بررسی...' : 'تأیید و ورود')),
-                    TextButton(onPressed: loading ? null : () => setState(() => codeSent = false), child: const Text('تغییر شماره')),
-                  ] else ...[
-                    FilledButton(onPressed: loading ? null : sendCode, child: Text(loading ? 'در حال ارسال...' : 'ارسال کد تأیید')),
-                  ],
-                  const SizedBox(height: 12),
-                  const Text('با ورود، حساب کاربری شما در Arad Messenger ساخته یا وارد می‌شود.', textAlign: TextAlign.center),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: loading ? null : signIn,
+                    child: Text(loading ? 'در حال پردازش...' : 'ورود'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: loading ? null : signUp,
+                    child: const Text('ساخت حساب جدید'),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'فعلاً ورود Arad Messenger با ایمیل و رمز عبور فعال است.',
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -172,13 +207,20 @@ class HomePage extends StatelessWidget {
               tooltip: 'خروج',
               onPressed: () async {
                 await Supabase.instance.client.auth.signOut();
-                if (context.mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  );
+                }
               },
               icon: const Icon(Icons.logout),
             ),
           ],
         ),
         body: const Center(child: Text('صفحه اصلی پیام‌رسان آماده است.')),
-        floatingActionButton: FloatingActionButton(onPressed: () {}, child: const Icon(Icons.chat_rounded)),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {},
+          child: const Icon(Icons.chat_rounded),
+        ),
       );
 }
