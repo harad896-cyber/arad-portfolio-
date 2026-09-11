@@ -1,218 +1,37 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const supabaseUrl = 'https://bkbdcqequyvubjmrbpqo.supabase.co';
 const supabasePublishableKey = 'sb_publishable_-wIHh9FKu-lmXSMHRWBbFw_t9u5KutA';
+late final SupabaseClient supabase;
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(url: supabaseUrl, publishableKey: supabasePublishableKey);
-  runApp(const AradMessengerApp());
+Future<void> main() async { WidgetsFlutterBinding.ensureInitialized(); await Supabase.initialize(url: supabaseUrl, publishableKey: supabasePublishableKey); supabase = Supabase.instance.client; runApp(const AradMessengerApp()); }
+class AradMessengerApp extends StatelessWidget { const AradMessengerApp({super.key}); @override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false,title:'Arad Messenger',theme:ThemeData(useMaterial3:true,colorSchemeSeed:Colors.indigo),home:const AuthGate()); }
+class AuthGate extends StatelessWidget { const AuthGate({super.key}); @override Widget build(BuildContext c)=>supabase.auth.currentSession==null?const LoginPage():const ProfileGate(); }
+
+class LoginPage extends StatefulWidget { const LoginPage({super.key}); @override State<LoginPage> createState()=>_LoginPageState(); }
+class _LoginPageState extends State<LoginPage>{ final email=TextEditingController(),password=TextEditingController(); bool loading=false,obscure=true;
+ Future<void> signIn() async {final e=email.text.trim(),p=password.text;if(!e.contains('@'))return msg('ایمیل را درست وارد کنید.');if(p.length<6)return msg('رمز عبور باید حداقل ۶ کاراکتر باشد.');setState(()=>loading=true);try{await supabase.auth.signInWithPassword(email:e,password:p);if(mounted)Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>const ProfileGate()));}on AuthException catch(x){msg(x.message);}finally{if(mounted)setState(()=>loading=false);}}
+ Future<void> signUp() async {final e=email.text.trim(),p=password.text;if(!e.contains('@'))return msg('ایمیل را درست وارد کنید.');if(p.length<6)return msg('رمز عبور باید حداقل ۶ کاراکتر باشد.');setState(()=>loading=true);try{final r=await supabase.auth.signUp(email:e,password:p);if(!mounted)return;if(r.session!=null)Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>const ProfileGate()));else msg('حساب ساخته شد. ایمیل تأیید را بررسی کنید.');}on AuthException catch(x){msg(x.message);}finally{if(mounted)setState(()=>loading=false);}}
+ void msg(String x)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(x)));@override void dispose(){email.dispose();password.dispose();super.dispose();}
+ @override Widget build(BuildContext c)=>Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:430),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[const Icon(Icons.forum_rounded,size:72),const SizedBox(height:16),Text('Arad Messenger',textAlign:TextAlign.center,style:TextStyle(fontSize:28,fontWeight:FontWeight.bold)),const SizedBox(height:8),const Text('ورود یا ثبت‌نام با ایمیل',textAlign:TextAlign.center),const SizedBox(height:32),TextField(controller:email,enabled:!loading,keyboardType:TextInputType.emailAddress,decoration:const InputDecoration(labelText:'ایمیل',hintText:'example@gmail.com',prefixIcon:Icon(Icons.email_outlined),border:OutlineInputBorder())),const SizedBox(height:12),TextField(controller:password,enabled:!loading,obscureText:obscure,decoration:InputDecoration(labelText:'رمز عبور',prefixIcon:const Icon(Icons.lock_outline),border:const OutlineInputBorder(),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),const SizedBox(height:16),FilledButton(onPressed:loading?null:signIn,child:Text(loading?'در حال ورود...':'ورود')),const SizedBox(height:8),OutlinedButton(onPressed:loading?null:signUp,child:const Text('ساخت حساب جدید'))]))))));}
 }
 
-class AradMessengerApp extends StatelessWidget {
-  const AradMessengerApp({super.key});
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Arad Messenger',
-        theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
-        home: const AuthGate(),
-      );
-}
+class ProfileGate extends StatefulWidget{const ProfileGate({super.key});@override State<ProfileGate> createState()=>_ProfileGateState();}
+class _ProfileGateState extends State<ProfileGate>{bool loading=true,ready=false;@override void initState(){super.initState();check();}Future<void> check()async{final u=supabase.auth.currentUser;if(u==null)return;try{final r=await supabase.from('profiles').select('username,display_name').eq('id',u.id).maybeSingle();if(mounted)setState(()=>ready=r!=null&&'${r['username']??''}'.isNotEmpty&&'${r['display_name']??''}'.isNotEmpty);}catch(_){}if(mounted)setState(()=>loading=false);}@override Widget build(BuildContext c)=>loading?const Scaffold(body:Center(child:CircularProgressIndicator())):ready?const HomePage():const ProfileSetupPage();}
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-  @override
-  Widget build(BuildContext context) => Supabase.instance.client.auth.currentSession == null
-      ? const LoginPage()
-      : const ProfileGate();
-}
+class ProfileSetupPage extends StatefulWidget{const ProfileSetupPage({super.key});@override State<ProfileSetupPage> createState()=>_ProfileSetupPageState();}
+class _ProfileSetupPageState extends State<ProfileSetupPage>{final name=TextEditingController(),username=TextEditingController(),bio=TextEditingController();bool loading=false;Future<void> save()async{final u=supabase.auth.currentUser;if(u==null)return;final n=name.text.trim(),un=username.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '');if(n.length<2)return msg('نام خود را وارد کنید.');if(un.length<3)return msg('نام کاربری حداقل ۳ کاراکتر باشد.');setState(()=>loading=true);try{await supabase.from('profiles').upsert({'id':u.id,'display_name':n,'username':un,'bio':bio.text.trim(),'phone':u.phone});if(mounted)Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>const HomePage()));}on PostgrestException catch(e){msg(e.message.contains('duplicate')?'این نام کاربری قبلاً گرفته شده است.':e.message);}finally{if(mounted)setState(()=>loading=false);}}void msg(String x)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(x)));@override void dispose(){name.dispose();username.dispose();bio.dispose();super.dispose();}@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('ساخت پروفایل')),body:SingleChildScrollView(padding:const EdgeInsets.all(24),child:Column(children:[const CircleAvatar(radius:50,child:Icon(Icons.person,size:55)),const SizedBox(height:24),TextField(controller:name,decoration:const InputDecoration(labelText:'نام نمایشی',border:OutlineInputBorder())),const SizedBox(height:12),TextField(controller:username,decoration:const InputDecoration(labelText:'نام کاربری',prefixText:'@',border:OutlineInputBorder(),helperText:'حروف انگلیسی، عدد و _')),const SizedBox(height:12),TextField(controller:bio,maxLines:3,decoration:const InputDecoration(labelText:'بیوگرافی',border:OutlineInputBorder())),const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:save,child:Text(loading?'در حال ذخیره...':'ادامه')))])));}
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
+class HomePage extends StatefulWidget{const HomePage({super.key});@override State<HomePage> createState()=>_HomePageState();}
+class _HomePageState extends State<HomePage>{List<Map<String,dynamic>> chats=[];List<Map<String,dynamic>> results=[];bool loading=true;final search=TextEditingController();@override void initState(){super.initState();load();presence(true);}Future<void> presence(bool online)async{final u=supabase.auth.currentUser;if(u!=null){try{await supabase.from('profiles').update({'is_online':online,'last_seen':DateTime.now().toIso8601String()}).eq('id',u.id);}catch(_){}}}Future<void> load()async{final u=supabase.auth.currentUser;if(u==null)return;try{final ms=await supabase.from('conversation_members').select('conversation_id').eq('user_id',u.id).order('joined_at',ascending:false);final list=<Map<String,dynamic>>[];for(final m in ms){final c=await supabase.from('conversations').select().eq('id',m['conversation_id']).maybeSingle();if(c==null)continue;final members=await supabase.from('conversation_members').select('user_id').eq('conversation_id',c['id']);Map<String,dynamic>? p;for(final mm in members){if(mm['user_id']!=u.id){p=await supabase.from('profiles').select('id,display_name,username,avatar_url,is_online,last_seen').eq('id',mm['user_id']).maybeSingle();break;}}final last=await supabase.from('messages').select('body,created_at').eq('conversation_id',c['id']).order('created_at',ascending:false).limit(1).maybeSingle();list.add({'conversation':c,'profile':p,'last':last});}if(mounted)setState(()=>chats=list);}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('خطا: $e')));}finally{if(mounted)setState(()=>loading=false);}}Future<void> searchUsers(String v)async{if(v.trim().length<2){setState(()=>results=[]);return;}try{final r=await supabase.rpc('search_profiles',params:{'search_text':v.trim()});if(mounted)setState(()=>results=List<Map<String,dynamic>>.from(r));}catch(_){} }Future<void> startChat(Map<String,dynamic> p)async{final me=supabase.auth.currentUser;if(me==null||p['id']==me.id)return;try{final c=await supabase.from('conversations').insert({'type':'direct','title':p['display_name'],'created_by':me.id}).select().single();await supabase.from('conversation_members').insert([{'conversation_id':c['id'],'user_id':me.id,'role':'member'},{'conversation_id':c['id'],'user_id':p['id'],'role':'member'}]);if(mounted)Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(conversationId:c['id'],title:p['display_name']??'گفتگو'))).then((_){load();});}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('ساخت گفتگو انجام نشد: $e')));}}Future<void> logout()async{await presence(false);await supabase.auth.signOut();if(mounted)Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder:(_)=>const LoginPage()),(_)=>false);}@override void dispose(){search.dispose();presence(false);super.dispose();}@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('Arad Messenger'),actions:[IconButton(onPressed:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>const ProfilePage())).then((_){load();}),icon:const Icon(Icons.person_outline)),IconButton(onPressed:logout,icon:const Icon(Icons.logout))]),body:Column(children:[Padding(padding:const EdgeInsets.all(12),child:TextField(controller:search,onChanged:searchUsers,decoration:const InputDecoration(hintText:'جستجوی نام یا نام کاربری...',prefixIcon:Icon(Icons.search),border:OutlineInputBorder()))),if(results.isNotEmpty)Expanded(child:ListView(children:results.map((p)=>ListTile(leading:avatar(p),title:Text(p['display_name']??''),subtitle:Text('@${p['username']??''}'),onTap:(){search.clear();setState(()=>results=[]);startChat(p);})).toList()))else Expanded(child:loading?const Center(child:CircularProgressIndicator()):chats.isEmpty?const Center(child:Text('هنوز گفتگویی ندارید.\nاز جستجو یک کاربر را انتخاب کنید.',textAlign:TextAlign.center)):RefreshIndicator(onRefresh:load,child:ListView.builder(itemCount:chats.length,itemBuilder:(_,i){final x=chats[i],p=x['profile'] as Map<String,dynamic>?,cc=x['conversation'] as Map<String,dynamic>,last=x['last'] as Map<String,dynamic>?;return ListTile(leading:avatar(p),title:Text(p?['display_name']??cc['title']??'گروه'),subtitle:Text(last?['body']??'شروع گفتگو'),onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>ChatPage(conversationId:cc['id'],title:p?['display_name']??cc['title']??'گفتگو'))).then((_){load();}));})))]),floatingActionButton:FloatingActionButton(onPressed:(){search.requestFocus();},child:const Icon(Icons.chat_rounded)));}
+Widget avatar(Map<String,dynamic>? p)=>CircleAvatar(backgroundImage:p?['avatar_url']!=null?NetworkImage(p!['avatar_url']):null,child:p?['avatar_url']==null?const Icon(Icons.person):null);
 
-class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  bool loading = false;
-  bool obscurePassword = true;
+class ChatPage extends StatefulWidget{final String conversationId,title;const ChatPage({super.key,required this.conversationId,required this.title});@override State<ChatPage> createState()=>_ChatPageState();}
+class _ChatPageState extends State<ChatPage>{final text=TextEditingController();final scroll=ScrollController();List<Map<String,dynamic>> messages=[];RealtimeChannel? channel;bool loading=true,sending=false;@override void initState(){super.initState();load();channel=supabase.channel('chat-${widget.conversationId}').onPostgresChanges(event:PostgresChangeEvent.insert,schema:'public',table:'messages',filter:PostgresChangeFilter(type:PostgresChangeFilterType.eq,column:'conversation_id',value:widget.conversationId),callback:(_)=>load()).subscribe();}Future<void> load()async{try{final r=await supabase.from('messages').select().eq('conversation_id',widget.conversationId).order('created_at');if(mounted)setState(()=>messages=List<Map<String,dynamic>>.from(r));WidgetsBinding.instance.addPostFrameCallback((_){if(scroll.hasClients)scroll.jumpTo(scroll.position.maxScrollExtent);});}catch(_){}finally{if(mounted)setState(()=>loading=false);}}Future<void> send()async{final body=text.text.trim();final u=supabase.auth.currentUser;if(body.isEmpty||u==null||sending)return;setState(()=>sending=true);text.clear();try{await supabase.from('messages').insert({'conversation_id':widget.conversationId,'sender_id':u.id,'body':body,'message_type':'text'});await load();}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('ارسال نشد: $e')));}finally{if(mounted)setState(()=>sending=false);}}@override void dispose(){channel?.unsubscribe();text.dispose();scroll.dispose();super.dispose();}@override Widget build(BuildContext c){final me=supabase.auth.currentUser?.id;return Scaffold(appBar:AppBar(title:Text(widget.title)),body:Column(children:[Expanded(child:loading?const Center(child:CircularProgressIndicator()):ListView.builder(controller:scroll,padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(_,i){final m=messages[i],mine=m['sender_id']==me;return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(margin:const EdgeInsets.symmetric(vertical:4),padding:const EdgeInsets.symmetric(horizontal:14,vertical:9),decoration:BoxDecoration(color:mine?Theme.of(c).colorScheme.primaryContainer:Theme.of(c).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.end,children:[Text(m['body']??''),if(mine)Text(m['read_at']!=null?'✓✓':'✓',style:const TextStyle(fontSize:11))]))})),SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(8,4,8,8),child:Row(children:[IconButton(onPressed:()=>ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('فایل در مرحله بعد فعال می‌شود.'))),icon:const Icon(Icons.attach_file)),Expanded(child:TextField(controller:text,textInputAction:TextInputAction.send,onSubmitted:(_)=>send(),decoration:const InputDecoration(hintText:'پیام...',border:OutlineInputBorder()))),IconButton(onPressed:sending?null:send,icon:const Icon(Icons.send))])))]));}}
 
-  Future<void> signIn() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text;
-    if (email.isEmpty || !email.contains('@')) return _message('ایمیل را درست وارد کنید.');
-    if (password.length < 6) return _message('رمز عبور باید حداقل ۶ کاراکتر باشد.');
-    setState(() => loading = true);
-    try {
-      await Supabase.instance.client.auth.signInWithPassword(email: email, password: password);
-      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ProfileGate()));
-    } on AuthException catch (e) { _message(e.message); }
-    finally { if (mounted) setState(() => loading = false); }
-  }
-
-  Future<void> signUp() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text;
-    if (email.isEmpty || !email.contains('@')) return _message('ایمیل را درست وارد کنید.');
-    if (password.length < 6) return _message('رمز عبور باید حداقل ۶ کاراکتر باشد.');
-    setState(() => loading = true);
-    try {
-      final response = await Supabase.instance.client.auth.signUp(email: email, password: password);
-      if (mounted) {
-        if (response.session != null) {
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ProfileGate()));
-        } else {
-          _message('حساب ساخته شد. ایمیل تأیید را بررسی کنید.');
-        }
-      }
-    } on AuthException catch (e) { _message(e.message); }
-    finally { if (mounted) setState(() => loading = false); }
-  }
-
-  void _message(String text) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  @override
-  void dispose() { emailController.dispose(); passwordController.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Icon(Icons.forum_rounded, size: 72),
-                    const SizedBox(height: 16),
-                    Text('Arad Messenger', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('ورود یا ثبت‌نام با ایمیل', textAlign: TextAlign.center),
-                    const SizedBox(height: 32),
-                    TextField(controller: emailController, enabled: !loading, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'ایمیل', hintText: 'example@gmail.com', prefixIcon: Icon(Icons.email_outlined), border: OutlineInputBorder())),
-                    const SizedBox(height: 12),
-                    TextField(controller: passwordController, enabled: !loading, obscureText: obscurePassword, decoration: InputDecoration(labelText: 'رمز عبور', prefixIcon: const Icon(Icons.lock_outline), border: const OutlineInputBorder(), suffixIcon: IconButton(onPressed: () => setState(() => obscurePassword = !obscurePassword), icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off)))),
-                    const SizedBox(height: 16),
-                    FilledButton(onPressed: loading ? null : signIn, child: Text(loading ? 'در حال پردازش...' : 'ورود')),
-                    const SizedBox(height: 8),
-                    OutlinedButton(onPressed: loading ? null : signUp, child: const Text('ساخت حساب جدید')),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-}
-
-class ProfileGate extends StatefulWidget {
-  const ProfileGate({super.key});
-  @override
-  State<ProfileGate> createState() => _ProfileGateState();
-}
-
-class _ProfileGateState extends State<ProfileGate> {
-  bool loading = true;
-  bool hasProfile = false;
-
-  @override
-  void initState() { super.initState(); _checkProfile(); }
-
-  Future<void> _checkProfile() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-    try {
-      final row = await Supabase.instance.client.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle();
-      if (mounted) setState(() { hasProfile = row != null && (row['username'] ?? '').toString().isNotEmpty && (row['display_name'] ?? '').toString().isNotEmpty; loading = false; });
-    } catch (_) {
-      if (mounted) setState(() { loading = false; hasProfile = false; });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    return hasProfile ? const HomePage() : const ProfileSetupPage();
-  }
-}
-
-class ProfileSetupPage extends StatefulWidget {
-  const ProfileSetupPage({super.key});
-  @override
-  State<ProfileSetupPage> createState() => _ProfileSetupPageState();
-}
-
-class _ProfileSetupPageState extends State<ProfileSetupPage> {
-  final nameController = TextEditingController();
-  final usernameController = TextEditingController();
-  final bioController = TextEditingController();
-  bool loading = false;
-
-  Future<void> saveProfile() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    final name = nameController.text.trim();
-    final username = usernameController.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '');
-    if (user == null) return;
-    if (name.length < 2) return _message('نام خود را وارد کنید.');
-    if (username.length < 3) return _message('نام کاربری باید حداقل ۳ حرف باشد.');
-    setState(() => loading = true);
-    try {
-      await Supabase.instance.client.from('profiles').upsert({
-        'id': user.id,
-        'display_name': name,
-        'username': username,
-        'bio': bioController.text.trim(),
-        'phone': user.phone,
-      });
-      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
-    } on PostgrestException catch (e) {
-      _message(e.message.contains('duplicate') ? 'این نام کاربری قبلاً استفاده شده است.' : e.message);
-    } catch (_) { _message('ذخیره پروفایل انجام نشد.'); }
-    finally { if (mounted) setState(() => loading = false); }
-  }
-
-  void _message(String text) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text))); }
-  @override
-  void dispose() { nameController.dispose(); usernameController.dispose(); bioController.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('ساخت پروفایل')),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const CircleAvatar(radius: 48, child: Icon(Icons.person, size: 52)),
-                const SizedBox(height: 24),
-                TextField(controller: nameController, enabled: !loading, decoration: const InputDecoration(labelText: 'نام نمایشی', prefixIcon: Icon(Icons.person_outline), border: OutlineInputBorder())),
-                const SizedBox(height: 12),
-                TextField(controller: usernameController, enabled: !loading, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', prefixIcon: Icon(Icons.alternate_email), border: OutlineInputBorder(), helperText: 'فقط حروف انگلیسی، عدد و _')),
-                const SizedBox(height: 12),
-                TextField(controller: bioController, enabled: !loading, maxLines: 3, decoration: const InputDecoration(labelText: 'بیوگرافی (اختیاری)', border: OutlineInputBorder())),
-                const SizedBox(height: 20),
-                SizedBox(width: double.infinity, child: FilledButton(onPressed: loading ? null : saveProfile, child: Text(loading ? 'در حال ذخیره...' : 'ادامه'))),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Arad Messenger'), actions: [IconButton(tooltip: 'خروج', onPressed: () async { await Supabase.instance.client.auth.signOut(); if (context.mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage())); }, icon: const Icon(Icons.logout))]),
-        body: const Center(child: Text('پروفایل شما آماده است.\nمرحله بعد: ساخت چت و پیام‌ها.', textAlign: TextAlign.center)),
-        floatingActionButton: FloatingActionButton(onPressed: () {}, child: const Icon(Icons.chat_rounded)),
-      );
-}
+class ProfilePage extends StatefulWidget{const ProfilePage({super.key});@override State<ProfilePage> createState()=>_ProfilePageState();}
+class _ProfilePageState extends State<ProfilePage>{final name=TextEditingController(),username=TextEditingController(),bio=TextEditingController();String? avatarUrl;bool loading=true,saving=false;@override void initState(){super.initState();load();}Future<void> load()async{final u=supabase.auth.currentUser;if(u==null)return;final p=await supabase.from('profiles').select().eq('id',u.id).maybeSingle();if(p!=null){name.text=p['display_name']??'';username.text=p['username']??'';bio.text=p['bio']??'';avatarUrl=p['avatar_url'];}if(mounted)setState(()=>loading=false);}Future<void> pickAvatar()async{final u=supabase.auth.currentUser;if(u==null)return;final x=await ImagePicker().pickImage(source:ImageSource.gallery,maxWidth:800,imageQuality:85);if(x==null)return;setState(()=>saving=true);try{final path='${u.id}/avatar.jpg';await supabase.storage.from('avatars').upload(path,File(x.path),fileOptions:const FileOptions(upsert:true,contentType:'image/jpeg'));final url=supabase.storage.from('avatars').getPublicUrl(path);await supabase.from('profiles').update({'avatar_url':url}).eq('id',u.id);if(mounted)setState(()=>avatarUrl=url);}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('آپلود عکس انجام نشد: $e')));}finally{if(mounted)setState(()=>saving=false);}}Future<void> save()async{final u=supabase.auth.currentUser;if(u==null)return;setState(()=>saving=true);try{await supabase.from('profiles').update({'display_name':name.text.trim(),'username':username.text.trim().toLowerCase(),'bio':bio.text.trim()}).eq('id',u.id);if(mounted)Navigator.pop(context);}on PostgrestException catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.message.contains('duplicate')?'نام کاربری تکراری است.':e.message)));}finally{if(mounted)setState(()=>saving=false);}}@override void dispose(){name.dispose();username.dispose();bio.dispose();super.dispose();}@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('پروفایل')),body:loading?const Center(child:CircularProgressIndicator()):SingleChildScrollView(padding:const EdgeInsets.all(24),child:Column(children:[GestureDetector(onTap:saving?null:pickAvatar,child:CircleAvatar(radius:56,backgroundImage:avatarUrl!=null?NetworkImage(avatarUrl!):null,child:avatarUrl==null?const Icon(Icons.person,size:60):null)),const SizedBox(height:8),const Text('برای تغییر عکس لمس کنید'),const SizedBox(height:24),TextField(controller:name,decoration:const InputDecoration(labelText:'نام نمایشی',border:OutlineInputBorder())),const SizedBox(height:12),TextField(controller:username,decoration:const InputDecoration(labelText:'نام کاربری',prefixText:'@',border:OutlineInputBorder())),const SizedBox(height:12),TextField(controller:bio,maxLines:3,decoration:const InputDecoration(labelText:'بیوگرافی',border:OutlineInputBorder())),const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:saving?null:save,child:Text(saving?'در حال ذخیره...':'ذخیره تغییرات')))])));}
