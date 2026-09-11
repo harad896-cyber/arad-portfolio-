@@ -27,6 +27,9 @@ jobs:
             flutter create --platforms=android --project-name arad_messenger .
           fi
 
+      - name: Remove generated sample test
+        run: rm -f test/widget_test.dart
+
       - name: Get dependencies
         run: flutter pub get
 
