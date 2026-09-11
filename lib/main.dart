@@ -60,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
       if (create) {
         final result = await supabase.auth.signUp(email: e, password: p);
         if (result.session == null) {
+          if (!mounted) return;
           showMsg(context, 'حساب ساخته شد. ایمیل تأیید را بررسی کنید.');
           return;
         }
@@ -69,8 +70,10 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const ProfileGate()), (_) => false);
     } on AuthException catch (error) {
+      if (!mounted) return;
       showMsg(context, error.message);
     } catch (error) {
+      if (!mounted) return;
       showMsg(context, 'خطا: $error');
     } finally {
       if (mounted) setState(() => busy = false);
@@ -160,7 +163,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       await supabase.from('profiles').upsert({'id': user.id, 'display_name': n, 'username': u, 'bio': bio.text.trim()});
       if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
-    } on PostgrestException catch (error) { showMsg(context, error.message); }
+    } on PostgrestException catch (error) { if (mounted) showMsg(context, error.message); }
     finally { if (mounted) setState(() => busy = false); }
   }
   @override
@@ -325,13 +328,43 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
   @override
   void dispose() { title.dispose(); search.dispose(); super.dispose(); }
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('ساخت گروه')), body: Column(children: [
-    Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder()))),
-    Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
-    if (selected.isNotEmpty) SizedBox(height: 60, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.all(8), children: selected.map((p) => Padding(padding: const EdgeInsets.only(right: 8), child: Chip(label: Text('${p['display_name'] ?? ''}'), onDeleted: () => setState(() => selected.remove(p)))).toList())),
-    Expanded(child: ListView(children: found.map((p) => ListTile(leading: avatar(p), title: Text('${p['display_name'] ?? ''}'), subtitle: Text('@${p['username'] ?? ''}'), trailing: Icon(selected.any((x) => x['id'] == p['id']) ? Icons.check_circle : Icons.add), onTap: () => setState(() { if (selected.any((x) => x['id'] == p['id'])) { selected.removeWhere((x) => x['id'] == p['id']); } else { selected.add(p); } })).toList())),
-    Padding(padding: const EdgeInsets.all(12), child: SizedBox(width: double.infinity, child: FilledButton(onPressed: busy ? null : createGroup, child: Text(busy ? 'در حال ساخت...' : 'ساخت گروه'))),
-  ]));
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('ساخت گروه')),
+    body: Column(children: [
+      Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder()))),
+      Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
+      if (selected.isNotEmpty)
+        SizedBox(
+          height: 60,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(8),
+            children: selected.map((p) => Padding(padding: const EdgeInsets.only(right: 8), child: Chip(label: Text('${p['display_name'] ?? ''}'), onDeleted: () => setState(() => selected.remove(p)))).toList(),
+          ),
+        ),
+      Expanded(
+        child: ListView(
+          children: found.map((p) => ListTile(
+            leading: avatar(p),
+            title: Text('${p['display_name'] ?? ''}'),
+            subtitle: Text('@${p['username'] ?? ''}'),
+            trailing: Icon(selected.any((x) => x['id'] == p['id']) ? Icons.check_circle : Icons.add),
+            onTap: () => setState(() {
+              if (selected.any((x) => x['id'] == p['id'])) {
+                selected.removeWhere((x) => x['id'] == p['id']);
+              } else {
+                selected.add(p);
+              }
+            }),
+          )).toList(),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(12),
+        child: SizedBox(width: double.infinity, child: FilledButton(onPressed: busy ? null : createGroup, child: Text(busy ? 'در حال ساخت...' : 'ساخت گروه'))),
+      ),
+    ]),
+  );
 }
 
 class ChatPage extends StatefulWidget {
@@ -424,7 +457,9 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> markRead() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
-    try { await supabase.from('messages').update({'read_at': DateTime.now().toIso8601String()}).eq('conversation_id', widget.id).neq('sender_id', user.id).isFilter('read_at', null); } catch (_) {}
+    try {
+      await supabase.from('messages').update({'read_at': DateTime.now().toIso8601String()}).eq('conversation_id', widget.id).neq('sender_id', user.id).isFilter('read_at', null);
+    } catch (_) {}
   }
 
   @override
@@ -482,8 +517,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> load() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
-    final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
-    if (mounted) setState(() { profile = row == null ? null : Map<String, dynamic>.from(row); loading = false; });
+    try {
+      final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+      if (mounted) setState(() { profile = row == null ? null : Map<String, dynamic>.from(row); loading = false; });
+    } catch (error) {
+      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در پروفایل: $error'); }
+    }
   }
   Future<void> changeAvatar() async {
     final user = supabase.auth.currentUser;
