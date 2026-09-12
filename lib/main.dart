@@ -137,6 +137,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final firstName = TextEditingController();
+  final lastName = TextEditingController();
   final email = TextEditingController();
   final password = TextEditingController();
   bool signup = true;
@@ -152,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (googleServerClientId.isEmpty) {
         throw const AuthException(
-          'GOOGLE_SERVER_CLIENT_ID برای نسخه اندروید تنظیم نشده است.',
+          'ورود با Google هنوز تنظیم نشده است. Client ID گوگل باید در نسخه اندروید قرار بگیرد.',
         );
       }
 
@@ -165,9 +167,21 @@ class _LoginPageState extends State<LoginPage> {
         throw const AuthException('Google ID Token دریافت نشد.');
       }
 
+      const scopes = <String>[
+        'openid',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+      ];
+      final authorization = await account.authorizationClient.authorizeScopes(scopes);
+      final accessToken = authorization.accessToken;
+      if (accessToken.isEmpty) {
+        throw const AuthException('Google Access Token دریافت نشد.');
+      }
+
       await supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
+        accessToken: accessToken,
       );
     } catch (e) {
       if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: $e');
@@ -177,35 +191,55 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> submit() async {
-    if (email.text.trim().isEmpty || password.text.isEmpty) {
+    final first = firstName.text.trim();
+    final last = lastName.text.trim();
+    final mail = email.text.trim();
+    final pass = password.text;
+
+    if (signup && (first.isEmpty || last.isEmpty)) {
+      showMsg(context, 'نام و نام خانوادگی را وارد کنید.');
+      return;
+    }
+    if (mail.isEmpty || pass.isEmpty) {
       showMsg(context, 'ایمیل و رمز عبور را وارد کنید.');
       return;
     }
+    if (pass.length < 6) {
+      showMsg(context, 'رمز عبور باید حداقل ۶ کاراکتر باشد.');
+      return;
+    }
+
     setState(() => busy = true);
     try {
       if (signup) {
         final response = await supabase.auth.signUp(
-          email: email.text.trim(),
-          password: password.text,
+          email: mail,
+          password: pass,
+          data: {
+            'first_name': first,
+            'last_name': last,
+            'full_name': '$first $last',
+          },
         );
         if (!mounted) return;
+
+        if (response.user == null) {
+          throw const AuthException('ثبت‌نام انجام نشد.');
+        }
+
         final verified = response.user?.emailConfirmedAt != null;
         if (!verified) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => EmailVerificationPage(
-                email: email.text.trim(),
-              ),
+              builder: (_) => EmailVerificationPage(email: mail),
             ),
           );
-        } else {
-          showMsg(context, 'ثبت‌نام با موفقیت انجام شد.');
         }
       } else {
         await supabase.auth.signInWithPassword(
-          email: email.text.trim(),
-          password: password.text,
+          email: mail,
+          password: pass,
         );
       }
     } catch (e) {
@@ -227,11 +261,46 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 12),
               const Text('Arad Messenger', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text(signup ? 'ثبت‌نام با ایمیل' : 'ورود به حساب', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(signup ? 'ساخت حساب جدید' : 'ورود به حساب', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 28),
-              TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'ایمیل', border: OutlineInputBorder())),
+              if (signup) ...[
+                TextField(
+                  controller: firstName,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'نام',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: lastName,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'نام خانوادگی',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'ایمیل',
+                  border: OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'رمز عبور', border: OutlineInputBorder())),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: signup ? 'رمز عبور (حداقل ۶ کاراکتر)' : 'رمز عبور',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -263,6 +332,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    firstName.dispose();
+    lastName.dispose();
     email.dispose();
     password.dispose();
     super.dispose();
