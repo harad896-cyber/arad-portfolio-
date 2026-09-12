@@ -1498,3 +1498,44 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> avatarUpload() async {
     try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      final path = '${supabase.auth.currentUser!.id}/avatar.jpg';
+      await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+      final url = supabase.storage.from('avatars').getPublicUrl(path);
+      await supabase.from('profiles').update({'avatar_url': '$url?x=${DateTime.now().millisecondsSinceEpoch}'}).eq('id', supabase.auth.currentUser!.id);
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'تصویر پروفایل ذخیره نشد: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = profile;
+    if (p == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(child: Stack(children: [avatar(p, size: 96), Positioned(bottom: 0, right: 0, child: IconButton.filled(onPressed: avatarUpload, icon: const Icon(Icons.camera_alt)))])),
+          const SizedBox(height: 20),
+          Text('${p['display_name'] ?? ''}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text('@${p['username'] ?? ''}'),
+          const SizedBox(height: 8),
+          Text('${p['bio'] ?? ''}'),
+          const SizedBox(height: 30),
+          FilledButton.tonal(onPressed: () => supabase.auth.signOut(), child: const Text('خروج')),
+        ],
+      ),
+    );
+  }
+}
