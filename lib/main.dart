@@ -353,6 +353,8 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   final code = TextEditingController();
   bool busy = false;
   bool resending = false;
+  int resendCount = 0;
+  static const int maxResends = 3;
 
   Future<void> verify() async {
     final token = code.text.trim().replaceAll(' ', '');
@@ -386,13 +388,26 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   }
 
   Future<void> resend() async {
+    if (resendCount >= maxResends || resending) {
+      showMsg(context, 'کد را ۳ بار می‌توانید دوباره ارسال کنید.');
+      return;
+    }
     setState(() => resending = true);
     try {
       await supabase.auth.resend(
         type: OtpType.signup,
         email: widget.email,
       );
-      if (mounted) showMsg(context, 'کد تأیید جدید به ایمیل شما ارسال شد. اگر کد قبلی را دریافت نکردید، همین کد جدید را وارد کنید.');
+      if (mounted) {
+        setState(() => resendCount++);
+        final left = maxResends - resendCount;
+        showMsg(
+          context,
+          left > 0
+              ? 'کد تأیید دوباره ارسال شد. $left بار امکان ارسال مجدد باقی مانده است.'
+              : 'کد تأیید دوباره ارسال شد. دیگر امکان ارسال مجدد نیست.',
+        );
+      }
     } catch (e) {
       if (mounted) showMsg(context, 'ارسال مجدد کد ناموفق بود. چند لحظه بعد دوباره تلاش کنید: $e');
     } finally {
@@ -472,8 +487,14 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                 ),
               ),
               TextButton(
-                onPressed: resending ? null : resend,
-                child: Text(resending ? 'در حال ارسال کد...' : 'ارسال مجدد کد تأیید'),
+                onPressed: (resending || resendCount >= maxResends) ? null : resend,
+                child: Text(
+                  resending
+                      ? 'در حال ارسال کد...'
+                      : resendCount >= maxResends
+                          ? 'سقف ۳ بار ارسال مجدد تمام شد'
+                          : 'ارسال مجدد کد تأیید (${maxResends - resendCount})',
+                ),
               ),
             ],
           ),
