@@ -545,7 +545,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: password,
                             obscureText: obscurePassword,
                             textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => busy ? null : submit(),
+                            onSubmitted: (_) => busy ? null : (ownerMode ? ownerLogin() : submit()),
                             decoration: InputDecoration(
                               labelText: signup ? 'رمز عبور (حداقل ۶ کاراکتر)' : 'رمز عبور',
                               prefixIcon: const Icon(Icons.lock_outline),
@@ -608,6 +608,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                             ),
                           ),
+                          if (!ownerMode) ...[
                           const SizedBox(height: 12),
                           SizedBox(
                             height: 52,
@@ -625,6 +626,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
+                          ],
                           const SizedBox(height: 8),
                           TextButton.icon(
                             onPressed: busy
