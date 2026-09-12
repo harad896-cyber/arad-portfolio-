@@ -729,111 +729,113 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('تأیید ایمیل')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              children: [
-                Container(
-                  width: 86,
-                  height: 86,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
+                children: [
+                  Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.secondary,
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                          color: theme.colorScheme.primary.withValues(alpha: .16),
+                        ),
                       ],
                     ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                        color: theme.colorScheme.primary.withValues(alpha: .16),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.mark_email_read_rounded,
-                    size: 42,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-              const Text(
-                'کد تأیید ارسال شد',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                child: Column(
-                  children: [
-                    const Text(
-                      'کد تأیید برای این ایمیل ارسال شده است:',
-                      textAlign: TextAlign.center,
+                    child: const Icon(
+                      Icons.mark_email_read_rounded,
+                      size: 42,
+                      color: Colors.white,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.email,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'کد تأیید ارسال شد',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'کد تأیید برای این ایمیل ارسال شده است:',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.email,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'ایمیل خود را بررسی کنید و کد ۶ رقمی را در کادر زیر وارد کنید.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'ایمیل خود را بررسی کنید. کد ۶ رقمی را در کادر زیر وارد کنید؛ نیازی به باز کردن لینک ایمیل نیست.',
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: code,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      labelText: 'کد ۶ رقمی',
+                      prefixIcon: Icon(Icons.password_rounded),
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: busy ? null : verify,
+                      child: Text(busy ? 'در حال تأیید...' : 'تأیید ایمیل'),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: (resending || resendCount >= maxResends) ? null : resend,
+                    child: Text(
+                      resending
+                          ? 'در حال ارسال کد...'
+                          : resendCount >= maxResends
+                              ? 'سقف ۳ بار ارسال مجدد تمام شد'
+                              : 'ارسال مجدد کد (${maxResends - resendCount})',
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: code,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                maxLength: 6,
-                decoration: const InputDecoration(
-                  labelText: 'کد ۶ رقمی',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: busy ? null : verify,
-                  child: Text(busy ? 'در حال تأیید...' : 'تأیید ایمیل'),
-                ),
-              ),
-              TextButton(
-                onPressed: (resending || resendCount >= maxResends) ? null : resend,
-                child: Text(
-                  resending
-                      ? 'در حال ارسال کد...'
-                      : resendCount >= maxResends
-                          ? 'سقف ۳ بار ارسال مجدد تمام شد'
-                          : 'ارسال مجدد کد تأیید (${maxResends - resendCount})',
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
-}
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
