@@ -73,16 +73,28 @@ class AradMessenger extends StatelessWidget {
           seedColor: const Color(0xFF4F46E5),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF8F9FD),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FB),
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: Color(0xFF17181C),
+          ),
+          iconTheme: IconThemeData(color: Color(0xFF30323A)),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(0xFFE6E8EF)),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -715,27 +727,54 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('تأیید ایمیل')),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const Icon(Icons.mark_email_read_outlined, size: 72),
-              const SizedBox(height: 16),
+          padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              children: [
+                Container(
+                  width: 86,
+                  height: 86,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                        color: theme.colorScheme.primary.withValues(alpha: .16),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mark_email_read_rounded,
+                    size: 42,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
               const Text(
                 'کد تأیید ارسال شد',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
                 child: Column(
                   children: [
                     const Text(
@@ -756,7 +795,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       'ایمیل خود را بررسی کنید. کد ۶ رقمی را در کادر زیر وارد کنید؛ نیازی به باز کردن لینک ایمیل نیست.',
                       textAlign: TextAlign.center,
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
