@@ -7,7 +7,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-\nString t(String key, String locale) {
+
+String t(String key, String locale) {
   const data = {
     'fa': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ورود با حساب Google','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
     'en': {'login':'Login','signup':'Sign up','email':'Email','password':'Password','google':'Continue with Google','profile':'Your profile','continue':'Continue','settings':'Settings','language':'Language'},
@@ -18,7 +19,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
   };
   return data[locale]?[key] ?? data['en']![key] ?? key;
 }
-\nclass LanguageController extends ChangeNotifier {
+
+class LanguageController extends ChangeNotifier {
   Locale locale = const Locale('fa');
   Future<void> load() async { final p = await SharedPreferences.getInstance(); locale = Locale(p.getString('locale') ?? 'fa'); notifyListeners(); }
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
@@ -779,7 +781,10 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> markRead() async {
     try {
-      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id);\n      for (final row in rows) {\n        await supabase.rpc('mark_message_read', params: {'p_message_id': row['id']});\n      }
+      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id);
+      for (final row in rows) {
+        await supabase.rpc('mark_message_read', params: {'p_message_id': row['id']});
+      }
     } catch (_) {}
   }
 
