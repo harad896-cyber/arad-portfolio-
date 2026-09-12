@@ -70,19 +70,16 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Check Google Client ID
-        env:
-          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
-        run: |
-          if [ -z "$GOOGLE_SERVER_CLIENT_ID" ]; then
-            echo "::error::Add GOOGLE_SERVER_CLIENT_ID in Settings > Secrets and variables > Actions."
-            exit 1
-          fi
-
       - name: Build test APK
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
-        run: flutter build apk --debug --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+        run: |
+          if [ -n "$GOOGLE_SERVER_CLIENT_ID" ]; then
+            flutter build apk --debug --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+          else
+            echo "Google Client ID not configured; building email-auth test APK."
+            flutter build apk --debug
+          fi
 
       - name: Upload test APK
         uses: actions/upload-artifact@v4
