@@ -202,6 +202,7 @@ class AuthGate extends StatelessWidget {
         if (!verified) {
           return EmailVerificationPage(
             email: user?.email ?? '',
+            verificationType: OtpType.signup,
           );
         }
 
@@ -253,6 +254,10 @@ class _LoginPageState extends State<LoginPage> {
   bool obscurePassword = true;
 
   Future<void> signInWithGoogle() async {
+    if (googleServerClientId.isEmpty && !kIsWeb) {
+      showMsg(context, 'ورود با Google هنوز در نسخه اندروید تنظیم نشده است.');
+      return;
+    }
     setState(() => busy = true);
     try {
       if (kIsWeb) {
@@ -323,7 +328,6 @@ class _LoginPageState extends State<LoginPage> {
         final response = await supabase.auth.signUp(
           email: mail,
           password: pass,
-          emailRedirectTo: authRedirectUrl(),
           data: {
             'first_name': first,
             'last_name': last,
@@ -336,51 +340,36 @@ class _LoginPageState extends State<LoginPage> {
           throw const AuthException('ثبت‌نام انجام نشد.');
         }
 
-        // اگر Confirm email در Supabase روشن باشد، signUp سشن نمی‌دهد.
-        // در این حالت کاربر نباید گیر کند؛ مستقیم به صفحه ورود کد می‌رود.
         if (response.session != null) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const ProfileGate()),
             (route) => false,
           );
         } else {
-          // برای اینکه کد حتماً به ایمیل برسد، یک OTP صریحاً درخواست می‌کنیم.
-          // این مسیر حتی اگر قالب تأیید Supabase لینک داشته باشد، کد ورود را می‌فرستد.
-          await supabase.auth.signInWithOtp(
-            email: mail,
-            shouldCreateUser: false,
-            emailRedirectTo: authRedirectUrl(),
-          );
-
-          if (!mounted) return;
+          // تأیید ثبت‌نام باید با OtpType.signup انجام شود.
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => EmailVerificationPage(
                 email: mail,
-                verificationType: OtpType.email,
+                verificationType: OtpType.signup,
               ),
             ),
           );
         }
       } else {
-        // اول رمز عبور را بررسی می‌کنیم.
-        // ورود با ایمیل از طریق کد یکبارمصرف انجام می‌شود.
-        // پس از وارد کردن کد، Supabase خودش session را می‌سازد.
-        await supabase.auth.signInWithOtp(
+        final response = await supabase.auth.signInWithPassword(
           email: mail,
-          shouldCreateUser: false,
-          emailRedirectTo: authRedirectUrl(),
+          password: pass,
         );
 
+        if (response.session == null) {
+          throw const AuthException('ورود انجام نشد.');
+        }
+
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EmailVerificationPage(
-              email: mail,
-              verificationType: OtpType.email,
-            ),
-          ),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ProfileGate()),
+          (route) => false,
         );
       }
     } catch (e) {
@@ -560,7 +549,7 @@ class _LoginPageState extends State<LoginPage> {
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
                                   : Text(
-                                      signup ? 'ثبت‌نام و ادامه' : 'ورود',
+                                      signup ? 'ثبت‌نام و دریافت کد' : 'ورود',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
@@ -654,7 +643,11 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       );
 
       if (response.session == null) {
-        throw const AuthException('تأیید انجام نشد. دوباره تلاش کنید.');
+        await supabase.auth.refreshSession();
+      }
+
+      if (supabase.auth.currentSession == null) {
+        throw const AuthException('تأیید انجام شد اما ورود کامل نشد. دوباره تلاش کنید.');
       }
 
       if (!mounted) return;
@@ -664,10 +657,13 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       );
     } on AuthException catch (e) {
       if (!mounted) return;
-      if (e.message.toLowerCase().contains('expired')) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('expired') || msg.contains('otp_expired')) {
         showMsg(context, 'کد تأیید منقضی شده است. کد جدید درخواست کنید.');
-      } else {
+      } else if (msg.contains('invalid') || msg.contains('otp')) {
         showMsg(context, 'کد تأیید اشتباه است. دوباره وارد کنید.');
+      } else {
+        showMsg(context, 'تأیید کد ناموفق بود: ' + e.message);
       }
       code.clear();
     } catch (_) {
@@ -687,10 +683,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
     setState(() => resending = true);
     try {
-      await supabase.auth.signInWithOtp(
+      await supabase.auth.resend(
+        type: widget.verificationType,
         email: widget.email,
-        shouldCreateUser: false,
-        emailRedirectTo: authRedirectUrl(),
       );
 
       if (!mounted) return;
