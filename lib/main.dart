@@ -700,7 +700,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
     setState(() => busy = true);
     try {
-      final response = await supabase.auth.verifyOtp(
+      final response = await supabase.auth.verifyOTP(
         type: OtpType.email,
         email: widget.email.trim().toLowerCase(),
         token: token,
@@ -1536,3 +1536,4 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
+}
