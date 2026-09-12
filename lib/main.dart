@@ -1,7 +1,12 @@
+class AppStrings {
+  static const supported = ['fa', 'en', 'ar', 'tr', 'fr', 'de'];
+  static const names = {'fa':'فارسی','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
+}
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -28,6 +33,9 @@ class AradMessenger extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: const Locale('fa'),
+      supportedLocales: AppStrings.supported.map((x) => Locale(x)),
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       title: 'Arad Messenger',
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
