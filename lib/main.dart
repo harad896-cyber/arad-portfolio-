@@ -499,12 +499,18 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   Future<void> load() async {
     try {
-      final uid = supabase.auth.currentUser!.id;
-      final row = await supabase.from('profiles').select().eq('id', uid).maybeSingle();
+      final user = supabase.auth.currentUser!;
+      final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
       if (row != null) {
         name.text = '${row['display_name'] ?? ''}';
         username.text = '${row['username'] ?? ''}';
         bio.text = '${row['bio'] ?? ''}';
+      } else {
+        final metadata = user.userMetadata ?? <String, dynamic>{};
+        final fullName = (metadata['full_name'] ?? '').toString().trim();
+        if (fullName.isNotEmpty) {
+          name.text = fullName;
+        }
       }
     } catch (_) {}
     if (mounted) setState(() => loading = false);
