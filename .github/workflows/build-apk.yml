@@ -87,3 +87,5 @@ jobs:
           name: arad-messenger-test-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+
+# APK test build
