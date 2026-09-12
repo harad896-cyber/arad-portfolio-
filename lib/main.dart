@@ -198,7 +198,12 @@ class AuthGate extends StatelessWidget {
         if (session == null) return const LoginPage();
 
         final user = supabase.auth.currentUser;
-        final verified = user?.emailConfirmedAt != null;
+        final meta = user?.appMetadata ?? const <String, dynamic>{};
+        final role = meta['role']?.toString().toLowerCase();
+        final privileged = role == 'owner' || role == 'admin' ||
+            meta['owner'] == true ||
+            meta['owner']?.toString().toLowerCase() == 'true';
+        final verified = user?.emailConfirmedAt != null || privileged;
         if (!verified) {
           return EmailVerificationPage(
             email: user?.email ?? '',
@@ -217,7 +222,13 @@ class ProfileGate extends StatelessWidget {
 
   Future<bool> hasProfile() async {
     final user = supabase.auth.currentUser;
-    if (user == null || user.emailConfirmedAt == null) return false;
+    if (user == null) return false;
+    final meta = user.appMetadata;
+    final role = meta['role']?.toString().toLowerCase();
+    final privileged = role == 'owner' || role == 'admin' ||
+        meta['owner'] == true ||
+        meta['owner']?.toString().toLowerCase() == 'true';
+    if (user.emailConfirmedAt == null && !privileged) return false;
     final uid = user.id;
     final row = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle();
     return row != null;
@@ -423,8 +434,22 @@ class _LoginPageState extends State<LoginPage> {
           (route) => false,
         );
       }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      final m = e.message.toLowerCase();
+      if (m.contains('invalid login credentials')) {
+        showMsg(context, 'ایمیل یا رمز عبور اشتباه است.');
+      } else if (m.contains('email not confirmed')) {
+        showMsg(context, 'ایمیل هنوز تأیید نشده است. کد تأیید را وارد کنید.');
+      } else if (m.contains('user already registered')) {
+        showMsg(context, 'این ایمیل قبلاً ثبت‌نام شده است. وارد شوید.');
+      } else if (m.contains('rate limit') || m.contains('too many')) {
+        showMsg(context, 'تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.');
+      } else {
+        showMsg(context, 'خطای ورود: ${e.message}');
+      }
     } catch (e) {
-      if (mounted) showMsg(context, 'خطا: $e');
+      if (mounted) showMsg(context, 'خطای غیرمنتظره: $e');
     } finally {
       if (mounted) setState(() => busy = false);
     }
