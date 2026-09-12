@@ -32,33 +32,6 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap
           cp assets/app_icon.jpg android/app/src/main/res/mipmap/ic_launcher.jpg
 
-      - name: Configure Google OAuth callback
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text()
-          activity = '<activity android:name=".MainActivity"'
-          intent = '''
-              <intent-filter>
-                  <action android:name="android.intent.action.VIEW" />
-                  <category android:name="android.intent.category.DEFAULT" />
-                  <category android:name="android.intent.category.BROWSABLE" />
-                  <data android:scheme="com.arad.messenger" android:host="login-callback" />
-              </intent-filter>
-          '''
-          if intent.strip() not in s:
-              i = s.find(activity)
-              end = s.find(">", i)
-              if i == -1 or end == -1:
-                  raise SystemExit("MainActivity declaration not found")
-              close = s.find("</activity>", end)
-              if close == -1:
-                  raise SystemExit("MainActivity activity block not found")
-              s = s[:close] + intent + s[close:]
-              p.write_text(s)
-          PY
-
       - name: Set app identity
         run: |
           sed -i 's/android:label="[^"]*"/android:label="Arad Messenger"/' android/app/src/main/AndroidManifest.xml
@@ -89,6 +62,3 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
 
-# APK test build
-
-# Build configuration verified for main branch APK tests.
