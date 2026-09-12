@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -784,7 +785,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                     textAlign: TextAlign.center,
                     maxLength: 6,
                     autofillHints: const [AutofillHints.oneTimeCode],
-                    inputFormatters: const [
+                    inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                     style: const TextStyle(
