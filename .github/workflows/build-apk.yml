@@ -1,4 +1,4 @@
-name: Build Android Test APK
+name: Build Android Release APK
 
 on:
   push:
@@ -43,23 +43,22 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        continue-on-error: true
-        run: flutter analyze
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
-      - name: Build test APK
+      - name: Build release APK
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
         run: |
           if [ -n "$GOOGLE_SERVER_CLIENT_ID" ]; then
-            flutter build apk --debug --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+            flutter build apk --release --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
           else
-            echo "Google Client ID not configured; building email-auth test APK."
-            flutter build apk --debug
+            echo "Google Client ID not configured; building email-auth release APK."
+            flutter build apk --release
           fi
 
-      - name: Upload test APK
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: arad-messenger-test-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: arad-messenger-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
