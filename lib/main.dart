@@ -392,9 +392,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
         type: OtpType.signup,
         email: widget.email,
       );
-      if (mounted) showMsg(context, 'کد جدید به ایمیل شما ارسال شد.');
+      if (mounted) showMsg(context, 'کد تأیید جدید به ایمیل شما ارسال شد. اگر کد قبلی را دریافت نکردید، همین کد جدید را وارد کنید.');
     } catch (e) {
-      if (mounted) showMsg(context, 'ارسال مجدد ناموفق بود: $e');
+      if (mounted) showMsg(context, 'ارسال مجدد کد ناموفق بود. چند لحظه بعد دوباره تلاش کنید: $e');
     } finally {
       if (mounted) setState(() => resending = false);
     }
@@ -473,7 +473,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
               ),
               TextButton(
                 onPressed: resending ? null : resend,
-                child: Text(resending ? 'در حال ارسال...' : 'ارسال دوباره کد'),
+                child: Text(resending ? 'در حال ارسال کد...' : 'ارسال مجدد کد تأیید'),
               ),
             ],
           ),
