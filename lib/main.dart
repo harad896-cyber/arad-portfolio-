@@ -405,7 +405,7 @@ class _LoginPageState extends State<LoginPage> {
                           BoxShadow(
                             blurRadius: 22,
                             offset: const Offset(0, 10),
-                            color: theme.colorScheme.primary.withOpacity(0.18),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.18),
                           ),
                         ],
                       ),
