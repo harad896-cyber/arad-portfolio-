@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -107,6 +108,20 @@ class _LoginPageState extends State<LoginPage> {
   bool signup = false;
   bool busy = false;
 
+  Future<void> signInWithGoogle() async {
+    setState(() => busy = true);
+    try {
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'com.arad.messenger://login-callback/',
+      );
+    } catch (e) {
+      if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> submit() async {
     if (email.text.trim().isEmpty || password.text.isEmpty) {
       showMsg(context, 'ایمیل و رمز عبور را وارد کنید.');
@@ -169,6 +184,16 @@ class _LoginPageState extends State<LoginPage> {
                   child: Text(busy ? 'در حال انجام...' : (signup ? 'ثبت‌نام' : 'ورود')),
                 ),
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: busy ? null : signInWithGoogle,
+                  icon: const Icon(Icons.g_mobiledata, size: 28),
+                  label: const Text('ورود با حساب Google'),
+                ),
+              ),
+              const SizedBox(height: 4),
               TextButton(
                 onPressed: busy ? null : () => setState(() => signup = !signup),
                 child: Text(signup ? 'حساب دارم؛ ورود' : 'حساب ندارم؛ ثبت‌نام'),
