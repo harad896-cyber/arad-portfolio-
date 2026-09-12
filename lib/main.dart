@@ -250,6 +250,7 @@ class _LoginPageState extends State<LoginPage> {
   final email = TextEditingController();
   final password = TextEditingController();
   bool signup = true;
+  bool ownerMode = false;
   bool busy = false;
   bool obscurePassword = true;
 
@@ -298,6 +299,56 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (e) {
       if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> ownerLogin() async {
+    final mail = email.text.trim();
+    final pass = password.text;
+
+    if (mail.isEmpty || pass.isEmpty) {
+      showMsg(context, 'ایمیل مالک و رمز عبور را وارد کنید.');
+      return;
+    }
+
+    setState(() => busy = true);
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: mail,
+        password: pass,
+      );
+
+      final user = response.user;
+      final session = response.session;
+      if (user == null || session == null) {
+        throw const AuthException('ورود مالک انجام نشد.');
+      }
+
+      // مجوز مالک فقط از app_metadata خوانده می‌شود.
+      // این مقدار باید فقط از سمت سرور/Supabase تنظیم شود.
+      final metadata = user.appMetadata;
+      final role = metadata['role']?.toString().toLowerCase();
+      final isOwner = role == 'owner' || role == 'admin' ||
+          metadata['owner'] == true ||
+          metadata['owner']?.toString().toLowerCase() == 'true';
+
+      if (!isOwner) {
+        await supabase.auth.signOut();
+        if (mounted) showMsg(context, 'این حساب دسترسی مالک ندارد.');
+        return;
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const ProfileGate()),
+        (route) => false,
+      );
+    } on AuthException catch (e) {
+      if (mounted) showMsg(context, 'ورود مالک ناموفق بود: ${e.message}');
+    } catch (_) {
+      if (mounted) showMsg(context, 'ورود مالک ناموفق بود. دوباره تلاش کنید.');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -430,7 +481,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    signup ? 'ساخت حساب جدید' : 'خوش آمدید',
+                    ownerMode ? 'ورود امن مالک' : (signup ? 'ساخت حساب جدید' : 'خوش آمدید'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 17,
@@ -451,7 +502,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (signup) ...[
+                          if (signup && !ownerMode) ...[
                             TextField(
                               controller: firstName,
                               textInputAction: TextInputAction.next,
@@ -536,7 +587,7 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(
                             height: 52,
                             child: FilledButton(
-                              onPressed: busy ? null : submit,
+                              onPressed: busy ? null : (ownerMode ? ownerLogin : submit),
                               style: FilledButton.styleFrom(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
@@ -549,7 +600,7 @@ class _LoginPageState extends State<LoginPage> {
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
                                   : Text(
-                                      signup ? 'ثبت‌نام و دریافت کد' : 'ورود',
+                                      ownerMode ? 'ورود امن مالک' : (signup ? 'ثبت‌نام و دریافت کد' : 'ورود'),
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
@@ -574,15 +625,34 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: busy
+                                ? null
+                                : () => setState(() {
+                                      ownerMode = !ownerMode;
+                                      signup = false;
+                                    }),
+                            icon: Icon(
+                              ownerMode
+                                  ? Icons.lock_open_rounded
+                                  : Icons.admin_panel_settings_outlined,
+                              size: 19,
+                            ),
+                            label: Text(
+                              ownerMode ? 'بازگشت به ورود عادی' : 'ورود مالک',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
                   TextButton(
-                    onPressed: busy ? null : () => setState(() => signup = !signup),
+                    onPressed: busy || ownerMode ? null : () => setState(() => signup = !signup),
                     child: Text(
-                      signup ? 'حساب دارم؛ ورود' : 'حساب ندارم؛ ثبت‌نام',
+                      ownerMode ? 'ورود مالک فعال است' : (signup ? 'حساب دارم؛ ورود' : 'حساب ندارم؛ ثبت‌نام'),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
