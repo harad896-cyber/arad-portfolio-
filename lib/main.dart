@@ -781,7 +781,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     setState(() => resending = true);
     try {
       await supabase.auth.resend(
-        type: widget.verificationType,
+        type: OtpType.signup,
         email: widget.email,
       );
 
