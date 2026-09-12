@@ -663,7 +663,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       } else if (msg.contains('invalid') || msg.contains('otp')) {
         showMsg(context, 'کد تأیید اشتباه است. دوباره وارد کنید.');
       } else {
-        showMsg(context, 'تأیید کد ناموفق بود: ' + e.message);
+        showMsg(context, 'تأیید کد ناموفق بود: ${e.message}');
       }
       code.clear();
     } catch (_) {
