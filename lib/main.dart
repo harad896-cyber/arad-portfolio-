@@ -139,7 +139,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final email = TextEditingController();
   final password = TextEditingController();
-  bool signup = false;
+  bool signup = true;
   bool busy = false;
 
   Future<void> signInWithGoogle() async {
@@ -226,6 +226,8 @@ class _LoginPageState extends State<LoginPage> {
               const Icon(Icons.forum_rounded, size: 80),
               const SizedBox(height: 12),
               const Text('Arad Messenger', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(signup ? 'ثبت‌نام با ایمیل' : 'ورود به حساب', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 28),
               TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'ایمیل', border: OutlineInputBorder())),
               const SizedBox(height: 12),
