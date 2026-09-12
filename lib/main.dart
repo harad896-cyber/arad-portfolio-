@@ -337,15 +337,15 @@ class _LoginPageState extends State<LoginPage> {
         throw const AuthException('ورود مالک انجام نشد.');
       }
 
-      // مجوز مالک فقط از app_metadata خوانده می‌شود.
-      // این مقدار باید فقط از سمت سرور/Supabase تنظیم شود.
-      final metadata = user.appMetadata;
-      final role = metadata['role']?.toString().toLowerCase();
-      final isOwner = role == 'owner' || role == 'admin' ||
-          metadata['owner'] == true ||
-          metadata['owner']?.toString().toLowerCase() == 'true';
+      // مالک بودن فقط از جدول امن admin_users تعیین می‌شود.
+      // این جدول با RLS طوری تنظیم شده که هر کاربر فقط رکورد خودش را می‌بیند.
+      final adminRow = await supabase
+          .from('admin_users')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (!isOwner) {
+      if (adminRow == null) {
         await supabase.auth.signOut();
         if (mounted) showMsg(context, 'این حساب دسترسی مالک ندارد.');
         return;
@@ -413,7 +413,8 @@ class _LoginPageState extends State<LoginPage> {
             MaterialPageRoute(
               builder: (_) => EmailVerificationPage(
                 email: mail,
-                verificationType: OtpType.signup,
+                // برای تأیید ایمیل از OTP شش‌رقمی استفاده می‌کنیم.
+                verificationType: OtpType.email,
               ),
             ),
           );
@@ -734,7 +735,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     setState(() => busy = true);
     try {
       final response = await supabase.auth.verifyOTP(
-        type: OtpType.email,
+        type: widget.verificationType,
         email: widget.email,
         token: token,
       );
