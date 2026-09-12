@@ -1,11 +1,15 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const supabaseUrl = 'https://bkbdcqequyvubjmrbpqo.supabase.co';
 const supabasePublishableKey = 'sb_publishable_-wIHh9FKu-lmXSMHRWBbFw_t9u5KutA';
+// Set this to the Google OAuth Web client ID from Google Cloud Console.
+const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '');
+final googleSignIn = GoogleSignIn.instance;
 
 final supabase = Supabase.instance.client;
 
@@ -111,9 +115,29 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> signInWithGoogle() async {
     setState(() => busy = true);
     try {
-      await supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'com.arad.messenger://login-callback/',
+      if (kIsWeb) {
+        await supabase.auth.signInWithOAuth(OAuthProvider.google);
+        return;
+      }
+
+      if (googleServerClientId.isEmpty) {
+        throw const AuthException(
+          'GOOGLE_SERVER_CLIENT_ID برای نسخه اندروید تنظیم نشده است.',
+        );
+      }
+
+      await googleSignIn.initialize(serverClientId: googleServerClientId);
+      final account = await googleSignIn.authenticate();
+      final authentication = account.authentication;
+      final idToken = authentication.idToken;
+
+      if (idToken == null || idToken.isEmpty) {
+        throw const AuthException('Google ID Token دریافت نشد.');
+      }
+
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
       );
     } catch (e) {
       if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: $e');
