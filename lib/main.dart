@@ -408,7 +408,22 @@ class _LoginPageState extends State<LoginPage> {
             (route) => false,
           );
         } else {
-          // تأیید ثبت‌نام باید با OtpType.signup انجام شود.
+          // در حالت Confirm Email، signUp ممکن است فقط user برگرداند.
+          // ارسال OTP ثبت‌نام را صریحاً درخواست می‌کنیم تا به Template تأیید ایمیل وابسته نباشد.
+          try {
+            await supabase.auth.resend(
+              type: OtpType.signup,
+              email: mail,
+            );
+          } on AuthException catch (e) {
+            final m = e.message.toLowerCase();
+            if (m.contains('rate limit') || m.contains('too many')) {
+              throw const AuthException('تعداد درخواست‌های ایمیل زیاد است. کمی بعد دوباره تلاش کنید.');
+            }
+            rethrow;
+          }
+
+          if (!mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => EmailVerificationPage(
