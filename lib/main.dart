@@ -103,11 +103,23 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => busy = true);
     try {
       if (signup) {
-        await supabase.auth.signUp(
+        final response = await supabase.auth.signUp(
           email: email.text.trim(),
           password: password.text,
         );
-        if (mounted) showMsg(context, 'حساب ساخته شد. در صورت نیاز ایمیل را تأیید کنید.');
+        if (!mounted) return;
+        if (response.session == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EmailVerificationPage(
+                email: email.text.trim(),
+              ),
+            ),
+          );
+        } else {
+          showMsg(context, 'ثبت‌نام با موفقیت انجام شد.');
+        }
       } else {
         await supabase.auth.signInWithPassword(
           email: email.text.trim(),
@@ -160,6 +172,120 @@ class _LoginPageState extends State<LoginPage> {
     email.dispose();
     password.dispose();
     super.dispose();
+  }
+}
+
+class EmailVerificationPage extends StatefulWidget {
+  final String email;
+
+  const EmailVerificationPage({super.key, required this.email});
+
+  @override
+  State<EmailVerificationPage> createState() => _EmailVerificationPageState();
+}
+
+class _EmailVerificationPageState extends State<EmailVerificationPage> {
+  final code = TextEditingController();
+  bool busy = false;
+  bool resending = false;
+
+  Future<void> verify() async {
+    final token = code.text.trim().replaceAll(' ', '');
+    if (token.length < 6) {
+      showMsg(context, 'کد تأیید را کامل وارد کنید.');
+      return;
+    }
+
+    setState(() => busy = true);
+    try {
+      final response = await supabase.auth.verifyOTP(
+        type: OtpType.signup,
+        email: widget.email,
+        token: token,
+      );
+      if (response.session == null) {
+        throw const AuthException('تأیید انجام نشد. دوباره تلاش کنید.');
+      }
+      if (mounted) {
+        showMsg(context, 'ایمیل با موفقیت تأیید شد.');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'کد تأیید نامعتبر یا منقضی شده است: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> resend() async {
+    setState(() => resending = true);
+    try {
+      await supabase.auth.resend(
+        type: OtpType.signup,
+        email: widget.email,
+      );
+      if (mounted) showMsg(context, 'کد جدید به ایمیل شما ارسال شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ارسال مجدد ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => resending = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    code.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('تأیید ایمیل')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const Icon(Icons.mark_email_read_outlined, size: 72),
+              const SizedBox(height: 16),
+              const Text(
+                'کد تأیید ارسال شد',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'کد ارسال‌شده به ${widget.email} را وارد کنید.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: code,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                maxLength: 6,
+                decoration: const InputDecoration(
+                  labelText: 'کد ۶ رقمی',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: busy ? null : verify,
+                  child: Text(busy ? 'در حال تأیید...' : 'تأیید ایمیل'),
+                ),
+              ),
+              TextButton(
+                onPressed: resending ? null : resend,
+                child: Text(resending ? 'در حال ارسال...' : 'ارسال دوباره کد'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
