@@ -657,26 +657,76 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
   Future<void> verify() async {
     final token = code.text.trim();
-    if (!RegExp(r'^\d{6}
+    if (token.length != 6 || int.tryParse(token) == null) {
+      showMsg(context, 'کد تأیید باید دقیقاً ۶ رقم باشد.');
+      return;
+    }
+    if (busy) return;
+
+    setState(() => busy = true);
+    try {
+      final response = await supabase.auth.verifyOtp(
+        type: OtpType.email,
+        email: widget.email,
+        token: token,
+      );
+
+      if (response.session == null || supabase.auth.currentSession == null) {
+        throw const AuthException('تأیید کد انجام نشد. دوباره تلاش کنید.');
+      }
+
+      if (widget.ownerOnly) {
+        final user = supabase.auth.currentUser;
+        if (user == null) {
+          throw const AuthException('حساب مالک پیدا نشد.');
+        }
+        final adminRow = await supabase
+            .from('admin_users')
+            .select('user_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        if (adminRow == null) {
+          await supabase.auth.signOut();
+          throw const AuthException('این ایمیل دسترسی مالک ندارد.');
+        }
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const ProfileGate()),
+        (route) => false,
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      showMsg(context, 'تأیید کد ناموفق بود: ${e.message}');
+      code.clear();
+    } catch (e) {
+      if (!mounted) return;
+      showMsg(context, 'تأیید کد ناموفق بود: $e');
+      code.clear();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> resend() async {
     if (resendCount >= maxResends || resending) {
       showMsg(context, 'سقف ارسال مجدد کد تمام شده است.');
       return;
     }
-
     setState(() => resending = true);
     try {
-      await supabase.auth.resend(
-        type: OtpType.signup,
+      await supabase.auth.signInWithOtp(
         email: widget.email,
+        shouldCreateUser: widget.allowCreateUser,
       );
-
       if (!mounted) return;
       setState(() => resendCount++);
-      showMsg(context, 'کد ۶ رقمی جدید به ایمیل شما ارسال شد.');
+      showMsg(context, 'کد ۶ رقمی جدید ارسال شد.');
     } on AuthException catch (e) {
       if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ${e.message}');
-    } catch (_) {
-      if (mounted) showMsg(context, 'ارسال کد ناموفق بود. دوباره تلاش کنید.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: $e');
     } finally {
       if (mounted) setState(() => resending = false);
     }
