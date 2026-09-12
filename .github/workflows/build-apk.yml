@@ -27,6 +27,7 @@ jobs:
         run: flutter create --platforms=android --org com.arad.messenger .
 
       - name: Install Arad Messenger app icon
+        if: ${{ hashFiles('assets/app_icon.jpg') != '' }}
         run: |
           find android/app/src/main/res -type f -name 'ic_launcher.*' -delete
           mkdir -p android/app/src/main/res/mipmap
