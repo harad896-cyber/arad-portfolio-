@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android Test APK
 
 on:
   push:
@@ -11,25 +11,32 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+
+      - name: Generate Android project
+        run: flutter create --platforms=android --org com.arad.messenger .
+
       - name: Install dependencies
         run: flutter pub get
+
       - name: Analyze
         run: flutter analyze
-      - name: Build APK
-        run: flutter build apk --release
-      - name: Upload APK
+
+      - name: Build test APK
+        run: flutter build apk --debug
+
+      - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: arad-messenger-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: arad-messenger-test-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
-
-# Test build workflow enabled
