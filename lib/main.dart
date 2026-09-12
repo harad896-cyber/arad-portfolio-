@@ -40,6 +40,13 @@ final googleSignIn = GoogleSignIn.instance;
 
 final supabase = Supabase.instance.client;
 
+String? authRedirectUrl() {
+  if (!kIsWeb) return null;
+  final uri = Uri.base;
+  if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+  return uri.origin;
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
@@ -216,6 +223,7 @@ class _LoginPageState extends State<LoginPage> {
         final response = await supabase.auth.signUp(
           email: mail,
           password: pass,
+          emailRedirectTo: authRedirectUrl(),
           data: {
             'first_name': first,
             'last_name': last,
@@ -257,6 +265,7 @@ class _LoginPageState extends State<LoginPage> {
         await supabase.auth.signInWithOtp(
           email: mail,
           shouldCreateUser: false,
+          emailRedirectTo: authRedirectUrl(),
         );
 
         if (!mounted) return;
@@ -548,10 +557,18 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     }
     setState(() => resending = true);
     try {
-      await supabase.auth.resend(
-        type: widget.verificationType,
-        email: widget.email,
-      );
+      if (widget.verificationType == OtpType.signup) {
+        await supabase.auth.resend(
+          type: OtpType.signup,
+          email: widget.email,
+        );
+      } else {
+        await supabase.auth.signInWithOtp(
+          email: widget.email,
+          shouldCreateUser: false,
+          emailRedirectTo: authRedirectUrl(),
+        );
+      }
       if (mounted) {
         setState(() => resendCount++);
         final left = maxResends - resendCount;
@@ -615,7 +632,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'ایمیل خود را بررسی کنید و کد ۶ رقمی را در کادر زیر وارد کنید.',
+                      'ایمیل خود را بررسی کنید. کد ۶ رقمی را در کادر زیر وارد کنید؛ نیازی به باز کردن لینک ایمیل نیست.',
                       textAlign: TextAlign.center,
                     ),
                   ],
