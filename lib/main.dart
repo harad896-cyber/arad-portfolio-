@@ -534,7 +534,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> markRead() async {
     try {
-      await supabase.from('messages').update({'read_at': DateTime.now().toIso8601String()}).eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id);
+      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id);\n      for (final row in rows) {\n        await supabase.rpc('mark_message_read', params: {'p_message_id': row['id']});\n      }
     } catch (_) {}
   }
 
@@ -543,7 +543,7 @@ class _ChatPageState extends State<ChatPage> {
     if (value.isEmpty || sending) return;
     setState(() => sending = true);
     try {
-      await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'content': value, 'message_type': 'text'});
+      await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': value, 'message_type': 'text'});
       text.clear();
       await load();
     } catch (e) {
@@ -560,9 +560,9 @@ class _ChatPageState extends State<ChatPage> {
       final f = result.files.single;
       final bytes = f.bytes;
       if (bytes == null) return;
-      final path = '${supabase.auth.currentUser!.id}/${DateTime.now().millisecondsSinceEpoch}_${f.name}';
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${f.name}';
       await supabase.storage.from('chat-media').uploadBinary(path, bytes);
-      final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'content': f.name, 'message_type': 'file'}).select().single();
+      final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': f.name, 'message_type': 'file'}).select().single();
       await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': f.name, 'file_size': f.size});
       await load();
     } catch (e) {
@@ -575,9 +575,9 @@ class _ChatPageState extends State<ChatPage> {
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (image == null) return;
       final bytes = await image.readAsBytes();
-      final path = '${supabase.auth.currentUser!.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
       await supabase.storage.from('chat-media').uploadBinary(path, bytes);
-      final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'content': image.name, 'message_type': 'image'}).select().single();
+      final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': image.name, 'message_type': 'image'}).select().single();
       await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image'});
       await load();
     } catch (e) {
@@ -631,7 +631,7 @@ class _ChatPageState extends State<ChatPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (m['message_type'] == 'image') const Icon(Icons.image),
-                                Text('${m['content'] ?? ''}'),
+                                Text('${m['body'] ?? ''}'),
                                 if (mine) Icon(m['read_at'] != null ? Icons.done_all : Icons.done, size: 16),
                               ],
                             ),
@@ -677,7 +677,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (image == null) return;
       final bytes = await image.readAsBytes();
-      final path = '${supabase.auth.currentUser!.id}.jpg';
+      final path = '${supabase.auth.currentUser!.id}/avatar.jpg';
       await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
       final url = supabase.storage.from('avatars').getPublicUrl(path);
       await supabase.from('profiles').update({'avatar_url': '$url?x=${DateTime.now().millisecondsSinceEpoch}'}).eq('id', supabase.auth.currentUser!.id);
