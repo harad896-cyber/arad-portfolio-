@@ -198,12 +198,7 @@ class AuthGate extends StatelessWidget {
         if (session == null) return const LoginPage();
 
         final user = supabase.auth.currentUser;
-        final metadata = user?.appMetadata ?? const <String, dynamic>{};
-        final role = metadata['role']?.toString().toLowerCase();
-        final isPrivileged = role == 'owner' || role == 'admin' ||
-            metadata['owner'] == true ||
-            metadata['owner']?.toString().toLowerCase() == 'true';
-        final verified = user?.emailConfirmedAt != null || isPrivileged;
+        final verified = user?.emailConfirmedAt != null;
         if (!verified) {
           return EmailVerificationPage(
             email: user?.email ?? '',
@@ -222,13 +217,7 @@ class ProfileGate extends StatelessWidget {
 
   Future<bool> hasProfile() async {
     final user = supabase.auth.currentUser;
-    if (user == null) return false;
-    final metadata = user.appMetadata;
-    final role = metadata['role']?.toString().toLowerCase();
-    final isPrivileged = role == 'owner' || role == 'admin' ||
-        metadata['owner'] == true ||
-        metadata['owner']?.toString().toLowerCase() == 'true';
-    if (user.emailConfirmedAt == null && !isPrivileged) return false;
+    if (user == null || user.emailConfirmedAt == null) return false;
     final uid = user.id;
     final row = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle();
     return row != null;
@@ -383,7 +372,6 @@ class _LoginPageState extends State<LoginPage> {
       showMsg(context, 'رمز عبور باید حداقل ۶ کاراکتر باشد.');
       return;
     }
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+
 
     setState(() => busy = true);
     try {
@@ -435,22 +423,8 @@ class _LoginPageState extends State<LoginPage> {
           (route) => false,
         );
       }
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      final m = e.message.toLowerCase();
-      if (m.contains('invalid login credentials')) {
-        showMsg(context, 'ایمیل یا رمز عبور اشتباه است.');
-      } else if (m.contains('email not confirmed')) {
-        showMsg(context, 'ایمیل هنوز تأیید نشده است. کد تأیید را وارد کنید.');
-      } else if (m.contains('user already registered')) {
-        showMsg(context, 'این ایمیل قبلاً ثبت‌نام شده است. وارد شوید.');
-      } else if (m.contains('rate limit') || m.contains('too many')) {
-        showMsg(context, 'تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.');
-      } else {
-        showMsg(context, 'خطای ورود: ${e.message}');
-      }
     } catch (e) {
-      if (mounted) showMsg(context, 'خطای غیرمنتظره: $e');
+      if (mounted) showMsg(context, 'خطا: $e');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1537,312 +1511,5 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
-  }
-}).hasMatch(mail)) {
-      showMsg(context, 'فرمت ایمیل صحیح نیست.');
-      return;
-    }
-
-    setState(() => busy = true);
-    try {
-      if (signup) {
-        final response = await supabase.auth.signUp(
-          email: mail,
-          password: pass,
-          data: {
-            'first_name': first,
-            'last_name': last,
-            'full_name': '$first $last',
-          },
-        );
-
-        if (!mounted) return;
-        if (response.user == null) {
-          throw const AuthException('ثبت‌نام انجام نشد.');
-        }
-
-        if (response.session != null) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const ProfileGate()),
-            (route) => false,
-          );
-        } else {
-          // تأیید ثبت‌نام باید با OtpType.signup انجام شود.
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => EmailVerificationPage(
-                email: mail,
-                verificationType: OtpType.signup,
-              ),
-            ),
-          );
-        }
-      } else {
-        final response = await supabase.auth.signInWithPassword(
-          email: mail,
-          password: pass,
-        );
-
-        if (response.session == null) {
-          throw const AuthException('ورود انجام نشد.');
-        }
-
-        if (!mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ProfileGate()),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) showMsg(context, 'خطا: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 28, 22, 20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 82,
-                      height: 82,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.secondary,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 22,
-                            offset: const Offset(0, 10),
-                            color: theme.colorScheme.primary.withValues(alpha: 0.18),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.forum_rounded,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Arad Messenger',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 29, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    ownerMode ? 'ورود امن مالک' : (signup ? 'ساخت حساب جدید' : 'خوش آمدید'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 17,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    elevation: 0,
-                    margin: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (signup && !ownerMode) ...[
-                            TextField(
-                              controller: firstName,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelText: 'نام',
-                                prefixIcon: const Icon(Icons.person_outline),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: lastName,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelText: 'نام خانوادگی',
-                                prefixIcon: const Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          TextField(
-                            controller: email,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: 'ایمیل',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: password,
-                            obscureText: obscurePassword,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => busy ? null : (ownerMode ? ownerLogin() : submit()),
-                            decoration: InputDecoration(
-                              labelText: signup ? 'رمز عبور (حداقل ۶ کاراکتر)' : 'رمز عبور',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                tooltip: obscurePassword ? 'نمایش رمز عبور' : 'مخفی کردن رمز عبور',
-                                onPressed: () => setState(() => obscurePassword = !obscurePassword),
-                                icon: Icon(
-                                  obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                ),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                          if (signup) ...[
-                            const SizedBox(height: 9),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 17,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 7),
-                                Expanded(
-                                  child: Text(
-                                    'رمز عبور خود را حداقل ۶ کاراکتر و قابل یادآوری انتخاب کنید.',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: 18),
-                          SizedBox(
-                            height: 52,
-                            child: FilledButton(
-                              onPressed: busy ? null : (ownerMode ? ownerLogin : submit),
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: busy
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : Text(
-                                      ownerMode ? 'ورود امن مالک' : (signup ? 'ثبت‌نام و دریافت کد' : 'ورود'),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          if (!ownerMode) ...[
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 52,
-                            child: OutlinedButton.icon(
-                              onPressed: busy ? null : signInWithGoogle,
-                              style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              icon: const Icon(Icons.g_mobiledata, size: 28),
-                              label: const Text(
-                                'ورود با حساب Google',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
-                          ],
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: busy
-                                ? null
-                                : () => setState(() {
-                                      ownerMode = !ownerMode;
-                                      signup = false;
-                                    }),
-                            icon: Icon(
-                              ownerMode
-                                  ? Icons.lock_open_rounded
-                                  : Icons.admin_panel_settings_outlined,
-                              size: 19,
-                            ),
-                            label: Text(
-                              ownerMode ? 'بازگشت به ورود عادی' : 'ورود مالک',
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    onPressed: busy || ownerMode ? null : () => setState(() => signup = !signup),
-                    child: Text(
-                      ownerMode ? 'ورود مالک فعال است' : (signup ? 'حساب دارم؛ ورود' : 'حساب ندارم؛ ثبت‌نام'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    firstName.dispose();
-    lastName.dispose();
-    email.dispose();
-    password.dispose();
-    super.dispose();
   }
 }
