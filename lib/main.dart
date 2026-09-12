@@ -836,6 +836,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       ),
     );
   }
+}
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
