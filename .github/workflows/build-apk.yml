@@ -90,3 +90,5 @@ jobs:
           if-no-files-found: error
 
 # APK test build
+
+# Build configuration verified for main branch APK tests.
