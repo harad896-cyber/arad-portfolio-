@@ -25,6 +25,12 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --org com.arad.messenger .
 
+      - name: Set app identity
+        run: |
+          sed -i 's/android:label="[^"]*"/android:label="Arad Messenger"/' android/app/src/main/AndroidManifest.xml
+          sed -i "s/applicationId = '[^']*'/applicationId = 'com.arad.messenger'/" android/app/build.gradle.kts || true
+          sed -i 's/applicationId "[^"]*"/applicationId "com.arad.messenger"/' android/app/build.gradle || true
+
       - name: Install dependencies
         run: flutter pub get
 
