@@ -697,7 +697,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       setState(() => resendCount++);
       showMsg(context, 'کد ۶ رقمی جدید به ایمیل شما ارسال شد.');
     } on AuthException catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ' + e.message);
+      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ${e.message}');
     } catch (_) {
       if (mounted) showMsg(context, 'ارسال کد ناموفق بود. دوباره تلاش کنید.');
     } finally {
@@ -826,9 +826,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           ? 'در حال ارسال کد...'
                           : resendCount >= maxResends
                               ? 'سقف ارسال مجدد تمام شد'
-                              : 'ارسال مجدد کد (' +
-                                  (maxResends - resendCount).toString() +
-                                  ')',
+                              : 'ارسال مجدد کد (${maxResends - resendCount})',
                     ),
                   ),
                 ],
