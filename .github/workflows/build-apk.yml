@@ -25,11 +25,11 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --org com.arad.messenger .
 
-      - name: Install app icon
+      - name: Install Arad Messenger app icon
         run: |
+          find android/app/src/main/res -type f -name 'ic_launcher.*' -delete
           mkdir -p android/app/src/main/res/mipmap
           cp assets/app_icon.jpg android/app/src/main/res/mipmap/ic_launcher.jpg
-          sed -i 's#@mipmap/ic_launcher#@mipmap/ic_launcher#' android/app/src/main/AndroidManifest.xml
 
       - name: Set app identity
         run: |
