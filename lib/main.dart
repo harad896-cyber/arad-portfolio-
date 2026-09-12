@@ -637,37 +637,45 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   static const int maxResends = 3;
 
   Future<void> verify() async {
-    final token = code.text.trim().replaceAll(RegExp(r'\\s+'), '');
-    if (!RegExp(r'^\\d{6}
+    final token = code.text.trim();
+    if (token.length != 6 || int.tryParse(token) == null) {
+      showMsg(context, 'کد تأیید باید دقیقاً ۶ رقم باشد.');
+      return;
+    }
+
+    if (busy) return;
+    setState(() => busy = true);
+
     try {
       final response = await supabase.auth.verifyOTP(
         type: widget.verificationType,
         email: widget.email,
         token: token,
       );
+
       if (response.session == null) {
         throw const AuthException('تأیید انجام نشد. دوباره تلاش کنید.');
       }
-      if (mounted) {
-        showMsg(context, 'ایمیل با موفقیت تأیید شد.');
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ProfileGate()),
-          (route) => false,
-        );
-      }
+
+      if (!mounted) return;
+      showMsg(context, 'ایمیل با موفقیت تأیید شد.');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const ProfileGate()),
+        (route) => false,
+      );
     } on AuthException catch (e) {
-      if (mounted) {
-        final message = e.message.toLowerCase().contains('expired')
-            ? 'کد تأیید منقضی شده است. یک کد جدید درخواست کنید.'
-            : 'کد تأیید اشتباه است. کد ۶ رقمی ارسال‌شده را دقیق وارد کنید.';
-        showMsg(context, message);
-        code.clear();
+      if (!mounted) return;
+      final lower = e.message.toLowerCase();
+      if (lower.contains('expired')) {
+        showMsg(context, 'کد تأیید منقضی شده است. یک کد جدید درخواست کنید.');
+      } else {
+        showMsg(context, 'کد تأیید اشتباه است. دوباره کد ۶ رقمی را وارد کنید.');
       }
+      code.clear();
     } catch (_) {
-      if (mounted) {
-        showMsg(context, 'کد تأیید اشتباه است. دوباره وارد کنید.');
-        code.clear();
-      }
+      if (!mounted) return;
+      showMsg(context, 'کد تأیید اشتباه است. دوباره کد ۶ رقمی را وارد کنید.');
+      code.clear();
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -675,35 +683,25 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
   Future<void> resend() async {
     if (resendCount >= maxResends || resending) {
-      showMsg(context, 'کد را ۳ بار می‌توانید دوباره ارسال کنید.');
+      showMsg(context, 'سقف ارسال مجدد کد تمام شده است.');
       return;
     }
+
     setState(() => resending = true);
     try {
-      if (widget.verificationType == OtpType.signup) {
-        await supabase.auth.resend(
-          type: OtpType.signup,
-          email: widget.email,
-        );
-      } else {
-        await supabase.auth.signInWithOtp(
-          email: widget.email,
-          shouldCreateUser: false,
-          emailRedirectTo: authRedirectUrl(),
-        );
-      }
-      if (mounted) {
-        setState(() => resendCount++);
-        final left = maxResends - resendCount;
-        showMsg(
-          context,
-          left > 0
-              ? 'کد تأیید دوباره ارسال شد. $left بار امکان ارسال مجدد باقی مانده است.'
-              : 'کد تأیید دوباره ارسال شد. دیگر امکان ارسال مجدد نیست.',
-        );
-      }
-    } catch (e) {
-      if (mounted) showMsg(context, 'ارسال مجدد کد ناموفق بود. چند لحظه بعد دوباره تلاش کنید: $e');
+      await supabase.auth.signInWithOtp(
+        email: widget.email,
+        shouldCreateUser: false,
+        emailRedirectTo: authRedirectUrl(),
+      );
+
+      if (!mounted) return;
+      setState(() => resendCount++);
+      showMsg(context, 'کد ۶ رقمی جدید به ایمیل شما ارسال شد.');
+    } on AuthException catch (e) {
+      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ' + e.message);
+    } catch (_) {
+      if (mounted) showMsg(context, 'ارسال کد ناموفق بود. چند لحظه بعد دوباره تلاش کنید.');
     } finally {
       if (mounted) setState(() => resending = false);
     }
@@ -718,6 +716,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('تأیید ایمیل')),
       body: SafeArea(
@@ -767,7 +766,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       child: Column(
                         children: [
                           const Text(
-                            'کد تأیید برای این ایمیل ارسال شده است:',
+                            'کد ۶ رقمی برای این ایمیل ارسال شده است:',
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
@@ -781,7 +780,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'ایمیل خود را بررسی کنید و کد ۶ رقمی را در کادر زیر وارد کنید.',
+                            'کد را وارد کنید؛ بعد از وارد شدن رقم ششم، برنامه خودکار تأیید و وارد حساب می‌شود.',
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -805,18 +804,13 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       letterSpacing: 8,
                     ),
                     onChanged: (value) {
-                      final digits = value.replaceAll(RegExp(r'\\D'), '');
-                      if (digits != value) {
-                        code.value = code.value.copyWith(
-                          text: digits,
-                          selection: TextSelection.collapsed(offset: digits.length),
-                        );
-                      }
-                      if (digits.length == 6 && !busy) {
+                      if (value.length == 6 && !busy) {
                         verify();
                       }
                     },
-                    onSubmitted: (_) => busy ? null : verify(),
+                    onSubmitted: (_) {
+                      if (!busy) verify();
+                    },
                     decoration: InputDecoration(
                       counterText: '',
                       labelText: 'کد ۶ رقمی',
@@ -832,7 +826,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: busy ? null : verify,
-                      child: Text(busy ? 'در حال تأیید...' : 'تأیید ایمیل'),
+                      child: Text(busy ? 'در حال تأیید...' : 'تأیید و ورود'),
                     ),
                   ),
                   TextButton(
@@ -841,8 +835,8 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       resending
                           ? 'در حال ارسال کد...'
                           : resendCount >= maxResends
-                              ? 'سقف ۳ بار ارسال مجدد تمام شد'
-                              : 'ارسال مجدد کد (${maxResends - resendCount})',
+                              ? 'سقف ارسال مجدد تمام شد'
+                              : 'ارسال مجدد کد (' + (maxResends - resendCount).toString() + ')',
                     ),
                   ),
                 ],
