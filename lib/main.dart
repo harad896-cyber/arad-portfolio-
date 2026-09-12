@@ -221,25 +221,48 @@ class _LoginPageState extends State<LoginPage> {
             'full_name': '$first $last',
           },
         );
-        if (!mounted) return;
 
+        if (!mounted) return;
         if (response.user == null) {
           throw const AuthException('ثبت‌نام انجام نشد.');
         }
 
-        final verified = response.user?.emailConfirmedAt != null;
-        if (!verified) {
-          Navigator.pushReplacement(
+        // ثبت‌نام اولیه بدون نمایش صفحه تأیید ایمیل.
+        // برای این حالت باید Confirm email در Supabase خاموش باشد.
+        if (response.session != null) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const ProfileGate()),
+            (route) => false,
+          );
+        } else {
+          showMsg(
             context,
-            MaterialPageRoute(
-              builder: (_) => EmailVerificationPage(email: mail),
-            ),
+            'حساب ساخته شد، اما Supabase هنوز تأیید ایمیل را اجباری کرده است. Confirm email را در Supabase خاموش کنید.',
           );
         }
       } else {
+        // اول رمز عبور را بررسی می‌کنیم.
         await supabase.auth.signInWithPassword(
           email: mail,
           password: pass,
+        );
+
+        // بعد از خروج و ورود دوباره، ایمیل باید یک بار دیگر با کد تأیید شود.
+        await supabase.auth.signOut();
+        await supabase.auth.signInWithOtp(
+          email: mail,
+          shouldCreateUser: false,
+        );
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationPage(
+              email: mail,
+              verificationType: OtpType.email,
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -342,8 +365,13 @@ class _LoginPageState extends State<LoginPage> {
 
 class EmailVerificationPage extends StatefulWidget {
   final String email;
+  final OtpType verificationType;
 
-  const EmailVerificationPage({super.key, required this.email});
+  const EmailVerificationPage({
+    super.key,
+    required this.email,
+    this.verificationType = OtpType.signup,
+  });
 
   @override
   State<EmailVerificationPage> createState() => _EmailVerificationPageState();
@@ -366,7 +394,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     setState(() => busy = true);
     try {
       final response = await supabase.auth.verifyOTP(
-        type: OtpType.signup,
+        type: widget.verificationType,
         email: widget.email,
         token: token,
       );
@@ -395,7 +423,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     setState(() => resending = true);
     try {
       await supabase.auth.resend(
-        type: OtpType.signup,
+        type: widget.verificationType,
         email: widget.email,
       );
       if (mounted) {
