@@ -52,7 +52,17 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<AuthState>(
       stream: supabase.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (supabase.auth.currentSession == null) return const LoginPage();
+        final session = supabase.auth.currentSession;
+        if (session == null) return const LoginPage();
+
+        final user = supabase.auth.currentUser;
+        final verified = user?.emailConfirmedAt != null;
+        if (!verified) {
+          return EmailVerificationPage(
+            email: user?.email ?? '',
+          );
+        }
+
         return const ProfileGate();
       },
     );
@@ -63,7 +73,9 @@ class ProfileGate extends StatelessWidget {
   const ProfileGate({super.key});
 
   Future<bool> hasProfile() async {
-    final uid = supabase.auth.currentUser!.id;
+    final user = supabase.auth.currentUser;
+    if (user == null || user.emailConfirmedAt == null) return false;
+    final uid = user.id;
     final row = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle();
     return row != null;
   }
@@ -108,8 +120,9 @@ class _LoginPageState extends State<LoginPage> {
           password: password.text,
         );
         if (!mounted) return;
-        if (response.session == null) {
-          Navigator.push(
+        final verified = response.user?.emailConfirmedAt != null;
+        if (!verified) {
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (_) => EmailVerificationPage(
@@ -208,7 +221,10 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       }
       if (mounted) {
         showMsg(context, 'ایمیل با موفقیت تأیید شد.');
-        Navigator.pop(context);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ProfileGate()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) showMsg(context, 'کد تأیید نامعتبر یا منقضی شده است: $e');
