@@ -331,11 +331,20 @@ class _LoginPageState extends State<LoginPage> {
             (route) => false,
           );
         } else {
+          // برای اینکه کد حتماً به ایمیل برسد، یک OTP صریحاً درخواست می‌کنیم.
+          // این مسیر حتی اگر قالب تأیید Supabase لینک داشته باشد، کد ورود را می‌فرستد.
+          await supabase.auth.signInWithOtp(
+            email: mail,
+            shouldCreateUser: false,
+            emailRedirectTo: authRedirectUrl(),
+          );
+
+          if (!mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => EmailVerificationPage(
                 email: mail,
-                verificationType: OtpType.signup,
+                verificationType: OtpType.email,
               ),
             ),
           );
@@ -644,8 +653,19 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
           (route) => false,
         );
       }
-    } catch (e) {
-      if (mounted) showMsg(context, 'کد تأیید نامعتبر یا منقضی شده است: $e');
+    } on AuthException catch (e) {
+      if (mounted) {
+        final message = e.message.toLowerCase().contains('expired')
+            ? 'کد تأیید منقضی شده است. یک کد جدید درخواست کنید.'
+            : 'کد تأیید اشتباه است. کد ۶ رقمی ارسال‌شده را دقیق وارد کنید.';
+        showMsg(context, message);
+        code.clear();
+      }
+    } catch (_) {
+      if (mounted) {
+        showMsg(context, 'کد تأیید اشتباه است. دوباره وارد کنید.');
+        code.clear();
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
