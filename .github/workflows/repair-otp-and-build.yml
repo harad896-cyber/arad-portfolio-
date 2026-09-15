@@ -18,16 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Recover clean source once
+      - name: Recover known clean source once
         shell: bash
         run: |
           if [ ! -f .github/recovery.done ]; then
-            python3 .github/recover_app.py
+            git checkout 6e215c34a2bc44bdab38462b53528522b43362cf -- lib/main.dart
             printf 'clean app source recovered\n' > .github/recovery.done
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add lib/main.dart .github/recovery.done
-            git commit -m 'fix: persist clean chat and profile implementation'
+            git commit -m 'fix: restore known clean chat and profile source'
             git push
           else
             echo 'Clean source already persisted.'
@@ -45,6 +45,7 @@ jobs:
           text = text.replace("hintText: '۱۲۳۴۵۶'", "hintText: '------'")
           text = text.replace("hintText: '123456'", "hintText: '------'")
           text = text.replace('بعد از وارد کردن رقم ششم، کد خودکار بررسی می‌شود و در صورت درست بودن وارد برنامه می‌شوید.', 'کد فقط وقتی بررسی می‌شود که روی «تأیید و ورود» بزنید. کدهای قبلی یا منقضی‌شده قابل استفاده نیستند.')
+          text = text.replace('پس از ارسال، یک کد ۶ رقمی به ایمیل شما می‌آید و بعد از رقم ششم خودکار بررسی می‌شود.', 'پس از ارسال، یک کد دقیقاً ۶ رقمی به ایمیل شما می‌آید. کد فقط با زدن «تأیید و ورود» بررسی می‌شود.')
           path.write_text(text, encoding='utf-8')
 
       - name: Set up Flutter
