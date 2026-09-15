@@ -36,6 +36,24 @@ jobs:
           cp assets/app_icon.jpg android/app/src/main/res/mipmap/ic_launcher.jpg
           sed -i 's/android:label="[^"]*"/android:label="Arad Messenger"/' android/app/src/main/AndroidManifest.xml
 
+      - name: Normalize nullable avatar entry
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              "        if (avatarUrl case final url?) 'avatar_url': url,",
+              "        'avatar_url': avatarUrl,",
+              1,
+          )
+          s = s.replace(
+              "        if (avatarUrl != null) 'avatar_url': avatarUrl,",
+              "        'avatar_url': avatarUrl,",
+              1,
+          )
+          p.write_text(s, encoding='utf-8')
+
       - name: Get dependencies
         run: flutter pub get
 
