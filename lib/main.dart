@@ -600,7 +600,7 @@ class _LoginPageState extends State<LoginPage> {
                                 const SizedBox(width: 7),
                                 Expanded(
                                   child: Text(
-                                    'پس از ارسال، یک کد ۶ رقمی به ایمیل شما می‌آید و بعد از رقم ششم خودکار بررسی می‌شود.',
+                                    'پس از ارسال، یک کد دقیقاً ۶ رقمی به ایمیل شما می‌آید. کد فقط با زدن «تأیید و ورود» بررسی می‌شود.',
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       color: theme.colorScheme.onSurfaceVariant,
@@ -910,7 +910,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'بعد از وارد کردن رقم ششم، کد خودکار بررسی می‌شود و در صورت درست بودن وارد برنامه می‌شوید.',
+                            'کد فقط وقتی بررسی می‌شود که روی «تأیید و ورود» بزنید. کدهای قبلی یا منقضی‌شده قابل استفاده نیستند.',
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -1330,7 +1330,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       body: Column(
         children: [
           Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder()))),
-          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
+          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: '------', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
             SizedBox(
               height: 60,
@@ -1522,7 +1522,7 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 IconButton(onPressed: sendImage, icon: const Icon(Icons.image)),
                 IconButton(onPressed: sendFile, icon: const Icon(Icons.attach_file)),
-                Expanded(child: TextField(controller: text, decoration: const InputDecoration(hintText: 'پیام...', border: OutlineInputBorder()))),
+                Expanded(child: TextField(controller: text, decoration: const InputDecoration(hintText: '------', border: OutlineInputBorder()))),
                 IconButton(onPressed: sending ? null : sendText, icon: const Icon(Icons.send)),
               ],
             ),
