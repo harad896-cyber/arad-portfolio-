@@ -1,5 +1,6 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -985,7 +986,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
-
   @override
   State<ProfileSetupPage> createState() => _ProfileSetupPageState();
 }
@@ -995,6 +995,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final username = TextEditingController();
   final bio = TextEditingController();
   XFile? avatarImage;
+  Uint8List? avatarBytes;
+  String? existingAvatarUrl;
   bool loading = true;
   bool busy = false;
 
@@ -1010,9 +1012,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       } else {
         final metadata = user.userMetadata ?? <String, dynamic>{};
         final fullName = (metadata['full_name'] ?? '').toString().trim();
-        if (fullName.isNotEmpty) {
-          name.text = fullName;
-        }
+        if (fullName.isNotEmpty) name.text = fullName;
       }
     } catch (_) {}
     if (mounted) setState(() => loading = false);
@@ -1021,133 +1021,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   Future<void> pickAvatar(ImageSource source) async {
     try {
       final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
-    } catch (e) {
-      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
-    }
-  }
-
-  Future<void> chooseAvatar() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
-        ]),
-      ),
-    );
-  }
-
-  Future<void> pickAvatar(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
-    } catch (e) {
-      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
-    }
-  }
-
-  Future<void> chooseAvatar() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
-        ]),
-      ),
-    );
-  }
-
-  Future<void> pickAvatar(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
-    } catch (e) {
-      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
-    }
-  }
-
-  Future<void> chooseAvatar() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
-        ]),
-      ),
-    );
-  }
-
-  Future<void> pickAvatar(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
-    } catch (e) {
-      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
-    }
-  }
-
-  Future<void> chooseAvatar() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
-        ]),
-      ),
-    );
-  }
-
-  Future<void> pickAvatar(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
-    } catch (e) {
-      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
-    }
-  }
-
-  Future<void> chooseAvatar() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
-        ]),
-      ),
-    );
-  }
-
-  Future<void> pickAvatar(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
-    } catch (e) {
-      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
-    }
-  }
-
-  Future<void> chooseAvatar() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
-        ]),
-      ),
-    );
-  }
-
-  Future<void> pickAvatar(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
-      if (image != null && mounted) setState(() => avatarImage = image);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (mounted) setState(() { avatarImage = image; avatarBytes = bytes; });
     } catch (e) {
       if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
     }
@@ -1175,13 +1051,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       final uid = supabase.auth.currentUser!.id;
       String? avatarUrl;
       if (avatarImage != null) {
-        final bytes = await avatarImage!.readAsBytes();
+        final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
         final path = '$uid/avatar.jpg';
-        await supabase.storage.from('avatars').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
-        );
+        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
         avatarUrl = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
       }
       await supabase.from('profiles').upsert({
@@ -1194,9 +1066,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         'is_online': true,
         'last_seen': DateTime.now().toIso8601String(),
       });
-      if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
-      }
+      if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
     } catch (e) {
       if (mounted) showMsg(context, 'ذخیره نشد: $e');
     } finally {
@@ -1205,18 +1075,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    load();
-  }
-
+  void initState() { super.initState(); load(); }
   @override
-  void dispose() {
-    name.dispose();
-    username.dispose();
-    bio.dispose();
-    super.dispose();
-  }
+  void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -1226,22 +1087,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Center(
-            child: GestureDetector(
-              onTap: chooseAvatar,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  CircleAvatar(
-                    radius: 58,
-                    backgroundImage: avatarImage != null ? FileImage(__import__('dart:io').File(avatarImage!.path)) : (p['avatar_url'] != null && '${p['avatar_url']}'.isNotEmpty ? NetworkImage('${p['avatar_url']}') : null),
-                    child: (avatarImage == null && (p['avatar_url'] == null || '${p['avatar_url']}'.isEmpty)) ? const Icon(Icons.person, size: 58) : null,
-                  ),
-                  Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: const Icon(Icons.camera_alt, size: 20))),
-                ],
+          Center(child: GestureDetector(
+            onTap: chooseAvatar,
+            child: Stack(clipBehavior: Clip.none, children: [
+              CircleAvatar(
+                radius: 58,
+                backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
+                child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
               ),
-            ),
-          ),
+              const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
+            ]),
+          )),
           const SizedBox(height: 22),
           TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
           const SizedBox(height: 12),
@@ -1258,7 +1114,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -1273,65 +1128,17 @@ class _HomePageState extends State<HomePage> {
     final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
     return chats.where((c) => '${c['type']}' == type).toList();
   }
-  int selectedFilter = 0;
-
-  List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
-  }
-  int selectedFilter = 0;
-
-  List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
-  }
-  int selectedFilter = 0;
-
-  List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
-  }
-  int selectedFilter = 0;
-
-  List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
-  }
-  int selectedFilter = 0;
-
-  List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
-  }
-  int selectedFilter = 0;
-
-  List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
-  }
 
   Future<void> load() async {
     try {
       final uid = supabase.auth.currentUser!.id;
       final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
       final ids = (members as List).map((e) => e['conversation_id']).toList();
-      if (ids.isEmpty) {
-        if (mounted) setState(() { chats = []; loading = false; });
-        return;
-      }
+      if (ids.isEmpty) { if (mounted) setState(() { chats = []; loading = false; }); return; }
       final rows = await supabase.from('conversations').select().inFilter('id', ids).order('created_at', ascending: false);
       if (mounted) setState(() { chats = List<Map<String, dynamic>>.from(rows); loading = false; });
     } catch (e) {
-      if (mounted) {
-        setState(() => loading = false);
-        showMsg(context, 'خطا در بارگذاری گفتگوها: $e');
-      }
+      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: $e'); }
     }
   }
 
@@ -1340,17 +1147,12 @@ class _HomePageState extends State<HomePage> {
     if (result == null) return;
     try {
       final uid = supabase.auth.currentUser!.id;
-      if ('${result['id']}' == uid) {
-        if (mounted) showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.');
-        return;
-      }
+      if ('${result['id']}' == uid) { if (mounted) showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.'); return; }
       final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
       for (final r in existing) {
         final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', r['conversation_id']);
         if ((members as List).length == 2 && members.any((m) => m['user_id'] == result['id'])) {
-          if (mounted) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${r['conversation_id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
-          }
+          if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${r['conversation_id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
           return;
         }
       }
@@ -1359,25 +1161,14 @@ class _HomePageState extends State<HomePage> {
         {'conversation_id': c['id'], 'user_id': uid},
         {'conversation_id': c['id'], 'user_id': result['id']},
       ]);
-      if (mounted) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
-      }
+      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
       load();
-    } catch (e) {
-      if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: $e');
-    }
+    } catch (e) { if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: $e'); }
   }
 
-  Future<void> createGroup() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage()));
-    load();
-  }
-
+  Future<void> createGroup() async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage())); load(); }
   @override
-  void initState() {
-    super.initState();
-    load();
-  }
+  void initState() { super.initState(); load(); }
 
   @override
   Widget build(BuildContext context) {
@@ -1390,91 +1181,46 @@ class _HomePageState extends State<HomePage> {
           IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())), icon: const Icon(Icons.person)),
         ],
       ),
-      body: Column(
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Row(
-              children: List.generate(4, (i) {
-                const labels = ['همه', 'شخصی', 'گروه', 'کانال'];
-                const icons = [Icons.all_inbox, Icons.person, Icons.group, Icons.campaign];
-                return Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: ChoiceChip(
-                    selected: selectedFilter == i,
-                    avatar: Icon(icons[i], size: 18),
-                    label: Text(labels[i]),
-                    onSelected: (_) => setState(() => selectedFilter = i),
-                  ),
-                );
-              }),
-            ),
-          ),
-          Expanded(
-            child: loading
+      body: Column(children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: Row(children: List.generate(4, (i) {
+            const labels = ['همه', 'شخصی', 'گروه', 'کانال'];
+            const icons = [Icons.all_inbox, Icons.person, Icons.group, Icons.campaign];
+            return Padding(padding: const EdgeInsets.only(left: 6), child: ChoiceChip(
+              selected: selectedFilter == i,
+              avatar: Icon(icons[i], size: 18),
+              label: Text(labels[i]),
+              onSelected: (_) => setState(() => selectedFilter = i),
+            ));
+          })),
+        ),
+        Expanded(child: loading
           ? const Center(child: CircularProgressIndicator())
           : visibleChats.isEmpty
-              ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 88,
-                      height: 88,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.forum_outlined,
-                        size: 42,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      selectedFilter == 1 ? 'گفتگوی شخصی ندارید' : selectedFilter == 2 ? 'گروهی ندارید' : selectedFilter == 3 ? 'کانالی ندارید' : 'هنوز گفتگویی ندارید',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'با پیدا کردن یک کاربر، اولین گفتگوی خود را شروع کنید.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.6,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    FilledButton.icon(
-                      onPressed: createDirect,
-                      icon: const Icon(Icons.add_comment_outlined),
-                      label: const Text('شروع گفتگوی جدید'),
-                    ),
-                  ],
-                ),
+            ? Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(width: 88, height: 88, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle), child: Icon(Icons.forum_outlined, size: 42, color: Theme.of(context).colorScheme.primary)),
+                  const SizedBox(height: 20),
+                  Text(selectedFilter == 1 ? 'گفتگوی شخصی ندارید' : selectedFilter == 2 ? 'گروهی ندارید' : selectedFilter == 3 ? 'کانالی ندارید' : 'هنوز گفتگویی ندارید', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  const Text('با پیدا کردن یک کاربر، اولین گفتگوی خود را شروع کنید.', textAlign: TextAlign.center),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(onPressed: createDirect, icon: const Icon(Icons.add_comment_outlined), label: const Text('شروع گفتگوی جدید')),
+                ],
+              )))
+            : ListView.builder(
+                itemCount: visibleChats.length,
+                itemBuilder: (context, i) {
+                  final c = visibleChats[i];
+                  final title = '${c['title'] ?? (c['type'] == 'group' ? 'گروه' : c['type'] == 'channel' ? 'کانال' : 'گفتگو')}';
+                  return ListTile(leading: const CircleAvatar(child: Icon(Icons.chat)), title: Text(title), subtitle: Text('${c['last_message'] ?? ''}'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title))));
+                },
               ),
-            )
-              : ListView.builder(
-                  itemCount: visibleChats.length,
-                  itemBuilder: (context, i) {
-                    final c = visibleChats[i];
-                    final title = '${c['title'] ?? (c['type'] == 'group' ? 'گروه' : 'گفتگو')}';
-                    return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.chat)),
-                      title: Text(title),
-                      subtitle: Text('${c['last_message'] ?? ''}'),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title))),
-                    );
-                  },
-                ),
+        ),
+      ]),
       floatingActionButton: FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat)),
     );
   }
@@ -1555,9 +1301,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       final uid = supabase.auth.currentUser!.id;
       final c = await supabase.from('conversations').insert({'type': 'group', 'title': title.text.trim(), 'created_by': uid}).select().single();
       final uniqueIds = <String>{uid, ...selected.map((p) => '${p['id']}')};
-      final members = uniqueIds
-          .map((memberId) => {'conversation_id': c['id'], 'user_id': memberId})
-          .toList();
+      final members = uniqueIds.map((memberId) => {'conversation_id': c['id'], 'user_id': memberId}).toList();
       await supabase.from('conversation_members').insert(members);
       if (mounted) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title.text.trim())));
