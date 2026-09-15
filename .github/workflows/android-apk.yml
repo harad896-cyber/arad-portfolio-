@@ -42,17 +42,12 @@ jobs:
           from pathlib import Path
           p = Path('lib/main.dart')
           s = p.read_text(encoding='utf-8')
-          s = s.replace(
-              "        if (avatarUrl case final url?) 'avatar_url': url,",
-              "        'avatar_url': avatarUrl,",
-              1,
-          )
-          s = s.replace(
-              "        if (avatarUrl != null) 'avatar_url': avatarUrl,",
-              "        'avatar_url': avatarUrl,",
-              1,
-          )
+          s = s.replace("        if (avatarUrl case final url?) 'avatar_url': url,", "        'avatar_url': avatarUrl,", 1)
+          s = s.replace("        if (avatarUrl != null) 'avatar_url': avatarUrl,", "        'avatar_url': avatarUrl,", 1)
           p.write_text(s, encoding='utf-8')
+
+      - name: Apply improved chat UI
+        run: python tools/chat_ui_patch.py
 
       - name: Get dependencies
         run: flutter pub get
