@@ -61,6 +61,9 @@ jobs:
       - name: Apply media and support fixes
         run: python tools/support_media_patch.py
 
+      - name: Apply final chat/header/filter fixes
+        run: python tools/final_ui_fix.py
+
       - name: Get dependencies
         run: flutter pub get
 
