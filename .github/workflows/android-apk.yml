@@ -49,6 +49,9 @@ jobs:
       - name: Apply improved chat UI
         run: python tools/chat_ui_patch.py
 
+      - name: Apply group and reaction features
+        run: python tools/group_chat_features_patch.py
+
       - name: Get dependencies
         run: flutter pub get
 
