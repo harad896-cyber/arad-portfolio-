@@ -40,6 +40,7 @@ const supabaseUrl = 'https://bkbdcqequyvubjmrbpqo.supabase.co';
 const supabasePublishableKey = 'sb_publishable_-wIHh9FKu-lmXSMHRWBbFw_t9u5KutA';
 // Set this to the Google OAuth Web client ID from Google Cloud Console.
 const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '');
+const ownerEmail = String.fromEnvironment('OWNER_EMAIL', defaultValue: 'harad896@gmail.com');
 final googleSignIn = GoogleSignIn.instance;
 
 final supabase = Supabase.instance.client;
@@ -287,6 +288,8 @@ class _LoginPageState extends State<LoginPage> {
   final firstName = TextEditingController();
   final lastName = TextEditingController();
   final email = TextEditingController();
+  final country = TextEditingController();
+  String selectedCountry = 'افغانستان';
   bool signup = true;
   bool ownerMode = false;
   bool busy = false;
@@ -348,9 +351,14 @@ class _LoginPageState extends State<LoginPage> {
       showMsg(context, 'ایمیل مالک را وارد کنید.');
       return;
     }
+    if (mail.toLowerCase() != ownerEmail.toLowerCase()) {
+      showMsg(context, 'این ایمیل، ایمیل مالک نیست.');
+      return;
+    }
 
     setState(() => busy = true);
     try {
+      await supabase.auth.signOut();
       await supabase.auth.signInWithOtp(
         email: mail.toLowerCase(),
         shouldCreateUser: false,
@@ -389,17 +397,23 @@ class _LoginPageState extends State<LoginPage> {
       showMsg(context, 'ایمیل را وارد کنید.');
       return;
     }
+    if (signup && selectedCountry.trim().isEmpty) {
+      showMsg(context, 'کشور خود را انتخاب کنید.');
+      return;
+    }
 
     setState(() => busy = true);
     try {
+      await supabase.auth.signOut();
       await supabase.auth.signInWithOtp(
-        email: mail,
+        email: mail.toLowerCase(),
         shouldCreateUser: signup,
         data: signup
             ? {
                 'first_name': first,
                 'last_name': last,
                 'full_name': '$first $last',
+                'country': selectedCountry,
               }
             : null,
       );
@@ -528,6 +542,38 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 12),
+                            DropdownButtonFormField<String>(
+                              value: selectedCountry,
+                              decoration: const InputDecoration(
+                                labelText: 'کشور',
+                                prefixIcon: Icon(Icons.public),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                'افغانستان',
+                                'ایران',
+                                'پاکستان',
+                                'هند',
+                                'ترکیه',
+                                'آلمان',
+                                'فرانسه',
+                                'انگلستان',
+                                'آمریکا',
+                                'کانادا',
+                                'استرالیا',
+                                'امارات متحده عربی',
+                                'عراق',
+                                'تاجیکستان',
+                                'ازبکستان',
+                                'صربستان',
+                              ].map((c) => DropdownMenuItem<String>(
+                                value: c,
+                                child: Text(c),
+                              )).toList(),
+                              onChanged: busy ? null : (value) {
+                                if (value != null) setState(() => selectedCountry = value);
+                              },
+                            ),
                           ],
                           TextField(
                             controller: email,
@@ -653,6 +699,7 @@ class _LoginPageState extends State<LoginPage> {
     firstName.dispose();
     lastName.dispose();
     email.dispose();
+    country.dispose();
     super.dispose();
   }
 }
@@ -982,6 +1029,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         'display_name': name.text.trim(),
         'username': username.text.trim().replaceFirst('@', ''),
         'bio': bio.text.trim(),
+        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
         'is_online': true,
         'last_seen': DateTime.now().toIso8601String(),
       });
