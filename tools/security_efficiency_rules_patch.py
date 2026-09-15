@@ -109,15 +109,6 @@ class _RulesCard extends StatelessWidget {
 if 'class SecurityEfficiencyRulesPage' not in s:
     s += page
 
-# Add a profile/settings entry without depending on the exact surrounding UI.
-if 'قوانین و امنیت' not in s:
-    markers = ["Text('حریم خصوصی و امنیت')", 'Text("حریم خصوصی و امنیت")']
-    marker = next((m for m in markers if m in s), None)
-    if marker:
-        replacement = marker + ",\n                  trailing: const Icon(Icons.chevron_left_rounded),"
-        s = s.replace(marker, replacement, 1)
-
-# Insert a standalone route helper; settings patches can call it if needed.
 helper = """
 void openSecurityEfficiencyRules(BuildContext context) {
   Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityEfficiencyRulesPage()));
@@ -126,7 +117,18 @@ void openSecurityEfficiencyRules(BuildContext context) {
 if 'void openSecurityEfficiencyRules(' not in s:
     s += '\n' + helper
 
-p.write_text(s, encoding='utf-8')
+# Add a visible entry to the existing profile/settings list when its stable heading is present.
+needle = "const Text('تنظیمات پروفایل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),"
+entry = needle + """
+          const SizedBox(height: 6),
+          ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('قوانین و امنیت'),
+            subtitle: const Text('امنیت حساب، حریم خصوصی و مصرف کم منابع'),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            onTap: () => openSecurityEfficiencyRules(context),
+          ),"""
+if "title: const Text('قوانین و امنیت')" not in s and needle in s:
+    s = s.replace(needle, entry, 1)
 
-# Add a robust, exact settings ListTile near the profile/settings area when a known label exists.
-# This is intentionally conservative: if no stable marker exists, the page remains available through the helper.
+p.write_text(s, encoding='utf-8')
