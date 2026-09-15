@@ -16,18 +16,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Recover clean source and apply app fixes
+      - name: Recover clean source once
         shell: bash
         run: |
-          python3 .github/recover_app.py
+          if [ ! -f .github/recovery.done ]; then
+            python3 .github/recover_app.py
+            printf 'clean app source recovered\n' > .github/recovery.done
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add lib/main.dart .github/recovery.done
+            git commit -m 'fix: persist clean chat and profile implementation'
+            git push
+          else
+            echo 'Clean source already persisted.'
+          fi
 
       - name: Repair OTP flow in source
-        id: repair
         shell: python
         run: |
           from pathlib import Path
           import re
-          import subprocess
           path = Path('lib/main.dart')
           text = path.read_text(encoding='utf-8')
           text = re.sub(r"\n\s*if \(normalized\.length == 6 && !busy && !_verificationStarted\) \{\n\s*verify\(\);\n\s*\}", '', text)
@@ -36,7 +44,6 @@ jobs:
           text = text.replace("hintText: '123456'", "hintText: '------'")
           text = text.replace('بعد از وارد کردن رقم ششم، کد خودکار بررسی می‌شود و در صورت درست بودن وارد برنامه می‌شوید.', 'کد فقط وقتی بررسی می‌شود که روی «تأیید و ورود» بزنید. کدهای قبلی یا منقضی‌شده قابل استفاده نیستند.')
           path.write_text(text, encoding='utf-8')
-          print('OTP checks applied')
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
