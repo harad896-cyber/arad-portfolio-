@@ -60,9 +60,7 @@ class InvitePage extends StatelessWidget {
 
   Future<void> shareInvite(BuildContext context) async {
     try {
-      await SharePlus.instance.share(
-        ShareParams(text: inviteText, subject: 'دعوت به آراد'),
-      );
+      await Share.share(inviteText, subject: 'دعوت به آراد');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
