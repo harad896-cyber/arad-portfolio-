@@ -1330,7 +1330,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       body: Column(
         children: [
           Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder()))),
-          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: '------', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
+          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
             SizedBox(
               height: 60,
@@ -1522,7 +1522,7 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 IconButton(onPressed: sendImage, icon: const Icon(Icons.image)),
                 IconButton(onPressed: sendFile, icon: const Icon(Icons.attach_file)),
-                Expanded(child: TextField(controller: text, decoration: const InputDecoration(hintText: '------', border: OutlineInputBorder()))),
+                Expanded(child: TextField(controller: text, decoration: const InputDecoration(hintText: 'پیام...', border: OutlineInputBorder()))),
                 IconButton(onPressed: sending ? null : sendText, icon: const Icon(Icons.send)),
               ],
             ),
