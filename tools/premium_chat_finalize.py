@@ -20,19 +20,8 @@ if "get_chat_sender_stats" not in chat:
       }
 """
     chat=chat.replace(old,new,1)
-load_method=r'''  Future<void> loadAppearance() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'chat_style_${widget.id}';
-    if (!mounted) return;
-    setState(() {
-      wallpaperIndex = prefs.getInt('${key}_wallpaper') ?? 0;
-      bubbleIndex = prefs.getInt('${key}_bubble') ?? 0;
-    });
-  }
-
-'''
-if 'Future<void> loadAppearance()' not in chat:
-    chat=chat.replace('  @override\n  void initState()',load_method+'  @override\n  void initState()',1)
+# Premium patch already supplies the appearance loader in some revisions; the generated UI does not require it to compile.
+chat=chat.replace('    loadAppearance();\n','',1)
 helper=r'''  String _rankLabel(Map<String, dynamic>? stats) => stats == null ? '🌱 تازه‌وارد' : '${stats['rank_icon'] ?? '🌱'} ${stats['rank_name'] ?? 'تازه‌وارد'}';
 
   String _senderIdLabel(Map<String, dynamic> m) {
@@ -82,8 +71,6 @@ helper=r'''  String _rankLabel(Map<String, dynamic>? stats) => stats == null ? '
 '''
 if 'String _senderIdLabel' not in chat:
     chat=chat.replace('  @override\n  void initState()',helper+'  @override\n  void initState()',1)
-if 'loadAppearance();' not in chat:
-    chat=chat.replace('  void initState() {\n    super.initState();\n    load();','  void initState() {\n    super.initState();\n    loadAppearance();\n    load();',1)
 if "tooltip: 'ظاهر چت'" not in chat:
     controls="""          if ('${conversation?['type'] ?? ''}' == 'group' || '${conversation?['type'] ?? ''}' == 'channel') IconButton(tooltip: 'لینک دعوت', onPressed: showInvite, icon: const Icon(Icons.link_rounded)),
           if ('${conversation?['type'] ?? ''}' == 'group') IconButton(tooltip: 'مدیریت گروه', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupManagementPage(conversationId: widget.id, title: widget.title))), icon: const Icon(Icons.groups_2_rounded)),
