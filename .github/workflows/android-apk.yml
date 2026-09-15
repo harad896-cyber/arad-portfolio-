@@ -41,7 +41,6 @@ jobs:
           s = p.read_text(encoding='utf-8')
           perm = '<uses-permission android:name="android.permission.RECORD_AUDIO" />'
           if perm not in s:
-              s = s.replace('<manifest ', '<manifest ', 1)
               s = s.replace('>\n', '>\n    ' + perm + '\n', 1)
           p.write_text(s, encoding='utf-8')
       - name: Normalize nullable avatar entry
@@ -83,6 +82,8 @@ jobs:
         run: python tools/telegram_style_ui_patch.py
       - name: Repair audio compile issues
         run: python tools/fix_chat_audio_compile.py
+      - name: Fix group and channel invite links
+        run: python tools/group_channel_invite_fix.py
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
