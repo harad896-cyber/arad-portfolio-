@@ -1,7 +1,7 @@
 name: arad_messenger
 description: A secure real-time messenger built with Flutter and Supabase.
 publish_to: 'none'
-version: 0.8.1+10
+version: 0.8.2+11
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
@@ -16,6 +16,7 @@ dependencies:
   supabase_flutter: ^2.17.2
   image_picker: ^1.2.0
   record: ^6.1.1
+  audioplayers: ^6.5.0
   file_picker: ^10.3.3
   google_sign_in: ^7.2.0
   shared_preferences: ^2.5.3
