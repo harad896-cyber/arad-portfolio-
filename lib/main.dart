@@ -994,6 +994,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final name = TextEditingController();
   final username = TextEditingController();
   final bio = TextEditingController();
+  XFile? avatarImage;
   bool loading = true;
   bool busy = false;
 
@@ -1016,6 +1017,27 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     if (mounted) setState(() => loading = false);
   }
 
+  Future<void> pickAvatar(ImageSource source) async {
+    try {
+      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
+      if (image != null && mounted) setState(() => avatarImage = image);
+    } catch (e) {
+      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
+    }
+  }
+
+  Future<void> chooseAvatar() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(children: [
+          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
+          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
+        ]),
+      ),
+    );
+  }
+
   Future<void> save() async {
     if (name.text.trim().isEmpty || username.text.trim().isEmpty) {
       showMsg(context, 'نام و نام کاربری را وارد کنید.');
@@ -1024,11 +1046,23 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
+      String? avatarUrl;
+      if (avatarImage != null) {
+        final bytes = await avatarImage!.readAsBytes();
+        final path = '$uid/avatar.jpg';
+        await supabase.storage.from('avatars').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+        );
+        avatarUrl = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
+      }
       await supabase.from('profiles').upsert({
         'id': uid,
         'display_name': name.text.trim(),
         'username': username.text.trim().replaceFirst('@', ''),
         'bio': bio.text.trim(),
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
         'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
         'is_online': true,
         'last_seen': DateTime.now().toIso8601String(),
@@ -1065,6 +1099,23 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          Center(
+            child: GestureDetector(
+              onTap: chooseAvatar,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 58,
+                    backgroundImage: avatarImage != null ? FileImage(__import__('dart:io').File(avatarImage!.path)) : (p['avatar_url'] != null && '${p['avatar_url']}'.isNotEmpty ? NetworkImage('${p['avatar_url']}') : null),
+                    child: (avatarImage == null && (p['avatar_url'] == null || '${p['avatar_url']}'.isEmpty)) ? const Icon(Icons.person, size: 58) : null,
+                  ),
+                  Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: const Icon(Icons.camera_alt, size: 20))),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
           TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           TextField(controller: username, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', border: OutlineInputBorder())),
@@ -1088,6 +1139,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> chats = [];
   bool loading = true;
+  int selectedFilter = 0;
+
+  List<Map<String, dynamic>> get visibleChats {
+    if (selectedFilter == 0) return chats;
+    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
+    return chats.where((c) => '${c['type']}' == type).toList();
+  }
 
   Future<void> load() async {
     try {
@@ -1113,6 +1171,10 @@ class _HomePageState extends State<HomePage> {
     if (result == null) return;
     try {
       final uid = supabase.auth.currentUser!.id;
+      if ('${result['id']}' == uid) {
+        if (mounted) showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.');
+        return;
+      }
       final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
       for (final r in existing) {
         final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', r['conversation_id']);
@@ -1159,9 +1221,31 @@ class _HomePageState extends State<HomePage> {
           IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())), icon: const Icon(Icons.person)),
         ],
       ),
-      body: loading
+      body: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Row(
+              children: List.generate(4, (i) {
+                const labels = ['همه', 'شخصی', 'گروه', 'کانال'];
+                const icons = [Icons.all_inbox, Icons.person, Icons.group, Icons.campaign];
+                return Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: ChoiceChip(
+                    selected: selectedFilter == i,
+                    avatar: Icon(icons[i], size: 18),
+                    label: Text(labels[i]),
+                    onSelected: (_) => setState(() => selectedFilter = i),
+                  ),
+                );
+              }),
+            ),
+          ),
+          Expanded(
+            child: loading
           ? const Center(child: CircularProgressIndicator())
-          : chats.isEmpty
+          : visibleChats.isEmpty
               ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -1183,7 +1267,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'هنوز گفتگویی ندارید',
+                      selectedFilter == 1 ? 'گفتگوی شخصی ندارید' : selectedFilter == 2 ? 'گروهی ندارید' : selectedFilter == 3 ? 'کانالی ندارید' : 'هنوز گفتگویی ندارید',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -1210,9 +1294,9 @@ class _HomePageState extends State<HomePage> {
               ),
             )
               : ListView.builder(
-                  itemCount: chats.length,
+                  itemCount: visibleChats.length,
                   itemBuilder: (context, i) {
-                    final c = chats[i];
+                    final c = visibleChats[i];
                     final title = '${c['title'] ?? (c['type'] == 'group' ? 'گروه' : 'گفتگو')}';
                     return ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.chat)),
@@ -1301,10 +1385,10 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
     try {
       final uid = supabase.auth.currentUser!.id;
       final c = await supabase.from('conversations').insert({'type': 'group', 'title': title.text.trim(), 'created_by': uid}).select().single();
-      final members = <Map<String, dynamic>>[
-        {'conversation_id': c['id'], 'user_id': uid},
-        ...selected.map((p) => {'conversation_id': c['id'], 'user_id': p['id']}),
-      ];
+      final uniqueIds = <String>{uid, ...selected.map((p) => '${p['id']}')};
+      final members = uniqueIds
+          .map((memberId) => {'conversation_id': c['id'], 'user_id': memberId})
+          .toList();
       await supabase.from('conversation_members').insert(members);
       if (mounted) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title.text.trim())));
