@@ -14,15 +14,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.0'
           channel: stable
           cache: true
-      - name: Ensure Android platform
+
+      # The repository intentionally stores Dart/app code without a committed
+      # Android Gradle project. Generate a fresh, Flutter-compatible Android
+      # project every build so stale/unsupported Gradle files cannot break APKs.
+      - name: Regenerate Android project
         run: |
-          if [ ! -d android ]; then flutter create . --platforms=android --project-name arad_messenger; fi
+          flutter create --platforms=android --org com.arad.messenger --project-name arad_messenger .
+          test -f android/settings.gradle.kts || test -f android/settings.gradle
+          test -f android/app/build.gradle.kts || test -f android/app/build.gradle
+          test -f android/gradle/wrapper/gradle-wrapper.properties
+
       - name: Install Arad logo
         if: ${{ hashFiles('assets/app_icon.jpg') != '' }}
         run: |
@@ -30,6 +39,7 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap
           cp assets/app_icon.jpg android/app/src/main/res/mipmap/ic_launcher.jpg
           sed -i 's/android:label="[^"]*"/android:label="Arad Messenger"/' android/app/src/main/AndroidManifest.xml
+
       - name: Normalize nullable avatar entry
         shell: python
         run: |
@@ -39,6 +49,7 @@ jobs:
           s = s.replace("        if (avatarUrl case final url?) 'avatar_url': url,", "        'avatar_url': avatarUrl,", 1)
           s = s.replace("        if (avatarUrl != null) 'avatar_url': avatarUrl,", "        'avatar_url': avatarUrl,", 1)
           p.write_text(s, encoding='utf-8')
+
       - name: Apply improved chat UI
         run: python tools/chat_ui_patch.py
       - name: Apply group and reaction features
@@ -53,12 +64,17 @@ jobs:
         run: python tools/limits_media_hardening.py
       - name: Apply final chat/header/filter fixes
         run: python tools/final_ui_fix.py
+
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Build release APK
         run: flutter build apk --release
+      - name: Verify APK exists
+        run: |
+          test -s build/app/outputs/flutter-apk/app-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
