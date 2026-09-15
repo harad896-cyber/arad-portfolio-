@@ -20,6 +20,19 @@ if "get_chat_sender_stats" not in chat:
       }
 """
     chat=chat.replace(old,new,1)
+load_method=r'''  Future<void> loadAppearance() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'chat_style_${widget.id}';
+    if (!mounted) return;
+    setState(() {
+      wallpaperIndex = prefs.getInt('${key}_wallpaper') ?? 0;
+      bubbleIndex = prefs.getInt('${key}_bubble') ?? 0;
+    });
+  }
+
+'''
+if 'Future<void> loadAppearance()' not in chat:
+    chat=chat.replace('  @override\n  void initState()',load_method+'  @override\n  void initState()',1)
 helper=r'''  String _rankLabel(Map<String, dynamic>? stats) => stats == null ? '🌱 تازه‌وارد' : '${stats['rank_icon'] ?? '🌱'} ${stats['rank_name'] ?? 'تازه‌وارد'}';
 
   String _senderIdLabel(Map<String, dynamic> m) {
@@ -41,18 +54,11 @@ helper=r'''  String _rankLabel(Map<String, dynamic>? stats) => stats == null ? '
     if (link == null) { showMsg(context, 'لینک دعوت هنوز آماده نیست.'); return; }
     await showModalBottomSheet<void>(
       context: context,
-      builder: (sheet) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-            Text(conversation?['type'] == 'channel' ? 'لینک دعوت کانال' : 'لینک دعوت گروه', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            SelectableText(link, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () { Clipboard.setData(ClipboardData(text: link)); Navigator.pop(sheet); showMsg(context, 'لینک دعوت کپی شد.'); }, icon: const Icon(Icons.copy_rounded), label: const Text('کپی لینک دعوت'))),
-          ]),
-        ),
-      ),
+      builder: (sheet) => SafeArea(child: Padding(padding: const EdgeInsets.all(18), child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        Text(conversation?['type'] == 'channel' ? 'لینک دعوت کانال' : 'لینک دعوت گروه', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 12), SelectableText(link, textAlign: TextAlign.center), const SizedBox(height: 12),
+        SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () { Clipboard.setData(ClipboardData(text: link)); Navigator.pop(sheet); showMsg(context, 'لینک دعوت کپی شد.'); }, icon: const Icon(Icons.copy_rounded), label: const Text('کپی لینک دعوت'))),
+      ]))),
     );
   }
 
@@ -61,33 +67,22 @@ helper=r'''  String _rankLabel(Map<String, dynamic>? stats) => stats == null ? '
     int nextBubble = bubbleIndex;
     await showModalBottomSheet<void>(
       context: context,
-      builder: (sheet) => StatefulBuilder(
-        builder: (sheetContext, setSheet) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-              const Text('ظاهر و پس‌زمینه چت', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 14),
-              const Align(alignment: Alignment.centerRight, child: Text('پس‌زمینه', style: TextStyle(fontWeight: FontWeight.w800))),
-              const SizedBox(height: 8),
-              Row(children: List<Widget>.generate(wallpapers.length, (i) => Expanded(child: InkWell(onTap: () => setSheet(() => nextWallpaper = i), child: Container(height: 38, margin: const EdgeInsets.all(3), decoration: BoxDecoration(color: wallpapers[i], borderRadius: BorderRadius.circular(10), border: Border.all(color: nextWallpaper == i ? Theme.of(sheetContext).colorScheme.primary : Colors.transparent, width: 2))))))),
-              const SizedBox(height: 12),
-              const Align(alignment: Alignment.centerRight, child: Text('رنگ پیام‌های شما', style: TextStyle(fontWeight: FontWeight.w800))),
-              const SizedBox(height: 8),
-              Row(children: List<Widget>.generate(mineColors.length, (i) => Expanded(child: InkWell(onTap: () => setSheet(() => nextBubble = i), child: Container(height: 38, margin: const EdgeInsets.all(3), decoration: BoxDecoration(color: mineColors[i], borderRadius: BorderRadius.circular(10), border: Border.all(color: nextBubble == i ? Theme.of(sheetContext).colorScheme.primary : Colors.transparent, width: 2))))))),
-              const SizedBox(height: 16),
-              SizedBox(width: double.infinity, child: FilledButton(onPressed: () async { wallpaperIndex = nextWallpaper; bubbleIndex = nextBubble; final prefs = await SharedPreferences.getInstance(); final key = 'chat_style_${widget.id}'; await prefs.setInt('${key}_wallpaper', wallpaperIndex); await prefs.setInt('${key}_bubble', bubbleIndex); if (mounted) { setState(() {}); Navigator.pop(sheet); } }, child: const Text('ذخیره قالب چت'))),
-            ]),
-          ),
-        ),
-      ),
+      builder: (sheet) => StatefulBuilder(builder: (sheetContext, setSheet) => SafeArea(child: Padding(padding: const EdgeInsets.all(18), child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        const Text('ظاهر و پس‌زمینه چت', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 14), const Align(alignment: Alignment.centerRight, child: Text('پس‌زمینه', style: TextStyle(fontWeight: FontWeight.w800))), const SizedBox(height: 8),
+        Row(children: List<Widget>.generate(wallpapers.length, (i) => Expanded(child: InkWell(onTap: () => setSheet(() => nextWallpaper = i), child: Container(height: 38, margin: const EdgeInsets.all(3), decoration: BoxDecoration(color: wallpapers[i], borderRadius: BorderRadius.circular(10), border: Border.all(color: nextWallpaper == i ? Theme.of(sheetContext).colorScheme.primary : Colors.transparent, width: 2))))))),
+        const SizedBox(height: 12), const Align(alignment: Alignment.centerRight, child: Text('رنگ پیام‌های شما', style: TextStyle(fontWeight: FontWeight.w800))), const SizedBox(height: 8),
+        Row(children: List<Widget>.generate(mineColors.length, (i) => Expanded(child: InkWell(onTap: () => setSheet(() => nextBubble = i), child: Container(height: 38, margin: const EdgeInsets.all(3), decoration: BoxDecoration(color: mineColors[i], borderRadius: BorderRadius.circular(10), border: Border.all(color: nextBubble == i ? Theme.of(sheetContext).colorScheme.primary : Colors.transparent, width: 2))))))),
+        const SizedBox(height: 16),
+        SizedBox(width: double.infinity, child: FilledButton(onPressed: () async { wallpaperIndex = nextWallpaper; bubbleIndex = nextBubble; final prefs = await SharedPreferences.getInstance(); final key = 'chat_style_${widget.id}'; await prefs.setInt('${key}_wallpaper', wallpaperIndex); await prefs.setInt('${key}_bubble', bubbleIndex); if (mounted) { setState(() {}); Navigator.pop(sheet); } }, child: const Text('ذخیره قالب چت'))),
+      ])))),
     );
   }
 
 '''
 if 'String _senderIdLabel' not in chat:
     chat=chat.replace('  @override\n  void initState()',helper+'  @override\n  void initState()',1)
-if 'loadAppearance();' not in chat and 'Future<void> loadAppearance()' in chat:
+if 'loadAppearance();' not in chat:
     chat=chat.replace('  void initState() {\n    super.initState();\n    load();','  void initState() {\n    super.initState();\n    loadAppearance();\n    load();',1)
 if "tooltip: 'ظاهر چت'" not in chat:
     controls="""          if ('${conversation?['type'] ?? ''}' == 'group' || '${conversation?['type'] ?? ''}' == 'channel') IconButton(tooltip: 'لینک دعوت', onPressed: showInvite, icon: const Icon(Icons.link_rounded)),
