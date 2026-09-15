@@ -1,0 +1,57 @@
+name: Repair Avatar Code and Build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair source
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+          p=Path('lib/main.dart')
+          s=p.read_text(encoding='utf-8')
+          if "import 'dart:typed_data';" not in s:
+              s=s.replace("import 'dart:async';", "import 'dart:async';\nimport 'dart:typed_data';", 1)
+          s=s.replace("  XFile? avatarImage;\n  bool loading = true;", "  XFile? avatarImage;\n  Uint8List? avatarBytes;\n  String? existingAvatarUrl;\n  bool loading = true;", 1)
+          s=s.replace("if (image != null && mounted) setState(() => avatarImage = image);", "if (image != null) {\n        final bytes = await image.readAsBytes();\n        if (mounted) setState(() { avatarImage = image; avatarBytes = bytes; });\n      }", 1)
+          bad="""                  CircleAvatar(
+                    radius: 58,
+                    backgroundImage: avatarImage != null ? FileImage(__import__('dart:io').File(avatarImage!.path)) : (p['avatar_url'] != null && '${p['avatar_url']}'.isNotEmpty ? NetworkImage('${p['avatar_url']}') : null),
+                    child: (avatarImage == null && (p['avatar_url'] == null || '${p['avatar_url']}'.isEmpty)) ? const Icon(Icons.person, size: 58) : null,
+                  ),"""
+          good="""                  CircleAvatar(
+                    radius: 58,
+                    backgroundImage: avatarBytes != null
+                        ? MemoryImage(avatarBytes!)
+                        : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
+                    child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty)
+                        ? const Icon(Icons.person, size: 58)
+                        : null,
+                  ),"""
+          if bad not in s:
+              raise SystemExit('bad avatar widget not found')
+          s=s.replace(bad,good,1)
+          p.write_text(s,encoding='utf-8')
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','lib/main.dart'],check=True)
+          subprocess.run(['git','commit','-m','fix: repair avatar picker rendering'],check=True)
+          subprocess.run(['git','push'],check=True)
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-chat-profile-fix
+          path: build/app/outputs/flutter-apk/app-release.apk
