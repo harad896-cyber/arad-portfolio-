@@ -14,20 +14,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.0'
           channel: stable
           cache: true
-
       - name: Ensure Android platform
         run: |
-          if [ ! -d android ]; then
-            flutter create . --platforms=android --project-name arad_messenger
-          fi
-
+          if [ ! -d android ]; then flutter create . --platforms=android --project-name arad_messenger; fi
       - name: Install Arad logo
         if: ${{ hashFiles('assets/app_icon.jpg') != '' }}
         run: |
@@ -35,7 +30,6 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap
           cp assets/app_icon.jpg android/app/src/main/res/mipmap/ic_launcher.jpg
           sed -i 's/android:label="[^"]*"/android:label="Arad Messenger"/' android/app/src/main/AndroidManifest.xml
-
       - name: Normalize nullable avatar entry
         shell: python
         run: |
@@ -45,34 +39,26 @@ jobs:
           s = s.replace("        if (avatarUrl case final url?) 'avatar_url': url,", "        'avatar_url': avatarUrl,", 1)
           s = s.replace("        if (avatarUrl != null) 'avatar_url': avatarUrl,", "        'avatar_url': avatarUrl,", 1)
           p.write_text(s, encoding='utf-8')
-
       - name: Apply improved chat UI
         run: python tools/chat_ui_patch.py
-
       - name: Apply group and reaction features
         run: python tools/group_chat_features_patch.py
-
       - name: Apply premium chat features
         run: python tools/premium_chat_features_patch.py
-
       - name: Finalize premium chat features
         run: python tools/premium_chat_finalize.py
-
       - name: Apply media and support fixes
         run: python tools/support_media_patch.py
-
+      - name: Apply creation-limit and image hardening
+        run: python tools/limits_media_hardening.py
       - name: Apply final chat/header/filter fixes
         run: python tools/final_ui_fix.py
-
       - name: Get dependencies
         run: flutter pub get
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
       - name: Build release APK
         run: flutter build apk --release
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
