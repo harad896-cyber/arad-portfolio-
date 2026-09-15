@@ -1,6 +1,8 @@
 name: Add Home Conversation Tabs
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -65,7 +67,7 @@ jobs:
                                 const SizedBox(height: 16),
                                 const Text('هنوز کانالی ندارید', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                                 const SizedBox(height: 8),
-                                const Text('بخش کانال آماده شده و در مرحله بعد ساخت کانال را اضافه می‌کنیم.', textAlign: TextAlign.center),
+                                const Text('بخش کانال اضافه شده است؛ ساخت کانال را در مرحله بعد فعال می‌کنیم.', textAlign: TextAlign.center),
                               ],
                             ),
                           ),
