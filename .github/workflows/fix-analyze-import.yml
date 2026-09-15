@@ -1,0 +1,30 @@
+name: Fix analyzer import
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - trigger-ui-enhancements.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove unused import
+        run: sed -i "/^import 'dart:typed_data';$/d" lib/main.dart
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No change needed"
+            exit 0
+          fi
+          git add lib/main.dart
+          git commit -m "fix: remove unused typed_data import"
+          git push
