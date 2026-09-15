@@ -543,7 +543,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: selectedCountry,
+                              initialValue: selectedCountry,
                               decoration: const InputDecoration(
                                 labelText: 'کشور',
                                 prefixIcon: Icon(Icons.public),
