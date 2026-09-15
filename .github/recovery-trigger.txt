@@ -1,0 +1,1 @@
+This file only triggers the recovery workflow. Do not use it in the app.
