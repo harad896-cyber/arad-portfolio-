@@ -1,0 +1,348 @@
+name: Recover Clean App and Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover and patch source
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess, re
+
+          # Restore the last known clean source before the accidental patch chain.
+          subprocess.run(['git','checkout','f38f2c2ba8a83fe4064b874f0c2049a1e0afdf97','--','lib/main.dart'], check=True)
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+
+          # Keep the six-digit OTP UX from the verified flow.
+          s = s.replace("hintText: '۱۲۳۴۵۶'", "hintText: '------'")
+          s = s.replace("hintText: '123456'", "hintText: '------'")
+
+          profile_class = r'''class ProfileSetupPage extends StatefulWidget {
+  const ProfileSetupPage({super.key});
+
+  @override
+  State<ProfileSetupPage> createState() => _ProfileSetupPageState();
+}
+
+class _ProfileSetupPageState extends State<ProfileSetupPage> {
+  final name = TextEditingController();
+  final username = TextEditingController();
+  final bio = TextEditingController();
+  XFile? avatarImage;
+  Uint8List? avatarBytes;
+  String? existingAvatarUrl;
+  bool loading = true;
+  bool busy = false;
+
+  Future<void> load() async {
+    try {
+      final user = supabase.auth.currentUser!;
+      final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+      if (row != null) {
+        existingAvatarUrl = '${row['avatar_url'] ?? ''}';
+        name.text = '${row['display_name'] ?? ''}';
+        username.text = '${row['username'] ?? ''}';
+        bio.text = '${row['bio'] ?? ''}';
+      } else {
+        final metadata = user.userMetadata ?? <String, dynamic>{};
+        final fullName = (metadata['full_name'] ?? '').toString().trim();
+        if (fullName.isNotEmpty) name.text = fullName;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> pickAvatar(ImageSource source) async {
+    try {
+      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (mounted) setState(() { avatarImage = image; avatarBytes = bytes; });
+    } catch (e) {
+      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
+    }
+  }
+
+  Future<void> chooseAvatar() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(children: [
+          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
+          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> save() async {
+    if (name.text.trim().isEmpty || username.text.trim().isEmpty) {
+      showMsg(context, 'نام و نام کاربری را وارد کنید.');
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      String? avatarUrl;
+      if (avatarImage != null) {
+        final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
+        final path = '$uid/avatar.jpg';
+        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+        avatarUrl = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
+      }
+      await supabase.from('profiles').upsert({
+        'id': uid,
+        'display_name': name.text.trim(),
+        'username': username.text.trim().replaceFirst('@', ''),
+        'bio': bio.text.trim(),
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
+        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
+        'is_online': true,
+        'last_seen': DateTime.now().toIso8601String(),
+      });
+      if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره نشد: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  void initState() { super.initState(); load(); }
+
+  @override
+  void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل شما')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(
+            child: GestureDetector(
+              onTap: chooseAvatar,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 58,
+                    backgroundImage: avatarBytes != null
+                        ? MemoryImage(avatarBytes!)
+                        : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
+                    child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty)
+                        ? const Icon(Icons.person, size: 58)
+                        : null,
+                  ),
+                  Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: const Icon(Icons.camera_alt, size: 20))),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: username, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
+        ],
+      ),
+    );
+  }
+}
+'''
+
+          home_class = r'''class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> chats = [];
+  bool loading = true;
+  int selectedFilter = 0;
+
+  List<Map<String, dynamic>> get visibleChats {
+    if (selectedFilter == 0) return chats;
+    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
+    return chats.where((c) => '${c['type']}' == type).toList();
+  }
+
+  Future<void> load() async {
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+      final ids = (members as List).map((e) => e['conversation_id']).toList();
+      if (ids.isEmpty) {
+        if (mounted) setState(() { chats = []; loading = false; });
+        return;
+      }
+      final rows = await supabase.from('conversations').select().inFilter('id', ids).order('created_at', ascending: false);
+      if (mounted) setState(() { chats = List<Map<String, dynamic>>.from(rows); loading = false; });
+    } catch (e) {
+      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: $e'); }
+    }
+  }
+
+  Future<void> createDirect() async {
+    final result = await showSearch<Map<String, dynamic>?>(context: context, delegate: UserSearchDelegate());
+    if (result == null) return;
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      if ('${result['id']}' == uid) {
+        if (mounted) showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.');
+        return;
+      }
+      final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+      for (final r in existing) {
+        final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', r['conversation_id']);
+        if ((members as List).length == 2 && members.any((m) => m['user_id'] == result['id'])) {
+          if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${r['conversation_id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
+          return;
+        }
+      }
+      final c = await supabase.from('conversations').insert({'type': 'direct', 'created_by': uid}).select().single();
+      await supabase.from('conversation_members').insert([
+        {'conversation_id': c['id'], 'user_id': uid},
+        {'conversation_id': c['id'], 'user_id': result['id']},
+      ]);
+      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
+      load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: $e');
+    }
+  }
+
+  Future<void> createGroup() async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage()));
+    load();
+  }
+
+  @override
+  void initState() { super.initState(); load(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Arad Messenger'),
+        actions: [
+          IconButton(onPressed: createDirect, icon: const Icon(Icons.person_add)),
+          IconButton(onPressed: createGroup, icon: const Icon(Icons.group_add)),
+          IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())), icon: const Icon(Icons.person)),
+        ],
+      ),
+      body: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Row(
+              children: List.generate(4, (i) {
+                const labels = ['همه', 'شخصی', 'گروه', 'کانال'];
+                const icons = [Icons.all_inbox, Icons.person, Icons.group, Icons.campaign];
+                return Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: ChoiceChip(
+                    selected: selectedFilter == i,
+                    avatar: Icon(icons[i], size: 18),
+                    label: Text(labels[i]),
+                    onSelected: (_) => setState(() => selectedFilter = i),
+                  ),
+                );
+              }),
+            ),
+          ),
+          Expanded(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : visibleChats.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 88,
+                                height: 88,
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle),
+                                child: Icon(Icons.forum_outlined, size: 42, color: Theme.of(context).colorScheme.primary),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                selectedFilter == 1 ? 'گفتگوی شخصی ندارید' : selectedFilter == 2 ? 'گروهی ندارید' : selectedFilter == 3 ? 'کانالی ندارید' : 'هنوز گفتگویی ندارید',
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text('با پیدا کردن یک کاربر، اولین گفتگوی خود را شروع کنید.', textAlign: TextAlign.center),
+                              const SizedBox(height: 20),
+                              FilledButton.icon(onPressed: createDirect, icon: const Icon(Icons.add_comment_outlined), label: const Text('شروع گفتگوی جدید')),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: visibleChats.length,
+                        itemBuilder: (context, i) {
+                          final c = visibleChats[i];
+                          final title = '${c['title'] ?? (c['type'] == 'group' ? 'گروه' : c['type'] == 'channel' ? 'کانال' : 'گفتگو')}';
+                          return ListTile(
+                            leading: const CircleAvatar(child: Icon(Icons.chat)),
+                            title: Text(title),
+                            subtitle: Text('${c['last_message'] ?? ''}'),
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title))),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat)),
+    );
+  }
+}
+'''
+
+          s = re.sub(r'class ProfileSetupPage extends StatefulWidget \{.*?\nclass HomePage extends StatefulWidget \{', profile_class + '\nclass HomePage extends StatefulWidget {', s, count=1, flags=re.S)
+          s = re.sub(r'class HomePage extends StatefulWidget \{.*?\nclass UserSearchDelegate extends SearchDelegate', home_class + '\nclass UserSearchDelegate extends SearchDelegate', s, count=1, flags=re.S)
+
+          if "import 'dart:typed_data';" not in s:
+              s=s.replace("import 'dart:async';", "import 'dart:async';\nimport 'dart:typed_data';", 1)
+
+          # Ensure group creation cannot insert the same user twice.
+          s=s.replace("""      final members = <Map<String, dynamic>>[\n        {'conversation_id': c['id'], 'user_id': uid},\n        ...selected.map((p) => {'conversation_id': c['id'], 'user_id': p['id']}),\n      ];""", """      final uniqueIds = <String>{uid, ...selected.map((p) => '${p['id']}')};\n      final members = uniqueIds.map((memberId) => {'conversation_id': c['id'], 'user_id': memberId}).toList();""", 1)
+
+          p.write_text(s, encoding='utf-8')
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','lib/main.dart'],check=True)
+          subprocess.run(['git','commit','-m','fix: cleanly repair chat creation and profile photo'],check=True)
+          subprocess.run(['git','push'],check=True)
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-final-chat-profile-fix
+          path: build/app/outputs/flutter-apk/app-release.apk
