@@ -84,6 +84,8 @@ jobs:
         run: python tools/fix_chat_audio_compile.py
       - name: Fix group and channel invite links
         run: python tools/group_channel_invite_fix.py
+      - name: Apply owner dashboard and message reports
+        run: python tools/owner_admin_reports_patch.py
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
