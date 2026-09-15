@@ -1061,7 +1061,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         'display_name': name.text.trim(),
         'username': username.text.trim().replaceFirst('@', ''),
         'bio': bio.text.trim(),
-        if (avatarUrl != null) 'avatar_url': avatarUrl,
+        if (avatarUrl case final url?) 'avatar_url': url,
         'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
         'is_online': true,
         'last_seen': DateTime.now().toIso8601String(),
