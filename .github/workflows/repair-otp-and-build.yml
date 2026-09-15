@@ -40,9 +40,10 @@ jobs:
               text,
           )
 
-          # Do not show a sample OTP in the field.
-          text = re.sub(r"hintText:\s*'[^']*'", "hintText: '------'", text)
-          text = re.sub(r"hintText:\s*\"[^\"]*\"", 'hintText: \'------\'', text)
+          # Only the OTP input may use the blank placeholder; never rewrite
+          # unrelated search/message fields.
+          text = text.replace("labelText: 'کد ۶ رقمی',\n                      hintText: '۱۲۳۴۵۶'", "labelText: 'کد ۶ رقمی',\n                      hintText: '------'")
+          text = text.replace("labelText: 'کد ۶ رقمی',\n                      hintText: '123456'", "labelText: 'کد ۶ رقمی',\n                      hintText: '------'")
 
           # Keep the UI consistent with explicit verification.
           text = text.replace(
@@ -53,6 +54,11 @@ jobs:
               'پس از ارسال، یک کد ۶ رقمی به ایمیل شما می‌آید و بعد از رقم ششم خودکار بررسی می‌شود.',
               'پس از ارسال، یک کد دقیقاً ۶ رقمی به ایمیل شما می‌آید. کد فقط با زدن «تأیید و ورود» بررسی می‌شود.',
           )
+
+          # Repair the two unrelated placeholders changed by the previous
+          # broad replacement run.
+          text = text.replace("hintText: '------', prefixIcon: Icon(Icons.search)", "hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search)")
+          text = text.replace("Expanded(child: TextField(controller: text, decoration: const InputDecoration(hintText: '------', border: OutlineInputBorder())))", "Expanded(child: TextField(controller: text, decoration: const InputDecoration(hintText: 'پیام...', border: OutlineInputBorder())))")
 
           # Defensive source checks: the client must submit exactly six digits
           # and verify the email OTP with the email OTP type.
