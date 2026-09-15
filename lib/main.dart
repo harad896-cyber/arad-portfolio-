@@ -679,6 +679,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   final code = TextEditingController();
   bool busy = false;
   bool resending = false;
+  bool _verificationStarted = false;
   int resendCount = 0;
   int resendCooldown = 60;
   Timer? resendTimer;
@@ -696,8 +697,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       showMsg(context, 'کد تأیید باید دقیقاً ۶ رقم باشد.');
       return;
     }
-    if (busy) return;
+    if (busy || _verificationStarted) return;
 
+    _verificationStarted = true;
     setState(() => busy = true);
     try {
       final response = await supabase.auth.verifyOTP(
@@ -741,6 +743,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       code.clear();
     } finally {
       if (mounted) setState(() => busy = false);
+      _verificationStarted = false;
     }
   }
 
@@ -875,8 +878,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                     textAlign: TextAlign.center,
                     maxLength: 6,
                     autofillHints: const [AutofillHints.oneTimeCode],
+                    textDirection: TextDirection.ltr,
                     inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9۰-۹٠-٩]')),
                     ],
                     style: const TextStyle(
                       fontSize: 26,
@@ -884,7 +888,15 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       letterSpacing: 8,
                     ),
                     onChanged: (value) {
-                      if (value.length == 6 && !busy) {
+                      final normalized = normalizeOtpDigits(value);
+                      if (normalized != value) {
+                        code.value = TextEditingValue(
+                          text: normalized,
+                          selection: TextSelection.collapsed(offset: normalized.length),
+                        );
+                        return;
+                      }
+                      if (normalized.length == 6 && !busy && !_verificationStarted) {
                         verify();
                       }
                     },
