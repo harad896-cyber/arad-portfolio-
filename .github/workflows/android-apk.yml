@@ -58,6 +58,9 @@ jobs:
       - name: Finalize premium chat features
         run: python tools/premium_chat_finalize.py
 
+      - name: Apply media and support fixes
+        run: python tools/support_media_patch.py
+
       - name: Get dependencies
         run: flutter pub get
 
