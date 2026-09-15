@@ -1,0 +1,120 @@
+name: Fix Chat Creation and Profile Photo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch Flutter source
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+          original = s
+
+          # 1) Never create a direct chat with the current user.
+          old = """    if (result == null) return;\n    try {\n      final uid = supabase.auth.currentUser!.id;\n      final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);"""
+          new = """    if (result == null) return;\n    try {\n      final uid = supabase.auth.currentUser!.id;\n      if ('${result['id']}' == uid) {\n        if (mounted) showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.');\n        return;\n      }\n      final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);"""
+          if old not in s:
+              raise SystemExit('direct-chat anchor not found')
+          s = s.replace(old, new, 1)
+
+          # 2) Prevent duplicate members when a group selection contains the creator.
+          old = """      final members = <Map<String, dynamic>>[\n        {'conversation_id': c['id'], 'user_id': uid},\n        ...selected.map((p) => {'conversation_id': c['id'], 'user_id': p['id']}),\n      ];"""
+          new = """      final uniqueIds = <String>{uid, ...selected.map((p) => '${p['id']}')};\n      final members = uniqueIds\n          .map((memberId) => {'conversation_id': c['id'], 'user_id': memberId})\n          .toList();"""
+          if old not in s:
+              raise SystemExit('group member anchor not found')
+          s = s.replace(old, new, 1)
+
+          # 3) Add profile photo state and camera/gallery picker to first profile setup.
+          old = """  final bio = TextEditingController();\n  bool loading = true;\n  bool busy = false;"""
+          new = """  final bio = TextEditingController();\n  XFile? avatarImage;\n  bool loading = true;\n  bool busy = false;"""
+          if old not in s:
+              raise SystemExit('profile state anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = """  Future<void> save() async {\n    if (name.text.trim().isEmpty || username.text.trim().isEmpty) {"""
+          new = """  Future<void> pickAvatar(ImageSource source) async {\n    try {\n      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);\n      if (image != null && mounted) setState(() => avatarImage = image);\n    } catch (e) {\n      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');\n    }\n  }\n\n  Future<void> chooseAvatar() async {\n    await showModalBottomSheet<void>(\n      context: context,\n      builder: (context) => SafeArea(\n        child: Wrap(children: [\n          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),\n          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),\n        ]),\n      ),\n    );\n  }\n\n  Future<void> save() async {\n    if (name.text.trim().isEmpty || username.text.trim().isEmpty) {"""
+          if old not in s:
+              raise SystemExit('profile save anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = """      final uid = supabase.auth.currentUser!.id;\n      await supabase.from('profiles').upsert({"""
+          new = """      final uid = supabase.auth.currentUser!.id;\n      String? avatarUrl;\n      if (avatarImage != null) {\n        final bytes = await avatarImage!.readAsBytes();\n        final path = '$uid/avatar.jpg';\n        await supabase.storage.from('avatars').uploadBinary(\n          path,\n          bytes,\n          fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),\n        );\n        avatarUrl = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';\n      }\n      await supabase.from('profiles').upsert({"""
+          if old not in s:
+              raise SystemExit('profile uid anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = """        'bio': bio.text.trim(),\n        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',"""
+          new = """        'bio': bio.text.trim(),\n        if (avatarUrl != null) 'avatar_url': avatarUrl,\n        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',"""
+          if old not in s:
+              raise SystemExit('profile map anchor not found')
+          s = s.replace(old, new, 1)
+
+          # 4) Show current/selected profile image above the setup fields.
+          old = """        children: [\n          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),"""
+          new = """        children: [\n          Center(\n            child: GestureDetector(\n              onTap: chooseAvatar,\n              child: Stack(\n                clipBehavior: Clip.none,\n                children: [\n                  CircleAvatar(\n                    radius: 58,\n                    backgroundImage: avatarImage != null ? FileImage(__import__('dart:io').File(avatarImage!.path)) : (p['avatar_url'] != null && '${p['avatar_url']}'.isNotEmpty ? NetworkImage('${p['avatar_url']}') : null),\n                    child: (avatarImage == null && (p['avatar_url'] == null || '${p['avatar_url']}'.isEmpty)) ? const Icon(Icons.person, size: 58) : null,\n                  ),\n                  Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: const Icon(Icons.camera_alt, size: 20))),\n                ],\n              ),\n            ),\n          ),\n          const SizedBox(height: 22),\n          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),"""
+          if old not in s:
+              raise SystemExit('profile UI anchor not found')
+          s = s.replace(old, new, 1)
+
+          # 5) Add top chat filters: همه / شخصی / گروه / کانال.
+          old = """class _HomePageState extends State<HomePage> {\n  List<Map<String, dynamic>> chats = [];\n  bool loading = true;"""
+          new = """class _HomePageState extends State<HomePage> {\n  List<Map<String, dynamic>> chats = [];\n  bool loading = true;\n  int selectedFilter = 0;\n\n  List<Map<String, dynamic>> get visibleChats {\n    if (selectedFilter == 0) return chats;\n    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';\n    return chats.where((c) => '${c['type']}' == type).toList();\n  }"""
+          if old not in s:
+              raise SystemExit('home state anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = """      body: loading\n          ? const Center(child: CircularProgressIndicator())\n          : chats.isEmpty\n              ? Center("""
+          new = """      body: Column(\n        children: [\n          SingleChildScrollView(\n            scrollDirection: Axis.horizontal,\n            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),\n            child: Row(\n              children: List.generate(4, (i) {\n                const labels = ['همه', 'شخصی', 'گروه', 'کانال'];\n                const icons = [Icons.all_inbox, Icons.person, Icons.group, Icons.campaign];\n                return Padding(\n                  padding: const EdgeInsets.only(left: 6),\n                  child: ChoiceChip(\n                    selected: selectedFilter == i,\n                    avatar: Icon(icons[i], size: 18),\n                    label: Text(labels[i]),\n                    onSelected: (_) => setState(() => selectedFilter = i),\n                  ),\n                );\n              }),\n            ),\n          ),\n          Expanded(\n            child: loading\n          ? const Center(child: CircularProgressIndicator())\n          : visibleChats.isEmpty\n              ? Center("""
+          if old not in s:
+              raise SystemExit('home body anchor not found')
+          s = s.replace(old, new, 1)
+
+          # Update the empty-state wording/close the added Expanded wrapper before FAB.
+          s = s.replace("""                    'هنوز گفتگویی ندارید',""", """                    selectedFilter == 1 ? 'گفتگوی شخصی ندارید' : selectedFilter == 2 ? 'گروهی ندارید' : selectedFilter == 3 ? 'کانالی ندارید' : 'هنوز گفتگویی ندارید',""", 1)
+          s = s.replace("""                  itemCount: chats.length,""", """                  itemCount: visibleChats.length,""", 1)
+          s = s.replace("""                    final c = chats[i];""", """                    final c = visibleChats[i];""", 1)
+
+          # The original body needs one closing parenthesis for Expanded.
+          marker = """                ),\n                ),\n      floatingActionButton:"""
+          if marker in s:
+              s = s.replace(marker, """                ),\n                ),\n          ),\n      floatingActionButton:""", 1)
+
+          if s == original:
+              raise SystemExit('no changes made')
+          p.write_text(s, encoding='utf-8')
+          print('patched main.dart')
+
+          subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git','add','lib/main.dart'], check=True)
+          subprocess.run(['git','commit','-m','fix: prevent duplicate members and add profile photo chooser'], check=True)
+          subprocess.run(['git','push'], check=True)
+
+      - name: Flutter build check
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-chat-profile-fix
+          path: build/app/outputs/flutter-apk/app-release.apk
