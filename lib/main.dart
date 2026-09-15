@@ -894,19 +894,12 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           text: normalized,
                           selection: TextSelection.collapsed(offset: normalized.length),
                         );
-                        return;
                       }
-                      if (normalized.length == 6 && !busy && !_verificationStarted) {
-                        verify();
-                      }
-                    },
-                    onSubmitted: (_) {
-                      if (!busy) verify();
                     },
                     decoration: InputDecoration(
                       counterText: '',
                       labelText: 'کد ۶ رقمی',
-                      hintText: '۱۲۳۴۵۶',
+                      hintText: '------',
                       prefixIcon: const Icon(Icons.password_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
