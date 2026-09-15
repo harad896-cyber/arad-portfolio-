@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'invite.dart';
 
 
 String t(String key, String locale) {
@@ -1582,9 +1583,49 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 8),
           Text('${p['bio'] ?? ''}'),
           const SizedBox(height: 30),
+          const SizedBox(height: 22),
+          const Divider(),
+          const SizedBox(height: 8),
+          const Text('تنظیمات پروفایل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          ListTile(leading: const Icon(Icons.person_outline), title: const Text('حساب کاربری'), subtitle: const Text('نام، نام کاربری و اطلاعات حساب'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()))),
+          ListTile(leading: const Icon(Icons.lock_outline), title: const Text('حریم خصوصی و امنیت'), subtitle: const Text('تنظیمات امنیت و حریم خصوصی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'حریم خصوصی و امنیت', icon: Icons.lock_outline)))),
+          ListTile(leading: const Icon(Icons.storage_outlined), title: const Text('داده‌ها و ذخیره‌سازی'), subtitle: const Text('مدیریت داده‌ها و فضای ذخیره‌سازی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'داده‌ها و ذخیره‌سازی', icon: Icons.storage_outlined)))),
+          ListTile(leading: const Icon(Icons.chat_bubble_outline), title: const Text('تنظیمات چت'), subtitle: const Text('ظاهر و رفتار گفتگوها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_bubble_outline)))),
+          ListTile(leading: const Icon(Icons.bookmark_outline), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('دسترسی سریع به پیام‌های مهم'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'پیام‌های ذخیره‌شده', icon: Icons.bookmark_outline)))),
+          ListTile(leading: const Icon(Icons.dashboard_customize_outlined), title: const Text('تنظیمات صفحات'), subtitle: const Text('مدیریت تنظیمات بخش‌های برنامه'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات صفحات', icon: Icons.dashboard_customize_outlined)))),
+          ListTile(leading: const Icon(Icons.language), title: const Text('زبان'), subtitle: const Text('انتخاب زبان برنامه'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'زبان', icon: Icons.language)))),
+          ListTile(leading: const Icon(Icons.account_balance_wallet_outlined), title: const Text('کیف پول'), subtitle: const Text('مدیریت کیف پول آراد'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'کیف پول', icon: Icons.account_balance_wallet_outlined)))),
+          ListTile(leading: const Icon(Icons.person_add_alt_1), title: const Text('دعوت از دوستان'), subtitle: const Text('دعوت یک دوست برای پیوستن به آراد'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvitePage()))),
+          ListTile(leading: const Icon(Icons.system_update_outlined), title: const Text('به‌روزرسانی'), subtitle: const Text('بررسی نسخه جدید برنامه'), onTap: () => showMsg(context, 'نسخه فعلی برنامه بررسی شد.')),
+          ListTile(leading: const Icon(Icons.support_agent_outlined), title: const Text('پشتیبانی'), subtitle: const Text('راهنمایی و ارتباط با پشتیبانی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'پشتیبانی', icon: Icons.support_agent_outlined)))),
+          const SizedBox(height: 12),
+
           FilledButton.tonal(onPressed: () => supabase.auth.signOut(), child: const Text('خروج')),
         ],
       ),
     );
 }
+}
+
+
+class ProfileOptionPage extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const ProfileOptionPage({super.key, required this.title, required this.icon});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(child: Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary)),
+          const SizedBox(height: 20),
+          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 12),
+          const Text('این بخش آماده است و بدون تغییر در حساب شما باز می‌شود. تنظیمات اختصاصی هر بخش در ادامه تکمیل می‌شوند.', textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
 }
