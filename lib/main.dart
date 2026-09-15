@@ -1102,6 +1102,27 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     );
   }
 
+  Future<void> pickAvatar(ImageSource source) async {
+    try {
+      final image = await ImagePicker().pickImage(source: source, imageQuality: 88, maxWidth: 900, maxHeight: 900);
+      if (image != null && mounted) setState(() => avatarImage = image);
+    } catch (e) {
+      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
+    }
+  }
+
+  Future<void> chooseAvatar() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(children: [
+          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('دوربین'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
+          ListTile(leading: const Icon(Icons.photo_library), title: const Text('گالری'), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
+        ]),
+      ),
+    );
+  }
+
   Future<void> save() async {
     if (name.text.trim().isEmpty || username.text.trim().isEmpty) {
       showMsg(context, 'نام و نام کاربری را وارد کنید.');
@@ -1203,6 +1224,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> chats = [];
   bool loading = true;
+  int selectedFilter = 0;
+
+  List<Map<String, dynamic>> get visibleChats {
+    if (selectedFilter == 0) return chats;
+    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
+    return chats.where((c) => '${c['type']}' == type).toList();
+  }
   int selectedFilter = 0;
 
   List<Map<String, dynamic>> get visibleChats {
