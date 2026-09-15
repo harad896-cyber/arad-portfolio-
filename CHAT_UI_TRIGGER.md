@@ -1,1 +1,1 @@
-One-time trigger for the chat UI repair workflow.
+Triggering the Android APK build with the improved chat UI patch.
