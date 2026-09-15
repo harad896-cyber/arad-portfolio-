@@ -20,8 +20,9 @@ jobs:
           flutter-version: '3.35.0'
           channel: stable
           cache: true
-      - name: Regenerate Android project
+      - name: Regenerate clean Android project
         run: |
+          rm -rf android
           flutter create --platforms=android --org com.arad.messenger --project-name arad_messenger .
           test -f android/settings.gradle.kts || test -f android/settings.gradle
           test -f android/app/build.gradle.kts || test -f android/app/build.gradle
