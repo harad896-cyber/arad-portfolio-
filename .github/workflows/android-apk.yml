@@ -79,6 +79,8 @@ jobs:
         run: python tools/theme_colors_runtime_fix.py
       - name: Apply notifications, read receipts and message stats
         run: python tools/notifications_read_receipts_patch.py
+      - name: Elevate app and settings UI
+        run: python tools/telegram_style_ui_patch.py
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
