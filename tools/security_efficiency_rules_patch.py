@@ -117,7 +117,6 @@ void openSecurityEfficiencyRules(BuildContext context) {
 if 'void openSecurityEfficiencyRules(' not in s:
     s += '\n' + helper
 
-# Add a visible entry to the existing profile/settings list when its stable heading is present.
 needle = "const Text('تنظیمات پروفایل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),"
 entry = needle + """
           const SizedBox(height: 6),
@@ -130,5 +129,17 @@ entry = needle + """
           ),"""
 if "title: const Text('قوانین و امنیت')" not in s and needle in s:
     s = s.replace(needle, entry, 1)
+
+# Final compile cleanup: remove a duplicate DividerThemeData declaration if two
+# identical blocks were injected by the theme/UI patches.
+block = '''        dividerTheme: const DividerThemeData(\n          space: 1,\n          thickness: 1,\n          indent: 72,\n          color: Color(0xFFE7ECF2),\n        ),\n'''
+first = s.find(block)
+if first >= 0:
+    second = s.find(block, first + len(block))
+    if second >= 0:
+        s = s[:second] + s[second + len(block):]
+
+# The current media implementation does not use dart:io in main.dart.
+s = s.replace("import 'dart:io';\n", '', 1)
 
 p.write_text(s, encoding='utf-8')
