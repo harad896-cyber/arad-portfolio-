@@ -3,13 +3,56 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class InviteDrawer extends StatelessWidget {
+  const InviteDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(radius: 28, child: Icon(Icons.person_add_alt_1)),
+                  SizedBox(height: 12),
+                  Text('آراد', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                  SizedBox(height: 4),
+                  Text('دعوت از دوستان برای پیوستن به آراد'),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_add_alt_1),
+              title: const Text('دعوت به آراد'),
+              subtitle: const Text('ارسال دعوت برای یک دوست'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InvitePage()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class InvitePage extends StatelessWidget {
   const InvitePage({super.key});
 
   String get referralCode {
     final id = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (id.isEmpty) return 'ARAD';
-    return 'ARAD-${id.replaceAll('-', '').substring(0, id.replaceAll('-', '').length >= 8 ? 8 : id.replaceAll('-', '').length).toUpperCase()}';
+    final clean = id.replaceAll('-', '');
+    final short = clean.substring(0, clean.length >= 8 ? 8 : clean.length);
+    return 'ARAD-${short.toUpperCase()}';
   }
 
   String get inviteText =>
@@ -17,7 +60,9 @@ class InvitePage extends StatelessWidget {
 
   Future<void> shareInvite(BuildContext context) async {
     try {
-      await SharePlus.instance.share(ShareParams(text: inviteText, subject: 'دعوت به آراد'));
+      await SharePlus.instance.share(
+        ShareParams(text: inviteText, subject: 'دعوت به آراد'),
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
