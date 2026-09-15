@@ -52,6 +52,9 @@ jobs:
       - name: Apply group and reaction features
         run: python tools/group_chat_features_patch.py
 
+      - name: Apply premium chat features
+        run: python tools/premium_chat_features_patch.py
+
       - name: Get dependencies
         run: flutter pub get
 
