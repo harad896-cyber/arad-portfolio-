@@ -13,8 +13,6 @@ on:
 permissions:
   contents: write
 
-auto_cancel: false
-
 jobs:
   patch-and-build:
     runs-on: ubuntu-latest
@@ -47,7 +45,7 @@ jobs:
               text = text.replace(marker, marker + "\nimport 'invite.dart';", 1)
 
           if 'drawer: const InviteDrawer(),' not in text:
-              m = re.search(r'class\\s+HomePage\\b[\\s\\S]*?(?=^class\\s+|\\Z)', text, re.MULTILINE)
+              m = re.search(r'class\s+HomePage\b[\s\S]*?(?=^class\s+|\Z)', text, re.MULTILINE)
               if not m:
                   raise SystemExit('HomePage class not found')
               section = m.group(0)
