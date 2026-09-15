@@ -1,4 +1,5 @@
 name: Build Android Release APK
+# Release build: fixed app identity and reproducible CI signing.
 
 on:
   push:
