@@ -1,0 +1,133 @@
+name: Repair Email OTP and Build APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Repair OTP flow in source
+        id: repair
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import subprocess
+
+          path = Path('lib/main.dart')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          # OTP must never be auto-verified when the sixth digit is entered.
+          text = re.sub(
+              r"\n\s*if \(normalized\.length == 6 && !busy && !_verificationStarted\) \{\n\s*verify\(\);\n\s*\}",
+              "",
+              text,
+          )
+          text = re.sub(
+              r"\n\s*onSubmitted: \(_\) \{\n\s*if \(!busy\) verify\(\);\n\s*\},",
+              "",
+              text,
+          )
+
+          # Do not show a sample OTP in the field.
+          text = re.sub(r"hintText:\s*'[^']*'", "hintText: '------'", text)
+          text = re.sub(r"hintText:\s*\"[^\"]*\"", 'hintText: \'------\'', text)
+
+          # Keep the UI consistent with explicit verification.
+          text = text.replace(
+              'بعد از وارد کردن رقم ششم، کد خودکار بررسی می‌شود و در صورت درست بودن وارد برنامه می‌شوید.',
+              'کد فقط وقتی بررسی می‌شود که روی «تأیید و ورود» بزنید. کدهای قبلی یا منقضی‌شده قابل استفاده نیستند.',
+          )
+          text = text.replace(
+              'پس از ارسال، یک کد ۶ رقمی به ایمیل شما می‌آید و بعد از رقم ششم خودکار بررسی می‌شود.',
+              'پس از ارسال، یک کد دقیقاً ۶ رقمی به ایمیل شما می‌آید. کد فقط با زدن «تأیید و ورود» بررسی می‌شود.',
+          )
+
+          # Defensive source checks: the client must submit exactly six digits
+          # and verify the email OTP with the email OTP type.
+          if 'maxLength: 6' not in text:
+              raise SystemExit('OTP input is not limited to 6 digits')
+          if "type: OtpType.email" not in text or 'verifyOTP(' not in text:
+              raise SystemExit('Email OTP verification code is missing')
+          if 'normalized.length == 6 && !busy && !_verificationStarted' in text:
+              raise SystemExit('Automatic OTP verification is still present')
+
+          path.write_text(text, encoding='utf-8')
+          changed = text != original
+          print(f'source_changed={changed}')
+          if changed:
+              subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
+              subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+              subprocess.run(['git', 'add', 'lib/main.dart'], check=True)
+              subprocess.run(['git', 'commit', '-m', 'fix: finalize six-digit email OTP flow'], check=True)
+              subprocess.run(['git', 'push'], check=True)
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android project
+        run: |
+          flutter create --platforms=android --org com.arad.messenger .
+          rm -rf test
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build release APK
+        env:
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+        run: |
+          if [ -n "$GOOGLE_SERVER_CLIENT_ID" ]; then
+            flutter build apk --release --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+          else
+            flutter build apk --release
+          fi
+
+      - name: Sign release APK
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          if [ ! -f "android/app/debug.keystore" ]; then
+            keytool -genkeypair -v \
+              -keystore android/app/debug.keystore \
+              -storepass android \
+              -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          "$BUILD_TOOLS/zipalign" -f -p 4 "$APK" "${APK%.apk}-aligned.apk"
+          mv "${APK%.apk}-aligned.apk" "$APK"
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks android/app/debug.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --ks-key-alias androiddebugkey \
+            "$APK"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-otp-fixed-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
