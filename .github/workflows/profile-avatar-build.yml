@@ -1,0 +1,275 @@
+name: Profile Avatar and Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-profile-avatar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update profile avatar UI and upload flow
+        shell: python
+        run: |
+          from pathlib import Path
+          import re, subprocess
+
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+          old = s
+
+          if "import 'dart:typed_data';" not in s:
+              s = s.replace("import 'dart:async';", "import 'dart:async';\nimport 'dart:typed_data';", 1)
+
+          start = s.index('class ProfileSetupPage extends StatefulWidget {')
+          end = s.index('class HomePage extends StatefulWidget {', start)
+
+          replacement = r'''class ProfileSetupPage extends StatefulWidget {
+  const ProfileSetupPage({super.key});
+
+  @override
+  State<ProfileSetupPage> createState() => _ProfileSetupPageState();
+}
+
+class _ProfileSetupPageState extends State<ProfileSetupPage> {
+  final name = TextEditingController();
+  final username = TextEditingController();
+  final bio = TextEditingController();
+  bool loading = true;
+  bool busy = false;
+  String avatarUrl = '';
+  XFile? selectedAvatar;
+  Uint8List? selectedAvatarBytes;
+
+  Future<void> load() async {
+    try {
+      final user = supabase.auth.currentUser!;
+      final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+      if (row != null) {
+        name.text = '${row['display_name'] ?? ''}';
+        username.text = '${row['username'] ?? ''}';
+        bio.text = '${row['bio'] ?? ''}';
+        avatarUrl = '${row['avatar_url'] ?? ''}';
+      } else {
+        final metadata = user.userMetadata ?? <String, dynamic>{};
+        final fullName = (metadata['full_name'] ?? '').toString().trim();
+        if (fullName.isNotEmpty) name.text = fullName;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> chooseAvatar(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+        source: source,
+        imageQuality: 88,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        selectedAvatar = file;
+        selectedAvatarBytes = bytes;
+      });
+    } catch (e) {
+      if (mounted) showMsg(context, 'انتخاب عکس ناموفق بود: $e');
+    }
+  }
+
+  Future<void> pickAvatar() async {
+    if (busy) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('دوربین'),
+              subtitle: const Text('گرفتن عکس جدید'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                chooseAvatar(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('گالری'),
+              subtitle: const Text('انتخاب عکس از گوشی'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                chooseAvatar(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> uploadAvatar(String uid) async {
+    final file = selectedAvatar;
+    final bytes = selectedAvatarBytes;
+    if (file == null || bytes == null) return avatarUrl.isEmpty ? null : avatarUrl;
+
+    final ext = file.name.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+    final path = '$uid/profile.$ext';
+    await supabase.storage.from('avatars').uploadBinary(
+      path,
+      bytes,
+      fileOptions: FileOptions(contentType: ext == 'png' ? 'image/png' : 'image/jpeg', upsert: true),
+    );
+    return supabase.storage.from('avatars').getPublicUrl(path);
+  }
+
+  Future<void> save() async {
+    if (name.text.trim().isEmpty || username.text.trim().isEmpty) {
+      showMsg(context, 'نام و نام کاربری را وارد کنید.');
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      final user = supabase.auth.currentUser!;
+      final uid = user.id;
+      final uploadedAvatarUrl = await uploadAvatar(uid);
+      await supabase.from('profiles').upsert({
+        'id': uid,
+        'display_name': name.text.trim(),
+        'username': username.text.trim().replaceFirst('@', ''),
+        'bio': bio.text.trim(),
+        'avatar_url': uploadedAvatarUrl,
+        'country': '${user.userMetadata?['country'] ?? ''}',
+        'is_online': true,
+        'last_seen': DateTime.now().toIso8601String(),
+      });
+      if (mounted) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    name.dispose();
+    username.dispose();
+    bio.dispose();
+    super.dispose();
+  }
+
+  Widget profileAvatar() {
+    if (selectedAvatarBytes != null) {
+      return CircleAvatar(radius: 56, backgroundImage: MemoryImage(selectedAvatarBytes!));
+    }
+    if (avatarUrl.isNotEmpty) {
+      return CircleAvatar(radius: 56, backgroundImage: NetworkImage(avatarUrl));
+    }
+    return const CircleAvatar(radius: 56, child: Icon(Icons.person, size: 52));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل شما')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        children: [
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                profileAvatar(),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Material(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: pickAvatar,
+                      child: const Padding(
+                        padding: EdgeInsets.all(11),
+                        child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Center(child: Text('عکس پروفایل', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
+          const SizedBox(height: 24),
+          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: username, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
+        ],
+      ),
+    );
+  }
+}
+
+'''
+          s = s[:start] + replacement + s[end:]
+
+          # Bump app version once.
+          s = s.replace('version: 0.8.1+10', 'version: 0.8.2+11', 1)
+          p.write_text(s, encoding='utf-8')
+
+          if s != old:
+              subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
+              subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+              subprocess.run(['git','add','lib/main.dart','pubspec.yaml'], check=True)
+              subprocess.run(['git','commit','-m','feat: add profile avatar camera and gallery'], check=True)
+              subprocess.run(['git','push'], check=True)
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-profile-avatar-0.8.2
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
