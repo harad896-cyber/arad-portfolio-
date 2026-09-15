@@ -12,7 +12,8 @@ if 'class ThemeController extends ChangeNotifier' not in s:
 class ThemeController extends ChangeNotifier {
   static const _key = 'arad_theme_color_index';
   static const colors = <Color>[
-    Color(0xFF4F46E5), // آبی/نیلی
+    Color(0xFF229ED9), // آبی تلگرامی
+    Color(0xFF4F46E5), // نیلی
     Color(0xFF2563EB), // آبی
     Color(0xFF7C3AED), // بنفش
     Color(0xFF059669), // سبز
@@ -108,7 +109,6 @@ if old_app not in s:
     raise SystemExit('AradMessenger theme block not found')
 s = s.replace(old_app, new_app, 1)
 
-# Insert a theme selector page before ProfilePage.
 profile_marker = 'class ProfilePage extends StatefulWidget {'
 if profile_marker not in s:
     raise SystemExit('ProfilePage marker not found')
@@ -126,6 +126,7 @@ class _ThemeColorPageState extends State<ThemeColorPage> {
   final ThemeController controller = ThemeController();
 
   static const names = [
+    'آبی تلگرامی',
     'نیلی',
     'آبی',
     'بنفش',
@@ -148,8 +149,6 @@ class _ThemeColorPageState extends State<ThemeColorPage> {
     setState(() => selected = index);
     await controller.setIndex(index);
     if (!mounted) return;
-    // Rebuild the root MaterialApp through the global controller stored in the
-    // app. The persisted value is also applied after the next app restart.
     Navigator.pop(context);
     showMsg(context, 'رنگ ${names[index]} انتخاب شد.');
   }
@@ -163,7 +162,7 @@ class _ThemeColorPageState extends State<ThemeColorPage> {
         children: [
           const Text('رنگ اصلی Arad Messenger را انتخاب کنید', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          const Text('این انتخاب برای حساب فعلی روی همین دستگاه ذخیره می‌شود.'),
+          const Text('انتخاب شما ذخیره می‌شود و بعد از باز کردن دوباره برنامه باقی می‌ماند.'),
           const SizedBox(height: 22),
           GridView.builder(
             shrinkWrap: true,
@@ -204,7 +203,6 @@ class _ThemeColorPageState extends State<ThemeColorPage> {
 '''
     s = s.replace(profile_marker, page + profile_marker, 1)
 
-# Add the menu item after the account item.
 needle = "ListTile(leading: const Icon(Icons.person_outline), title: const Text('حساب کاربری'), subtitle: const Text('نام، نام کاربری و اطلاعات حساب'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()))),"
 insert = needle + "\n          ListTile(leading: const Icon(Icons.palette_outlined), title: const Text('رنگ‌بندی برنامه'), subtitle: const Text('انتخاب رنگ اصلی Arad Messenger'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeColorPage()))),"
 if needle not in s:
@@ -212,4 +210,4 @@ if needle not in s:
 s = s.replace(needle, insert, 1)
 
 p.write_text(s, encoding='utf-8')
-print('Applied Arad theme color selector')
+print('Applied Arad theme color selector with Telegram blue default')
