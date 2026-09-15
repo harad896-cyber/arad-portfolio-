@@ -1,0 +1,246 @@
+name: Repair profile options
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-profile-options.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore clean main and patch profile
+        shell: python
+        run: |
+          import subprocess
+          from pathlib import Path
+          import re
+
+          clean = '6e215c34a2bc44bdab38462b53528522b43362cf'
+          subprocess.run(['git', 'checkout', clean, '--', 'lib/main.dart'], check=True)
+
+          path = Path('lib/main.dart')
+          text = path.read_text(encoding='utf-8')
+
+          if "import 'invite.dart';" not in text:
+              marker = "import 'package:image_picker/image_picker.dart';"
+              text = text.replace(marker, marker + "\nimport 'invite.dart';", 1)
+
+          start = text.find('class ProfilePage extends StatefulWidget {')
+          if start < 0:
+              raise SystemExit('ProfilePage not found')
+
+          profile = r'''class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  Map<String, dynamic>? profile;
+
+  Future<void> load() async {
+    try {
+      final row = await supabase.from('profiles').select().eq('id', supabase.auth.currentUser!.id).maybeSingle();
+      if (mounted) setState(() => profile = row);
+    } catch (e) {
+      if (mounted) showMsg(context, 'خطا در بارگذاری پروفایل: $e');
+    }
+  }
+
+  Future<void> avatarUpload() async {
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      final path = '${supabase.auth.currentUser!.id}/avatar.jpg';
+      await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+      final url = supabase.storage.from('avatars').getPublicUrl(path);
+      await supabase.from('profiles').update({'avatar_url': '$url?x=${DateTime.now().millisecondsSinceEpoch}'}).eq('id', supabase.auth.currentUser!.id);
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'تصویر پروفایل ذخیره نشد: $e');
+    }
+  }
+
+  void openInfo(String title, String text) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(text),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('باشه'))],
+      ),
+    );
+  }
+
+  void openLanguage() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: AppStrings.supported.map((code) => ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(AppStrings.names[code] ?? code),
+            trailing: code == 'fa' ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              showMsg(context, 'زبان انتخابی: ${AppStrings.names[code] ?? code}');
+            },
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  void openWallet() {
+    openInfo('کیف پول', 'کیف پول آراد در حال آماده‌سازی است. موجودی و تراکنش‌ها بعداً از همین بخش اضافه می‌شوند.');
+  }
+
+  void openPageSettings() {
+    openInfo('تنظیمات صفحات', 'تنظیمات مربوط به صفحات و نمایش آن‌ها در این بخش قرار می‌گیرد.');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = profile;
+    if (p == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    Widget option({required IconData icon, required String title, String? subtitle, VoidCallback? onTap}) {
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        leading: CircleAvatar(
+          radius: 20,
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          child: Icon(icon, size: 21),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: subtitle == null ? null : Text(subtitle),
+        trailing: const Icon(Icons.chevron_left),
+        onTap: onTap,
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('پروفایل'),
+        actions: [
+          IconButton(onPressed: avatarUpload, tooltip: 'تغییر عکس', icon: const Icon(Icons.camera_alt_outlined)),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+        children: [
+          Center(child: Stack(children: [
+            avatar(p, size: 96),
+            Positioned(bottom: 0, right: 0, child: IconButton.filled(onPressed: avatarUpload, icon: const Icon(Icons.camera_alt))),
+          ])),
+          const SizedBox(height: 14),
+          Text('${p['display_name'] ?? ''}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text('@${p['username'] ?? ''}', textAlign: TextAlign.center),
+          if ('${p['bio'] ?? ''}'.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('${p['bio'] ?? ''}', textAlign: TextAlign.center),
+          ],
+          const SizedBox(height: 20),
+          Card(
+            child: Column(
+              children: [
+                option(icon: Icons.manage_accounts_outlined, title: 'حساب کاربری', subtitle: 'ویرایش نام، نام کاربری و معرفی', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage())).then((_) => load())),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Column(
+              children: [
+                option(icon: Icons.shield_outlined, title: 'حریم خصوصی و امنیت', subtitle: 'کنترل امنیت و حریم خصوصی', onTap: () => openInfo('حریم خصوصی و امنیت', 'تنظیمات امنیت حساب و حریم خصوصی آراد از این بخش مدیریت می‌شود.')),
+                const Divider(height: 1),
+                option(icon: Icons.storage_outlined, title: 'داده‌ها و ذخیره‌سازی', subtitle: 'مدیریت مصرف داده و فایل‌ها', onTap: () => openInfo('داده‌ها و ذخیره‌سازی', 'مدیریت فایل‌ها، حافظه و مصرف اینترنت در نسخه بعدی تکمیل می‌شود.')),
+                const Divider(height: 1),
+                option(icon: Icons.chat_bubble_outline, title: 'تنظیمات چت', subtitle: 'تنظیمات گفتگوها و پیام‌ها', onTap: () => openInfo('تنظیمات چت', 'تنظیمات اعلان، نمایش پیام و رفتار گفتگوها در این بخش قرار می‌گیرد.')),
+                const Divider(height: 1),
+                option(icon: Icons.bookmark_outline, title: 'پیام‌های ذخیره شده', subtitle: 'دسترسی سریع به پیام‌های مهم', onTap: () => openInfo('پیام‌های ذخیره شده', 'بخش پیام‌های ذخیره‌شده آماده‌سازی می‌شود.')),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Column(
+              children: [
+                option(icon: Icons.pages_outlined, title: 'تنظیمات صفحات', subtitle: 'مدیریت نمایش و صفحات', onTap: openPageSettings),
+                const Divider(height: 1),
+                option(icon: Icons.language, title: 'زبان', subtitle: 'فارسی', onTap: openLanguage),
+                const Divider(height: 1),
+                option(icon: Icons.account_balance_wallet_outlined, title: 'کیف پول', subtitle: 'موجودی و تراکنش‌ها', onTap: openWallet),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Column(
+              children: [
+                option(icon: Icons.person_add_alt_1, title: 'دعوت از دوستان', subtitle: 'دوستانت را به آراد دعوت کن', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvitePage()))),
+                const Divider(height: 1),
+                option(icon: Icons.system_update_outlined, title: 'به‌روزرسانی', subtitle: 'بررسی نسخه جدید آراد', onTap: () => openInfo('به‌روزرسانی', 'نسخه فعلی برنامه بررسی می‌شود. سیستم به‌روزرسانی خودکار در نسخه بعدی فعال خواهد شد.')),
+                const Divider(height: 1),
+                option(icon: Icons.support_agent, title: 'پشتیبانی', subtitle: 'کمک و گزارش مشکل', onTap: () => openInfo('پشتیبانی', 'برای پشتیبانی، مشکل یا پیشنهاد خود را در همین بخش ثبت کنید.')),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.tonalIcon(
+            onPressed: () => supabase.auth.signOut(),
+            icon: const Icon(Icons.logout),
+            label: const Text('خروج از حساب'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+'''
+          text = text[:start] + profile
+          path.write_text(text, encoding='utf-8')
+
+      - name: Verify
+        run: |
+          flutter --version || true
+          flutter pub get
+          flutter analyze --no-fatal-infos
+
+      - name: Commit repaired source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart
+          git commit -m "Move selected settings into profile" || true
+          git push
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-profile-options
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
