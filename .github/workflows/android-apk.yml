@@ -40,10 +40,10 @@ jobs:
           if p is None: raise SystemExit('Android app Gradle file not found')
           s = p.read_text(encoding='utf-8')
           if p.suffix == '.kts':
-              s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
-              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion(23)')
+              s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
+              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion(24)')
           else:
-              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 23')
+              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 24')
           p.write_text(s, encoding='utf-8')
       - name: Install Arad logo
         if: ${{ hashFiles('assets/app_icon.jpg') != '' }}
@@ -122,8 +122,8 @@ jobs:
           p = Path('android/app/build.gradle.kts')
           if p.exists():
               s = p.read_text(encoding='utf-8')
-              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion(23)')
-              s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
+              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion(24)')
+              s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
               p.write_text(s, encoding='utf-8')
       - name: Build release APK with Gradle
         working-directory: android
