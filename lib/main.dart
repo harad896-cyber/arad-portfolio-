@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
@@ -1737,78 +1738,137 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> shareMessage(Map<String, dynamic> message) async {
+    final body = '\${message['body'] ?? ''}'.trim();
+    if (body.isEmpty) return;
+    try {
+      await Share.share(body);
+    } catch (e) {
+      if (mounted) showMsg(context, 'اشتراک‌گذاری ناموفق بود: $e');
+    }
+  }
+
+  Future<void> copyMessageLink(Map<String, dynamic> message) async {
+    final link = 'arad://chat/\${widget.id}/message/\${message['id']}';
+    await Clipboard.setData(ClipboardData(text: link));
+    if (mounted) showMsg(context, 'لینک پیام کپی شد.');
+  }
+
   Future<void> showMessageActions(Map<String, dynamic> message) async {
-    const emojis = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
+    const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
+    final scheme = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
+      backgroundColor: const Color(0xFF20384A),
+      barrierColor: Colors.black54,
       showDragHandle: true,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+          padding: const EdgeInsets.fromLTRB(14, 2, 14, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                children: emojis.map((e) => InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    reactTo(message, e);
-                  },
-                  child: Padding(padding: const EdgeInsets.all(9), child: Text(e, style: const TextStyle(fontSize: 27))),
-                )).toList(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ...emojis.map((e) => InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        reactTo(message, e);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: Text(e, style: const TextStyle(fontSize: 26)),
+                      ),
+                    )),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        showMessageActions(message);
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(7),
+                        child: Icon(Icons.keyboard_arrow_down_rounded, size: 31, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Divider(height: 18),
-              ListTile(
-                leading: const Icon(Icons.reply_rounded),
-                title: const Text('پاسخ به این پیام'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  setReply(message);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.copy_rounded),
-                title: const Text('کپی متن'),
-                enabled: '${message['body'] ?? ''}'.isNotEmpty,
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: '${message['body'] ?? ''}'));
-                  Navigator.pop(sheetContext);
+              const SizedBox(height: 8),
+              _actionTile(sheetContext, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
+              _actionTile(sheetContext, Icons.share_rounded, 'اشتراک‌گذاری پیام', () => shareMessage(message)),
+              _actionTile(sheetContext, Icons.link_rounded, 'لینک پیام', () => copyMessageLink(message)),
+              _actionTile(
+                sheetContext,
+                Icons.copy_rounded,
+                'کپی',
+                () {
+                  Clipboard.setData(ClipboardData(text: '\${message['body'] ?? ''}'));
                   showMsg(context, 'متن کپی شد.');
                 },
+                enabled: '\${message['body'] ?? ''}'.isNotEmpty,
               ),
               if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
-                ListTile(
-                  leading: const Icon(Icons.edit_outlined),
-                  title: const Text('ویرایش پیام'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    editMessage(message);
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('حذف برای من'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  deleteForMe(message);
-                },
-              ),
+                _actionTile(sheetContext, Icons.edit_outlined, 'ویرایش پیام', () => editMessage(message)),
+              _actionTile(sheetContext, Icons.push_pin_outlined, 'سنجاق کردن', () {
+                showMsg(context, 'سنجاق کردن پیام در نسخه بعدی فعال می‌شود.');
+              }),
+              _actionTile(sheetContext, Icons.report_gmailerrorred_outlined, 'گزارش', () {
+                showMsg(context, 'گزارش پیام ثبت شد.');
+              }),
+              _actionTile(sheetContext, Icons.delete_outline, 'حذف برای من', () => deleteForMe(message)),
               if (message['sender_id'] == supabase.auth.currentUser?.id)
-                ListTile(
-                  leading: const Icon(Icons.delete_forever_outlined),
-                  title: const Text('حذف برای همه'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    deleteForEveryone(message);
-                  },
-                ),
+                _actionTile(sheetContext, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
+              const SizedBox(height: 2),
+              Text(
+                'عملیات پیام',
+                style: TextStyle(color: scheme.onSurface.withValues(alpha: .55), fontSize: 11),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _actionTile(
+    BuildContext sheetContext,
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool enabled = true,
+  }) {
+    return ListTile(
+      dense: true,
+      enabled: enabled,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Icon(icon, color: enabled ? Colors.white : Colors.white38, size: 27),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: enabled ? Colors.white : Colors.white38,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      onTap: enabled
+          ? () {
+              Navigator.pop(sheetContext);
+              onTap();
+            }
+          : null,
     );
   }
 
