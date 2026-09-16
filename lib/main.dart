@@ -335,6 +335,57 @@ class PremiumPageRoute<T> extends PageRouteBuilder<T> {
     transitionDuration:const Duration(milliseconds:260),
   );
 }
+class ProfessionalSettingsPage extends StatefulWidget {
+  const ProfessionalSettingsPage({super.key});
+  @override State<ProfessionalSettingsPage> createState()=>_ProfessionalSettingsPageState();
+}
+class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
+  final search=TextEditingController();
+  String theme='خودکار',language='فارسی',privacy='مخاطبینم',layout='راحت',backup='هفتگی';
+  double font=1;
+  bool dnd=false,highContrast=false,reducedMotion=false,wifiOnly=true;
+  @override void dispose(){search.dispose();super.dispose();}
+  List<Map<String,String>> get items=>[
+    {'cat':'حساب کاربری','title':'حساب کاربری','desc':'نام، نام کاربری، ایمیل، بیو و عکس پروفایل','value':'ویرایش اطلاعات'},
+    {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'کنترل اینکه چه کسانی اطلاعات شما را ببینند','value':privacy},
+    {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'قفل برنامه، تأیید دومرحله‌ای و دستگاه‌های متصل','value':'مدیریت امنیت'},
+    {'cat':'اعلان‌ها','title':'اعلان‌ها','desc':'صدای پیام، لرزش و پیش‌نمایش برای هر نوع اعلان','value':'شخصی‌سازی'},
+    {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم و رنگ برنامه را انتخاب کنید','value':theme},
+    {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری برنامه','value':language},
+    {'cat':'داده و ذخیره‌سازی','title':'داده و ذخیره‌سازی','desc':'مصرف رسانه و دانلود خودکار را کنترل کنید','value':wifiOnly?'فقط Wi-Fi':'آزاد'},
+    {'cat':'پشتیبان‌گیری','title':'پشتیبان‌گیری','desc':'زمان‌بندی و مقصد ذخیره نسخه پشتیبان','value':backup},
+    {'cat':'درباره','title':'درباره برنامه','desc':'نسخه، حریم خصوصی و پشتیبانی','value':'نسخه 1.0.0'},
+  ];
+  @override Widget build(BuildContext context){
+    final q=search.text.trim();
+    final filtered=items.where((x)=>q.isEmpty||x.values.any((v)=>v.contains(q))).toList();
+    final groups=<String,List<Map<String,String>>>{};
+    for(final x in filtered)(groups[x['cat']]??=[]).add(x);
+    return Scaffold(appBar:AppBar(title:const Text('تنظیمات'),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(padding:const EdgeInsets.fromLTRB(14,4,14,10),child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:'جستجو در تنظیمات',prefixIcon:const Icon(Icons.search_rounded),filled:true,border:OutlineInputBorder(borderRadius:BorderRadius.circular(18),borderSide:BorderSide.none)))))),
+    body:ListView(padding:const EdgeInsets.fromLTRB(14,10,14,30),children:[
+      ...groups.entries.expand((g)=>[Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:15,fontWeight:FontWeight.w800))),...g.value.map((x)=>Card(child:ListTile(
+        contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:5),
+        leading:Icon(_iconForSetting(x['title']!)),title:Text(x['title']!,style:const TextStyle(fontWeight:FontWeight.w700)),
+        subtitle:Text(x['desc']!),trailing:ConstrainedBox(constraints:const BoxConstraints(maxWidth:100),child:Text(x['value']!,textAlign:TextAlign.end,style:TextStyle(color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w700))),
+        onTap:()=>_open(x['title']!),
+      )))])
+    ]);
+  }
+  IconData _iconForSetting(String s)=>switch(s){'حساب کاربری'=>Icons.person_outline_rounded,'حریم خصوصی'=>Icons.visibility_outlined,'امنیت'=>Icons.shield_outlined,'اعلان‌ها'=>Icons.notifications_none_rounded,'ظاهر'=>Icons.palette_outlined,'زبان'=>Icons.language_rounded,'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.cloud_outlined,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
+  void _open(String title){
+    if(title=='ظاهر'){showModalBottomSheet(context:context,builder:(_)=>_ChoiceSheet(title:'ظاهر',options:['روشن','تاریک','خودکار'],value:theme,onChanged:(v){setState(()=>theme=v);Navigator.pop(context);},));}
+    else if(title=='زبان'){showModalBottomSheet(context:context,builder:(_)=>_ChoiceSheet(title:'زبان',options:['فارسی','English','العربية'],value:language,onChanged:(v){setState(()=>language=v);Navigator.pop(context);}));}
+    else if(title=='پشتیبان‌گیری'){showModalBottomSheet(context:context,builder:(_)=>_ChoiceSheet(title:'پشتیبان‌گیری',options:['روزانه','هفتگی','ماهانه'],value:backup,onChanged:(v){setState(()=>backup=v);Navigator.pop(context);}));}
+    else if(title=='داده و ذخیره‌سازی'){setState(()=>wifiOnly=!wifiOnly);}
+    else if(title=='امنیت'){Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage()));}
+    else if(title=='درباره برنامه'){Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutAppPage()));}
+  }
+}
+class _ChoiceSheet extends StatelessWidget{
+  final String title,value; final List<String> options; final ValueChanged<String> onChanged;
+  const _ChoiceSheet({required this.title,required this.options,required this.value,required this.onChanged});
+  @override Widget build(BuildContext context)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[Padding(padding:const EdgeInsets.all(18),child:Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w800))),...options.map((o)=>RadioListTile(value:o,groupValue:value,onChanged:(v)=>onChanged(v!),title:Text(o)))]));
+}
 class AppAppearancePage extends StatefulWidget {
   const AppAppearancePage({super.key});
   @override State<AppAppearancePage> createState()=>_AppAppearancePageState();
