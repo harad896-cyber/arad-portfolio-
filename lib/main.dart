@@ -16,6 +16,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'invite.dart';
+import 'profile_page.dart';
 
 
 String t(String key, String locale) {
