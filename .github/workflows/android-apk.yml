@@ -95,8 +95,6 @@ jobs:
         run: python tools/message_actions_compile_fix.py
       - name: Final compile cleanup
         run: python tools/final_compile_cleanup.py
-      - name: Apply completed language/privacy/legal/support/group/channel/profile features
-        run: python tools/feature_completion_patch.py
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
