@@ -919,25 +919,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     }
   }
 
-  Widget _voicePlayButton(String messageId) {
-    return IconButton(
-      icon: const Icon(Icons.play_circle_fill_rounded),
-      tooltip: 'پخش پیام صوتی',
-      onPressed: () async {
-        try {
-          final row = await supabase.from('message_attachments').select('storage_path').eq('message_id', messageId).maybeSingle();
-          final path = row?['storage_path']?.toString() ?? '';
-          if (path.isEmpty) return;
-          final url = supabase.storage.from('chat-media').getPublicUrl(path);
-          await _voicePlayer.stop();
-          await _voicePlayer.play(UrlSource(url));
-        } catch (e) {
-          if (mounted) showMsg(context, 'پخش ویس ناموفق بود: $e');
-        }
-      },
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -1364,7 +1345,7 @@ class _HomePageState extends State<HomePage> {
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('اعلان‌ها و نمایش پیام‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
         const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage()))),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()))),
       ])),
     ]),
   );
@@ -1721,6 +1702,29 @@ class _ChatPageState extends State<ChatPage> {
   final AudioPlayer _voicePlayer = AudioPlayer();
   bool recordingVoice = false;
 
+  Widget _voicePlayButton(String messageId) {
+    return IconButton(
+      icon: const Icon(Icons.play_circle_fill_rounded),
+      tooltip: 'پخش پیام صوتی',
+      onPressed: () async {
+        try {
+          final row = await supabase
+              .from('message_attachments')
+              .select('storage_path')
+              .eq('message_id', messageId)
+              .maybeSingle();
+          final path = row?['storage_path']?.toString() ?? '';
+          if (path.isEmpty) return;
+          final url = supabase.storage.from('chat-media').getPublicUrl(path);
+          await _voicePlayer.stop();
+          await _voicePlayer.play(UrlSource(url));
+        } catch (e) {
+          if (mounted) showMsg(context, 'پخش ویس ناموفق بود: $e');
+        }
+      },
+    );
+  }
+
   String _time(dynamic value) {
     final dt = DateTime.tryParse('$value')?.toLocal();
     if (dt == null) return '';
@@ -1988,7 +1992,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> shareMessage(Map<String, dynamic> message) async {
-    final body = '\${message['body'] ?? ''}'.trim();
+    final body = "${message['body'] ?? ''}".trim();
     if (body.isEmpty) return;
     try {
       await Share.share(body);
@@ -1998,7 +2002,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> copyMessageLink(Map<String, dynamic> message) async {
-    final link = 'arad://chat/\${widget.id}/message/\${message['id']}';
+    final link = "arad://chat/${widget.id}/message/${message['id']}";
     await Clipboard.setData(ClipboardData(text: link));
     if (mounted) showMsg(context, 'لینک پیام کپی شد.');
   }
@@ -2212,7 +2216,27 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _showMoreReactions(Map<String, dynamic> message) async {
     const more = ['😂','😍','😎','😢','😡','👏','🎉','❤️‍🔥','💯','🙏','🤝','👀','🚀','⭐','⚡','😮'];
-    final selected = await showModalBottomSheet<String>(context: context, backgroundColor: Theme.of(context).colorScheme.surface, showDragHandle: true, builder: (_) => SafeArea(child: GridView.count(shrinkWrap: true, crossAxisCount: 5, padding: const EdgeInsets.all(18), mainAxisSpacing: 8, crossAxisSpacing: 8, children: more.map((e) => InkWell(borderRadius: BorderRadius.circular(16), onTap: () => Navigator.pop(context, e), child: Center(child: Text(e, style: const TextStyle(fontSize: 30)))).toList())));
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: GridView.count(
+          shrinkWrap: true,
+          crossAxisCount: 5,
+          padding: const EdgeInsets.all(18),
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          children: more
+              .map((e) => InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => Navigator.pop(context, e),
+                    child: Center(child: Text(e, style: const TextStyle(fontSize: 30))),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
     if (selected != null) await reactTo(message, selected);
   }
 
