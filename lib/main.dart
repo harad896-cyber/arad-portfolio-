@@ -2752,7 +2752,10 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await supabase.auth.signOut();
       if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
     } on AuthException catch (err) {
       if (mounted) showMsg(context, 'خروج ناموفق بود: ' + err.message);
     } catch (err) {
