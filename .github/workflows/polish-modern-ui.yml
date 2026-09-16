@@ -1,0 +1,113 @@
+name: Polish Modern UI
+
+on:
+  push:
+    paths:
+      - 'trigger-modern-ui.txt'
+      - '.github/workflows/polish-modern-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Apply modern transparent UI
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+
+          if '// ARAD_MODERN_GLASS_V1' not in s:
+              # Softer translucent app bars for a modern messenger feel.
+              s = s.replace(
+                  "backgroundColor: const Color(0xE6F8FAFD),",
+                  "backgroundColor: const Color(0xB8F8FAFD), // ARAD_MODERN_GLASS_V1",
+                  1,
+              )
+              s = s.replace(
+                  "backgroundColor: const Color(0xE6101214),",
+                  "backgroundColor: const Color(0xB8101214), // ARAD_MODERN_GLASS_V1",
+                  1,
+              )
+
+              # Add translucent bottom navigation without changing navigation behavior.
+              nav = """navigationBarTheme: NavigationBarThemeData(
+          elevation: 0,
+          backgroundColor: Colors.white.withValues(alpha: 0.82),
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: Color(0xFF229ED9).withValues(alpha: 0.16),
+          labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.w700)),
+        ),"""
+              marker = "        floatingActionButtonTheme: const FloatingActionButtonThemeData("
+              if marker in s and "backgroundColor: Colors.white.withValues(alpha: 0.82)" not in s:
+                  s = s.replace(marker, nav + "\n" + marker, 1)
+
+              nav_dark = """navigationBarTheme: NavigationBarThemeData(
+          elevation: 0,
+          backgroundColor: const Color(0xD914171A),
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: Color(0xFF7DD3FC).withValues(alpha: 0.18),
+          labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.w700)),
+        ),"""
+              marker_dark = "        floatingActionButtonTheme: const FloatingActionButtonThemeData("
+              # Put dark navigation styling after the dark input theme by targeting its second occurrence.
+              pos = s.find(marker_dark)
+              pos2 = s.find(marker_dark, pos + 1) if pos >= 0 else -1
+              if pos2 >= 0 and "backgroundColor: const Color(0xD914171A)" not in s:
+                  s = s[:pos2] + nav_dark + "\n" + s[pos2:]
+
+              # Give the home surface a subtle depth while keeping content readable.
+              old = """    return Scaffold(
+      body: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree("""
+              new = """    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withValues(alpha: 0.96),
+            ],
+          ),
+        ),
+        child: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree("""
+              if old in s:
+                  s = s.replace(old, new, 1)
+                  s = s.replace("""      ))),
+      floatingActionButton:""", """        ))),
+      ),
+      floatingActionButton:""", 1)
+
+              p.write_text(s, encoding='utf-8')
+              print('modern UI applied')
+          else:
+              print('modern UI already applied')
+
+      - name: Verify
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-infos
+
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/main.dart
+          git diff --cached --quiet || git commit -m 'feat: polish modern transparent messenger UI'
+          git push
