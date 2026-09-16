@@ -35,6 +35,20 @@ class _ProfilePageState extends State<ProfilePage> {
     }catch(e){if(mounted)showMsg(context,'ذخیره پروفایل ناموفق بود: $e');}
     finally{if(mounted)setState(()=>saving=false);}
   }
+  Future<void> requestVerification() async {
+    final uid=supabase.auth.currentUser?.id; if(uid==null)return;
+    try{
+      final existing=await supabase.from('verification_requests').select('status').eq('user_id',uid).maybeSingle();
+      if(existing!=null){showMsg(context, existing['status']=='pending'?'درخواست شما در حال بررسی است.':'برای این حساب قبلاً درخواست ثبت شده است.');return;}
+      await supabase.from('verification_requests').insert({'user_id':uid});
+      if(mounted)showMsg(context,'درخواست تیک آبی ارسال شد.');
+    }catch(e){if(mounted)showMsg(context,'ارسال درخواست ناموفق بود: $e');}
+  }
+  Future<void> openOwnerVerification() async {
+    if(profile['is_owner']!=true)return;
+    await Navigator.push(context,MaterialPageRoute(builder:(_)=>const VerificationAdminPage()));
+    if(mounted)await loadProfile();
+  }
   Future<void> editProfile() async {
     name.text='${profile['display_name']??''}'; username.text='${profile['username']??''}'; bio.text='${profile['bio']??''}';
     await showModalBottomSheet<void>(context:context,isScrollControlled:true,backgroundColor:Colors.transparent,builder:(c)=>ClipRRect(
@@ -180,5 +194,36 @@ class _ProfilePageState extends State<ProfilePage> {
         ListTile(leading:CircleAvatar(backgroundColor:s.errorContainer,child:Icon(Icons.logout_rounded,color:s.error)),title:const Text('خروج از حساب',style:TextStyle(fontWeight:FontWeight.w800)),onTap:switchAccount),
       ])),
     ]);
+  }
+}
+
+class VerificationAdminPage extends StatefulWidget {
+  const VerificationAdminPage({super.key});
+  @override State<VerificationAdminPage> createState()=>_VerificationAdminPageState();
+}
+class _VerificationAdminPageState extends State<VerificationAdminPage>{
+  List<Map<String,dynamic>> rows=[]; bool loading=true;
+  Future<void> load()async{
+    try{
+      final data=await supabase.from('verification_requests').select('id,user_id,status,created_at').order('created_at',ascending:false);
+      final list=List<Map<String,dynamic>>.from(data);
+      for(final r in list){final p=await supabase.from('profiles').select('display_name,username,avatar_url,is_verified').eq('id',r['user_id']).maybeSingle();r['profile']=p??{};}
+      if(mounted)setState(()=>rows=list);
+    }catch(e){if(mounted)showMsg(context,'خطا: $e');} finally{if(mounted)setState(()=>loading=false);}
+  }
+  Future<void> decide(Map<String,dynamic> r,bool approve)async{
+    try{await supabase.from('verification_requests').update({'status':approve?'approved':'rejected'}).eq('id',r['id']);await supabase.from('profiles').update({'is_verified':approve}).eq('id',r['user_id']);await load();}
+    catch(e){if(mounted)showMsg(context,'عملیات ناموفق بود: $e');}
+  }
+  @override void initState(){super.initState();load();}
+  @override Widget build(BuildContext context){
+    final s=Theme.of(context).colorScheme;
+    return Scaffold(appBar:AppBar(title:const Text('درخواست‌های تیک آبی')),body:loading?const Center(child:CircularProgressIndicator()):ListView.separated(
+      padding:const EdgeInsets.all(12),itemCount:rows.length,separatorBuilder:(_,__)=>const SizedBox(height:8),
+      itemBuilder:(_,i){final r=rows[i];final p=Map<String,dynamic>.from(r['profile']??{});return Card(child:ListTile(
+        leading:avatar(p),title:Text((p['display_name']??p['username']??'کاربر').toString(),style:const TextStyle(fontWeight:FontWeight.w800)),
+        subtitle:Text('@'+(p['username']??'').toString()+'\nوضعیت: '+(r['status']??'pending').toString()),isThreeLine:true,
+        trailing:Wrap(children:[IconButton(tooltip:'تأیید',onPressed:r['status']=='approved'?null:()=>decide(r,true),icon:Icon(Icons.verified_rounded,color:s.primary)),IconButton(tooltip:'رد',onPressed:r['status']=='rejected'?null:()=>decide(r,false),icon:Icon(Icons.close_rounded,color:s.error))]),
+      ));}));
   }
 }
