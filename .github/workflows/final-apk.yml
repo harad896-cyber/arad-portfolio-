@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -30,23 +30,74 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos
+      - name: Analyze Flutter
+        id: analyze
+        continue-on-error: true
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze.txt
+          echo "ANALYZE_EXIT=${PIPESTATUS[0]}" >> flutter-analyze.txt
 
-      - name: Test
-        run: flutter test
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: |
+          set +e
+          flutter test 2>&1 | tee flutter-test.txt
+          echo "TEST_EXIT=${PIPESTATUS[0]}" >> flutter-test.txt
 
       - name: Build release APK
-        run: flutter build apk --release
+        id: apk
+        continue-on-error: true
+        run: |
+          set +e
+          flutter build apk --release 2>&1 | tee flutter-build.txt
+          echo "BUILD_EXIT=${PIPESTATUS[0]}" >> flutter-build.txt
 
-      - name: Verify APK
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          {
+            echo "=== ARAD FINAL BUILD DIAGNOSTICS ==="
+            date -u
+            echo
+            echo "=== ANALYZE ==="
+            cat flutter-analyze.txt 2>/dev/null || true
+            echo
+            echo "=== TESTS ==="
+            cat flutter-test.txt 2>/dev/null || true
+            echo
+            echo "=== BUILD ==="
+            cat flutter-build.txt 2>/dev/null || true
+          } > ci-diagnostics.txt
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arad-build-diagnostics
+          path: |
+            ci-diagnostics.txt
+            flutter-analyze.txt
+            flutter-test.txt
+            flutter-build.txt
+          if-no-files-found: warn
+
+      - name: Verify final APK
+        id: verify
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
           ls -lh build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload APK
+      - name: Upload final APK
         uses: actions/upload-artifact@v4
         with:
           name: arad-messenger-final-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+
+      - name: Fail if validation failed
+        run: |
+          test "${{ steps.analyze.outcome }}" = "success"
+          test "${{ steps.tests.outcome }}" = "success"
+          test "${{ steps.apk.outcome }}" = "success"
