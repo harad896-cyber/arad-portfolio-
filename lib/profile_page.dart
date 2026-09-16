@@ -102,6 +102,16 @@ class _ProfilePageState extends State<ProfilePage> {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return;
     try {
+      final p = await supabase.from('profiles').select('joined_at,is_verified').eq('id', uid).maybeSingle();
+      final joined = DateTime.tryParse(p?['joined_at']?.toString() ?? '');
+      if (joined == null || DateTime.now().toUtc().isBefore(joined.toUtc().add(const Duration(days: 60)))) {
+        showMsg(context, 'برای درخواست تیک آبی باید حداقل دو ماه از عضویت این حساب گذشته باشد.');
+        return;
+      }
+      if (p?['is_verified'] == true) {
+        showMsg(context, 'این حساب قبلاً تیک آبی دارد.');
+        return;
+      }
       final existing = await supabase.from('verification_requests').select('status').eq('user_id', uid).maybeSingle();
       if (existing != null) {
         showMsg(context, existing['status'] == 'pending' ? 'درخواست شما در حال بررسی است.' : 'برای این حساب قبلاً درخواست ثبت شده است.');
