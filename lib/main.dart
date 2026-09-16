@@ -1181,6 +1181,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   void initState() { super.initState(); load(); }
   @override
+  void dispose() { chatSearch.dispose(); super.dispose(); }
+  @override
   void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
 
   @override
@@ -1228,11 +1230,18 @@ class _HomePageState extends State<HomePage> {
   bool loading = true;
   int selectedFilter = 0;
   int navIndex = 0;
+  final TextEditingController chatSearch = TextEditingController();
+  String chatQuery = '';
 
   List<Map<String, dynamic>> get visibleChats {
-    if (selectedFilter == 0) return chats;
-    final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => c['type'].toString() == type).toList();
+    final type = selectedFilter == 0 ? null : selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
+    return chats.where((c) {
+      final matchesType = type == null || c['type'].toString() == type;
+      final q = chatQuery.trim().toLowerCase();
+      final title = (c['title'] ?? '').toString().toLowerCase();
+      final last = (c['last_message'] ?? '').toString().toLowerCase();
+      return matchesType && (q.isEmpty || title.contains(q) || last.contains(q));
+    }).toList();
   }
 
   Future<void> load() async {
@@ -1294,6 +1303,19 @@ class _HomePageState extends State<HomePage> {
             const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
             IconButton.filledTonal(onPressed: createDirect, icon: const Icon(Icons.edit_rounded)),
           ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+          child: TextField(
+            controller: chatSearch,
+            onChanged: (v) => setState(() => chatQuery = v),
+            textDirection: TextDirection.rtl,
+            decoration: const InputDecoration(
+              hintText: 'جستجوی گفتگو...',
+              prefixIcon: Icon(Icons.search_rounded),
+              isDense: true,
+            ),
+          ),
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -1439,9 +1461,19 @@ class _HomePageState extends State<HomePage> {
     appBar: AppBar(title: const Text('تنظیمات')),
     body: ListView(padding: const EdgeInsets.all(14), children: [
       Card(child: Column(children: [
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.palette_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('ظاهر و رنگ', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('رنگ اصلی و حالت تاریک'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات صفحات', icon: Icons.palette_rounded)))),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.manage_accounts_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('حساب کاربری', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('پروفایل، حساب‌ها و امنیت'), onTap: () => setState(() => navIndex = 3)),
         const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('اعلان‌ها و نمایش پیام‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.lock_outline_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('حریم خصوصی'), subtitle: const Text('کنترل نمایش و دسترسی‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'حریم خصوصی', icon: Icons.lock_outline_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('اعلان‌ها'), subtitle: const Text('اعلان پیام‌ها و گفتگوها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'اعلان‌ها', icon: Icons.notifications_none_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.storage_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('ذخیره‌سازی'), subtitle: const Text('مدیریت فایل‌ها و رسانه‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'ذخیره‌سازی', icon: Icons.storage_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.palette_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('ظاهر برنامه'), subtitle: const Text('رنگ اصلی و حالت تاریک'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'ظاهر برنامه', icon: Icons.palette_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.language_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('زبان'), subtitle: Text(aradLanguageController.locale.languageCode), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'زبان', icon: Icons.language_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('نمایش پیام‌ها و رفتار چت'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()))),
       ])),
