@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -259,6 +260,140 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ])),
       ],
+    );
+  }
+}
+
+
+class ProfileOptionPage extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  const ProfileOptionPage({super.key, required this.title, required this.icon});
+  @override
+  State<ProfileOptionPage> createState() => _ProfileOptionPageState();
+}
+
+class _ProfileOptionPageState extends State<ProfileOptionPage> {
+  bool enabled = true;
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title)),
+      body: ListView(
+        padding: const EdgeInsets.all(14),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: s.surface.withValues(alpha: .72),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: s.onSurface.withValues(alpha: .08)),
+                ),
+                child: SwitchListTile(
+                  secondary: CircleAvatar(
+                    backgroundColor: s.primaryContainer,
+                    child: Icon(widget.icon, color: s.primary),
+                  ),
+                  title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: const Text('تنظیم این بخش برای همین حساب ذخیره می‌شود.'),
+                  value: enabled,
+                  onChanged: (v) => setState(() => enabled = v),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class VerificationAdminPage extends StatefulWidget {
+  const VerificationAdminPage({super.key});
+  @override
+  State<VerificationAdminPage> createState() => _VerificationAdminPageState();
+}
+
+class _VerificationAdminPageState extends State<VerificationAdminPage> {
+  List<Map<String, dynamic>> rows = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      final data = await supabase.from('verification_requests').select('id,user_id,status,created_at').order('created_at', ascending: false);
+      final list = List<Map<String, dynamic>>.from(data);
+      for (final r in list) {
+        final p = await supabase.from('profiles').select('display_name,username,avatar_url,is_verified').eq('id', r['user_id']).maybeSingle();
+        r['profile'] = p ?? {};
+      }
+      if (mounted) setState(() { rows = list; loading = false; });
+    } catch (e) {
+      if (mounted) {
+        setState(() => loading = false);
+        showMsg(context, 'بارگذاری درخواست‌ها ناموفق بود: $e');
+      }
+    }
+  }
+
+  Future<void> decide(Map<String, dynamic> row, bool approve) async {
+    try {
+      await supabase.from('verification_requests').update({'status': approve ? 'approved' : 'rejected'}).eq('id', row['id']);
+      await supabase.from('profiles').update({'is_verified': approve}).eq('id', row['user_id']);
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'عملیات ناموفق بود: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('درخواست‌های تیک آبی')),
+      body: rows.isEmpty
+          ? const Center(child: Text('درخواستی وجود ندارد.'))
+          : ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: rows.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, i) {
+                final row = rows[i];
+                final p = Map<String, dynamic>.from(row['profile'] ?? {});
+                final status = '${row['status'] ?? 'pending'}';
+                return Card(
+                  child: ListTile(
+                    leading: avatar(p),
+                    title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text('وضعیت: $status'),
+                    trailing: Wrap(
+                      children: [
+                        IconButton(
+                          tooltip: 'تأیید',
+                          onPressed: status == 'approved' ? null : () => decide(row, true),
+                          icon: Icon(Icons.verified_rounded, color: s.primary),
+                        ),
+                        IconButton(
+                          tooltip: 'رد',
+                          onPressed: status == 'rejected' ? null : () => decide(row, false),
+                          icon: Icon(Icons.close_rounded, color: s.error),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
