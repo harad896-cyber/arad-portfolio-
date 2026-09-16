@@ -290,6 +290,34 @@ String normalizeOtpDigits(String value) {
       .replaceAll('٩', '9');
 }
 
+class ChatFoldersPage extends StatefulWidget {
+  const ChatFoldersPage({super.key});
+  @override State<ChatFoldersPage> createState()=>_ChatFoldersPageState();
+}
+class _ChatFoldersPageState extends State<ChatFoldersPage> {
+  final folders=<String>['همه گفتگوها','کار','خانواده','ناخوانده‌ها'];
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:ListView.builder(padding:const EdgeInsets.all(14),itemCount:folders.length,itemBuilder:(_,i)=>Card(child:ListTile(leading:Icon(i==0?Icons.chat_bubble_outline_rounded:Icons.folder_rounded),title:Text(folders[i])))),floatingActionButton:FloatingActionButton(onPressed:()=>showDialog(context:context,builder:(_){final c=TextEditingController();return AlertDialog(title:const Text('پوشه جدید'),content:TextField(controller:c,decoration:const InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('لغو')),FilledButton(onPressed:(){if(c.text.trim().isNotEmpty)setState(()=>folders.add(c.text.trim()));Navigator.pop(context);},child:const Text('افزودن'))];}),child:const Icon(Icons.add_rounded)));
+}
+class DataAndPermissionsPage extends StatefulWidget {
+  const DataAndPermissionsPage({super.key});
+  @override State<DataAndPermissionsPage> createState()=>_DataAndPermissionsPageState();
+}
+class _DataAndPermissionsPageState extends State<DataAndPermissionsPage> {
+  bool lowData=false,wifiOnly=false,highContrast=false; double fontScale=1;
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('داده و دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    Card(child:SwitchListTile(title:const Text('حالت کم‌مصرف'),value:lowData,onChanged:(v)=>setState(()=>lowData=v))),
+    Card(child:SwitchListTile(title:const Text('دانلود خودکار فقط با وای‌فای'),value:wifiOnly,onChanged:(v)=>setState(()=>wifiOnly=v))),
+    Card(child:SwitchListTile(title:const Text('کنتراست بالا'),value:highContrast,onChanged:(v)=>setState(()=>highContrast=v))),
+    Card(child:ListTile(title:const Text('اندازه فونت'),subtitle:Text('${(fontScale*100).round()}%'),trailing:SizedBox(width:170,child:Slider(value:fontScale,min:.8,max:1.4,onChanged:(v)=>setState(()=>fontScale=v))))),
+    const ListTile(title:Text('اعلان‌ها و لرزش'),subtitle:Text('پیام، تماس و گروه')),
+    const ListTile(title:Text('دستگاه‌های متصل'),subtitle:Text('مدیریت ورود هم‌زمان')),
+  ]));
+}
+class PermissionInfoPage extends StatelessWidget {
+  final String title,reason; final IconData icon;
+  const PermissionInfoPage({super.key,required this.title,required this.reason,required this.icon});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(title)),body:Padding(padding:const EdgeInsets.all(20),child:Card(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:52,color:Theme.of(context).colorScheme.primary),const SizedBox(height:16),Text(reason,textAlign:TextAlign.center),const SizedBox(height:20),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ادامه'))])))));
+}
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   final url = profile['avatar_url']?.toString() ?? '';
   return CircleAvatar(
