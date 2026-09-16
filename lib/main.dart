@@ -1546,6 +1546,8 @@ class _HomePageState extends State<HomePage> {
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.language_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('زبان'), subtitle: Text(aradLanguageController.locale.languageCode), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'زبان', icon: Icons.language_rounded)))),
         const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.call_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تماس‌ها'), subtitle: const Text('تماس صوتی و تصویری'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CallsPage()))),
+        const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('نمایش پیام‌ها و رفتار چت'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()))),
@@ -2021,6 +2023,58 @@ class _GroupManagementPageState extends State<GroupManagementPage>{
       ),
     ]),
   );
+}
+
+
+class CallsPage extends StatefulWidget {
+  const CallsPage({super.key});
+  @override State<CallsPage> createState() => _CallsPageState();
+}
+class _CallsPageState extends State<CallsPage> {
+  bool video = false, muted = false, speaker = true;
+  @override
+  Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('تماس‌ها')),
+      body: Stack(children: [
+        Positioned.fill(child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topCenter,end: Alignment.bottomCenter,
+              colors: [c.primary.withValues(alpha:.28), c.surface, c.surface]),
+          ),
+        )),
+        Center(child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              margin: const EdgeInsets.all(20), padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(color:c.surface.withValues(alpha:.60),borderRadius:BorderRadius.circular(32),border:Border.all(color:c.onSurface.withValues(alpha:.08))),
+              child: Column(mainAxisSize:MainAxisSize.min,children:[
+                const CircleAvatar(radius:54,child:Icon(Icons.person_rounded,size:48)),
+                const SizedBox(height:16),
+                const Text('تماس صوتی / تصویری',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+                const SizedBox(height:8),
+                Text(video ? 'تماس تصویری آماده است' : 'تماس صوتی آماده است',style:TextStyle(color:c.onSurface.withValues(alpha:.65))),
+                const SizedBox(height:28),
+                Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                  _glassCallButton(Icons.mic_off_rounded, muted, () => setState(()=>muted=!muted)),
+                  const SizedBox(width:14),
+                  _glassCallButton(video?Icons.videocam_rounded:Icons.call_rounded, false, () => setState(()=>video=!video)),
+                  const SizedBox(width:14),
+                  _glassCallButton(Icons.volume_up_rounded, speaker, () => setState(()=>speaker=!speaker)),
+                ]),
+              ]),
+            ),
+          ),
+        )),
+      ]),
+    );
+  }
+  Widget _glassCallButton(IconData icon,bool active,VoidCallback tap) {
+    final c=Theme.of(context).colorScheme;
+    return Material(color:c.surface.withValues(alpha:.72),shape:const CircleBorder(),child:InkWell(onTap:tap,customBorder:const CircleBorder(),child:Padding(padding:const EdgeInsets.all(18),child:Icon(icon,color:active?c.primary:c.onSurface))));
+  }
 }
 
 class SavedMessagesPage extends StatefulWidget {
