@@ -54,20 +54,21 @@ a = s.find('class ChatPage extends StatefulWidget {')
 b = s.find('class ProfilePage extends StatefulWidget {', a)
 if a >= 0 and b > a:
     chat = s[a:b]
-    # Remove every declaration form, including inferred generic literals and
-    # declarations sharing a line with another state field.
+    # Remove every reaction field declaration, including inline declarations
+    # emitted by different patch generations.
     chat = re.sub(
         r'(?:(?:final|late|var)\s+)?(?:Map\s*<[^;=]+>\s+)?reactions\s*=\s*(?:<[^;=]+>\s*)?\{\}\s*;\s*',
         '',
         chat,
     )
-    if 'Map<String, List<String>> reactions = {};' not in chat:
-        anchor = 'bool sending = false;'
-        if anchor in chat:
-            chat = chat.replace(anchor, anchor + '\n  Map<String, List<String>> reactions = {};', 1)
+    # One deliberately flexible container type supports both legacy reaction
+    # rows ({reaction,user_id,...}) and the newer emoji-only reaction list.
+    anchor = 'bool sending = false;'
+    if anchor in chat:
+        chat = chat.replace(anchor, anchor + '\n  Map<String, List<dynamic>> reactions = {};', 1)
     s = s[:a] + chat + s[b:]
 
-# Wrap has no padding named argument.
+# Remove invalid Wrap(padding: ...) arguments.
 s = re.sub(r'Wrap\(\s*padding\s*:\s*(?:const\s+)?EdgeInsets\.[^,\n]+,\s*', 'Wrap(', s)
 
 p.write_text(s, encoding='utf-8')
