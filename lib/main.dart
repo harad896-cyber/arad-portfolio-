@@ -2015,6 +2015,7 @@ class _GroupManagementPageState extends State<GroupManagementPage>{
           )),
         ]),
       )),
+      ),
     ]),
   );
 }
