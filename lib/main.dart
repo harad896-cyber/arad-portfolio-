@@ -1772,6 +1772,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       title:Text(titles[i],style:TextStyle(fontWeight:read[i]?FontWeight.w500:FontWeight.w900)),
       subtitle:Text(read[i]?'خوانده شده':'جدید'),
       onTap:()=>setState(()=>read[i]=true)))));
+}
 
 class SharedMediaPage extends StatelessWidget {
   const SharedMediaPage({super.key});
