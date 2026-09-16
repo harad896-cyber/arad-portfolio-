@@ -2171,6 +2171,12 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at');
       final loaded = List<Map<String, dynamic>>.from(rows);
+      final uid = supabase.auth.currentUser?.id;
+      if (uid != null && loaded.isNotEmpty) {
+        final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
+        final hidden = {for (final r in List<Map<String, dynamic>>.from(deletedRows)) '${r['message_id']}'};
+        loaded.removeWhere((m) => hidden.contains('${m['id']}'));
+      }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet().toList();
       if (senderIds.isNotEmpty) {
         final people = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', senderIds);
