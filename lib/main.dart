@@ -2046,9 +2046,7 @@ class _ChatPageState extends State<ChatPage> {
           attachments = loadedAttachments;
           loading = false;
         });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_messagesScroll.hasClients) _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
-        });
+        // Keep chat ordered from top to bottom; do not force the list back to the bottom.
       }
       await markRead();
     } catch (e) {
