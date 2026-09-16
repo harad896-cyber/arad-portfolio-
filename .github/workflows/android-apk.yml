@@ -143,14 +143,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "APK files produced by Gradle:"
-          find android -type f -name '*.apk' -size +1c -print -exec ls -lh {} \; || true
-          APK="$(find android -type f -name 'app-release.apk' -size +1c | head -n 1)"
-          if [ -z "$APK" ]; then
-            APK="$(find android -type f -name '*.apk' -size +1c | head -n 1)"
+          echo "Checking Flutter APK output..."
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          if [ ! -s "$APK" ]; then
+            echo "Expected Flutter APK not found: $APK"
+            echo "Searching all generated APK files..."
+            find . -type f -name '*.apk' -size +1c -print -exec ls -lh {} \; || true
+            APK="$(find . -type f -name '*.apk' -size +1c -not -path './.git/*' | head -n 1)"
           fi
-          if [ -z "$APK" ]; then
-            echo "ERROR: Gradle reported success but no non-empty APK file was found under android."
+          if [ -z "$APK" ] || [ ! -s "$APK" ]; then
+            echo "ERROR: No non-empty APK was produced."
             exit 1
           fi
           mkdir -p build/app/outputs/flutter-apk
