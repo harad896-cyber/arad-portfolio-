@@ -2653,6 +2653,29 @@ class _ProfilePageState extends State<ProfilePage> {
     load();
   }
 
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('خروج از حساب'),
+        content: const Text('آیا می‌خواهید از این حساب خارج شوید؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('خروج')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await supabase.auth.signOut();
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } on AuthException catch (err) {
+      if (mounted) showMsg(context, 'خروج ناموفق بود: ' + err.message);
+    } catch (err) {
+      if (mounted) showMsg(context, 'خروج ناموفق بود: ' + err.toString());
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -2695,7 +2718,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ListTile(leading: const Icon(Icons.support_agent_outlined), title: const Text('پشتیبانی'), subtitle: const Text('راهنمایی و ارتباط با پشتیبانی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'پشتیبانی', icon: Icons.support_agent_outlined)))),
           const SizedBox(height: 12),
 
-          FilledButton.tonal(onPressed: () => supabase.auth.signOut(), child: const Text('خروج')),
+          FilledButton.tonal(
+            onPressed: _logout,
+            child: const Text('خروج'),
+          ),
         ],
       ),
     );
