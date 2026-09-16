@@ -222,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
               if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
             ]),
-            if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
+            if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)), IconButton(tooltip: 'کپی آیدی', icon: const Icon(Icons.copy_rounded, size: 18), onPressed: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); }),
             const SizedBox(height: 9),
             Text(b.isEmpty ? 'هنوز بیویی ثبت نشده است.' : b, textAlign: TextAlign.center, style: TextStyle(color: s.onSurfaceVariant, height: 1.4)),
             const SizedBox(height: 16),
@@ -275,7 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 
-class ProfileOptionPage extends StatefulWidget {
+$newClass$marker extends StatefulWidget {
   final String title;
   final IconData icon;
   const ProfileOptionPage({super.key, required this.title, required this.icon});
