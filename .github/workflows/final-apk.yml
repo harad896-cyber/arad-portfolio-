@@ -27,6 +27,13 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore Android platform
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --org com.arad --project-name arad_messenger .
+          fi
+          test -f android/app/src/main/AndroidManifest.xml
+
       - name: Install dependencies
         run: flutter pub get
 
