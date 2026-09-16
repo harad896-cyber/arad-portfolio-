@@ -15,6 +15,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -24,6 +25,13 @@ jobs:
           flutter-version: '3.35.0'
           channel: stable
           cache: true
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: ~/.gradle/caches
+          key: gradle-${{ runner.os }}-${{ hashFiles('pubspec.lock', 'android/**/build.gradle*', 'android/**/settings.gradle*') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
       - name: Regenerate clean Android project
         run: |
           rm -rf android
@@ -124,6 +132,11 @@ jobs:
               s = p.read_text(encoding='utf-8')
               s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion(24)')
               s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
+              # Modern Android phones are arm64; limiting the release artifact
+              # to arm64 avoids unnecessary x86/32-bit native compilation.
+              marker = '        ndk {\n            abiFilters += listOf("arm64-v8a")\n        }\n'
+              if marker not in s and 'ndk {' not in s:
+                  s = s.replace('    defaultConfig {\n', '    defaultConfig {\n' + marker, 1)
               p.write_text(s, encoding='utf-8')
       - name: Build release APK with Gradle
         working-directory: android
