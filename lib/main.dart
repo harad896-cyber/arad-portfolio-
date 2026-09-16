@@ -40,9 +40,32 @@ class LanguageController extends ChangeNotifier {
 class AppThemeController extends ChangeNotifier {
   bool dark = false;
   int seed = 0xFF4F46E5;
-  Future<void> load() async { final p = await SharedPreferences.getInstance(); dark = p.getBool('dark_mode') ?? false; seed = p.getInt('accent_seed') ?? 0xFF4F46E5; notifyListeners(); }
-  Future<void> setDark(bool value) async { dark = value; final p = await SharedPreferences.getInstance(); await p.setBool('dark_mode', value); notifyListeners(); }
-  Future<void> setSeed(int value) async { seed = value; final p = await SharedPreferences.getInstance(); await p.setInt('accent_seed', value); notifyListeners(); }
+
+  String get _scope {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    return uid == null ? 'guest' : uid;
+  }
+
+  Future<void> load() async => loadForUser();
+  Future<void> loadForUser() async {
+    final p = await SharedPreferences.getInstance();
+    final key = _scope;
+    dark = p.getBool('dark_mode_$key') ?? false;
+    seed = p.getInt('accent_seed_$key') ?? 0xFF4F46E5;
+    notifyListeners();
+  }
+  Future<void> setDark(bool value) async {
+    dark = value;
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('dark_mode_$_scope', value);
+    notifyListeners();
+  }
+  Future<void> setSeed(int value) async {
+    seed = value;
+    final p = await SharedPreferences.getInstance();
+    await p.setInt('accent_seed_$_scope', value);
+    notifyListeners();
+  }
 }
 final appTheme = AppThemeController();
 
@@ -857,6 +880,8 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       }
 
       await _rememberAccount(widget.email);
+      // Theme is private to the signed-in account, not shared between accounts.
+      await appTheme.loadForUser();
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
