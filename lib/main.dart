@@ -269,6 +269,30 @@ Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   );
 }
 
+const _accountEmailsKey = 'arad_account_emails';
+
+Future<List<String>> _savedAccountEmails() async {
+  final p = await SharedPreferences.getInstance();
+  return p.getStringList(_accountEmailsKey) ?? <String>[];
+}
+
+Future<void> _rememberAccount(String email) async {
+  final normalized = email.trim().toLowerCase();
+  if (normalized.isEmpty) return;
+  final p = await SharedPreferences.getInstance();
+  final accounts = p.getStringList(_accountEmailsKey) ?? <String>[];
+  accounts.removeWhere((e) => e.toLowerCase() == normalized);
+  accounts.insert(0, normalized);
+  await p.setStringList(_accountEmailsKey, accounts.take(3).toList());
+}
+
+Future<void> _removeSavedAccount(String email) async {
+  final p = await SharedPreferences.getInstance();
+  final accounts = p.getStringList(_accountEmailsKey) ?? <String>[];
+  accounts.removeWhere((e) => e.toLowerCase() == email.toLowerCase());
+  await p.setStringList(_accountEmailsKey, accounts);
+}
+
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -829,6 +853,8 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
           throw const AuthException('این ایمیل دسترسی مالک ندارد.');
         }
       }
+
+      await _rememberAccount(widget.email);
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -2177,6 +2203,194 @@ class _ChatPageState extends State<ChatPage> {
 
 
 
+class AccountSwitcherPage extends StatefulWidget {
+  const AccountSwitcherPage({super.key});
+
+  @override
+  State<AccountSwitcherPage> createState() => _AccountSwitcherPageState();
+}
+
+class _AccountSwitcherPageState extends State<AccountSwitcherPage> {
+  List<String> accounts = <String>[];
+  bool loading = true;
+  bool busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final list = await _savedAccountEmails();
+    final current = supabase.auth.currentUser?.email?.toLowerCase();
+    if (current != null && current.isNotEmpty) {
+      await _rememberAccount(current);
+    }
+    if (!mounted) return;
+    setState(() {
+      accounts = list.contains(current) ? list : ([if (current != null) current, ...list]);
+      accounts = accounts.take(3).toList();
+      loading = false;
+    });
+  }
+
+  Future<void> _switchTo(String email) async {
+    final current = supabase.auth.currentUser?.email?.toLowerCase();
+    if (current == email.toLowerCase()) {
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      await supabase.auth.signOut();
+      await supabase.auth.signInWithOtp(email: email.toLowerCase(), shouldCreateUser: false);
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => EmailVerificationPage(
+          email: email.toLowerCase(),
+          verificationType: OtpType.email,
+          allowCreateUser: false,
+        )),
+        (route) => false,
+      );
+    } on AuthException catch (e) {
+      if (mounted) showMsg(context, 'تغییر حساب ناموفق بود: ${e.message}');
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر حساب ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _addAccount() async {
+    if (accounts.length >= 3) {
+      showMsg(context, 'حداکثر ۳ حساب می‌توانید روی این دستگاه داشته باشید.');
+      return;
+    }
+    final controller = TextEditingController();
+    final email = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('افزودن حساب'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.emailAddress,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'ایمیل حساب جدید',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('ادامه')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (email == null || email.trim().isEmpty) return;
+    final normalized = email.trim().toLowerCase();
+    if (accounts.any((e) => e.toLowerCase() == normalized)) {
+      showMsg(context, 'این حساب قبلاً اضافه شده است.');
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      await supabase.auth.signOut();
+      await supabase.auth.signInWithOtp(email: normalized, shouldCreateUser: true);
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => EmailVerificationPage(
+          email: normalized,
+          verificationType: OtpType.email,
+          allowCreateUser: true,
+        )),
+        (route) => false,
+      );
+    } on AuthException catch (e) {
+      if (mounted) showMsg(context, 'ارسال کد حساب جدید ناموفق بود: ${e.message}');
+    } catch (e) {
+      if (mounted) showMsg(context, 'افزودن حساب ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _remove(String email) async {
+    final current = supabase.auth.currentUser?.email?.toLowerCase();
+    if (current == email.toLowerCase()) {
+      showMsg(context, 'حساب فعال را نمی‌توان از لیست حذف کرد.');
+      return;
+    }
+    await _removeSavedAccount(email);
+    await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = supabase.auth.currentUser?.email?.toLowerCase();
+    return Scaffold(
+      appBar: AppBar(title: const Text('تغییر حساب')),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Row(children: [
+                      CircleAvatar(radius: 27, child: const Icon(Icons.manage_accounts_rounded)),
+                      const SizedBox(width: 14),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('حساب‌های من', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 4),
+                        Text('${accounts.length} از ۳ حساب فعال روی این دستگاه'),
+                      ])),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...accounts.map((email) {
+                  final active = email.toLowerCase() == current;
+                  return Card(
+                    child: ListTile(
+                      leading: CircleAvatar(child: Icon(active ? Icons.check_rounded : Icons.person_outline_rounded)),
+                      title: Text(email, textDirection: TextDirection.ltr),
+                      subtitle: Text(active ? 'حساب فعلی' : 'برای ورود، کد ۶ رقمی ایمیل می‌شود.'),
+                      trailing: active
+                          ? const Icon(Icons.radio_button_checked_rounded)
+                          : PopupMenuButton<String>(
+                              onSelected: (v) { if (v == 'switch') _switchTo(email); if (v == 'remove') _remove(email); },
+                              itemBuilder: (_) => const [
+                                PopupMenuItem(value: 'switch', child: Text('تغییر به این حساب')),
+                                PopupMenuItem(value: 'remove', child: Text('حذف از این دستگاه')),
+                              ],
+                            ),
+                      onTap: active ? null : () => _switchTo(email),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: busy ? null : _addAccount,
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: Text(accounts.length >= 3 ? 'سقف ۳ حساب تکمیل است' : 'افزودن حساب جدید'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'برای امنیت، هنگام تغییر یا افزودن حساب، کد ۶ رقمی همان ایمیل درخواست می‌شود.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6), fontSize: 12),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -2228,8 +2442,17 @@ class _ProfilePageState extends State<ProfilePage> {
           Text('@${p['username'] ?? ''}'),
           const SizedBox(height: 8),
           Text('${p['bio'] ?? ''}'),
-          const SizedBox(height: 30),
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
+          Card(
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.swap_horiz_rounded)),
+              title: const Text('تغییر حساب', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: const Text('تا ۳ حساب را روی این دستگاه مدیریت و جابه‌جا کنید'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSwitcherPage())),
+            ),
+          ),
+          const SizedBox(height: 18),
           const Divider(),
           const SizedBox(height: 8),
           const Text('تنظیمات پروفایل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
