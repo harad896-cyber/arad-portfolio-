@@ -1554,6 +1554,13 @@ class _HomePageState extends State<HomePage> {
         ListTile(title: const Text('استیکر و ایموجی'), leading: const Icon(Icons.emoji_emotions_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const StickersPage()))),
         ListTile(title: const Text('امنیت پیشرفته'), leading: const Icon(Icons.security_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityPage()))),
         ListTile(title: const Text('درباره برنامه'), leading: const Icon(Icons.info_outline_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutPage()))),
+        ListTile(title: const Text('مدیریت گفتگو'),leading: const Icon(Icons.tune_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ConversationToolsPage(conversationId:'global')))),
+        ListTile(title: const Text('افزودن مخاطب و دعوت'),leading: const Icon(Icons.person_add_alt_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ContactsToolsPage()))),
+        ListTile(title: const Text('کیف پول'),leading: const Icon(Icons.account_balance_wallet_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const WalletPage()))),
+        ListTile(title: const Text('مصرف داده'),leading: const Icon(Icons.data_usage_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const DataSettingsPage()))),
+        ListTile(title: const Text('دسترسی‌پذیری'),leading: const Icon(Icons.accessibility_new_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccessibilityPage()))),
+        ListTile(title: const Text('دسترسی‌های برنامه'),leading: const Icon(Icons.verified_user_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const PermissionScreensPage()))),
+        ListTile(title: const Text('پیام‌رسانی پیشرفته'),leading: const Icon(Icons.auto_awesome_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedMessagingPage()))),
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('نمایش پیام‌ها و رفتار چت'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
         const Divider(height: 1),
@@ -2033,6 +2040,66 @@ class _GroupManagementPageState extends State<GroupManagementPage>{
 }
 
 
+
+class ConversationToolsPage extends StatefulWidget {
+  final String conversationId;
+  const ConversationToolsPage({super.key,required this.conversationId});
+  @override State<ConversationToolsPage> createState()=>_ConversationToolsPageState();
+}
+class _ConversationToolsPageState extends State<ConversationToolsPage>{
+  bool pinned=false,archived=false,muted=false;
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مدیریت گفتگو')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    Card(child:SwitchListTile(value:pinned,onChanged:(v)=>setState(()=>pinned=v),title:const Text('پین کردن گفتگو'),secondary:const Icon(Icons.push_pin_rounded))),
+    Card(child:SwitchListTile(value:archived,onChanged:(v)=>setState(()=>archived=v),title:const Text('آرشیو گفتگو'),secondary:const Icon(Icons.archive_rounded))),
+    Card(child:SwitchListTile(value:muted,onChanged:(v)=>setState(()=>muted=v),title:const Text('بی‌صدا کردن'),secondary:const Icon(Icons.notifications_off_rounded))),
+    Card(child:ListTile(title:const Text('پوشه گفتگو'),subtitle:const Text('کار / خانواده / ناخوانده‌ها'),leading:const Icon(Icons.folder_rounded),onTap:()=>showMsg(context,'پوشه انتخاب شد'))),
+    Card(child:ListTile(title:const Text('پس‌زمینه گفتگو'),leading:const Icon(Icons.wallpaper_rounded),onTap:()=>showMsg(context,'انتخاب پس‌زمینه'))),
+    Card(child:ListTile(title:const Text('حذف گفتگو'),leading:const Icon(Icons.delete_outline_rounded),onTap:()=>showMsg(context,'حذف گفتگو'))),
+  ]));
+}
+
+class ContactsToolsPage extends StatelessWidget {
+  const ContactsToolsPage({super.key});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مخاطبین')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    Card(child:ListTile(leading:const Icon(Icons.qr_code_scanner_rounded),title:const Text('اسکن QR Code'),onTap:()=>showMsg(context,'اسکن QR'))),
+    Card(child:ListTile(leading:const Icon(Icons.qr_code_rounded),title:const Text('QR کد پروفایل من'),onTap:()=>showMsg(context,'QR پروفایل'))),
+    Card(child:ListTile(leading:const Icon(Icons.share_rounded),title:const Text('دعوت دوستان'),subtitle:const Text('لینک اختصاصی دعوت'),onTap:()=>showMsg(context,'لینک دعوت آماده است'))),
+  ]));
+}
+
+class WalletPage extends StatelessWidget {
+  const WalletPage({super.key});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('کیف پول')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    const Card(child:ListTile(title:Text('موجودی'),subtitle:Text('۰'),leading:Icon(Icons.account_balance_wallet_rounded))),
+    const Card(child:ListTile(title:Text('تاریخچه تراکنش‌ها'),leading:Icon(Icons.receipt_long_rounded))),
+    Card(child:ListTile(title:const Text('انتقال وجه'),subtitle:const Text('انتقال به مخاطبین'),leading:const Icon(Icons.send_to_mobile_rounded),onTap:()=>showMsg(context,'انتقال وجه'))),
+  ]));
+}
+
+class DataSettingsPage extends StatefulWidget {const DataSettingsPage({super.key});@override State<DataSettingsPage> createState()=>_DataSettingsPageState();}
+class _DataSettingsPageState extends State<DataSettingsPage>{bool low=false,wifi=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مصرف داده')),body:ListView(padding:const EdgeInsets.all(14),children:[
+ Card(child:SwitchListTile(value:low,onChanged:(v)=>setState(()=>low=v),title:const Text('حالت کم‌مصرف'))),
+ Card(child:SwitchListTile(value:wifi,onChanged:(v)=>setState(()=>wifi=v),title:const Text('دانلود خودکار فقط با وای‌فای'))),
+]));}
+
+class AccessibilityPage extends StatefulWidget {const AccessibilityPage({super.key});@override State<AccessibilityPage> createState()=>_AccessibilityPageState();}
+class _AccessibilityPageState extends State<AccessibilityPage>{double size=1;bool contrast=false;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(14),children:[
+ Card(child:ListTile(title:const Text('اندازه متن'),subtitle:Slider(value:size,min:.8,max:1.5,divisions:7,onChanged:(v)=>setState(()=>size=v)))),
+ Card(child:SwitchListTile(value:contrast,onChanged:(v)=>setState(()=>contrast=v),title:const Text('کنتراست بالا'))),
+]));}
+
+class PermissionScreensPage extends StatelessWidget {const PermissionScreensPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌های برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[
+ const Card(child:ListTile(leading:Icon(Icons.contacts_rounded),title:Text('مخاطبین'),subtitle:Text('برای پیدا کردن دوستان لازم است.'))),
+ const Card(child:ListTile(leading:Icon(Icons.notifications_rounded),title:Text('اعلان‌ها'),subtitle:Text('برای پیام‌ها و تماس‌های جدید لازم است.'))),
+ const Card(child:ListTile(leading:Icon(Icons.camera_alt_rounded),title:Text('دوربین و میکروفون'),subtitle:Text('برای تماس، عکس و پیام صوتی لازم است.'))),
+]));}
+
+class AdvancedMessagingPage extends StatelessWidget {const AdvancedMessagingPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی پیشرفته')),body:ListView(padding:const EdgeInsets.all(14),children:[
+ const Card(child:ListTile(leading:Icon(Icons.graphic_eq_rounded),title:Text('Waveform پیام صوتی'))),
+ const Card(child:ListTile(leading:Icon(Icons.video_camera_front_rounded),title:Text('ویدیو-پیام دایره‌ای'))),
+ const Card(child:ListTile(leading:Icon(Icons.translate_rounded),title:Text('ترجمه با یک ضربه'))),
+ const Card(child:ListTile(leading:Icon(Icons.location_on_rounded),title:Text('موقعیت مکانی زنده'))),
+]));}
 
 class CallHistoryPage extends StatelessWidget {
   const CallHistoryPage({super.key});
