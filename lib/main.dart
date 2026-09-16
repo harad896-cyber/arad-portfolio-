@@ -442,7 +442,7 @@ class _LoginPageState extends State<LoginPage>{
       const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود'))),
       const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
     ])))
-  ])))));}
+  )))));}
   @override void dispose(){email.dispose();password.dispose();first.dispose();last.dispose();super.dispose();}
 }
 
@@ -451,7 +451,7 @@ class _PasswordSetupPageState extends State<PasswordSetupPage>{
  final p=TextEditingController(),c=TextEditingController();bool busy=false;
  String? err(String v)=>v.length<8||!RegExp(r'[A-Z]').hasMatch(v)||!RegExp(r'[0-9]').hasMatch(v)?'حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد لازم است':null;
  Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
- @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ساخت رمز عبور')),body:ListView(padding:const EdgeInsets.all(20),children:[const Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),const SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),const SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:const InputDecoration(labelText:'تکرار رمز عبور')),const SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]);
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ساخت رمز عبور')),body:ListView(padding:const EdgeInsets.all(20),children:[const Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),const SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),const SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:const InputDecoration(labelText:'تکرار رمز عبور')),const SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]));
  @override void dispose(){p.dispose();c.dispose();super.dispose();}
 }
 class EmailVerificationPage extends StatefulWidget {
@@ -1763,7 +1763,7 @@ class NotificationsPage extends StatefulWidget {
 }
 class _NotificationsPageState extends State<NotificationsPage> {
   Widget _actionTile(BuildContext context, IconData icon, String label, VoidCallback onTap)=>ListTile(leading:Icon(icon),title:Text(label),onTap:onTap);
-  void _showChatEmojiPicker()=>showModalBottomSheet(context:context,builder:(_)=>const SizedBox(height:260,child:Center(child:Text('😀  ❤️  👍  😂  🔥')));
+  void _showChatEmojiPicker()=>showModalBottomSheet(context:context,builder:(_)=>const SizedBox(height:260,child:Center(child:Text('😀  ❤️  👍  😂  🔥'))));
   final List<bool> read=[false,true,false];
   final List<String> titles=['پیام جدید','درخواست عضویت گروه','به‌روزرسانی برنامه'];
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(
