@@ -3,11 +3,8 @@ import re
 
 p = Path('lib/main.dart')
 s = p.read_text(encoding='utf-8')
-
-# Remove the unused import that older media patches could add.
 s = s.replace("import 'dart:io';\n", '', 1)
 
-# Keep only the first dividerTheme declaration inside ThemeData.
 def remove_duplicate_theme_property(source: str, property_name: str) -> str:
     matches = list(re.finditer(r'(?m)^        ' + re.escape(property_name) + r'\s*:', source))
     if len(matches) <= 1:
@@ -53,15 +50,14 @@ def remove_duplicate_theme_property(source: str, property_name: str) -> str:
 
 s = remove_duplicate_theme_property(s, 'dividerTheme')
 
-# The chat feature patches are intentionally layered. Normalize the final
-# ChatPage state so exactly one reactions map exists even if an earlier patch
-# inserted it on an inline line.
 a = s.find('class ChatPage extends StatefulWidget {')
 b = s.find('class ProfilePage extends StatefulWidget {', a)
 if a >= 0 and b > a:
     chat = s[a:b]
+    # Remove every declaration form, including inferred generic literals and
+    # declarations sharing a line with another state field.
     chat = re.sub(
-        r'\b(?:(?:final|late)\s+)?(?:Map\s*<\s*String\s*,\s*List\s*<\s*String\s*>\s*>|Map\s*<String\s*,\s*List<String>>|Map\s*<String,List<String>>|var)\s+reactions\s*=\s*\{\}\s*;\s*',
+        r'(?:(?:final|late|var)\s+)?(?:Map\s*<[^;=]+>\s+)?reactions\s*=\s*(?:<[^;=]+>\s*)?\{\}\s*;\s*',
         '',
         chat,
     )
@@ -71,9 +67,7 @@ if a >= 0 and b > a:
             chat = chat.replace(anchor, anchor + '\n  Map<String, List<String>> reactions = {};', 1)
     s = s[:a] + chat + s[b:]
 
-# A Wrap has no padding parameter. Some layered UI patches emitted
-# Wrap(padding: ..., ...), which stops analysis. Remove only that invalid
-# named argument; surrounding spacing/containers remain intact.
+# Wrap has no padding named argument.
 s = re.sub(r'Wrap\(\s*padding\s*:\s*(?:const\s+)?EdgeInsets\.[^,\n]+,\s*', 'Wrap(', s)
 
 p.write_text(s, encoding='utf-8')
