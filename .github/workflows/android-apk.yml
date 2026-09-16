@@ -145,7 +145,10 @@ jobs:
           set -euo pipefail
           echo "APK files produced by Gradle:"
           find android/app/build/outputs -type f -name '*.apk' -print -exec ls -lh {} \; || true
-          APK="$(find android/app/build/outputs -type f -name '*.apk' -size +1c | head -n 1)"
+          APK="$(find android/app/build/outputs -type f -name 'app-release.apk' -size +1c | head -n 1)"
+          if [ -z "$APK" ]; then
+            APK="$(find android/app/build/outputs -type f -name '*.apk' -size +1c | head -n 1)"
+          fi
           if [ -z "$APK" ]; then
             echo "ERROR: Gradle reported success but no APK file was found under android/app/build/outputs."
             exit 1
