@@ -442,7 +442,7 @@ class _LoginPageState extends State<LoginPage>{
       const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود'))),
       const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
     ])))
-  )))));}
+  ]))))));}
   @override void dispose(){email.dispose();password.dispose();first.dispose();last.dispose();super.dispose();}
 }
 
