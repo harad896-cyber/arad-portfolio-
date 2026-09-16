@@ -318,6 +318,35 @@ class PermissionInfoPage extends StatelessWidget {
   const PermissionInfoPage({super.key,required this.title,required this.reason,required this.icon});
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(title)),body:Padding(padding:const EdgeInsets.all(20),child:Card(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:52,color:Theme.of(context).colorScheme.primary),const SizedBox(height:16),Text(reason,textAlign:TextAlign.center),const SizedBox(height:20),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ادامه'))])))));
 }
+class PremiumEmptyState extends StatelessWidget {
+  final IconData icon; final String title, subtitle;
+  const PremiumEmptyState({super.key,required this.icon,required this.title,required this.subtitle});
+  @override Widget build(BuildContext context)=>Center(child:Padding(padding:const EdgeInsets.all(32),child:Column(mainAxisSize:MainAxisSize.min,children:[
+    Container(width:86,height:86,decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(28)),child:Icon(icon,size:40)),
+    const SizedBox(height:20),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+    const SizedBox(height:8),Text(subtitle,textAlign:TextAlign.center)
+  ])));
+}
+class PremiumPageRoute<T> extends PageRouteBuilder<T> {
+  PremiumPageRoute({required Widget page}):super(
+    pageBuilder:(context,a,b)=>page,
+    transitionsBuilder:(context,a,b,child)=>FadeTransition(opacity:a,child:SlideTransition(
+      position:Tween(begin:const Offset(.035,0),end:Offset.zero).animate(CurvedAnimation(parent:a,curve:Curves.easeOutCubic)),child:child)),
+    transitionDuration:const Duration(milliseconds:260),
+  );
+}
+class AppAppearancePage extends StatefulWidget {
+  const AppAppearancePage({super.key});
+  @override State<AppAppearancePage> createState()=>_AppAppearancePageState();
+}
+class _AppAppearancePageState extends State<AppAppearancePage>{
+  String mode='خودکار';
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ظاهر برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    Card(child:RadioListTile(value:'روشن',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('روشن'))),
+    Card(child:RadioListTile(value:'تاریک',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('تاریک'))),
+    Card(child:RadioListTile(value:'خودکار',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('خودکار'))),
+  ]));
+}
 class CallHistoryPage extends StatelessWidget {
   const CallHistoryPage({super.key});
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),body:ListView(children:[
