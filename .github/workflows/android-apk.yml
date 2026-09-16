@@ -119,6 +119,8 @@ jobs:
         run: python tools/message_actions_compile_fix.py
       - name: Final compile cleanup
         run: python tools/final_compile_cleanup.py
+      - name: Apply final messenger UI fixes
+        run: python tools/final_messenger_ui_fix.py
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
