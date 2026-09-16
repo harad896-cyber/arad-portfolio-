@@ -125,11 +125,14 @@ jobs:
               s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion(23)')
               s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
               p.write_text(s, encoding='utf-8')
-      - name: Build release APK
-        run: flutter build apk --release
-      - name: Verify APK exists
+      - name: Build release APK with Gradle
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Prepare verified APK
         run: |
-          test -s build/app/outputs/flutter-apk/app-release.apk
+          test -s android/app/build/outputs/apk/release/app-release.apk
+          mkdir -p build/app/outputs/flutter-apk
+          cp android/app/build/outputs/apk/release/app-release.apk build/app/outputs/flutter-apk/app-release.apk
           ls -lh build/app/outputs/flutter-apk/app-release.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
