@@ -12,20 +12,13 @@ a = s.index('class ChatPage extends StatefulWidget {')
 b = s.index('class ProfilePage extends StatefulWidget {', a)
 chat = s[a:b]
 
-# Normalize duplicate reaction state declarations introduced by earlier patches.
+# Remove every pre-existing reactions field inside ChatPage and insert exactly one.
 chat = re.sub(r'(?m)^\s*(?:final\s+|late\s+)?(?:Map\s*<\s*String\s*,\s*List\s*<\s*String\s*>\s*>|Map\s*<String,\s*List<String>>|var)\s+reactions\s*=.*;\s*$', '', chat)
-if 'Map<String, List<String>> reactions = {};' not in chat:
+chat = re.sub(r'(?m)^\s*Map<String,\s*List<String>>\s+reactions\s*=\s*\{\};\s*$', '', chat)
+if '  Map<String, List<String>> reactions = {};' not in chat:
     chat = chat.replace('  bool sending = false;', '  bool sending = false;\n  Map<String, List<String>> reactions = {};', 1)
 
-chat = chat.replace(
-    "showModalBottomSheet(context:context,showDragHandle:true,builder:(x)=>SafeArea(child:Wrap(spacing:10,runSpacing:10,padding:const EdgeInsets.all(20),children:",
-    "showModalBottomSheet(context:context,showDragHandle:true,builder:(x)=>SafeArea(child:Padding(padding:const EdgeInsets.all(20),child:Wrap(spacing:10,runSpacing:10,children:"
-)
-chat = chat.replace(
-    ").toList()))); }\n  Future<void> actions",
-    ").toList())))); }\n  Future<void> actions"
-)
-
+# Keep the existing action/helper methods intact; only replace the broken build method.
 bs = chat.index('  @override Widget build') if '  @override Widget build' in chat else chat.index('  @override\n  Widget build')
 new_build = r'''  @override
   Widget build(BuildContext context) {
@@ -79,7 +72,7 @@ new_build = r'''  @override
     );
   }
 '''
-# IMPORTANT: close _ChatPageState before the next top-level class.
+# Close _ChatPageState before ProfilePage so no nested-class analyzer errors.
 chat = chat[:bs] + new_build + '}\n'
 s = s[:a] + chat + s[b:]
 p.write_text(s, encoding='utf-8')
