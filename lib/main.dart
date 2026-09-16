@@ -1326,17 +1326,88 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget contactsView() => Scaffold(
-    backgroundColor: Colors.transparent,
-    appBar: AppBar(title: const Text('مخاطبین'), actions: [
-      IconButton(onPressed: () => showSearch(context: context, delegate: UserSearchDelegate()), icon: const Icon(Icons.search_rounded)),
-    ]),
-    body: Center(child: FilledButton.tonalIcon(
-      onPressed: () => showSearch(context: context, delegate: UserSearchDelegate()),
-      icon: const Icon(Icons.person_search_rounded),
-      label: const Text('جستجوی کاربر'),
-    )),
-  );
+  Widget contactsView() {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+        child: Row(children: [
+          const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
+          IconButton.filledTonal(onPressed: () => showSearch(context: context, delegate: ContactSearchDelegate()), icon: const Icon(Icons.person_add_alt_1_rounded)),
+        ]),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(children: [
+          Expanded(child: _glassAction(Icons.person_add_rounded, 'افزودن مخاطب', () => showSearch(context: context, delegate: ContactSearchDelegate()))),
+          const SizedBox(width: 8),
+          Expanded(child: _glassAction(Icons.groups_rounded, 'ایجاد گروه', createGroup)),
+        ]),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChannelCreatePage())).then((_) => load())),
+      ),
+      Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
+        future: _loadContacts(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          final rows = snap.data ?? [];
+          if (rows.isEmpty) return const Center(child: Text('هنوز مخاطبی اضافه نکرده‌اید.'));
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 90),
+            itemCount: rows.length,
+            separatorBuilder: (_,__) => const SizedBox(height: 6),
+            itemBuilder: (_,i) {
+              final p = rows[i];
+              final title = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
+              return Card(child: ListTile(
+                leading: avatar(p),
+                title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: Text((p['username'] == null || p['username'].toString().isEmpty) ? '' : '@' + p['username'].toString()),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: p['_conversation_id'].toString(), title: title))),
+              ));
+            },
+          );
+        },
+      )),
+    ]);
+  }
+
+  Future<List<Map<String,dynamic>>> _loadContacts() async {
+    final uid = supabase.auth.currentUser!.id;
+    final rows = await supabase.from('contacts').select('contact_id').eq('user_id', uid);
+    final ids = (rows as List).map((x) => x['contact_id']).toList();
+    if (ids.isEmpty) return [];
+    final profiles = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
+    final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+    for (final p in profiles) {
+      for (final m in (members as List)) {
+        final mm = await supabase.from('conversation_members').select('user_id').eq('conversation_id', m['conversation_id']);
+        if ((mm as List).length == 2 && mm.any((x) => x['user_id'].toString() == p['id'].toString())) {
+          p['_conversation_id'] = m['conversation_id'];
+          break;
+        }
+      }
+    }
+    return profiles.where((p) => p['_conversation_id'] != null).toList();
+  }
+
+  Widget _glassAction(IconData icon, String label, VoidCallback onTap) {
+    final s = Theme.of(context).colorScheme;
+    return ClipRRect(borderRadius: BorderRadius.circular(20), child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+      child: Material(color: s.surface.withValues(alpha: .70), child: InkWell(
+        onTap: onTap, borderRadius: BorderRadius.circular(20),
+        child: Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, color: s.primary), const SizedBox(width: 7),
+            Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+          ]),
+        ),
+      )),
+    ));
+  }
 
   Widget settingsView() => Scaffold(
     backgroundColor: Colors.transparent,
@@ -1688,6 +1759,72 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
     );
   }
 }
+
+class ContactSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
+  @override List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear))];
+  @override Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: const Icon(Icons.arrow_back));
+  @override Widget buildResults(BuildContext context) => _build(context);
+  @override Widget buildSuggestions(BuildContext context) => _build(context);
+  Widget _build(BuildContext context) => FutureBuilder(
+    future: query.trim().isEmpty ? Future.value([]) : supabase.rpc('search_profiles', params: {'search_text': query.trim()}),
+    builder: (context, snap) {
+      if (query.trim().isEmpty) return const Center(child: Text('نام یا آیدی کاربر را جستجو کنید.'));
+      if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+      final users = List<Map<String,dynamic>>.from(snap.data as List);
+      return ListView(children: users.map((p) => ListTile(
+        leading: avatar(p),
+        title: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString()),
+        subtitle: Text('@' + (p['username'] ?? '').toString()),
+        trailing: const Icon(Icons.person_add_alt_1_rounded),
+        onTap: () async {
+          final uid = supabase.auth.currentUser!.id;
+          if (p['id'].toString() == uid) { showMsg(context, 'نمی‌توانید خودتان را اضافه کنید.'); return; }
+          await supabase.from('contacts').upsert({'user_id': uid, 'contact_id': p['id']}, onConflict: 'user_id,contact_id');
+          if (context.mounted) { showMsg(context, 'مخاطب اضافه شد.'); close(context, p); }
+        },
+      )).toList());
+    },
+  );
+}
+
+class ChannelCreatePage extends StatefulWidget {
+  const ChannelCreatePage({super.key});
+  @override State<ChannelCreatePage> createState() => _ChannelCreatePageState();
+}
+class _ChannelCreatePageState extends State<ChannelCreatePage> {
+  final title = TextEditingController(); final about = TextEditingController(); bool busy = false;
+  Future<void> create() async {
+    if (title.text.trim().isEmpty) { showMsg(context, 'نام کانال را وارد کنید.'); return; }
+    setState(() => busy = true);
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final c = await supabase.from('conversations').insert({'type':'channel','title':title.text.trim(),'created_by':uid}).select().single();
+      await supabase.from('conversation_members').insert({'conversation_id':c['id'],'user_id':uid});
+      if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ChatPage(id:c['id'].toString(),title:title.text.trim())));
+    } catch(e) { if(mounted) showMsg(context, 'ساخت کانال ناموفق بود: ' + e.toString()); }
+    finally { if(mounted) setState(() => busy=false); }
+  }
+  @override Widget build(BuildContext context) => Scaffold(
+    extendBodyBehindAppBar: true, appBar: AppBar(title: const Text('ایجاد کانال'), backgroundColor: Colors.transparent),
+    body: Center(child: Padding(padding: const EdgeInsets.all(18), child: ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(filter: ImageFilter.blur(sigmaX:20,sigmaY:20), child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(28)),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.campaign_rounded, size: 58), const SizedBox(height: 12),
+          TextField(controller:title, decoration:const InputDecoration(labelText:'نام کانال',prefixIcon:Icon(Icons.campaign_outlined))),
+          const SizedBox(height:10),
+          TextField(controller:about,maxLines:3,decoration:const InputDecoration(labelText:'توضیحات کانال')),
+          const SizedBox(height:16),
+          SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:busy?null:create,icon:const Icon(Icons.add_circle_outline),label:Text(busy?'در حال ساخت...':'ساخت کانال'))),
+        ]),
+      )),
+    ))),
+  );
+  @override void dispose(){title.dispose();about.dispose();super.dispose();}
+}
+
 
 class SavedMessagesPage extends StatefulWidget {
   const SavedMessagesPage({super.key});
