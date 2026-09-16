@@ -125,9 +125,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> switchAccount() async {
-    await supabase.auth.signOut();
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSwitcherPage()));
+    if (mounted) await loadProfile();
+  }
+
+  Future<void> logoutThisAccount() async {
+    final email=supabase.auth.currentUser?.email?.trim().toLowerCase();
+    if(email!=null && email.isNotEmpty) await _secureAccounts.delete(key:'account_refresh_\${email}');
+    await _removeSavedAccount(email??'');
+    await supabase.auth.signOut();
+    if(!mounted)return;
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const LoginPage()),(_)=>false);
   }
 
   Widget glass(Widget child) {
@@ -239,7 +248,7 @@ class _ProfilePageState extends State<ProfilePage> {
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.person_add_alt_1_rounded, color: s.primary)),
             title: const Text('افزودن حساب', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: const Text('تا ۳ حساب روی دستگاه'),
-            onTap: switchAccount,
+            onTap: logoutThisAccount,
           ),
           const Divider(height: 1),
           ListTile(
@@ -407,3 +416,40 @@ class _VerificationAdminPageState extends State<VerificationAdminPage> {
     );
   }
 }
+
+class AccountSwitcherPage extends StatefulWidget {
+  const AccountSwitcherPage({super.key});
+  @override State<AccountSwitcherPage> createState()=>_AccountSwitcherPageState();
+}
+class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
+  List<String> emails=[]; String? active; bool loading=true;
+  @override void initState(){super.initState();load();}
+  Future<void> load()async{emails=await rememberedAccountEmails();active=supabase.auth.currentUser?.email?.toLowerCase();if(mounted)setState(()=>loading=false);}
+  Future<void> select(String mail)async{
+    if(mail.toLowerCase()==active){Navigator.pop(context);return;}
+    final token=await _secureAccounts.read(key:'account_refresh_\${mail.toLowerCase()}');
+    if(token==null||token.isEmpty){showMsg(context,'نشست ذخیره‌شده این حساب پیدا نشد.');return;}
+    try{
+      final res=await supabase.auth.setSession(token);
+      if(res.session==null)throw const AuthException('نشست حساب منقضی شده است.');
+      await rememberCurrentSession();await appTheme.loadForUser();
+      if(mounted)Navigator.of(context).pop();
+    }catch(e){if(mounted)showMsg(context,'تغییر حساب ناموفق بود: \$e');}
+  }
+  Future<void> addAccount()async{
+    if(emails.length>=3){showMsg(context,'حداکثر ۳ حساب مجاز است.');return;}
+    await Navigator.push(context,MaterialPageRoute(builder:(_)=>const LoginPage(addAccount:true)));
+    if(mounted)await load();
+  }
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تغییر حساب')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    if(loading)const Center(child:Padding(padding:EdgeInsets.all(30),child:CircularProgressIndicator())),
+    if(!loading)...emails.map((mail)=>Card(child:ListTile(
+      leading:CircleAvatar(child:Text(mail.isEmpty?'?':mail[0].toUpperCase())),
+      title:Text(mail),subtitle:Text(mail.toLowerCase()==active?'حساب فعال':'حساب ذخیره‌شده'),
+      trailing:mail.toLowerCase()==active?const Icon(Icons.check_circle_rounded):const Icon(Icons.touch_app_rounded),
+      onTap:()=>select(mail),
+    ))),
+    if(!loading&&emails.length<3)Card(child:ListTile(leading:const Icon(Icons.add_circle_outline_rounded),title:Text('افزودن حساب \${emails.length+1}'),subtitle:const Text('ورود با ایمیل دیگر'),onTap:addAccount)),
+  ]));
+}
+
