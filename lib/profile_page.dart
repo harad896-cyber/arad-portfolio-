@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+const _profileSecureAccounts = FlutterSecureStorage();
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -132,8 +135,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> logoutThisAccount() async {
     final email=supabase.auth.currentUser?.email?.trim().toLowerCase();
-    if(email!=null && email.isNotEmpty) await _secureAccounts.delete(key:'account_refresh_\${email}');
-    await _removeSavedAccount(email??'');
+    if(email!=null && email.isNotEmpty) await _profileSecureAccounts.delete(key:'account_refresh_\${email}');
+    await _rememberAccount(email??'');
     await supabase.auth.signOut();
     if(!mounted)return;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const LoginPage()),(_)=>false);
@@ -427,7 +430,7 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
   Future<void> load()async{emails=await rememberedAccountEmails();active=supabase.auth.currentUser?.email?.toLowerCase();if(mounted)setState(()=>loading=false);}
   Future<void> select(String mail)async{
     if(mail.toLowerCase()==active){Navigator.pop(context);return;}
-    final token=await _secureAccounts.read(key:'account_refresh_\${mail.toLowerCase()}');
+    final token=await _profileSecureAccounts.read(key:'account_refresh_\${mail.toLowerCase()}');
     if(token==null||token.isEmpty){showMsg(context,'نشست ذخیره‌شده این حساب پیدا نشد.');return;}
     try{
       final res=await supabase.auth.setSession(token);
