@@ -1769,7 +1769,23 @@ class _ChatPageState extends State<ChatPage> {
         return;
       }
       final rows = await supabase.from('conversations').select('id,title,type,created_at').inFilter('id', ids).order('created_at', ascending: false);
-      final targets = List<Map<String, dynamic>>.from(rows).where((c) => '\${c['id']}' != '\${widget.id}').toList();
+      final rawTargets = List<Map<String, dynamic>>.from(rows).where((c) => '${c['id']}' != '${widget.id}').toList();
+      final targets = <Map<String, dynamic>>[];
+      for (final c in rawTargets) {
+        var displayTitle = '${c['title'] ?? ''}'.trim();
+        if (displayTitle.isEmpty && '${c['type']}' == 'direct') {
+          final other = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']).neq('user_id', uid).maybeSingle();
+          if (other != null) {
+            final p = await supabase.from('profiles').select('display_name,username').eq('id', other['user_id']).maybeSingle();
+            displayTitle = '${p?['display_name'] ?? p?['username'] ?? 'کاربر'}';
+          }
+        }
+        if (displayTitle.isEmpty) {
+          final type = '${c['type']}';
+          displayTitle = type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو';
+        }
+        targets.add({...c, '_display_title': displayTitle});
+      }
       if (targets.isEmpty) {
         if (mounted) showMsg(context, 'گفتگوی دیگری برای فوروارد پیدا نشد.');
         return;
