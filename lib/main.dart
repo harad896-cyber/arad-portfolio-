@@ -1732,7 +1732,9 @@ class _ChatPageState extends State<ChatPage> {
   List<Map<String, dynamic>> messages = [];
   Map<String, Map<String, dynamic>> profiles = {};
   Map<String, List<Map<String, dynamic>>> reactions = {};
+  Map<String, Map<String, dynamic>> attachments = {};
   RealtimeChannel? channel;
+  final ScrollController _messagesScroll = ScrollController();
   bool loading = true;
   bool sending = false;
   Map<String, dynamic>? replyMessage;
@@ -1740,22 +1742,36 @@ class _ChatPageState extends State<ChatPage> {
   final AudioPlayer _voicePlayer = AudioPlayer();
   bool recordingVoice = false;
 
+  Future<String?> _attachmentUrl(String path) async {
+    if (path.isEmpty) return null;
+    try {
+      return await supabase.storage.from('chat-media').createSignedUrl(path, 3600);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _playAttachment(String messageId) async {
+    try {
+      final a = attachments[messageId];
+      final path = a?['storage_path']?.toString() ?? '';
+      final mime = a?['mime_type']?.toString() ?? 'audio/mp4';
+      final url = await _attachmentUrl(path);
+      if (url == null || url.isEmpty) throw Exception('لینک امن فایل صوتی ساخته نشد');
+      await _voicePlayer.stop();
+      await _voicePlayer.play(UrlSource(url, mimeType: mime));
+    } catch (e) {
+      if (mounted) showMsg(context, 'پخش فایل صوتی ناموفق بود: $e');
+    }
+  }
+
   Widget _voicePlayButton(String messageId) {
     return IconButton(
       icon: const Icon(Icons.play_circle_fill_rounded),
       tooltip: 'پخش پیام صوتی',
       onPressed: () async {
         try {
-          final row = await supabase
-              .from('message_attachments')
-              .select('storage_path')
-              .eq('message_id', messageId)
-              .maybeSingle();
-          final path = row?['storage_path']?.toString() ?? '';
-          if (path.isEmpty) return;
-          final url = supabase.storage.from('chat-media').getPublicUrl(path);
-          await _voicePlayer.stop();
-          await _voicePlayer.play(UrlSource(url));
+          await _playAttachment(messageId);
         } catch (e) {
           if (mounted) showMsg(context, 'پخش ویس ناموفق بود: $e');
         }
@@ -1798,17 +1814,26 @@ class _ChatPageState extends State<ChatPage> {
       }
       final ids = loaded.map((m) => '${m['id']}').toList();
       final loadedReactions = <String, List<Map<String, dynamic>>>{};
+      final loadedAttachments = <String, Map<String, dynamic>>{};
       if (ids.isNotEmpty) {
         final rr = await supabase.from('message_reactions').select('message_id,user_id,reaction,created_at').inFilter('message_id', ids);
         for (final r in List<Map<String, dynamic>>.from(rr)) {
           loadedReactions.putIfAbsent('${r['message_id']}', () => []).add(r);
+        }
+        final aa = await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids);
+        for (final a in List<Map<String, dynamic>>.from(aa)) {
+          loadedAttachments['${a['message_id']}'] = a;
         }
       }
       if (mounted) {
         setState(() {
           messages = loaded;
           reactions = loadedReactions;
+          attachments = loadedAttachments;
           loading = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_messagesScroll.hasClients) _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
         });
       }
       await markRead();
@@ -1851,27 +1876,60 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  String _mimeType(String name) {
+    final n = name.toLowerCase();
+    if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
+    if (n.endsWith('.png')) return 'image/png';
+    if (n.endsWith('.webp')) return 'image/webp';
+    if (n.endsWith('.gif')) return 'image/gif';
+    if (n.endsWith('.mp3')) return 'audio/mpeg';
+    if (n.endsWith('.m4a')) return 'audio/mp4';
+    if (n.endsWith('.aac')) return 'audio/aac';
+    if (n.endsWith('.wav')) return 'audio/wav';
+    if (n.endsWith('.ogg') || n.endsWith('.oga')) return 'audio/ogg';
+    if (n.endsWith('.opus')) return 'audio/opus';
+    if (n.endsWith('.mp4')) return 'video/mp4';
+    if (n.endsWith('.mov')) return 'video/quicktime';
+    if (n.endsWith('.pdf')) return 'application/pdf';
+    return 'application/octet-stream';
+  }
+
   Future<void> sendFile() async {
+    if (sending) return;
     try {
-      final result = await FilePicker.platform.pickFiles(withData: true);
+      final result = await FilePicker.platform.pickFiles(withData: false);
       if (result == null) return;
       final f = result.files.single;
-      final bytes = f.bytes;
-      if (bytes == null) return;
+      final localPath = f.path;
+      if (localPath == null || localPath.isEmpty) throw Exception('مسیر فایل از Android دریافت نشد');
+      final bytes = await File(localPath).readAsBytes();
+      if (bytes.isEmpty) throw Exception('فایل خالی است');
+      final mime = _mimeType(f.name);
+      final isAudio = mime.startsWith('audio/');
+      final isImage = mime.startsWith('image/');
       final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${f.name}';
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes);
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: mime, upsert: false));
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
         'sender_id': supabase.auth.currentUser!.id,
         'body': f.name,
-        'message_type': 'file',
+        'message_type': isAudio ? 'audio' : (isImage ? 'image' : 'file'),
         'reply_to': replyMessage?['id'],
       }).select().single();
-      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': f.name, 'file_size': f.size});
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': path,
+        'file_name': f.name,
+        'file_size': f.size,
+        'mime_type': mime,
+      });
       if (mounted) setState(() => replyMessage = null);
       await load();
     } catch (e) {
       if (mounted) showMsg(context, 'فایل ارسال نشد: $e');
+    } finally {
+      if (mounted) setState(() => sending = false);
     }
   }
 
@@ -1925,12 +1983,15 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> sendImage() async {
+    if (sending) return;
     try {
-      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 88, maxWidth: 1800, maxHeight: 1800);
       if (image == null) return;
       final bytes = await image.readAsBytes();
+      if (bytes.isEmpty) throw Exception('تصویر خالی است');
       final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes);
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
         'sender_id': supabase.auth.currentUser!.id,
@@ -1938,11 +1999,19 @@ class _ChatPageState extends State<ChatPage> {
         'message_type': 'image',
         'reply_to': replyMessage?['id'],
       }).select().single();
-      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image'});
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': path,
+        'file_name': image.name,
+        'mime_type': 'image/jpeg',
+        'file_size': bytes.length,
+      });
       if (mounted) setState(() => replyMessage = null);
       await load();
     } catch (e) {
       if (mounted) showMsg(context, 'تصویر ارسال نشد: $e');
+    } finally {
+      if (mounted) setState(() => sending = false);
     }
   }
 
@@ -2374,6 +2443,36 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Widget _imageAttachment(Map<String, dynamic> m) {
+    final a = attachments['${m['id']}'];
+    final path = a?['storage_path']?.toString() ?? '';
+    if (path.isEmpty) return const Icon(Icons.image_rounded, size: 42);
+    return FutureBuilder<String?>(
+      future: _attachmentUrl(path),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
+        final url = snapshot.data;
+        if (url == null || url.isEmpty) return const Icon(Icons.broken_image_rounded, size: 42);
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.network(url, width: 220, height: 180, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42)))),
+        );
+      },
+    );
+  }
+
+  Widget _fileAttachment(Map<String, dynamic> m) {
+    final a = attachments['${m['id']}'];
+    final name = (a?['file_name'] ?? m['body'] ?? 'فایل').toString();
+    final mime = (a?['mime_type'] ?? '').toString();
+    final icon = mime.startsWith('audio/') ? Icons.music_note_rounded : mime == 'application/pdf' ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 32),
+      const SizedBox(width: 8),
+      Flexible(child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+    ]);
+  }
+
   Widget _messageBubble(Map<String, dynamic> m) {
     final mine = m['sender_id'] == supabase.auth.currentUser!.id;
     final sender = _senderName(m);
@@ -2399,7 +2498,7 @@ class _ChatPageState extends State<ChatPage> {
               Flexible(
                 child: Card(
                   margin: EdgeInsets.zero,
-                  color: mine ? Theme.of(context).colorScheme.primaryContainer : Colors.white,
+                  color: mine ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(12, 9, 10, 7),
@@ -2408,9 +2507,11 @@ class _ChatPageState extends State<ChatPage> {
                       children: [
                         if (!mine) Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(sender, style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary))),
                         _replyPreview(m),
-                        if (m['message_type'] == 'image') const Padding(padding: EdgeInsets.only(bottom: 5), child: Icon(Icons.image_rounded, size: 42)),
+                        if (m['message_type'] == 'image') _imageAttachment(m),
                         if (m['message_type'] == 'audio') _voicePlayButton(m['id'].toString()),
-                        if (m['message_type'] != 'audio' && '${m['body'] ?? ''}'.isNotEmpty) Text('${m['body'] ?? ''}', style: const TextStyle(fontSize: 15.5, height: 1.35)),
+                        if (m['message_type'] == 'file') _fileAttachment(m),
+                        if (m['message_type'] != 'audio' && m['message_type'] != 'image' && m['message_type'] != 'file' && '${m['body'] ?? ''}'.isNotEmpty)
+                          Text('${m['body'] ?? ''}', style: TextStyle(fontSize: 15.5, height: 1.35, color: Theme.of(context).colorScheme.onSurface)),
                         const SizedBox(height: 3),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -2455,6 +2556,7 @@ class _ChatPageState extends State<ChatPage> {
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
+    _messagesScroll.dispose();
     text.dispose();
     super.dispose();
   }
@@ -2472,7 +2574,7 @@ class _ChatPageState extends State<ChatPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : messages.isEmpty
                     ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
-                    : ListView.builder(padding: const EdgeInsets.fromLTRB(12, 12, 12, 8), itemCount: messages.length, itemBuilder: (context, i) => _messageBubble(messages[i])),
+                    : ListView.builder(controller: _messagesScroll, padding: const EdgeInsets.fromLTRB(12, 12, 12, 8), itemCount: messages.length, itemBuilder: (context, i) => _messageBubble(messages[i]),
           ),
           if (replyMessage != null)
             Container(
