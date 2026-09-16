@@ -2622,46 +2622,39 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _messageActionsContent(BuildContext context, Map<String, dynamic> message) {
-    const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
-    final scheme = Theme.of(context).colorScheme;
+    const emojis = ['❤️', '👍', '😂', '🔥', '😍'];
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
-          const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white70, size: 20),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('عملیات پیام', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800))),
-            IconButton(tooltip: 'بستن', onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white70)),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
+        const SizedBox(height: 8),
+        Row(children: [
+          const Expanded(child: Text('واکنش و گزینه‌ها', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800))),
+          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white70)),
+        ]),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha:.14), borderRadius: BorderRadius.circular(28)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            ...emojis.map((e) => InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () { Navigator.pop(context); reactTo(message, e); },
+              child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 26))),
+            )),
+            IconButton(onPressed: () { Navigator.pop(context); _showMoreReactions(message); }, icon: const Icon(Icons.add_reaction_outlined, color: Colors.white)),
           ]),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: .14), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white.withValues(alpha: .07))),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              ...emojis.map((e) => InkWell(borderRadius: BorderRadius.circular(24), onTap: () { Navigator.pop(context); reactTo(message, e); }, child: Padding(padding: const EdgeInsets.all(5), child: Text(e, style: const TextStyle(fontSize: 25))))),
-              InkWell(borderRadius: BorderRadius.circular(24), onTap: () { Navigator.pop(context); _showMoreReactions(message); }, child: const Padding(padding: EdgeInsets.all(7), child: Icon(Icons.add_reaction_outlined, color: Colors.white, size: 25))),
-            ]),
-          ),
-          const SizedBox(height: 7),
-          _actionTile(context, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
-          _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری پیام', () => shareMessage(message)),
-          _actionTile(context, Icons.link_rounded, 'لینک پیام', () => copyMessageLink(message)),
-          _actionTile(context, Icons.copy_rounded, 'کپی', () { final text = '${message['body'] ?? ''}'; if (text.trim().isNotEmpty) { Clipboard.setData(ClipboardData(text: text)); showMsg(context, 'متن کپی شد.'); } else { showMsg(context, 'این پیام متن قابل کپی ندارد.'); } }),
-          if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text') _actionTile(context, Icons.edit_outlined, 'ویرایش پیام', () => editMessage(message)),
-          _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
-          const Divider(height: 12, color: Colors.white12),
-          _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره پیام', () => saveMessage(message)),
-          _actionTile(context, Icons.push_pin_outlined, 'سنجاق کردن', () => showMsg(context, 'قابلیت سنجاق پیام در حال آماده‌سازی است.')),
-          _actionTile(context, Icons.info_outline_rounded, 'اطلاعات پیام', () => _showMessageInfo(message)),
-          _actionTile(context, Icons.report_gmailerrorred_outlined, 'گزارش پیام', () => showMsg(context, 'گزارش پیام در نسخه فعلی فقط به‌صورت محلی ثبت می‌شود.')),
-          _actionTile(context, Icons.delete_outline_rounded, 'حذف برای من', () => deleteForMe(message)),
-          if (message['sender_id'] == supabase.auth.currentUser?.id) _actionTile(context, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
-          Text('با انیمیشن باز و بسته می‌شود', style: TextStyle(color: scheme.onSurface.withValues(alpha: .45), fontSize: 10)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 6),
+        _actionTile(context, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
+        _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
+        _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری', () => shareMessage(message)),
+        if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
+          _actionTile(context, Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
+        _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره', () => saveMessage(message)),
+        _actionTile(context, Icons.delete_outline_rounded, 'حذف برای من', () => deleteForMe(message)),
+        if (message['sender_id'] == supabase.auth.currentUser?.id)
+          _actionTile(context, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
+      ]),
     );
   }
 
@@ -2810,6 +2803,7 @@ class _ChatPageState extends State<ChatPage> {
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
         onLongPress: () => showMessageActions(m),
+        onDoubleTap: () => reactTo(m, '❤️'),
         onHorizontalDragEnd: (details) {
           if ((details.primaryVelocity ?? 0).abs() > 450) setReply(m);
         },
