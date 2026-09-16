@@ -102,3 +102,5 @@ jobs:
             flutter-analyze.txt
             flutter-test.txt
           if-no-files-found: warn
+
+# Trigger final APK validation after Flutter source repair.
