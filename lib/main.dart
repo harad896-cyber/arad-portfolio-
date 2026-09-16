@@ -1141,38 +1141,35 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   }
 
   Future<void> save() async {
-    if (name.text.trim().isEmpty || username.text.trim().isEmpty) {
-      showMsg(context, 'نام و نام کاربری را وارد کنید.');
-      return;
-    }
+    final displayName = name.text.trim();
+    final userName = username.text.trim().replaceFirst('@', '');
+    if (displayName.isEmpty) { showMsg(context, 'نام نمایشی را وارد کنید.'); return; }
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
-      String? avatarUrl;
+      final data = <String, dynamic>{
+        'id': uid,
+        'display_name': displayName,
+        'username': userName,
+        'bio': bio.text.trim(),
+        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
+        'is_online': true,
+        'last_seen': DateTime.now().toIso8601String(),
+      };
       if (avatarImage != null) {
         final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
         final path = '$uid/avatar.jpg';
         await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
-        avatarUrl = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
+        data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
       }
-      await supabase.from('profiles').upsert({
-        'id': uid,
-        'display_name': name.text.trim(),
-        'username': username.text.trim().replaceFirst('@', ''),
-        'bio': bio.text.trim(),
-        'avatar_url': avatarUrl,
-        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
-        'is_online': true,
-        'last_seen': DateTime.now().toIso8601String(),
-      });
-      if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+      await supabase.from('profiles').upsert(data);
+      if (mounted) { showMsg(context, 'پروفایل با موفقیت ذخیره شد.'); Navigator.pop(context); }
     } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره نشد: $e');
+      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
-
   @override
   void initState() { super.initState(); load(); }
   @override
@@ -2681,18 +2678,38 @@ class _ProfilePageState extends State<ProfilePage> {
     final p = profile;
     if (p == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
-      appBar: AppBar(title: const Text('پروفایل')),
+      appBar: AppBar(
+        title: const Text('پروفایل'),
+        actions: [
+          IconButton(
+            tooltip: 'ویرایش پروفایل',
+            icon: const Icon(Icons.edit_rounded),
+            onPressed: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()));
+              await load();
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Center(child: Stack(children: [avatar(p, size: 96), Positioned(bottom: 0, right: 0, child: IconButton.filled(onPressed: avatarUpload, icon: const Icon(Icons.camera_alt)))])),
-          const SizedBox(height: 20),
-          Text('${p['display_name'] ?? ''}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          Text('@${p['username'] ?? ''}'),
-          const SizedBox(height: 8),
-          Text('${p['bio'] ?? ''}'),
-          const SizedBox(height: 24),
-          Card(
+          Center(child: Stack(children: [avatar(p, size: 104), Positioned(bottom: 0, right: 0, child: IconButton.filled(onPressed: avatarUpload, icon: const Icon(Icons.camera_alt)))])),
+          const SizedBox(height: 18),
+          Center(child: Text('${p['display_name'] ?? 'بدون نام'}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
+          if ('${p['username'] ?? ''}'.trim().isNotEmpty) Center(child: Text('@${p['username']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700))),
+          const SizedBox(height: 10),
+          Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('${p['bio']?.toString().trim().isNotEmpty == true ? p['bio'] : 'هنوز بیویی برای پروفایل ثبت نشده است.'}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.5)))),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()));
+              await load();
+            },
+            icon: const Icon(Icons.edit_rounded),
+            label: const Text('ویرایش نام، نمایه و بیو'),
+          ),
+          const SizedBox(height: 24),          Card(
             child: ListTile(
               leading: const CircleAvatar(child: Icon(Icons.swap_horiz_rounded)),
               title: const Text('تغییر حساب', style: TextStyle(fontWeight: FontWeight.w800)),
