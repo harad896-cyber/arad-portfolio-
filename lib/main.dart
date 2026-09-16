@@ -1754,6 +1754,108 @@ class _ChatPageState extends State<ChatPage> {
     if (mounted) showMsg(context, 'لینک پیام کپی شد.');
   }
 
+  Future<void> forwardMessage(Map<String, dynamic> message) async {
+    final body = message['body']?.toString().trim() ?? '';
+    if (body.isEmpty || message['deleted_at'] != null) {
+      if (mounted) showMsg(context, 'این پیام قابل فوروارد نیست.');
+      return;
+    }
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+      final ids = (memberRows as List).map((e) => e['conversation_id']).where((id) => id != null).toList();
+      if (ids.isEmpty) {
+        if (mounted) showMsg(context, 'گفتگویی برای فوروارد وجود ندارد.');
+        return;
+      }
+      final rows = await supabase.from('conversations').select('id,title,type,created_at').inFilter('id', ids).order('created_at', ascending: false);
+      final targets = List<Map<String, dynamic>>.from(rows).where((c) => '\${c['id']}' != '\${widget.id}').toList();
+      if (targets.isEmpty) {
+        if (mounted) showMsg(context, 'گفتگوی دیگری برای فوروارد پیدا نشد.');
+        return;
+      }
+
+      final target = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        showDragHandle: true,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * .62,
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('ارسال فوروارد به...', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: targets.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+                    itemBuilder: (_, index) {
+                      final c = targets[index];
+                      final type = '\${c['type']}';
+                      final title = '\${c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
+                      final icon = type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      return ListTile(
+                        leading: CircleAvatar(child: Icon(icon)),
+                        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text(type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی شخصی'),
+                        trailing: const Icon(Icons.chevron_left_rounded),
+                        onTap: () => Navigator.pop(sheetContext, c),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (target == null) return;
+
+      final inserted = await supabase.from('messages').insert({
+        'conversation_id': target['id'],
+        'sender_id': uid,
+        'body': body,
+        'message_type': message['message_type'] ?? 'text',
+        'reply_to': null,
+      }).select().single();
+
+      final type = '\${message['message_type'] ?? 'text'}';
+      if (type != 'text') {
+        final attachment = await supabase.from('message_attachments')
+            .select('storage_path,file_name,file_size,mime_type')
+            .eq('message_id', message['id'])
+            .maybeSingle();
+        if (attachment != null) {
+          await supabase.from('message_attachments').insert({
+            'message_id': inserted['id'],
+            'storage_path': attachment['storage_path'],
+            'file_name': attachment['file_name'],
+            'file_size': attachment['file_size'],
+            'mime_type': attachment['mime_type'],
+          });
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ChatPage(id: '\${target['id']}', title: '\${target['title'] ?? 'گفتگو'}'),
+        ));
+        showMsg(context, 'پیام با موفقیت فوروارد شد.');
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'فوروارد پیام ناموفق بود: $e');
+    }
+  }
+
   Future<void> showMessageActions(Map<String, dynamic> message) async {
     const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
     final scheme = Theme.of(context).colorScheme;
@@ -1846,6 +1948,7 @@ class _ChatPageState extends State<ChatPage> {
           }),
           if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
             _actionTile(context, Icons.edit_outlined, 'ویرایش پیام', () => editMessage(message)),
+          _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
           _actionTile(context, Icons.push_pin_outlined, 'سنجاق کردن', () {
             showMsg(context, 'سنجاق کردن پیام در نسخه بعدی فعال می‌شود.');
           }),
@@ -1858,88 +1961,6 @@ class _ChatPageState extends State<ChatPage> {
           const SizedBox(height: 2),
           Text('عملیات پیام', style: TextStyle(color: scheme.onSurface.withValues(alpha: .55), fontSize: 11)),
         ],
-      ),
-    );
-  }
-      barrierColor: Colors.black54,
-      showDragHandle: true,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 2, 14, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ...emojis.map((e) => InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: () {
-                        Navigator.pop(sheetContext);
-                        reactTo(message, e);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(5),
-                        child: Text(e, style: const TextStyle(fontSize: 26)),
-                      ),
-                    )),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: () {
-                        Navigator.pop(sheetContext);
-                        showMessageActions(message);
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(7),
-                        child: Icon(Icons.keyboard_arrow_down_rounded, size: 31, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              _actionTile(sheetContext, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
-              _actionTile(sheetContext, Icons.share_rounded, 'اشتراک‌گذاری پیام', () => shareMessage(message)),
-              _actionTile(sheetContext, Icons.link_rounded, 'لینک پیام', () => copyMessageLink(message)),
-              _actionTile(
-                sheetContext,
-                Icons.copy_rounded,
-                'کپی',
-                () {
-                  Clipboard.setData(ClipboardData(text: '\${message['body'] ?? ''}'));
-                  showMsg(context, 'متن کپی شد.');
-                },
-                enabled: '\${message['body'] ?? ''}'.isNotEmpty,
-              ),
-              if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
-                _actionTile(sheetContext, Icons.edit_outlined, 'ویرایش پیام', () => editMessage(message)),
-              _actionTile(sheetContext, Icons.push_pin_outlined, 'سنجاق کردن', () {
-                showMsg(context, 'سنجاق کردن پیام در نسخه بعدی فعال می‌شود.');
-              }),
-              _actionTile(sheetContext, Icons.report_gmailerrorred_outlined, 'گزارش', () {
-                showMsg(context, 'گزارش پیام ثبت شد.');
-              }),
-              _actionTile(sheetContext, Icons.delete_outline, 'حذف برای من', () => deleteForMe(message)),
-              if (message['sender_id'] == supabase.auth.currentUser?.id)
-                _actionTile(sheetContext, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
-              const SizedBox(height: 2),
-              Text(
-                'عملیات پیام',
-                style: TextStyle(color: scheme.onSurface.withValues(alpha: .55), fontSize: 11),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
