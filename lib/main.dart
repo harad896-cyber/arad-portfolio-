@@ -2252,6 +2252,59 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> sendCameraImage() async {
+    if (sending) return;
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 88, maxWidth: 1800, maxHeight: 1800);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (bytes.isEmpty) throw Exception('تصویر خالی است');
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}';
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': image.name, 'message_type': 'image', 'reply_to': replyMessage?['id']}).select().single();
+      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+    } catch (e) { if (mounted) showMsg(context, 'ارسال عکس دوربین ناموفق بود: $e'); }
+    finally { if (mounted) setState(() => sending = false); }
+  }
+
+  Future<void> _showAttachmentPanel() async {
+    await showModalBottomSheet<void>(
+      context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30), bottom: Radius.circular(24)),
+          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22), child: Container(
+            decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .94), border: Border.all(color: scheme.onSurface.withValues(alpha: .08))),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 18),
+              Row(children: [Expanded(child: Text('افزودن به پیام', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
+              GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
+                _attachmentItem(sheetContext, Icons.photo_library_rounded, 'گالری', () { Navigator.pop(sheetContext); sendImage(); }),
+                _attachmentItem(sheetContext, Icons.camera_alt_rounded, 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
+                _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.music_note_rounded, 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
+              ]),
+            ]),
+          )),
+        ));
+      },
+    );
+  }
+
+  Widget _attachmentItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(borderRadius: BorderRadius.circular(24), onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(width: 68, height: 68, decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .72), shape: BoxShape.circle), child: Icon(icon, size: 32, color: scheme.primary)),
+      const SizedBox(height: 8), Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
+    ]));
+  }
   Future<void> sendImage() async {
     if (sending) return;
     try {
@@ -3099,14 +3152,9 @@ class _ChatPageState extends State<ChatPage> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           IconButton(
-                            onPressed: sendImage,
-                            tooltip: 'تصویر',
-                            icon: Icon(Icons.image_outlined, color: scheme.primary),
-                          ),
-                          IconButton(
-                            onPressed: sendFile,
-                            tooltip: 'فایل',
-                            icon: Icon(Icons.attach_file_rounded, color: scheme.primary),
+                            onPressed: _showAttachmentPanel,
+                            tooltip: 'پیوست‌ها',
+                            icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary, size: 27),
                           ),
                           IconButton(
                             onPressed: toggleVoiceRecording,
