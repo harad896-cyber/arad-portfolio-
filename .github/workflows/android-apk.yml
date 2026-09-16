@@ -89,6 +89,8 @@ jobs:
         run: python tools/owner_broadcast_safe_patch.py
       - name: Apply security and efficiency rules
         run: python tools/security_efficiency_rules_patch.py
+      - name: Apply professional message actions and modern chat UI
+        run: python tools/message_actions_pro_patch.py
       - name: Final compile cleanup
         run: python tools/final_compile_cleanup.py
       - name: Get dependencies
