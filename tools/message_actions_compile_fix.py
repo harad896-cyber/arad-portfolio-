@@ -12,13 +12,17 @@ a = s.index('class ChatPage extends StatefulWidget {')
 b = s.index('class ProfilePage extends StatefulWidget {', a)
 chat = s[a:b]
 
-# Remove every pre-existing reactions field inside ChatPage and insert exactly one.
-chat = re.sub(r'(?m)^\s*(?:final\s+|late\s+)?(?:Map\s*<\s*String\s*,\s*List\s*<\s*String\s*>\s*>|Map\s*<String,\s*List<String>>|var)\s+reactions\s*=.*;\s*$', '', chat)
-chat = re.sub(r'(?m)^\s*Map<String,\s*List<String>>\s+reactions\s*=\s*\{\};\s*$', '', chat)
-if '  Map<String, List<String>> reactions = {};' not in chat:
-    chat = chat.replace('  bool sending = false;', '  bool sending = false;\n  Map<String, List<String>> reactions = {};', 1)
+# Normalize the ChatPage state fields: exactly one reactions map and one reply pair.
+chat = re.sub(r'(?m)^\s*(?:(?:final|late)\s+)?(?:Map\s*<\s*String\s*,\s*List\s*<\s*String\s*>\s*>|Map\s*<String\s*,\s*List<String>>|Map\s*<String,List<String>>|var)\s+reactions\s*=\s*[^;]*;\s*$', '', chat)
+chat = re.sub(r'(?m)^\s*Map<String,List<String>>\s+reactions\s*=\s*[^;]*;\s*$', '', chat)
+chat = re.sub(r'(?m)^\s*Map<String,\s*List<String>>\s+reactions\s*=\s*[^;]*;\s*$', '', chat)
+chat = chat.replace('  Map<String,List<String>> reactions = {};\n', '')
+chat = chat.replace('  Map<String,List<String>> reactions = {};', '')
+chat = chat.replace('  Map<String, List<String>> reactions = {};\n', '')
+chat = chat.replace('  Map<String, List<String>> reactions = {};', '')
+chat = chat.replace('  bool sending = false;', '  bool sending = false;\n  Map<String, List<String>> reactions = {};', 1)
 
-# Keep the existing action/helper methods intact; only replace the broken build method.
+# Keep existing helper/action methods intact; replace only ChatPage.build.
 bs = chat.index('  @override Widget build') if '  @override Widget build' in chat else chat.index('  @override\n  Widget build')
 new_build = r'''  @override
   Widget build(BuildContext context) {
@@ -72,7 +76,7 @@ new_build = r'''  @override
     );
   }
 '''
-# Close _ChatPageState before ProfilePage so no nested-class analyzer errors.
+# Close _ChatPageState before the next top-level class.
 chat = chat[:bs] + new_build + '}\n'
 s = s[:a] + chat + s[b:]
 p.write_text(s, encoding='utf-8')
