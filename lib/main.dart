@@ -2025,6 +2025,63 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _showChatEmojiPicker() async {
+    const emojis = [
+      '😀','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩',
+      '😢','😭','😡','😮','🤔','🙌','👏','🙏','👍','👎',
+      '❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥',
+      '🔥','✨','🎉','🎊','💯','⭐','⚡','🚀','🌹','☀️',
+      '😇','🤗','😴','🤝','👀','💪','🫶','🦋','🎵','🍀',
+    ];
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: scheme.surface.withValues(alpha: .88),
+                border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: .10))),
+              ),
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 18),
+              child: GridView.builder(
+                shrinkWrap: true,
+                itemCount: emojis.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  childAspectRatio: 1,
+                ),
+                itemBuilder: (_, i) => InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.pop(sheetContext, emojis[i]),
+                  child: Center(child: Text(emojis[i], style: const TextStyle(fontSize: 28))),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (selected != null && mounted) {
+      final value = text.text;
+      final selection = text.selection;
+      final start = selection.start < 0 ? value.length : selection.start;
+      final end = selection.end < 0 ? value.length : selection.end;
+      text.value = TextEditingValue(
+        text: value.replaceRange(start, end, selected),
+        selection: TextSelection.collapsed(offset: start + selected.length),
+      );
+    }
+  }
+
   Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
     final uid = supabase.auth.currentUser!.id;
     try {
@@ -2524,15 +2581,27 @@ class _ChatPageState extends State<ChatPage> {
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
                       decoration: BoxDecoration(
-                        color: base.withValues(alpha: mine ? .78 : .68),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            base.withValues(alpha: mine ? .88 : .76),
+                            scheme.primary.withValues(alpha: mine ? .20 : .10),
+                          ],
+                        ),
                         border: Border.all(
-                          color: scheme.onSurface.withValues(alpha: .08),
+                          color: scheme.onSurface.withValues(alpha: .11),
                         ),
                         boxShadow: [
                           BoxShadow(
+                            color: scheme.primary.withValues(alpha: .10),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                          BoxShadow(
                             color: Colors.black.withValues(alpha: .10),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -2772,6 +2841,11 @@ class _ChatPageState extends State<ChatPage> {
                               recordingVoice ? Icons.stop_circle_rounded : Icons.mic_rounded,
                               color: recordingVoice ? scheme.error : scheme.primary,
                             ),
+                          ),
+                          IconButton(
+                            onPressed: _showChatEmojiPicker,
+                            tooltip: 'اموجی',
+                            icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
                           ),
                           Expanded(
                             child: TextField(
