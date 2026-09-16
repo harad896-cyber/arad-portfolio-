@@ -1548,6 +1548,13 @@ class _HomePageState extends State<HomePage> {
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.call_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تماس‌ها'), subtitle: const Text('تماس صوتی و تصویری'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CallsPage()))),
         const Divider(height: 1),
+        ListTile(title: const Text('تاریخچه تماس‌ها'), leading: const Icon(Icons.history_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage()))),
+        ListTile(title: const Text('مرکز اعلان‌ها'), leading: const Icon(Icons.notifications_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsPage()))),
+        ListTile(title: const Text('پشتیبان‌گیری'), leading: const Icon(Icons.backup_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const BackupPage()))),
+        ListTile(title: const Text('استیکر و ایموجی'), leading: const Icon(Icons.emoji_emotions_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const StickersPage()))),
+        ListTile(title: const Text('امنیت پیشرفته'), leading: const Icon(Icons.security_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityPage()))),
+        ListTile(title: const Text('درباره برنامه'), leading: const Icon(Icons.info_outline_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutPage()))),
+        const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('نمایش پیام‌ها و رفتار چت'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
         const Divider(height: 1),
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()))),
@@ -2025,6 +2032,74 @@ class _GroupManagementPageState extends State<GroupManagementPage>{
   );
 }
 
+
+
+class CallHistoryPage extends StatelessWidget {
+  const CallHistoryPage({super.key});
+  @override Widget build(BuildContext context) {
+    final c=Theme.of(context).colorScheme;
+    final items=[('تماس دریافتی',Icons.call_received_rounded),('تماس ارسالی',Icons.call_made_rounded),('تماس بی‌پاسخ',Icons.call_missed_rounded)];
+    return Scaffold(appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),body:ListView.separated(
+      padding:const EdgeInsets.all(14),itemCount:items.length,separatorBuilder:(_,__)=>const SizedBox(height:7),
+      itemBuilder:(_,i)=>Card(child:ListTile(leading:CircleAvatar(backgroundColor:c.primaryContainer,child:Icon(items[i].$2,color:i==2?c.error:c.primary)),title:Text(items[i].$1,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:const Text('امروز'),trailing:IconButton(icon:const Icon(Icons.call_rounded),onPressed:()=>showMsg(context,'تماس مجدد'))))));
+  }
+}
+
+class NotificationsPage extends StatefulWidget {
+  const NotificationsPage({super.key});
+  @override State<NotificationsPage> createState()=>_NotificationsPageState();
+}
+class _NotificationsPageState extends State<NotificationsPage>{
+  final List<bool> read=[false,true,false];
+  final List<String> titles=['پیام جدید','درخواست عضویت گروه','به‌روزرسانی برنامه'];
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(
+    padding:const EdgeInsets.all(14),itemCount:titles.length,itemBuilder:(_,i)=>Card(child:ListTile(
+      leading:Icon(read[i]?Icons.notifications_none_rounded:Icons.notifications_active_rounded),
+      title:Text(titles[i],style:TextStyle(fontWeight:read[i]?FontWeight.w500:FontWeight.w900)),
+      subtitle:Text(read[i]?'خوانده شده':'جدید'),
+      onTap:()=>setState(()=>read[i]=true)))));
+
+class SharedMediaPage extends StatelessWidget {
+  const SharedMediaPage({super.key});
+  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(
+    appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),
+    body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
+}
+
+class GlobalSearchPage extends StatefulWidget {
+  const GlobalSearchPage({super.key});
+  @override State<GlobalSearchPage> createState()=>_GlobalSearchPageState();
+}
+class _GlobalSearchPageState extends State<GlobalSearchPage>{
+  final q=TextEditingController();
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('جستجوی سراسری')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    TextField(controller:q,onChanged:(_)=>setState((){}),textDirection:TextDirection.rtl,decoration:const InputDecoration(hintText:'جستجوی گفتگو، مخاطب و پیام',prefixIcon:Icon(Icons.search_rounded))),
+    const SizedBox(height:16),if(q.text.isNotEmpty)...const [Text('نتایج گفتگوها',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.forum_rounded),title:Text('نتیجه گفتگو')),Text('نتایج مخاطبین',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.person_rounded),title:Text('نتیجه مخاطب')),Text('نتایج پیام‌ها',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.message_rounded),title:Text('نتیجه پیام'))] ]));
+}
+
+class BackupPage extends StatefulWidget { const BackupPage({super.key}); @override State<BackupPage> createState()=>_BackupPageState(); }
+class _BackupPageState extends State<BackupPage>{bool auto=true; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  Card(child:SwitchListTile(value:auto,onChanged:(v)=>setState(()=>auto=v),title:const Text('پشتیبان‌گیری خودکار'),subtitle:const Text('ذخیره نسخه پشتیبان در فضای ابری'))),
+  const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('۰ مگابایت'))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی انجام نشده است'))),
+]));}
+
+class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  Card(child:ListTile(leading:const Icon(Icons.emoji_emotions_rounded),title:const Text('مدیریت پک‌های استیکر'),onTap:()=>showMsg(context,'مدیریت پک‌ها آماده است'))),
+  Card(child:ListTile(leading:const Icon(Icons.gif_box_rounded),title:const Text('جستجوی GIF'),onTap:()=>showMsg(context,'جستجوی GIF'))),
+]));}
+
+class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
+class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(14),children:[
+ Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:const Text('تأیید دومرحله‌ای'))),
+ const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text('دستگاه‌های متصل'))),
+ const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text('مخاطبین مسدودشده'))),
+ Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:const Text('پیام‌های خودتخریب‌شونده'))),
+]));}
+
+class AboutPage extends StatelessWidget { const AboutPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[
+ const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه حرفه‌ای پیام‌رسان'))),
+ const Card(child:ListTile(title:Text('حریم خصوصی و قوانین'))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'))),const Card(child:ListTile(title:Text('امتیاز به برنامه'))),
+]));}
 
 class CallsPage extends StatefulWidget {
   const CallsPage({super.key});
