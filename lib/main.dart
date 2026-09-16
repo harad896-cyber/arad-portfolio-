@@ -392,7 +392,7 @@ Future<void> rememberCurrentSession() async {
   final user=supabase.auth.currentUser, session=supabase.auth.currentSession;
   if(user==null||session==null||session.refreshToken==null)return;
   final mail=(user.email??'').trim().toLowerCase(); if(mail.isEmpty)return;
-  await _secureAccounts.write(key:'account_refresh_\${mail}',value:session.refreshToken);
+  await _secureAccounts.write(key:'account_refresh_${mail}',value:session.refreshToken);
   await _rememberAccount(mail);
 }
 Future<List<String>> rememberedAccountEmails()=>_savedAccountEmails();
@@ -415,9 +415,9 @@ class _LoginPageState extends State<LoginPage>{
       setState(()=>busy=true);
       try{
         await supabase.auth.signOut();
-        await supabase.auth.signInWithOtp(email:mail,shouldCreateUser:true,data:{'first_name':first.text.trim(),'last_name':last.text.trim(),'full_name':'\${first.text.trim()} \${last.text.trim()}'});
+        await supabase.auth.signInWithOtp(email:mail,shouldCreateUser:true,data:{'first_name':first.text.trim(),'last_name':last.text.trim(),'full_name':'${first.text.trim()} ${last.text.trim()}'});
         if(mounted)Navigator.push(context,MaterialPageRoute(builder:(_)=>EmailVerificationPage(email:mail,verificationType:OtpType.email,allowCreateUser:true)));
-      }on AuthException catch(e){if(mounted)showMsg(context,'ثبت‌نام ناموفق بود: \${e.message}');}
+      }on AuthException catch(e){if(mounted)showMsg(context,'ثبت‌نام ناموفق بود: ${e.message}');}
       finally{if(mounted)setState(()=>busy=false);}
     }else{
       final pe=passwordMessage(password.text);if(pe!=null){setState(()=>passwordError=pe);return;}
@@ -426,11 +426,11 @@ class _LoginPageState extends State<LoginPage>{
         await supabase.auth.signInWithPassword(email:mail,password:password.text);
         await rememberCurrentSession();await appTheme.loadForUser();
         if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);
-      }on AuthException catch(e){if(mounted)showMsg(context,'ورود ناموفق بود: \${e.message}');}
+      }on AuthException catch(e){if(mounted)showMsg(context,'ورود ناموفق بود: ${e.message}');}
       finally{if(mounted)setState(()=>busy=false);}
     }
   }
-  Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: \$e');}}
+  Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
   @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
     Container(height:82,decoration:BoxDecoration(gradient:LinearGradient(colors:[t.colorScheme.primary,t.colorScheme.secondary]),borderRadius:BorderRadius.circular(24)),child:const Icon(Icons.forum_rounded,size:46,color:Colors.white)),
     const SizedBox(height:18),const Text('Arad Messenger',textAlign:TextAlign.center,style:TextStyle(fontSize:29,fontWeight:FontWeight.w800)),const SizedBox(height:20),
@@ -450,7 +450,7 @@ class PasswordSetupPage extends StatefulWidget{const PasswordSetupPage({super.ke
 class _PasswordSetupPageState extends State<PasswordSetupPage>{
  final p=TextEditingController(),c=TextEditingController();bool busy=false;
  String? err(String v)=>v.length<8||!RegExp(r'[A-Z]').hasMatch(v)||!RegExp(r'[0-9]').hasMatch(v)?'حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد لازم است':null;
- Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: \$e');}finally{if(mounted)setState(()=>busy=false);}}
+ Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ساخت رمز عبور')),body:ListView(padding:const EdgeInsets.all(20),children:[const Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),const SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),const SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:const InputDecoration(labelText:'تکرار رمز عبور')),const SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]);
  @override void dispose(){p.dispose();c.dispose();super.dispose();}
 }
