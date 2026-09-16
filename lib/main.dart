@@ -1713,6 +1713,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       final uniqueIds = <String>{uid, ...selected.map((p) => '${p['id']}')};
       final members = uniqueIds.map((memberId) => {'conversation_id': c['id'], 'user_id': memberId}).toList();
       await supabase.from('conversation_members').insert(members);
+      await supabase.from('conversation_admins').insert({'conversation_id':c['id'],'user_id':uid,'role':'owner'});
       if (mounted) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title.text.trim())));
       }
@@ -1825,6 +1826,7 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
       final uid = supabase.auth.currentUser!.id;
       final c = await supabase.from('conversations').insert({'type':'channel','title':title.text.trim(),'created_by':uid}).select().single();
       await supabase.from('conversation_members').insert({'conversation_id':c['id'],'user_id':uid});
+      await supabase.from('conversation_admins').insert({'conversation_id':c['id'],'user_id':uid,'role':'owner'});
       if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ChatPage(id:c['id'].toString(),title:title.text.trim())));
     } catch(e) { if(mounted) showMsg(context, 'ساخت کانال ناموفق بود: ' + e.toString()); }
     finally { if(mounted) setState(() => busy=false); }
@@ -1850,6 +1852,70 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
   @override void dispose(){title.dispose();about.dispose();super.dispose();}
 }
 
+
+class GroupManagementPage extends StatefulWidget {
+  final String conversationId;
+  final String title;
+  const GroupManagementPage({super.key,required this.conversationId,required this.title});
+  @override State<GroupManagementPage> createState()=>_GroupManagementPageState();
+}
+class _GroupManagementPageState extends State<GroupManagementPage>{
+  List<Map<String,dynamic>> members=[],admins=[]; bool loading=true;
+  Future<void> load()async{
+    try{
+      final ms=List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id').eq('conversation_id',widget.conversationId));
+      final ids=ms.map((x)=>x['user_id']).toList();
+      members=ids.isEmpty?[]:List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id',ids));
+      admins=List<Map<String,dynamic>>.from(await supabase.from('conversation_admins').select('user_id,role').eq('conversation_id',widget.conversationId));
+      if(mounted)setState(()=>loading=false);
+    }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'خطا: '+e.toString());}}
+  }
+  bool isAdmin(String id)=>admins.any((a)=>a['user_id'].toString()==id);
+  Future<void> addMember()async{
+    final r=await showSearch<Map<String,dynamic>?>(context:context,delegate:UserSearchDelegate()); if(r==null)return;
+    try{await supabase.from('conversation_members').upsert({'conversation_id':widget.conversationId,'user_id':r['id']},onConflict:'conversation_id,user_id');await load();if(mounted)showMsg(context,'عضو اضافه شد.');}
+    catch(e){if(mounted)showMsg(context,'افزودن عضو ناموفق بود: '+e.toString());}
+  }
+  Future<void> toggleAdmin(Map<String,dynamic> p)async{
+    final id=p['id'].toString(); if(id==supabase.auth.currentUser!.id){showMsg(context,'مالک را نمی‌توان تغییر داد.');return;}
+    try{
+      if(isAdmin(id)) await supabase.from('conversation_admins').delete().eq('conversation_id',widget.conversationId).eq('user_id',id);
+      else await supabase.from('conversation_admins').insert({'conversation_id':widget.conversationId,'user_id':id,'role':'admin'});
+      await load();
+    }catch(e){if(mounted)showMsg(context,'تغییر مدیر ناموفق بود: '+e.toString());}
+  }
+  Future<void> removeMember(Map<String,dynamic> p)async{
+    final id=p['id'].toString(); if(id==supabase.auth.currentUser!.id){showMsg(context,'مالک را نمی‌توان حذف کرد.');return;}
+    try{await supabase.from('conversation_admins').delete().eq('conversation_id',widget.conversationId).eq('user_id',id);await supabase.from('conversation_members').delete().eq('conversation_id',widget.conversationId).eq('user_id',id);await load();}
+    catch(e){if(mounted)showMsg(context,'حذف عضو ناموفق بود: '+e.toString());}
+  }
+  @override void initState(){super.initState();load();}
+  @override Widget build(BuildContext context)=>Scaffold(
+    extendBodyBehindAppBar:true,
+    appBar:AppBar(title:Text('مدیریت '+widget.title),backgroundColor:Colors.transparent,actions:[IconButton(onPressed:addMember,icon:const Icon(Icons.person_add_alt_1_rounded))]),
+    body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(12,100,12,24),children:[
+      ClipRRect(borderRadius:BorderRadius.circular(24),child:BackdropFilter(filter:ImageFilter.blur(sigmaX:18,sigmaY:18),child:Container(
+        decoration:BoxDecoration(color:Theme.of(context).colorScheme.surface.withValues(alpha:.72),borderRadius:BorderRadius.circular(24)),
+        child:Column(children:[
+          ListTile(leading:const Icon(Icons.admin_panel_settings_rounded),title:const Text('مدیریت اعضا',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text(members.length.toString()+' عضو • '+admins.length.toString()+' مدیر')),
+          const Divider(height:1),
+          ...members.map((p)=>ListTile(
+            leading:avatar(p),
+            title:Text((p['display_name']??p['username']??'کاربر').toString(),style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text(isAdmin(p['id'].toString())?'مدیر':'عضو'),
+            trailing:PopupMenuButton<String>(
+              onSelected:(v)=>v=='admin'?toggleAdmin(p):removeMember(p),
+              itemBuilder:(_)=>[
+                PopupMenuItem(value:'admin',child:Text(isAdmin(p['id'].toString())?'حذف مدیر':'انتخاب به‌عنوان مدیر')),
+                const PopupMenuItem(value:'remove',child:Text('حذف عضو')),
+              ],
+            ),
+          )),
+        ]),
+      )),
+    ]),
+  );
+}
 
 class SavedMessagesPage extends StatefulWidget {
   const SavedMessagesPage({super.key});
@@ -2859,6 +2925,18 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
+  Future<bool> _isGroupAdmin() async {
+    try {
+      final uid=supabase.auth.currentUser!.id;
+      final r=await supabase.from('conversation_admins').select('role').eq('conversation_id',widget.id).eq('user_id',uid).maybeSingle();
+      return r!=null;
+    } catch (_) { return false; }
+  }
+  Future<void> _openGroupManagement() async {
+    if (!await _isGroupAdmin()) { if(mounted) showMsg(context,'فقط مدیر گروه یا کانال می‌تواند مدیریت کند.'); return; }
+    if (mounted) await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.id,title:widget.title)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -2880,6 +2958,14 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
         ),
+        actions: [
+          FutureBuilder<bool>(
+            future: _isGroupAdmin(),
+            builder: (_,snap) => snap.data==true
+                ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:const Icon(Icons.admin_panel_settings_rounded))
+                : const SizedBox.shrink(),
+          ),
+        ],
         title: Row(
           children: [
             const CircleAvatar(radius: 17, child: Icon(Icons.person, size: 18)),
