@@ -27,6 +27,22 @@ jobs:
           test -f android/settings.gradle.kts || test -f android/settings.gradle
           test -f android/app/build.gradle.kts || test -f android/app/build.gradle
           test -f android/gradle/wrapper/gradle-wrapper.properties
+      - name: Set Android minimum SDK for current plugins
+        shell: python
+        run: |
+          from pathlib import Path
+          candidates = [Path('android/app/build.gradle.kts'), Path('android/app/build.gradle')]
+          p = next((x for x in candidates if x.exists()), None)
+          if p is None:
+              raise SystemExit('Android app Gradle file not found')
+          s = p.read_text(encoding='utf-8')
+          if p.suffix == '.kts':
+              s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
+              s = s.replace('minSdk = flutter.minSdkVersion\n', 'minSdk = 23\n')
+          else:
+              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 23')
+          p.write_text(s, encoding='utf-8')
+          print(f'Using minSdk 23 in {p}')
       - name: Install Arad logo
         if: ${{ hashFiles('assets/app_icon.jpg') != '' }}
         run: |
