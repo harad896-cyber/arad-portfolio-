@@ -2106,7 +2106,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openImage(Map<String, dynamic> m) async {
-    final a = attachments['\${m['id']}'];
+    final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) { if (mounted) showMsg(context, 'تصویر پیدا نشد'); return; }
     final url = await _attachmentUrl(path);
