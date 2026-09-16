@@ -1,6 +1,7 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -2473,10 +2474,12 @@ class _ChatPageState extends State<ChatPage> {
     ]);
   }
 
-  Widget _messageBubble(Map<String, dynamic> m) {
+  Widget _glassMessageBubble(Map<String, dynamic> m) {
     final mine = m['sender_id'] == supabase.auth.currentUser!.id;
     final sender = _senderName(m);
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
+    final scheme = Theme.of(context).colorScheme;
+    final base = mine ? scheme.primary : scheme.surfaceContainerHighest;
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
@@ -2486,45 +2489,100 @@ class _ChatPageState extends State<ChatPage> {
         },
         child: Container(
           constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84),
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 7),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!mine) ...[
-                CircleAvatar(radius: 17, backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 18) : null),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null,
+                ),
                 const SizedBox(width: 6),
               ],
               Flexible(
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  color: mine ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 9, 10, 7),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!mine) Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(sender, style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary))),
-                        _replyPreview(m),
-                        if (m['message_type'] == 'image') _imageAttachment(m),
-                        if (m['message_type'] == 'audio') _voicePlayButton(m['id'].toString()),
-                        if (m['message_type'] == 'file') _fileAttachment(m),
-                        if (m['message_type'] != 'audio' && m['message_type'] != 'image' && m['message_type'] != 'file' && '${m['body'] ?? ''}'.isNotEmpty)
-                          Text('${m['body'] ?? ''}', style: TextStyle(fontSize: 15.5, height: 1.35, color: Theme.of(context).colorScheme.onSurface)),
-                        const SizedBox(height: 3),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                            if (mine) ...[
-                              const SizedBox(width: 4),
-                              Icon(m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? Colors.blue : null),
-                            ],
-                          ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(mine ? 20 : 5),
+                    bottomRight: Radius.circular(mine ? 5 : 20),
+                  ),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
+                      decoration: BoxDecoration(
+                        color: base.withValues(alpha: mine ? .78 : .68),
+                        border: Border.all(
+                          color: scheme.onSurface.withValues(alpha: .08),
                         ),
-                        _reactionRow(m),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .10),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!mine)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
+                              child: Text(
+                                sender,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.primary,
+                                ),
+                              ),
+                            ),
+                          _replyPreview(m),
+                          if (m['message_type'] == 'image') _imageAttachment(m),
+                          if (m['message_type'] == 'audio') _voicePlayButton(m['id'].toString()),
+                          if (m['message_type'] == 'file') _fileAttachment(m),
+                          if (m['message_type'] != 'audio' &&
+                              m['message_type'] != 'image' &&
+                              m['message_type'] != 'file' &&
+                              '${m['body'] ?? ''}'.isNotEmpty)
+                            Text(
+                              '${m['body'] ?? ''}',
+                              style: TextStyle(
+                                fontSize: 15.5,
+                                height: 1.38,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                          const SizedBox(height: 3),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              if (mine) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  m['read_at'] != null
+                                      ? Icons.done_all_rounded
+                                      : Icons.done_rounded,
+                                  size: 15,
+                                  color: m['read_at'] != null ? Colors.blue : null,
+                                ),
+                              ],
+                            ],
+                          ),
+                          _reactionRow(m),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -2563,462 +2621,182 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Row(children: [const CircleAvatar(radius: 17, child: Icon(Icons.person, size: 18)), const SizedBox(width: 9), Expanded(child: Text(widget.title, overflow: TextOverflow.ellipsis))]),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: loading
-                ? const Center(child: CircularProgressIndicator())
-                : messages.isEmpty
-                    ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
-                    : ListView.builder(controller: _messagesScroll, padding: const EdgeInsets.fromLTRB(12, 12, 12, 8), itemCount: messages.length, itemBuilder: (context, i) => _messageBubble(messages[i]),
-          ),
-          if (replyMessage != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, border: const Border(top: BorderSide(color: Color(0xFFE0E2E8)))),
-              child: Row(children: [const Icon(Icons.reply_rounded, size: 20), const SizedBox(width: 8), Expanded(child: Text('${_senderName(replyMessage!)}: ${replyMessage!['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))), IconButton(onPressed: () => setState(() => replyMessage = null), icon: const Icon(Icons.close))]),
-            ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(onPressed: sendImage, tooltip: 'تصویر', icon: const Icon(Icons.image_outlined)),
-                  IconButton(onPressed: sendFile, tooltip: 'فایل', icon: const Icon(Icons.attach_file)),
-                  IconButton(onPressed: toggleVoiceRecording, tooltip: recordingVoice ? 'توقف و ارسال ویس' : 'ضبط ویس', icon: Icon(recordingVoice ? Icons.stop_circle_rounded : Icons.mic_rounded)),
-                  Expanded(child: TextField(controller: text, minLines: 1, maxLines: 5, textInputAction: TextInputAction.newline, decoration: const InputDecoration(hintText: 'پیام...', border: OutlineInputBorder(), isDense: true))),
-                  IconButton(onPressed: sending ? null : sendText, icon: const Icon(Icons.send_rounded)),
-                ],
+        backgroundColor: scheme.surface.withValues(alpha: .62),
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              color: scheme.surface.withValues(alpha: .20),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: scheme.onSurface.withValues(alpha: .07)),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-
-class AccountSwitcherPage extends StatefulWidget {
-  final bool autoAdd;
-
-  const AccountSwitcherPage({super.key, this.autoAdd = false});
-
-  @override
-  State<AccountSwitcherPage> createState() => _AccountSwitcherPageState();
-}
-
-class _AccountSwitcherPageState extends State<AccountSwitcherPage> {
-  List<String> accounts = <String>[];
-  bool loading = true;
-  bool busy = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-    if (widget.autoAdd) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _addAccount();
-      });
-    }
-  }
-
-  Future<void> _load() async {
-    final list = await _savedAccountEmails();
-    final current = supabase.auth.currentUser?.email?.toLowerCase();
-    if (current != null && current.isNotEmpty) {
-      await _rememberAccount(current);
-    }
-    if (!mounted) return;
-    setState(() {
-      accounts = list.contains(current) ? list : ([if (current != null) current, ...list]);
-      accounts = accounts.take(3).toList();
-      loading = false;
-    });
-  }
-
-  Future<void> _switchTo(String email) async {
-    final current = supabase.auth.currentUser?.email?.toLowerCase();
-    if (current == email.toLowerCase()) {
-      if (mounted) Navigator.pop(context);
-      return;
-    }
-    setState(() => busy = true);
-    try {
-      await supabase.auth.signOut();
-      await supabase.auth.signInWithOtp(email: email.toLowerCase(), shouldCreateUser: false);
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => EmailVerificationPage(
-          email: email.toLowerCase(),
-          verificationType: OtpType.email,
-          allowCreateUser: false,
-        )),
-        (route) => false,
-      );
-    } on AuthException catch (e) {
-      if (mounted) showMsg(context, 'تغییر حساب ناموفق بود: ${e.message}');
-    } catch (e) {
-      if (mounted) showMsg(context, 'تغییر حساب ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
-  Future<void> _addAccount() async {
-    if (accounts.length >= 3) {
-      showMsg(context, 'حداکثر ۳ حساب می‌توانید روی این دستگاه داشته باشید.');
-      return;
-    }
-    final controller = TextEditingController();
-    final email = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('افزودن حساب'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.emailAddress,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'ایمیل حساب جدید',
-            border: OutlineInputBorder(),
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('ادامه')),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (email == null || email.trim().isEmpty) return;
-    final normalized = email.trim().toLowerCase();
-    if (accounts.any((e) => e.toLowerCase() == normalized)) {
-      showMsg(context, 'این حساب قبلاً اضافه شده است.');
-      return;
-    }
-    setState(() => busy = true);
-    try {
-      await supabase.auth.signOut();
-      await supabase.auth.signInWithOtp(email: normalized, shouldCreateUser: true);
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => EmailVerificationPage(
-          email: normalized,
-          verificationType: OtpType.email,
-          allowCreateUser: true,
-        )),
-        (route) => false,
-      );
-    } on AuthException catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد حساب جدید ناموفق بود: ${e.message}');
-    } catch (e) {
-      if (mounted) showMsg(context, 'افزودن حساب ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
-  Future<void> _remove(String email) async {
-    final current = supabase.auth.currentUser?.email?.toLowerCase();
-    if (current == email.toLowerCase()) {
-      showMsg(context, 'حساب فعال را نمی‌توان از لیست حذف کرد.');
-      return;
-    }
-    await _removeSavedAccount(email);
-    await _load();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final current = supabase.auth.currentUser?.email?.toLowerCase();
-    return Scaffold(
-      appBar: AppBar(title: const Text('تغییر حساب')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Row(children: [
-                      CircleAvatar(radius: 27, child: const Icon(Icons.manage_accounts_rounded)),
-                      const SizedBox(width: 14),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('حساب‌های من', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-                        const SizedBox(height: 4),
-                        Text('${accounts.length} از ۳ حساب فعال روی این دستگاه'),
-                      ])),
-                    ]),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ...accounts.map((email) {
-                  final active = email.toLowerCase() == current;
-                  return Card(
-                    child: ListTile(
-                      leading: CircleAvatar(child: Icon(active ? Icons.check_rounded : Icons.person_outline_rounded)),
-                      title: Text(email, textDirection: TextDirection.ltr),
-                      subtitle: Text(active ? 'حساب فعلی' : 'برای ورود، کد ۶ رقمی ایمیل می‌شود.'),
-                      trailing: active
-                          ? const Icon(Icons.radio_button_checked_rounded)
-                          : PopupMenuButton<String>(
-                              onSelected: (v) { if (v == 'switch') _switchTo(email); if (v == 'remove') _remove(email); },
-                              itemBuilder: (_) => const [
-                                PopupMenuItem(value: 'switch', child: Text('تغییر به این حساب')),
-                                PopupMenuItem(value: 'remove', child: Text('حذف از این دستگاه')),
-                              ],
-                            ),
-                      onTap: active ? null : () => _switchTo(email),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: busy ? null : _addAccount,
-                  icon: const Icon(Icons.person_add_alt_1_rounded),
-                  label: Text(accounts.length >= 3 ? 'سقف ۳ حساب تکمیل است' : 'افزودن حساب جدید'),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'برای امنیت، هنگام تغییر یا افزودن حساب، کد ۶ رقمی همان ایمیل درخواست می‌شود.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6), fontSize: 12),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
-
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  Map<String, dynamic>? profile;
-
-  Future<void> load() async {
-    final row = await supabase.from('profiles').select().eq('id', supabase.auth.currentUser!.id).maybeSingle();
-    if (mounted) setState(() => profile = row);
-  }
-
-  Future<void> avatarUpload() async {
-    try {
-      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (image == null) return;
-      final bytes = await image.readAsBytes();
-      final path = '${supabase.auth.currentUser!.id}/avatar.jpg';
-      await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
-      final url = supabase.storage.from('avatars').getPublicUrl(path);
-      await supabase.from('profiles').update({'avatar_url': '$url?x=${DateTime.now().millisecondsSinceEpoch}'}).eq('id', supabase.auth.currentUser!.id);
-      await load();
-    } catch (e) {
-      if (mounted) showMsg(context, 'تصویر پروفایل ذخیره نشد: $e');
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    load();
-  }
-
-  Future<void> _logout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('خروج از حساب'),
-        content: const Text('آیا می‌خواهید از این حساب خارج شوید؟'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('خروج')),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    try {
-      await supabase.auth.signOut();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-    } on AuthException catch (err) {
-      if (mounted) showMsg(context, 'خروج ناموفق بود: ' + err.message);
-    } catch (err) {
-      if (mounted) showMsg(context, 'خروج ناموفق بود: ' + err.toString());
-    }
-  }
-  @override
-  Widget build(BuildContext context) {
-    final p = profile;
-    if (p == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('پروفایل'),
-        actions: [
-          IconButton(
-            tooltip: 'تغییر یا افزودن حساب',
-            icon: const Icon(Icons.manage_accounts_rounded),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AccountSwitcherPage()),
-            ),
-          ),
-          IconButton(
-            tooltip: 'ویرایش پروفایل',
-            icon: const Icon(Icons.edit_rounded),
-            onPressed: () async {
-              await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()));
-              await load();
-            },
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(child: Stack(children: [avatar(p, size: 104), Positioned(bottom: 0, right: 0, child: IconButton.filled(onPressed: avatarUpload, icon: const Icon(Icons.camera_alt)))])),
-          const SizedBox(height: 18),
-          Center(child: Text('${p['display_name'] ?? 'بدون نام'}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
-          if ('${p['username'] ?? ''}'.trim().isNotEmpty) Center(child: Text('@${p['username']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700))),
-          const SizedBox(height: 10),
-          Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('${p['bio']?.toString().trim().isNotEmpty == true ? p['bio'] : 'هنوز بیویی برای پروفایل ثبت نشده است.'}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.5)))),
-          const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: () async {
-              await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()));
-              await load();
-            },
-            icon: const Icon(Icons.edit_rounded),
-            label: const Text('ویرایش نام، نمایه و بیو'),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text('حساب‌ها', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 5),
-                  Text(
-                    'تا ۳ حساب را روی این دستگاه نگه دارید و هر زمان خواستید با کد ۶ رقمی بین آن‌ها جابه‌جا شوید.',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const AccountSwitcherPage()),
-                          ),
-                          icon: const Icon(Icons.swap_horiz_rounded),
-                          label: const Text('تغییر حساب'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const AccountSwitcherPage(autoAdd: true)),
-                          ),
-                          icon: const Icon(Icons.person_add_alt_1_rounded),
-                          label: const Text('افزودن حساب'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+        title: Row(
+          children: [
+            const CircleAvatar(radius: 17, child: Icon(Icons.person, size: 18)),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                widget.title,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
+          ],
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: dark
+                ? [
+                    scheme.surface,
+                    Color.alphaBlend(scheme.primary.withValues(alpha: .07), scheme.surface),
+                    scheme.surface,
+                  ]
+                : [
+                    scheme.surface,
+                    Color.alphaBlend(scheme.primary.withValues(alpha: .045), scheme.surface),
+                    scheme.surface,
+                  ],
           ),
-          const SizedBox(height: 24),
-          const SizedBox(height: 18),
-          const Divider(),
-          const SizedBox(height: 8),
-          const Text('تنظیمات پروفایل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-          ListTile(leading: const Icon(Icons.person_outline), title: const Text('حساب کاربری'), subtitle: const Text('نام، نام کاربری و اطلاعات حساب'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSetupPage()))),
-          ListTile(leading: const Icon(Icons.lock_outline), title: const Text('حریم خصوصی و امنیت'), subtitle: const Text('تنظیمات امنیت و حریم خصوصی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'حریم خصوصی و امنیت', icon: Icons.lock_outline)))),
-          ListTile(leading: const Icon(Icons.storage_outlined), title: const Text('داده‌ها و ذخیره‌سازی'), subtitle: const Text('مدیریت داده‌ها و فضای ذخیره‌سازی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'داده‌ها و ذخیره‌سازی', icon: Icons.storage_outlined)))),
-          ListTile(leading: const Icon(Icons.chat_bubble_outline), title: const Text('تنظیمات چت'), subtitle: const Text('ظاهر و رفتار گفتگوها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_bubble_outline)))),
-          ListTile(leading: const Icon(Icons.bookmark_outline), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('دسترسی سریع به پیام‌های مهم'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'پیام‌های ذخیره‌شده', icon: Icons.bookmark_outline)))),
-          ListTile(leading: const Icon(Icons.dashboard_customize_outlined), title: const Text('تنظیمات صفحات'), subtitle: const Text('مدیریت تنظیمات بخش‌های برنامه'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات صفحات', icon: Icons.dashboard_customize_outlined)))),
-          ListTile(leading: const Icon(Icons.language), title: const Text('زبان'), subtitle: const Text('انتخاب زبان برنامه'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'زبان', icon: Icons.language)))),
-          ListTile(leading: const Icon(Icons.account_balance_wallet_outlined), title: const Text('کیف پول'), subtitle: const Text('مدیریت کیف پول آراد'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'کیف پول', icon: Icons.account_balance_wallet_outlined)))),
-          ListTile(leading: const Icon(Icons.person_add_alt_1), title: const Text('دعوت از دوستان'), subtitle: const Text('دعوت یک دوست برای پیوستن به آراد'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvitePage()))),
-          ListTile(leading: const Icon(Icons.system_update_outlined), title: const Text('به‌روزرسانی'), subtitle: const Text('بررسی نسخه جدید برنامه'), onTap: () => showMsg(context, 'نسخه فعلی برنامه بررسی شد.')),
-          ListTile(leading: const Icon(Icons.support_agent_outlined), title: const Text('پشتیبانی'), subtitle: const Text('راهنمایی و ارتباط با پشتیبانی'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'پشتیبانی', icon: Icons.support_agent_outlined)))),
-          const SizedBox(height: 12),
-
-          FilledButton.tonal(
-            onPressed: _logout,
-            child: const Text('خروج'),
-          ),
-        ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : messages.isEmpty
+                      ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
+                      : ListView.builder(
+                          controller: _messagesScroll,
+                          physics: const BouncingScrollPhysics(),
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.fromLTRB(12, 92, 12, 12),
+                          itemCount: messages.length,
+                          itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
+                        ),
+            ),
+            if (replyMessage != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
+                    decoration: BoxDecoration(
+                      color: scheme.surface.withValues(alpha: .78),
+                      border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: .08))),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.reply_rounded, size: 20, color: scheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${_senderName(replyMessage!)}: ${replyMessage!['body'] ?? ''}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() => replyMessage = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 5, 8, 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: dark ? .72 : .78),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .10),
+                            blurRadius: 18,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            onPressed: sendImage,
+                            tooltip: 'تصویر',
+                            icon: Icon(Icons.image_outlined, color: scheme.primary),
+                          ),
+                          IconButton(
+                            onPressed: sendFile,
+                            tooltip: 'فایل',
+                            icon: Icon(Icons.attach_file_rounded, color: scheme.primary),
+                          ),
+                          IconButton(
+                            onPressed: toggleVoiceRecording,
+                            tooltip: recordingVoice ? 'توقف و ارسال ویس' : 'ضبط ویس',
+                            icon: Icon(
+                              recordingVoice ? Icons.stop_circle_rounded : Icons.mic_rounded,
+                              color: recordingVoice ? scheme.error : scheme.primary,
+                            ),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: text,
+                              minLines: 1,
+                              maxLines: 5,
+                              textInputAction: TextInputAction.newline,
+                              decoration: InputDecoration(
+                                hintText: 'پیام...',
+                                filled: true,
+                                fillColor: scheme.surface.withValues(alpha: .48),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(19),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          IconButton.filled(
+                            onPressed: sending ? null : sendText,
+                            icon: const Icon(Icons.send_rounded),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
-}
-}
-
-
-class ProfileOptionPage extends StatefulWidget {
-  final String title; final IconData icon;
-  const ProfileOptionPage({super.key, required this.title, required this.icon});
-  @override State<ProfileOptionPage> createState() => _ProfileOptionPageState();
-}
-class _ProfileOptionPageState extends State<ProfileOptionPage> {
-  bool notifications = true, readReceipts = true, mediaAuto = true;
-  @override Widget build(BuildContext context) {
-    final title = widget.title;
-    return Scaffold(appBar: AppBar(title: Text(title)), body: ListView(padding: const EdgeInsets.all(16), children: [
-      Card(child: Padding(padding: const EdgeInsets.all(18), child: Row(children: [CircleAvatar(radius: 26, child: Icon(widget.icon)), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), const SizedBox(height: 4), const Text('تنظیمات Arad Messenger')]))]))),
-      if (title == 'حریم خصوصی و امنیت') ...[
-        SwitchListTile(value: readReceipts, onChanged: (v) => setState(() => readReceipts = v), title: const Text('وضعیت خوانده‌شدن'), subtitle: const Text('نمایش تیک خوانده‌شدن پیام‌ها')),
-        ListTile(leading: const Icon(Icons.logout_rounded), title: const Text('خروج از حساب'), onTap: () => supabase.auth.signOut()),
-      ] else if (title == 'داده‌ها و ذخیره‌سازی') ...[
-        SwitchListTile(value: mediaAuto, onChanged: (v) => setState(() => mediaAuto = v), title: const Text('دانلود خودکار رسانه')),
-        ListTile(leading: const Icon(Icons.delete_sweep_outlined), title: const Text('پاک‌سازی حافظه موقت'), onTap: () => showMsg(context, 'حافظه موقت پاک شد.')),
-      ] else if (title == 'تنظیمات چت') ...[
-        ListTile(leading: const Icon(Icons.palette_outlined), title: const Text('رنگ برنامه'), subtitle: const Text('انتخاب رنگ اصلی'), onTap: () => _pickColor(context)),
-        SwitchListTile(value: notifications, onChanged: (v) => setState(() => notifications = v), title: const Text('پیش‌نمایش پیام')),
-      ] else if (title == 'تنظیمات صفحات') ...[
-        SwitchListTile(value: appTheme.dark, onChanged: (v) => appTheme.setDark(v), title: const Text('حالت تاریک'), subtitle: const Text('تغییر ظاهر روشن و تاریک')),
-        SwitchListTile(value: notifications, onChanged: (v) => setState(() => notifications = v), title: const Text('اعلان‌ها')),
-      ] else if (title == 'پشتیبانی') ...[
-        ListTile(leading: const Icon(Icons.help_outline_rounded), title: const Text('راهنمای استفاده'), onTap: () => showDialog(context: context, builder: (_) => const AlertDialog(title: Text('راهنمای Arad Messenger'), content: Text('برای شروع گفتگو، کاربر را جستجو کنید یا گروه بسازید. در چت می‌توانید تصویر و فایل ارسال کنید.')))),
-        ListTile(leading: const Icon(Icons.bug_report_outlined), title: const Text('گزارش مشکل'), onTap: () => showMsg(context, 'گزارش مشکل را از طریق پشتیبانی ارسال کنید.')),
-      ] else if (title == 'زبان') ...[
-        ...AppStrings.supported.map((code) => ListTile(leading: const Icon(Icons.language), title: Text(AppStrings.names[code] ?? code), trailing: aradLanguageController.locale.languageCode == code ? const Icon(Icons.check_circle_rounded) : null, onTap: () async { await aradLanguageController.setLocale(code); if (context.mounted) Navigator.pop(context); })),
-      ] else if (title == 'کیف پول') ...[
-        ListTile(leading: const Icon(Icons.account_balance_wallet_outlined), title: const Text('وضعیت کیف پول'), subtitle: const Text('کیف پول هنوز فعال نشده است.')),
-      ] else ...[
-        ListTile(leading: const Icon(Icons.check_circle_outline), title: const Text('وضعیت حساب'), subtitle: const Text('حساب شما فعال است.')),
-      ],
-    ]));
-  }
-  Future<void> _pickColor(BuildContext context) async {
-    const colors = [0xFF4F46E5,0xFF2563EB,0xFF0891B2,0xFF059669,0xFFEA580C,0xFFDB2777];
-    final value = await showModalBottomSheet<int>(context: context, builder: (_) => SafeArea(child: Wrap(children: colors.map((c) => ListTile(leading: CircleAvatar(backgroundColor: Color(c)), title: Text('#'+c.toRadixString(16).substring(2).toUpperCase()), onTap: () => Navigator.pop(context,c))).toList())));
-    if(value != null) await appTheme.setSeed(value);
-  }
-}
+  }}
