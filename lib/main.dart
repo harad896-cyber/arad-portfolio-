@@ -318,6 +318,66 @@ class PermissionInfoPage extends StatelessWidget {
   const PermissionInfoPage({super.key,required this.title,required this.reason,required this.icon});
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(title)),body:Padding(padding:const EdgeInsets.all(20),child:Card(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:52,color:Theme.of(context).colorScheme.primary),const SizedBox(height:16),Text(reason,textAlign:TextAlign.center),const SizedBox(height:20),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ادامه'))])))));
 }
+class CallHistoryPage extends StatelessWidget {
+  const CallHistoryPage({super.key});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),body:ListView(children:[
+    ListTile(leading:Icon(Icons.call_received_rounded,color:Theme.of(context).colorScheme.primary),title:const Text('تماس صوتی'),subtitle:const Text('دریافتی • امروز'),trailing:IconButton(onPressed:(){},icon:const Icon(Icons.call_rounded))),
+    ListTile(leading:Icon(Icons.videocam_rounded,color:Theme.of(context).colorScheme.secondary),title:const Text('تماس تصویری'),subtitle:const Text('ارسالی • دیروز'),trailing:IconButton(onPressed:(){},icon:const Icon(Icons.videocam_rounded))),
+    ListTile(leading:Icon(Icons.call_missed_rounded,color:Theme.of(context).colorScheme.error),title:const Text('تماس بی‌پاسخ'),subtitle:const Text('امروز'),trailing:IconButton(onPressed:(){},icon:const Icon(Icons.call_rounded))),
+  ]));
+}
+class NotificationsCenterPage extends StatefulWidget {
+  const NotificationsCenterPage({super.key});
+  @override State<NotificationsCenterPage> createState()=>_NotificationsCenterPageState();
+}
+class _NotificationsCenterPageState extends State<NotificationsCenterPage>{
+  final read=<bool>[false,false,true];
+  final items=<String>['پیام جدید دریافت شد','درخواست عضویت در گروه','به‌روزرسانی برنامه'];
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(itemCount:items.length,itemBuilder:(_,i)=>ListTile(onTap:()=>setState(()=>read[i]=true),leading:Icon(read[i]?Icons.notifications_none_rounded:Icons.notifications_active_rounded,color:read[i]?null:Theme.of(context).colorScheme.primary),title:Text(items[i],style:TextStyle(fontWeight:read[i]?FontWeight.w400:FontWeight.w800)),subtitle:Text(read[i]?'خوانده شده':'خوانده نشده'))));
+}
+class SharedMediaFilesPage extends StatelessWidget {
+  const SharedMediaFilesPage({super.key});
+  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
+}
+class GlobalSearchPage extends StatefulWidget {
+  const GlobalSearchPage({super.key});
+  @override State<GlobalSearchPage> createState()=>_GlobalSearchPageState();
+}
+class _GlobalSearchPageState extends State<GlobalSearchPage>{
+  final c=TextEditingController();
+  @override void dispose(){c.dispose();super.dispose();}
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:TextField(controller:c,autofocus:true,decoration:const InputDecoration(hintText:'جستجو در همه گفتگوها و مخاطبین',border:InputBorder.none),onChanged:(_)=>setState((){}))),body:c.text.trim().isEmpty?const Center(child:Text('نام مخاطب، گفتگو یا پیام را جستجو کنید')):ListView(children:const[ _SearchSection(title:'مخاطبین'),_SearchSection(title:'گفتگوها'),_SearchSection(title:'پیام‌ها')]));
+}
+class _SearchSection extends StatelessWidget {
+  final String title; const _SearchSection({required this.title});
+  @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17))),const ListTile(leading:Icon(Icons.search_rounded),title:Text('نتیجه جستجو'))]);
+}
+class BackupPage extends StatefulWidget {
+  const BackupPage({super.key});
+  @override State<BackupPage> createState()=>_BackupPageState();
+}
+class _BackupPageState extends State<BackupPage>{bool auto=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(14),children:[Card(child:SwitchListTile(title:const Text('پشتیبان‌گیری خودکار'),value:auto,onChanged:(v)=>setState(()=>auto=v))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی ثبت نشده'),trailing:Text('—'))),const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('محاسبه پس از اولین پشتیبان'),trailing:Text('—'))),FilledButton(onPressed:(){},child:const Text('پشتیبان‌گیری اکنون'))]));}
+class StickersGifsPage extends StatelessWidget {
+  const StickersGifsPage({super.key});
+  @override Widget build(BuildContext context)=>DefaultTabController(length:3,child:Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی'),bottom:const TabBar(tabs:[Tab(text:'استیکرها'),Tab(text:'GIF'),Tab(text:'ایموجی')])),body:TabBarView(children:[ListView(children:const[ListTile(leading:Icon(Icons.stars_rounded),title:Text('پک‌های استیکر من')),ListTile(leading:Icon(Icons.add_rounded),title:Text('افزودن پک'))]),Center(child:TextField(decoration:InputDecoration(hintText:'جستجوی GIF',prefixIcon:Icon(Icons.search_rounded)))),GridView.count(crossAxisCount:6,children:List.generate(24,(i)=>Center(child:Text(['😀','❤️','👍','😂','🔥','🎉'][i%6],style:const TextStyle(fontSize:25)))))])));
+}
+class SecurityCenterPage extends StatelessWidget {
+  const SecurityCenterPage({super.key});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(14),children:[
+    Card(child:SwitchListTile(title:const Text('تأیید دومرحله‌ای'),value:false,onChanged:(_){},secondary:const Icon(Icons.verified_user_rounded))),
+    const Card(child:ListTile(title:Text('دستگاه‌های متصل'),subtitle:Text('مدیریت نشست‌های فعال'),trailing:Icon(Icons.chevron_left_rounded))),
+    const Card(child:ListTile(title:Text('مخاطبین مسدودشده'),trailing:Icon(Icons.chevron_left_rounded))),
+    const Card(child:ListTile(title:Text('پیام‌های خودتخریب‌شونده'),subtitle:Text('تنظیم زمان حذف خودکار'),trailing:Icon(Icons.timer_rounded))),
+  ]));
+}
+class GroupAdvancedPage extends StatefulWidget {
+  const GroupAdvancedPage({super.key});
+  @override State<GroupAdvancedPage> createState()=>_GroupAdvancedPageState();
+}
+class _GroupAdvancedPageState extends State<GroupAdvancedPage>{final q=TextEditingController();@override void dispose(){q.dispose();super.dispose();}@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی گروهی')),body:ListView(padding:const EdgeInsets.all(14),children:[Card(child:ListTile(leading:const Icon(Icons.poll_rounded),title:const Text('نظرسنجی'),onTap:()=>showDialog(context:context,builder:(_)=>AlertDialog(title:const Text('نظرسنجی جدید'),content:TextField(controller:q,decoration:const InputDecoration(labelText:'سؤال')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ساخت'))])))),const Card(child:ListTile(leading:Icon(Icons.push_pin_rounded),title:Text('پیام‌های پین‌شده'))),const Card(child:ListTile(leading:Icon(Icons.alternate_email_rounded),title:Text('ذکر اعضا با @')))]));}
+class AboutAppPage extends StatelessWidget {
+  const AboutAppPage({super.key});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه 1.0.0'))),const Card(child:ListTile(title:Text('حریم خصوصی'),trailing:Icon(Icons.chevron_left_rounded))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'),trailing:Icon(Icons.chevron_left_rounded))),Card(child:ListTile(title:const Text('امتیاز به برنامه'),trailing:Icon(Icons.star_rounded,color:Colors.amber),onTap:(){}))]));}
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   final url = profile['avatar_url']?.toString() ?? '';
   return CircleAvatar(
