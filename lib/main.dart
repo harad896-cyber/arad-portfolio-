@@ -2029,6 +2029,22 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> saveMessage(Map<String, dynamic> message) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await supabase.from('saved_messages').upsert({
+        'user_id': uid,
+        'source_message_id': message['id'],
+        'body': message['body'],
+        'message_type': message['message_type'] ?? 'text',
+      }, onConflict: 'user_id,source_message_id');
+      if (mounted) showMsg(context, 'پیام ذخیره شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره پیام ناموفق بود. جدول saved_messages را در Supabase اجرا کنید.');
+    }
+  }
+
   Future<void> shareMessage(Map<String, dynamic> message) async {
     final body = "${message['body'] ?? ''}".trim();
     if (body.isEmpty) return;
@@ -2241,6 +2257,7 @@ class _ChatPageState extends State<ChatPage> {
           if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text') _actionTile(context, Icons.edit_outlined, 'ویرایش پیام', () => editMessage(message)),
           _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
           const Divider(height: 12, color: Colors.white12),
+          _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره پیام', () => saveMessage(message)),
           _actionTile(context, Icons.push_pin_outlined, 'سنجاق کردن', () => showMsg(context, 'قابلیت سنجاق پیام در حال آماده‌سازی است.')),
           _actionTile(context, Icons.info_outline_rounded, 'اطلاعات پیام', () => _showMessageInfo(message)),
           _actionTile(context, Icons.report_gmailerrorred_outlined, 'گزارش پیام', () => showMsg(context, 'گزارش پیام در نسخه فعلی فقط به‌صورت محلی ثبت می‌شود.')),
