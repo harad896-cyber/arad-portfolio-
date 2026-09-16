@@ -278,7 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ListTile(
             leading: CircleAvatar(backgroundColor: s.errorContainer, child: Icon(Icons.logout_rounded, color: s.error)),
             title: const Text('خروج از حساب', style: TextStyle(fontWeight: FontWeight.w800)),
-            onTap: switchAccount,
+            onTap: logoutThisAccount,
           ),
         ])),
       ],
@@ -287,10 +287,10 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 
-$newClass$marker extends StatefulWidget {
+class ProfileOptionPage extends StatefulWidget {
   final String title;
   final IconData icon;
-  ProfileOptionPage({super.key, required this.title, required this.icon});
+  const ProfileOptionPage({super.key, required this.title, required this.icon});
   @override
   State<ProfileOptionPage> createState() => _ProfileOptionPageState();
 }
