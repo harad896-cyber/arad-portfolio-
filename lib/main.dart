@@ -1211,6 +1211,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   }
 }
 
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   @override
@@ -1221,11 +1222,12 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> chats = [];
   bool loading = true;
   int selectedFilter = 0;
+  int navIndex = 0;
 
   List<Map<String, dynamic>> get visibleChats {
     if (selectedFilter == 0) return chats;
     final type = selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
-    return chats.where((c) => '${c['type']}' == type).toList();
+    return chats.where((c) => c['type'].toString() == type).toList();
   }
 
   Future<void> load() async {
@@ -1233,11 +1235,14 @@ class _HomePageState extends State<HomePage> {
       final uid = supabase.auth.currentUser!.id;
       final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
       final ids = (members as List).map((e) => e['conversation_id']).toList();
-      if (ids.isEmpty) { if (mounted) setState(() { chats = []; loading = false; }); return; }
+      if (ids.isEmpty) {
+        if (mounted) setState(() { chats = []; loading = false; });
+        return;
+      }
       final rows = await supabase.from('conversations').select().inFilter('id', ids).order('created_at', ascending: false);
       if (mounted) setState(() { chats = List<Map<String, dynamic>>.from(rows); loading = false; });
     } catch (e) {
-      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: $e'); }
+      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: ' + e.toString()); }
     }
   }
 
@@ -1246,12 +1251,12 @@ class _HomePageState extends State<HomePage> {
     if (result == null) return;
     try {
       final uid = supabase.auth.currentUser!.id;
-      if ('${result['id']}' == uid) { if (mounted) showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.'); return; }
+      if (result['id'].toString() == uid) { showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.'); return; }
       final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
       for (final r in existing) {
         final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', r['conversation_id']);
         if ((members as List).length == 2 && members.any((m) => m['user_id'] == result['id'])) {
-          if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${r['conversation_id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
+          if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: r['conversation_id'].toString(), title: (result['display_name'] ?? result['username'] ?? 'گفتگو').toString())));
           return;
         }
       }
@@ -1260,68 +1265,289 @@ class _HomePageState extends State<HomePage> {
         {'conversation_id': c['id'], 'user_id': uid},
         {'conversation_id': c['id'], 'user_id': result['id']},
       ]);
-      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: '${result['display_name'] ?? result['username'] ?? 'گفتگو'}')));
+      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: c['id'].toString(), title: (result['display_name'] ?? result['username'] ?? 'گفتگو').toString())));
       load();
-    } catch (e) { if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: $e'); }
+    } catch (e) { if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: ' + e.toString()); }
   }
 
-  Future<void> createGroup() async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage())); load(); }
+  Future<void> createGroup() async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage()));
+    load();
+  }
+
   @override
   void initState() { super.initState(); load(); }
+
+  Widget chatsView() {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        const _StoriesStrip(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 6),
+          child: Row(children: [
+            const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
+            IconButton.filledTonal(onPressed: createDirect, icon: const Icon(Icons.edit_rounded)),
+          ]),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(children: List.generate(4, (i) {
+            const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها'];
+            const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded];
+            return Padding(
+              padding: const EdgeInsets.only(left: 7),
+              child: ChoiceChip(
+                selected: selectedFilter == i,
+                avatar: Icon(icons[i], size: 17),
+                label: Text(labels[i]),
+                onSelected: (_) => setState(() => selectedFilter = i),
+              ),
+            );
+          })),
+        ),
+        Expanded(
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : visibleChats.isEmpty
+                  ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      CircleAvatar(radius: 42, backgroundColor: theme.colorScheme.primaryContainer, child: Icon(Icons.forum_rounded, size: 40, color: theme.colorScheme.primary)),
+                      const SizedBox(height: 16),
+                      const Text('هنوز گفتگویی ندارید', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 8),
+                      const Text('برای شروع یک گفتگو کاربر را جستجو کنید.'),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(onPressed: createDirect, icon: const Icon(Icons.add_comment_rounded), label: const Text('گفتگوی جدید')),
+                    ]))
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(10, 4, 10, 90),
+                      itemCount: visibleChats.length,
+                      itemBuilder: (context, i) {
+                        final c = visibleChats[i];
+                        final type = c['type'].toString();
+                        final title = (c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString();
+                        final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            leading: CircleAvatar(backgroundColor: theme.colorScheme.primaryContainer, child: Icon(icon, color: theme.colorScheme.primary)),
+                            title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                            subtitle: Text((c['last_message'] ?? 'شروع گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            trailing: const Icon(Icons.chevron_left_rounded),
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: c['id'].toString(), title: title))),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget contactsView() => Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(title: const Text('مخاطبین'), actions: [
+      IconButton(onPressed: () => showSearch(context: context, delegate: UserSearchDelegate()), icon: const Icon(Icons.search_rounded)),
+    ]),
+    body: Center(child: FilledButton.tonalIcon(
+      onPressed: () => showSearch(context: context, delegate: UserSearchDelegate()),
+      icon: const Icon(Icons.person_search_rounded),
+      label: const Text('جستجوی کاربر'),
+    )),
+  );
+
+  Widget settingsView() => Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(title: const Text('تنظیمات')),
+    body: ListView(padding: const EdgeInsets.all(14), children: [
+      Card(child: Column(children: [
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.palette_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('ظاهر و رنگ', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('رنگ اصلی و حالت تاریک'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات صفحات', icon: Icons.palette_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('اعلان‌ها و نمایش پیام‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
+        const Divider(height: 1),
+        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage()))),
+      ])),
+    ]),
+  );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Arad Messenger'),
-        actions: [
-          IconButton(onPressed: createDirect, tooltip: 'گفتگوی جدید', icon: const Icon(Icons.person_add_alt_1_rounded)),
-          IconButton(onPressed: createGroup, tooltip: 'گروه جدید', icon: const Icon(Icons.group_add_rounded)),
-          IconButton(onPressed: load, tooltip: 'تازه‌سازی', icon: const Icon(Icons.refresh_rounded)),
-          IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())), tooltip: 'پروفایل', icon: const Icon(Icons.account_circle_rounded)),
+      body: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree(
+        key: ValueKey(navIndex),
+        child: navIndex == 0 ? chatsView() : navIndex == 1 ? contactsView() : navIndex == 2 ? settingsView() : const ProfilePage(),
+      ))),
+      floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navIndex,
+        onDestinationSelected: (i) => setState(() => navIndex = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
+          NavigationDestination(icon: Icon(Icons.people_outline_rounded), selectedIcon: Icon(Icons.people_rounded), label: 'مخاطبین'),
+          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'تنظیمات'),
+          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'پروفایل'),
         ],
       ),
-      body: Column(children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-          child: Row(children: List.generate(4, (i) {
-            const labels = ['همه', 'شخصی', 'گروه', 'کانال'];
-            const icons = [Icons.all_inbox, Icons.person, Icons.group, Icons.campaign];
-            return Padding(padding: const EdgeInsets.only(left: 6), child: ChoiceChip(
-              selected: selectedFilter == i,
-              avatar: Icon(icons[i], size: 18),
-              label: Text(labels[i]),
-              onSelected: (_) => setState(() => selectedFilter = i),
-            ));
-          })),
+    );
+  }
+}
+
+class _StoriesStrip extends StatefulWidget {
+  const _StoriesStrip();
+  @override State<_StoriesStrip> createState() => _StoriesStripState();
+}
+
+class _StoriesStripState extends State<_StoriesStrip> {
+  List<Map<String, dynamic>> stories = [];
+  bool loading = true;
+
+  Future<void> load() async {
+    try {
+      final rows = await supabase.from('stories').select('id,user_id,text,background,created_at,expires_at').gt('expires_at', DateTime.now().toUtc().toIso8601String()).order('created_at', ascending: false).limit(30);
+      final raw = List<Map<String, dynamic>>.from(rows);
+      final ids = raw.map((x) => x['user_id']).toSet().toList();
+      final people = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
+      final map = {for (final p in people) p['id'].toString(): p};
+      if (mounted) setState(() { stories = raw.map((s) => {...s, '_profile': map[s['user_id'].toString()] ?? {}}).toList(); loading = false; });
+    } catch (_) {
+      if (mounted) setState(() { stories = []; loading = false; });
+    }
+  }
+
+  @override void initState() { super.initState(); load(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = supabase.auth.currentUser?.id;
+    final mine = stories.where((s) => s['user_id'].toString() == uid).toList();
+    final others = stories.where((s) => s['user_id'].toString() != uid).toList();
+    return SizedBox(
+      height: 110,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 9, 12, 2),
+        children: [
+          _storyItem(context, mine.isEmpty ? null : mine.first, true),
+          ...others.map((s) => _storyItem(context, s, false)),
+        ],
+      ),
+    );
+  }
+
+  Widget _storyItem(BuildContext context, Map<String, dynamic>? story, bool mine) {
+    final theme = Theme.of(context);
+    final p = story == null ? <String, dynamic>{} : Map<String, dynamic>.from(story['_profile'] ?? {});
+    return GestureDetector(
+      onTap: () async {
+        if (mine) {
+          final changed = await Navigator.push(context, MaterialPageRoute(builder: (_) => StoryComposerPage(existing: story)));
+          if (changed == true) load();
+        } else if (story != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => StoryViewerPage(story: story)));
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const StoryComposerPage()));
+        }
+      },
+      child: SizedBox(width: 78, child: Column(children: [
+        Container(
+          width: 64, height: 64, padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary])),
+          child: story == null ? CircleAvatar(backgroundColor: theme.colorScheme.surface, child: Icon(Icons.add_rounded, color: theme.colorScheme.primary)) : avatar(p, size: 58),
         ),
-        Expanded(child: loading
-          ? const Center(child: CircularProgressIndicator())
-          : visibleChats.isEmpty
-            ? Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(width: 88, height: 88, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle), child: Icon(Icons.forum_outlined, size: 42, color: Theme.of(context).colorScheme.primary)),
-                  const SizedBox(height: 20),
-                  Text(selectedFilter == 1 ? 'گفتگوی شخصی ندارید' : selectedFilter == 2 ? 'گروهی ندارید' : selectedFilter == 3 ? 'کانالی ندارید' : 'هنوز گفتگویی ندارید', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 8),
-                  const Text('با پیدا کردن یک کاربر، اولین گفتگوی خود را شروع کنید.', textAlign: TextAlign.center),
-                  const SizedBox(height: 20),
-                  FilledButton.icon(onPressed: createDirect, icon: const Icon(Icons.add_comment_outlined), label: const Text('شروع گفتگوی جدید')),
-                ],
-              )))
-            : ListView.builder(
-                itemCount: visibleChats.length,
-                itemBuilder: (context, i) {
-                  final c = visibleChats[i];
-                  final title = '${c['title'] ?? (c['type'] == 'group' ? 'گروه' : c['type'] == 'channel' ? 'کانال' : 'گفتگو')}';
-                  return Card(margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), leading: CircleAvatar(child: Icon(c['type'] == 'group' ? Icons.group_rounded : c['type'] == 'channel' ? Icons.campaign_rounded : Icons.person_rounded)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('${c['last_message'] ?? 'شروع گفتگو'}', maxLines: 1, overflow: TextOverflow.ellipsis), trailing: const Icon(Icons.chevron_left_rounded), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title))));
-                },
-              ),
+        const SizedBox(height: 5),
+        Text(mine ? (story == null ? 'استوری شما' : 'استوری من') : (p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+      ])),
+    );
+  }
+}
+
+class StoryComposerPage extends StatefulWidget {
+  final Map<String, dynamic>? existing;
+  const StoryComposerPage({super.key, this.existing});
+  @override State<StoryComposerPage> createState() => _StoryComposerPageState();
+}
+
+class _StoryComposerPageState extends State<StoryComposerPage> {
+  late TextEditingController text;
+  int background = 0xFF2563EB;
+  bool busy = false;
+  static const colors = [0xFF2563EB, 0xFF7C3AED, 0xFFDB2777, 0xFFEA580C, 0xFF059669, 0xFF0F172A];
+
+  @override void initState() {
+    super.initState();
+    text = TextEditingController(text: (widget.existing?['text'] ?? '').toString());
+    background = int.tryParse((widget.existing?['background'] ?? '').toString()) ?? background;
+  }
+
+  Future<void> save() async {
+    final value = text.text.trim();
+    if (value.isEmpty) { showMsg(context, 'یک جمله برای استوری بنویسید.'); return; }
+    if (value.length > 180) { showMsg(context, 'استوری حداکثر ۱۸۰ کاراکتر باشد.'); return; }
+    setState(() => busy = true);
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final data = {'user_id': uid, 'text': value, 'background': background.toString(), 'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String()};
+      if (widget.existing != null) {
+        await supabase.from('stories').update(data).eq('id', widget.existing!['id']).eq('user_id', uid);
+      } else {
+        await supabase.from('stories').insert(data);
+      }
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره استوری انجام نشد. ابتدا migration استوری را در Supabase اجرا کنید.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('استوری یک‌جمله‌ای')),
+      body: ListView(padding: const EdgeInsets.all(18), children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 290,
+          decoration: BoxDecoration(color: Color(background), borderRadius: BorderRadius.circular(28)),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(28),
+          child: Text(text.text.isEmpty ? 'جمله استوری شما' : text.text, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, height: 1.3)),
         ),
+        const SizedBox(height: 18),
+        TextField(controller: text, maxLength: 180, maxLines: 2, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'یک جمله بنویسید', prefixIcon: Icon(Icons.edit_rounded))),
+        const SizedBox(height: 8),
+        const Text('رنگ استوری', style: TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 10, children: colors.map((c) => GestureDetector(onTap: () => setState(() => background = c), child: Container(width: 42, height: 42, decoration: BoxDecoration(color: Color(c), shape: BoxShape.circle, border: background == c ? Border.all(color: Colors.white, width: 4) : null)))).toList()),
+        const SizedBox(height: 22),
+        FilledButton.icon(onPressed: busy ? null : save, icon: const Icon(Icons.check_rounded), label: Text(busy ? 'در حال ذخیره...' : 'انتشار استوری')),
       ]),
-      floatingActionButton: FloatingActionButton.extended(onPressed: createDirect, icon: const Icon(Icons.chat_rounded), label: const Text('گفتگوی جدید')),
+    );
+  }
+
+  @override void dispose() { text.dispose(); super.dispose(); }
+}
+
+class StoryViewerPage extends StatelessWidget {
+  final Map<String, dynamic> story;
+  const StoryViewerPage({super.key, required this.story});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Map<String, dynamic>.from(story['_profile'] ?? {});
+    final bg = int.tryParse(story['background'].toString()) ?? 0xFF2563EB;
+    return Scaffold(
+      backgroundColor: Color(bg),
+      body: SafeArea(child: Stack(children: [
+        Center(child: Padding(padding: const EdgeInsets.all(30), child: Text(story['text'].toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 31, fontWeight: FontWeight.w900, height: 1.35)))),
+        Positioned(top: 10, left: 16, right: 16, child: Row(children: [
+          avatar(p, size: 42),
+          const SizedBox(width: 10),
+          Expanded(child: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white)),
+        ])),
+      ])),
     );
   }
 }
