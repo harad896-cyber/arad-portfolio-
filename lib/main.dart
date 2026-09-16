@@ -1757,9 +1757,110 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> showMessageActions(Map<String, dynamic> message) async {
     const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
     final scheme = Theme.of(context).colorScheme;
-    await showModalBottomSheet<void>(
+    await showGeneralDialog<void>(
       context: context,
-      backgroundColor: const Color(0xFF20384A),
+      barrierLabel: 'عملیات پیام',
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) => Align(
+        alignment: Alignment.bottomCenter,
+        child: Material(
+          color: Colors.transparent,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF20384A),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: _messageActionsContent(context, message),
+              ),
+            ),
+          ),
+        ),
+      ),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, .18),
+              end: Offset.zero,
+            ).animate(curved),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: .96, end: 1).animate(curved),
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _messageActionsContent(BuildContext context, Map<String, dynamic> message) {
+    const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 42, height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ...emojis.map((e) => InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () { Navigator.pop(context); reactTo(message, e); },
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: Text(e, style: const TextStyle(fontSize: 26)),
+                  ),
+                )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _actionTile(context, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
+          _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری پیام', () => shareMessage(message)),
+          _actionTile(context, Icons.link_rounded, 'لینک پیام', () => copyMessageLink(message)),
+          _actionTile(context, Icons.copy_rounded, 'کپی', () {
+            Clipboard.setData(ClipboardData(text: '${message['body'] ?? ''}'));
+            showMsg(context, 'متن کپی شد.');
+          }),
+          if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
+            _actionTile(context, Icons.edit_outlined, 'ویرایش پیام', () => editMessage(message)),
+          _actionTile(context, Icons.push_pin_outlined, 'سنجاق کردن', () {
+            showMsg(context, 'سنجاق کردن پیام در نسخه بعدی فعال می‌شود.');
+          }),
+          _actionTile(context, Icons.report_gmailerrorred_outlined, 'گزارش', () {
+            showMsg(context, 'گزارش پیام ثبت شد.');
+          }),
+          _actionTile(context, Icons.delete_outline, 'حذف برای من', () => deleteForMe(message)),
+          if (message['sender_id'] == supabase.auth.currentUser?.id)
+            _actionTile(context, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
+          const SizedBox(height: 2),
+          Text('عملیات پیام', style: TextStyle(color: scheme.onSurface.withValues(alpha: .55), fontSize: 11)),
+        ],
+      ),
+    );
+  }
       barrierColor: Colors.black54,
       showDragHandle: true,
       isScrollControlled: true,
