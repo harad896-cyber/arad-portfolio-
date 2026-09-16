@@ -1,10 +1,6 @@
 name: Polish Modern UI
 
 on:
-  push:
-    paths:
-      - 'trigger-modern-ui.txt'
-      - '.github/workflows/polish-modern-ui.yml'
   workflow_dispatch:
 
 permissions:
