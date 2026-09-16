@@ -129,17 +129,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> switchAccount() async {
     if (!mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSwitcherPage()));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => AccountSwitcherPage()));
     if (mounted) await loadProfile();
   }
 
   Future<void> logoutThisAccount() async {
     final email=supabase.auth.currentUser?.email?.trim().toLowerCase();
     if(email!=null && email.isNotEmpty) await _profileSecureAccounts.delete(key:'account_refresh_\${email}');
-    await _rememberAccount(email??'');
+    if(email!=null && email.isNotEmpty) await _profileSecureAccounts.delete(key:'account_refresh_${email}');
     await supabase.auth.signOut();
     if(!mounted)return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const LoginPage()),(_)=>false);
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>LoginPage()),(_)=>false);
   }
 
   Widget glass(Widget child) {
@@ -265,14 +265,14 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.admin_panel_settings_rounded, color: s.primary)),
               title: const Text('مدیریت تیک آبی', style: TextStyle(fontWeight: FontWeight.w800)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerificationAdminPage())),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VerificationAdminPage())),
             ),
           ],
           const Divider(height: 1),
           ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.bookmark_rounded, color: s.primary)),
             title: const Text('پیام‌های ذخیره‌شده', style: TextStyle(fontWeight: FontWeight.w800)),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage())),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage())),
           ),
           const Divider(height: 1),
           ListTile(
@@ -290,7 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
 $newClass$marker extends StatefulWidget {
   final String title;
   final IconData icon;
-  const ProfileOptionPage({super.key, required this.title, required this.icon});
+  ProfileOptionPage({super.key, required this.title, required this.icon});
   @override
   State<ProfileOptionPage> createState() => _ProfileOptionPageState();
 }
