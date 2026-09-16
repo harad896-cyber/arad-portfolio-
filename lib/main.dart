@@ -2025,14 +2025,34 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final a = attachments[messageId];
       final path = a?['storage_path']?.toString() ?? '';
-      final mime = a?['mime_type']?.toString() ?? 'audio/mp4';
-      final url = await _attachmentUrl(path);
-      if (url == null || url.isEmpty) throw Exception('لینک امن فایل صوتی ساخته نشد');
+      if (path.isEmpty) throw Exception('مسیر فایل صوتی خالی است');
+      final bytes = await supabase.storage.from('chat-media').download(path);
+      if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
       await _voicePlayer.stop();
-      await _voicePlayer.play(UrlSource(url, mimeType: mime));
+      await _voicePlayer.play(BytesSource(bytes, mimeType: 'audio/mp4'));
     } catch (e) {
       if (mounted) showMsg(context, 'پخش فایل صوتی ناموفق بود: $e');
     }
+  }
+
+  Future<void> _openImage(Map<String, dynamic> m) async {
+    final a = attachments['\${m['id']}'];
+    final path = a?['storage_path']?.toString() ?? '';
+    if (path.isEmpty) { if (mounted) showMsg(context, 'تصویر پیدا نشد'); return; }
+    final url = await _attachmentUrl(path);
+    if (!mounted || url == null || url.isEmpty) { if (mounted) showMsg(context, 'باز کردن تصویر ناموفق بود'); return; }
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: .88),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(12),
+        child: GestureDetector(
+          onTap: () => Navigator.pop(dialogContext),
+          child: InteractiveViewer(minScale: .8, maxScale: 4, child: ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.network(url, fit: BoxFit.contain))),
+        ),
+      ),
+    );
   }
 
   Widget _voicePlayButton(String messageId) {
@@ -2826,9 +2846,18 @@ class _ChatPageState extends State<ChatPage> {
         if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
         final url = snapshot.data;
         if (url == null || url.isEmpty) return const Icon(Icons.broken_image_rounded, size: 42);
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Image.network(url, width: 220, height: 180, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42)))),
+        return GestureDetector(
+          onTap: () => _openImage(m),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.network(
+              url,
+              width: 220,
+              height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42))),
+            ),
+          ),
         );
       },
     );
