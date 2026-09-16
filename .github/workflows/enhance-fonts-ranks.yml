@@ -2,10 +2,6 @@ name: Enhance Arad Messenger - Fonts and Ranks
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/enhance-fonts-ranks.yml'
-      - 'trigger-ui-enhancements.txt'
 
 permissions:
   contents: write
