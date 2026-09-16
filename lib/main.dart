@@ -1756,10 +1756,15 @@ class CallHistoryPage extends StatelessWidget {
 }
 
 class NotificationsPage extends StatefulWidget {
+  final String id;
+  final String title;
+  const NotificationsPage({super.key,this.id='',this.title='اعلان‌ها'});
   const NotificationsPage({super.key});
   @override State<NotificationsPage> createState()=>_NotificationsPageState();
 }
-class _NotificationsPageState extends State<NotificationsPage>{
+class _NotificationsPageState extends State<NotificationsPage> {
+  Widget _actionTile(BuildContext context, IconData icon, String label, VoidCallback onTap)=>ListTile(leading:Icon(icon),title:Text(label),onTap:onTap);
+  void _showChatEmojiPicker()=>showModalBottomSheet(context:context,builder:(_)=>const SizedBox(height:260,child:Center(child:Text('😀  ❤️  👍  😂  🔥')));
   final List<bool> read=[false,true,false];
   final List<String> titles=['پیام جدید','درخواست عضویت گروه','به‌روزرسانی برنامه'];
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(
