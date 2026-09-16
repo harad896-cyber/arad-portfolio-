@@ -124,6 +124,7 @@ class AradMessenger extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFF8FAFD),
         visualDensity: VisualDensity.standard,
+        splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
             TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
@@ -1181,8 +1182,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   void initState() { super.initState(); load(); }
   @override
-  void dispose() { chatSearch.dispose(); super.dispose(); }
-  @override
   void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
 
   @override
@@ -1219,6 +1218,34 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 }
 
 
+class _ChatSkeleton extends StatelessWidget {
+  const _ChatSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    Widget bar(double w, double h) => Container(
+      width: w, height: h,
+      decoration: BoxDecoration(
+        color: s.onSurface.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+    return Card(
+      margin: const EdgeInsets.only(bottom: 7),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          CircleAvatar(radius: 25, backgroundColor: s.onSurface.withValues(alpha: .07)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            bar(140, 14), const SizedBox(height: 9), bar(210, 11),
+          ])),
+        ]),
+      ),
+    );
+  }
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   @override
@@ -1234,13 +1261,19 @@ class _HomePageState extends State<HomePage> {
   String chatQuery = '';
 
   List<Map<String, dynamic>> get visibleChats {
-    final type = selectedFilter == 0 ? null : selectedFilter == 1 ? 'direct' : selectedFilter == 2 ? 'group' : 'channel';
+    final type = selectedFilter >= 1 && selectedFilter <= 3
+        ? ['direct', 'group', 'channel'][selectedFilter - 1]
+        : null;
+    final unreadOnly = selectedFilter == 4;
     return chats.where((c) {
       final matchesType = type == null || c['type'].toString() == type;
+      final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
+      final isUnread = unreadCount > 0 || c['unread'] == true;
       final q = chatQuery.trim().toLowerCase();
       final title = (c['title'] ?? '').toString().toLowerCase();
       final last = (c['last_message'] ?? '').toString().toLowerCase();
-      return matchesType && (q.isEmpty || title.contains(q) || last.contains(q));
+      return matchesType && (!unreadOnly || isUnread) &&
+          (q.isEmpty || title.contains(q) || last.contains(q));
     }).toList();
   }
 
@@ -1292,6 +1325,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() { super.initState(); load(); }
 
+  @override
+  void dispose() { chatSearch.dispose(); super.dispose(); }
+
   Widget chatsView() {
     final theme = Theme.of(context);
     return Column(
@@ -1321,8 +1357,8 @@ class _HomePageState extends State<HomePage> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: Row(children: List.generate(4, (i) {
-            const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها'];
-            const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded];
+            const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
+            const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
             return Padding(
               padding: const EdgeInsets.only(left: 7),
               child: ChoiceChip(
@@ -1336,7 +1372,11 @@ class _HomePageState extends State<HomePage> {
         ),
         Expanded(
           child: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(10, 4, 10, 90),
+                  itemCount: 7,
+                  itemBuilder: (_, __) => const _ChatSkeleton(),
+                )
               : visibleChats.isEmpty
                   ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       CircleAvatar(radius: 42, backgroundColor: theme.colorScheme.primaryContainer, child: Icon(Icons.forum_rounded, size: 40, color: theme.colorScheme.primary)),
@@ -1355,15 +1395,45 @@ class _HomePageState extends State<HomePage> {
                         final type = c['type'].toString();
                         final title = (c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString();
                         final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            leading: CircleAvatar(backgroundColor: theme.colorScheme.primaryContainer, child: Icon(icon, color: theme.colorScheme.primary)),
-                            title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                            subtitle: Text((c['last_message'] ?? 'شروع گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            trailing: const Icon(Icons.chevron_left_rounded),
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: c['id'].toString(), title: title))),
+                        final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
+                        final unread = unreadCount > 0 || c['unread'] == true;
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                            child: Card(
+                              color: theme.colorScheme.surface.withValues(alpha: .66),
+                              margin: const EdgeInsets.only(bottom: 7),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                                leading: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    CircleAvatar(backgroundColor: theme.colorScheme.primaryContainer, child: Icon(icon, color: theme.colorScheme.primary)),
+                                    if (c['is_online'] == true) Positioned(
+                                      right: -1, bottom: -1,
+                                      child: Container(width: 12, height: 12, decoration: BoxDecoration(
+                                        color: const Color(0xFF22C55E),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: theme.colorScheme.surface, width: 2),
+                                      )),
+                                    ),
+                                  ],
+                                ),
+                                title: Row(children: [
+                                  Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+                                  if (unread) Container(
+                                    margin: const EdgeInsets.only(right: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                    decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                                    child: Text(unreadCount > 0 ? '$unreadCount' : 'جدید', style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w800)),
+                                  ),
+                                ]),
+                                subtitle: Text((c['last_message'] ?? 'شروع گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                trailing: const Icon(Icons.chevron_left_rounded),
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: c['id'].toString(), title: title))),
+                              ),
+                            ),
                           ),
                         );
                       },
