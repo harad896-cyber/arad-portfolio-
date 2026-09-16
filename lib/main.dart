@@ -1759,7 +1759,6 @@ class NotificationsPage extends StatefulWidget {
   final String id;
   final String title;
   const NotificationsPage({super.key,this.id='',this.title='اعلان‌ها'});
-  const NotificationsPage({super.key});
   @override State<NotificationsPage> createState()=>_NotificationsPageState();
 }
 class _NotificationsPageState extends State<NotificationsPage> {
