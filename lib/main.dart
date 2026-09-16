@@ -3052,6 +3052,7 @@ class _ChatPageState extends State<ChatPage> {
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.fromLTRB(12, 92, 12, 12),
+                          reverse: true,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
                         ),
