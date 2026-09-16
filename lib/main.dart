@@ -1679,6 +1679,44 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
   }
 }
 
+class SavedMessagesPage extends StatefulWidget {
+  const SavedMessagesPage({super.key});
+  @override
+  State<SavedMessagesPage> createState() => _SavedMessagesPageState();
+}
+
+class _SavedMessagesPageState extends State<SavedMessagesPage> {
+  List<Map<String, dynamic>> items = [];
+  bool loading = true;
+  @override void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    try {
+      final rows = await supabase.from('saved_messages').select('id, body, message_type, created_at').order('created_at', ascending: false);
+      if (!mounted) return;
+      setState(() { items = List<Map<String, dynamic>>.from(rows); loading = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      showMsg(context, 'پیام‌های ذخیره‌شده بارگذاری نشد');
+    }
+  }
+  Future<void> _remove(String id) async {
+    try { await supabase.from('saved_messages').delete().eq('id', id); await _load(); }
+    catch (e) { if (mounted) showMsg(context, 'حذف پیام ناموفق بود'); }
+  }
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('پیام‌های ذخیره‌شده')),
+    body: loading ? const Center(child: CircularProgressIndicator()) : items.isEmpty
+      ? const Center(child: Text('هنوز پیامی ذخیره نکرده‌اید.'))
+      : ListView.separated(padding: const EdgeInsets.all(12), itemCount: items.length, separatorBuilder: (_, __) => const SizedBox(height: 8), itemBuilder: (context, i) {
+          final m = items[i];
+          final type = '${m['message_type'] ?? 'text'}';
+          final body = '${m['body'] ?? ''}';
+          final title = body.isEmpty ? (type == 'image' ? 'تصویر' : type == 'audio' ? 'پیام صوتی' : 'پیام') : body;
+          return Card(child: ListTile(leading: const Icon(Icons.bookmark_rounded), title: Text(title, maxLines: 3, overflow: TextOverflow.ellipsis), subtitle: const Text('ذخیره‌شده در Arad Messenger'), trailing: IconButton(icon: const Icon(Icons.delete_outline_rounded), onPressed: () => _remove('${m['id']}'))));
+        }),
+  );
+}
 class ChatPage extends StatefulWidget {
   final String id;
   final String title;
