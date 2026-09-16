@@ -1816,8 +1816,8 @@ class _ChatPageState extends State<ChatPage> {
                     separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
                     itemBuilder: (_, index) {
                       final c = targets[index];
-                      final type = '\${c['type']}';
-                      final title = '\${c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
+                      final type = '${c['type']}';
+                      final title = '${c['_display_title'] ?? c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
                       final icon = type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                       return ListTile(
                         leading: CircleAvatar(child: Icon(icon)),
@@ -1844,7 +1844,7 @@ class _ChatPageState extends State<ChatPage> {
         'reply_to': null,
       }).select().single();
 
-      final type = '\${message['message_type'] ?? 'text'}';
+      final type = '${message['message_type'] ?? 'text'}';
       if (type != 'text') {
         final attachment = await supabase.from('message_attachments')
             .select('storage_path,file_name,file_size,mime_type')
@@ -1863,7 +1863,7 @@ class _ChatPageState extends State<ChatPage> {
 
       if (mounted) {
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ChatPage(id: '\${target['id']}', title: '\${target['title'] ?? 'گفتگو'}'),
+          builder: (_) => ChatPage(id: '${target['id']}', title: '${target['_display_title'] ?? target['title'] ?? 'گفتگو'}'),
         ));
         showMsg(context, 'پیام با موفقیت فوروارد شد.');
       }
