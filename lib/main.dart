@@ -31,6 +31,15 @@ class LanguageController extends ChangeNotifier {
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
+class AppThemeController extends ChangeNotifier {
+  bool dark = false;
+  int seed = 0xFF4F46E5;
+  Future<void> load() async { final p = await SharedPreferences.getInstance(); dark = p.getBool('dark_mode') ?? false; seed = p.getInt('accent_seed') ?? 0xFF4F46E5; notifyListeners(); }
+  Future<void> setDark(bool value) async { dark = value; final p = await SharedPreferences.getInstance(); await p.setBool('dark_mode', value); notifyListeners(); }
+  Future<void> setSeed(int value) async { seed = value; final p = await SharedPreferences.getInstance(); await p.setInt('accent_seed', value); notifyListeners(); }
+}
+final appTheme = AppThemeController();
+
 class AppStrings {
   static const supported = ['fa', 'en', 'ar', 'tr', 'fr', 'de'];
   static const names = {'fa':'فارسی','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
@@ -59,6 +68,7 @@ Future<void> main() async {
     url: supabaseUrl,
     publishableKey: supabasePublishableKey,
   );
+  await appTheme.load();
   runApp(const AradMessenger());
 }
 
@@ -67,7 +77,7 @@ class AradMessenger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return AnimatedBuilder(animation: appTheme, builder: (context, _) => MaterialApp(
       locale: const Locale('fa'),
       supportedLocales: AppStrings.supported.map((x) => Locale(x)),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -76,7 +86,7 @@ class AradMessenger extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4F46E5),
+          seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
         ),
         scaffoldBackgroundColor: const Color(0xFFF5F7FB),
@@ -173,8 +183,10 @@ class AradMessenger extends StatelessWidget {
           color: Color(0xFFE7E8EE),
         ),
       ),
+      darkTheme: ThemeData(useMaterial3: true, colorScheme: ColorScheme.fromSeed(seedColor: Color(appTheme.seed), brightness: Brightness.dark)),
+      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       home: const AuthGate(),
-    );
+    ));
   }
 }
 
@@ -1176,9 +1188,10 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Arad Messenger'),
         actions: [
-          IconButton(onPressed: createDirect, icon: const Icon(Icons.person_add)),
-          IconButton(onPressed: createGroup, icon: const Icon(Icons.group_add)),
-          IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())), icon: const Icon(Icons.person)),
+          IconButton(onPressed: createDirect, tooltip: 'گفتگوی جدید', icon: const Icon(Icons.person_add_alt_1_rounded)),
+          IconButton(onPressed: createGroup, tooltip: 'گروه جدید', icon: const Icon(Icons.group_add_rounded)),
+          IconButton(onPressed: load, tooltip: 'تازه‌سازی', icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())), tooltip: 'پروفایل', icon: const Icon(Icons.account_circle_rounded)),
         ],
       ),
       body: Column(children: [
@@ -1216,12 +1229,12 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, i) {
                   final c = visibleChats[i];
                   final title = '${c['title'] ?? (c['type'] == 'group' ? 'گروه' : c['type'] == 'channel' ? 'کانال' : 'گفتگو')}';
-                  return ListTile(leading: const CircleAvatar(child: Icon(Icons.chat)), title: Text(title), subtitle: Text('${c['last_message'] ?? ''}'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title))));
+                  return Card(margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), leading: CircleAvatar(child: Icon(c['type'] == 'group' ? Icons.group_rounded : c['type'] == 'channel' ? Icons.campaign_rounded : Icons.person_rounded)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('${c['last_message'] ?? 'شروع گفتگو'}', maxLines: 1, overflow: TextOverflow.ellipsis), trailing: const Icon(Icons.chevron_left_rounded), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${c['id']}', title: title))));
                 },
               ),
         ),
       ]),
-      floatingActionButton: FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat)),
+      floatingActionButton: FloatingActionButton.extended(onPressed: createDirect, icon: const Icon(Icons.chat_rounded), label: const Text('گفتگوی جدید')),
     );
   }
 }
@@ -1607,24 +1620,44 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 
-class ProfileOptionPage extends StatelessWidget {
-  final String title;
-  final IconData icon;
+class ProfileOptionPage extends StatefulWidget {
+  final String title; final IconData icon;
   const ProfileOptionPage({super.key, required this.title, required this.icon});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(child: Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary)),
-          const SizedBox(height: 20),
-          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 12),
-          const Text('این بخش آماده است و بدون تغییر در حساب شما باز می‌شود. تنظیمات اختصاصی هر بخش در ادامه تکمیل می‌شوند.', textAlign: TextAlign.center),
-        ],
-      ),
-    );
+  @override State<ProfileOptionPage> createState() => _ProfileOptionPageState();
+}
+class _ProfileOptionPageState extends State<ProfileOptionPage> {
+  bool notifications = true, readReceipts = true, mediaAuto = true;
+  @override Widget build(BuildContext context) {
+    final title = widget.title;
+    return Scaffold(appBar: AppBar(title: Text(title)), body: ListView(padding: const EdgeInsets.all(16), children: [
+      Card(child: Padding(padding: const EdgeInsets.all(18), child: Row(children: [CircleAvatar(radius: 26, child: Icon(widget.icon)), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), const SizedBox(height: 4), const Text('تنظیمات Arad Messenger')]))]))),
+      if (title == 'حریم خصوصی و امنیت') ...[
+        SwitchListTile(value: readReceipts, onChanged: (v) => setState(() => readReceipts = v), title: const Text('وضعیت خوانده‌شدن'), subtitle: const Text('نمایش تیک خوانده‌شدن پیام‌ها')),
+        ListTile(leading: const Icon(Icons.logout_rounded), title: const Text('خروج از حساب'), onTap: () => supabase.auth.signOut()),
+      ] else if (title == 'داده‌ها و ذخیره‌سازی') ...[
+        SwitchListTile(value: mediaAuto, onChanged: (v) => setState(() => mediaAuto = v), title: const Text('دانلود خودکار رسانه')),
+        ListTile(leading: const Icon(Icons.delete_sweep_outlined), title: const Text('پاک‌سازی حافظه موقت'), onTap: () => showMsg(context, 'حافظه موقت پاک شد.')),
+      ] else if (title == 'تنظیمات چت') ...[
+        ListTile(leading: const Icon(Icons.palette_outlined), title: const Text('رنگ برنامه'), subtitle: const Text('انتخاب رنگ اصلی'), onTap: () => _pickColor(context)),
+        SwitchListTile(value: notifications, onChanged: (v) => setState(() => notifications = v), title: const Text('پیش‌نمایش پیام')),
+      ] else if (title == 'تنظیمات صفحات') ...[
+        SwitchListTile(value: appTheme.dark, onChanged: (v) => appTheme.setDark(v), title: const Text('حالت تاریک'), subtitle: const Text('تغییر ظاهر روشن و تاریک')),
+        SwitchListTile(value: notifications, onChanged: (v) => setState(() => notifications = v), title: const Text('اعلان‌ها')),
+      ] else if (title == 'پشتیبانی') ...[
+        ListTile(leading: const Icon(Icons.help_outline_rounded), title: const Text('راهنمای استفاده'), onTap: () => showDialog(context: context, builder: (_) => const AlertDialog(title: Text('راهنمای Arad Messenger'), content: Text('برای شروع گفتگو، کاربر را جستجو کنید یا گروه بسازید. در چت می‌توانید تصویر و فایل ارسال کنید.')))),
+        ListTile(leading: const Icon(Icons.bug_report_outlined), title: const Text('گزارش مشکل'), onTap: () => showMsg(context, 'گزارش مشکل را از طریق پشتیبانی ارسال کنید.')),
+      ] else if (title == 'زبان') ...[
+        ...AppStrings.supported.map((code) => ListTile(leading: const Icon(Icons.language), title: Text(AppStrings.names[code] ?? code), onTap: () => showMsg(context, 'زبان انتخاب شد.'))),
+      ] else if (title == 'کیف پول') ...[
+        ListTile(leading: const Icon(Icons.account_balance_wallet_outlined), title: const Text('وضعیت کیف پول'), subtitle: const Text('کیف پول هنوز فعال نشده است.')),
+      ] else ...[
+        ListTile(leading: const Icon(Icons.check_circle_outline), title: const Text('وضعیت حساب'), subtitle: const Text('حساب شما فعال است.')),
+      ],
+    ]));
+  }
+  Future<void> _pickColor(BuildContext context) async {
+    const colors = [0xFF4F46E5,0xFF2563EB,0xFF0891B2,0xFF059669,0xFFEA580C,0xFFDB2777];
+    final value = await showModalBottomSheet<int>(context: context, builder: (_) => SafeArea(child: Wrap(children: colors.map((c) => ListTile(leading: CircleAvatar(backgroundColor: Color(c)), title: Text('#'+c.toRadixString(16).substring(2).toUpperCase()), onTap: () => Navigator.pop(context,c))).toList())));
+    if(value != null) await appTheme.setSeed(value);
   }
 }
