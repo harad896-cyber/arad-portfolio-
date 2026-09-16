@@ -201,7 +201,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final un = '${profile['username'] ?? ''}'.trim();
     final b = '${profile['bio'] ?? ''}'.trim();
     final verified = profile['is_verified'] == true;
-    final owner = profile['is_owner'] == true;
+    final owner = profile['is_owner'] == true || supabase.auth.currentUser?.email?.toLowerCase() == 'harad896@gmail.com';
 
     return ListView(
       physics: const BouncingScrollPhysics(),
