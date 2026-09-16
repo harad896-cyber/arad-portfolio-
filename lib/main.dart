@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
@@ -385,433 +386,75 @@ class ProfileGate extends StatelessWidget {
   }
 }
 
+
+const _secureAccounts = FlutterSecureStorage();
+Future<void> rememberCurrentSession() async {
+  final user=supabase.auth.currentUser, session=supabase.auth.currentSession;
+  if(user==null||session==null||session.refreshToken==null)return;
+  final mail=(user.email??'').trim().toLowerCase(); if(mail.isEmpty)return;
+  await _secureAccounts.write(key:'account_refresh_\${mail}',value:session.refreshToken);
+  await _rememberAccount(mail);
+}
+Future<List<String>> rememberedAccountEmails()=>_savedAccountEmails();
+
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
+  final bool addAccount;
+  const LoginPage({super.key,this.addAccount=false});
+  @override State<LoginPage> createState()=>_LoginPageState();
 }
-
-class _LoginPageState extends State<LoginPage> {
-  final firstName = TextEditingController();
-  final lastName = TextEditingController();
-  final email = TextEditingController();
-  final country = TextEditingController();
-  String selectedCountry = 'افغانستان';
-  bool signup = true;
-  bool ownerMode = false;
-  bool busy = false;
-
-  Future<void> signInWithGoogle() async {
-    if (googleServerClientId.isEmpty && !kIsWeb) {
-      showMsg(context, 'ورود با Google هنوز در نسخه اندروید تنظیم نشده است.');
-      return;
-    }
-    setState(() => busy = true);
-    try {
-      if (kIsWeb) {
-        await supabase.auth.signInWithOAuth(OAuthProvider.google);
-        return;
-      }
-
-      if (googleServerClientId.isEmpty) {
-        throw const AuthException(
-          'ورود با Google هنوز تنظیم نشده است. Client ID گوگل باید در نسخه اندروید قرار بگیرد.',
-        );
-      }
-
-      await googleSignIn.initialize(serverClientId: googleServerClientId);
-      final account = await googleSignIn.authenticate();
-      final authentication = account.authentication;
-      final idToken = authentication.idToken;
-
-      if (idToken == null || idToken.isEmpty) {
-        throw const AuthException('Google ID Token دریافت نشد.');
-      }
-
-      const scopes = <String>[
-        'openid',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-      ];
-      final authorization = await account.authorizationClient.authorizeScopes(scopes);
-      final accessToken = authorization.accessToken;
-      if (accessToken.isEmpty) {
-        throw const AuthException('Google Access Token دریافت نشد.');
-      }
-
-      await supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: accessToken,
-      );
-    } catch (e) {
-      if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
-  Future<void> ownerLogin() async {
-    final mail = email.text.trim();
-
-    if (mail.isEmpty) {
-      showMsg(context, 'ایمیل مالک را وارد کنید.');
-      return;
-    }
-    if (mail.toLowerCase() != ownerEmail.toLowerCase()) {
-      showMsg(context, 'این ایمیل، ایمیل مالک نیست.');
-      return;
-    }
-
-    setState(() => busy = true);
-    try {
-      await supabase.auth.signOut();
-      await supabase.auth.signInWithOtp(
-        email: mail.toLowerCase(),
-        shouldCreateUser: false,
-      );
-
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => EmailVerificationPage(
-            email: mail.toLowerCase(),
-            verificationType: OtpType.email,
-            allowCreateUser: false,
-            ownerOnly: true,
-          ),
-        ),
-      );
-    } on AuthException catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد مالک ناموفق بود: ${e.message}');
-    } catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد مالک ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
+class _LoginPageState extends State<LoginPage>{
+  final email=TextEditingController(),password=TextEditingController(),first=TextEditingController(),last=TextEditingController();
+  bool signup=false,busy=false,obscure=true; String? emailError,passwordError;
+  bool validEmail(String v)=>RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim());
+  String? passwordMessage(String v){if(v.isEmpty)return 'رمز عبور را وارد کنید';if(v.length<8)return 'حداقل ۸ کاراکتر';if(!RegExp(r'[A-Z]').hasMatch(v))return 'حداقل یک حرف بزرگ';if(!RegExp(r'[0-9]').hasMatch(v))return 'حداقل یک عدد';return null;}
   Future<void> submit() async {
-    final first = firstName.text.trim();
-    final last = lastName.text.trim();
-    final mail = email.text.trim();
-
-    if (signup && (first.isEmpty || last.isEmpty)) {
-      showMsg(context, 'نام و نام خانوادگی را وارد کنید.');
-      return;
-    }
-    if (mail.isEmpty) {
-      showMsg(context, 'ایمیل را وارد کنید.');
-      return;
-    }
-    if (signup && selectedCountry.trim().isEmpty) {
-      showMsg(context, 'کشور خود را انتخاب کنید.');
-      return;
-    }
-
-    setState(() => busy = true);
-    try {
-      await supabase.auth.signOut();
-      await supabase.auth.signInWithOtp(
-        email: mail.toLowerCase(),
-        shouldCreateUser: signup,
-        data: signup
-            ? {
-                'first_name': first,
-                'last_name': last,
-                'full_name': '$first $last',
-                'country': selectedCountry,
-              }
-            : null,
-      );
-
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => EmailVerificationPage(
-            email: mail.toLowerCase(),
-            verificationType: OtpType.email,
-            allowCreateUser: signup,
-          ),
-        ),
-      );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      final m = e.message.toLowerCase();
-      if (m.contains('user not found') || m.contains('not found')) {
-        showMsg(context, 'این ایمیل ثبت نشده است. ابتدا ثبت‌نام کنید.');
-      } else if (m.contains('rate limit') || m.contains('too many') || m.contains('60')) {
-        showMsg(context, 'تعداد درخواست‌ها زیاد است. حداقل ۶۰ ثانیه صبر کنید.');
-      } else {
-        showMsg(context, 'ارسال کد ناموفق بود: ${e.message}');
-      }
-    } catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
+    final mail=email.text.trim().toLowerCase();
+    if(!validEmail(mail)){setState(()=>emailError='ایمیل معتبر نیست');return;}
+    if(signup){
+      if(first.text.trim().isEmpty||last.text.trim().isEmpty){showMsg(context,'نام و نام خانوادگی را وارد کنید.');return;}
+      final pe=passwordMessage(password.text);if(pe!=null){setState(()=>passwordError=pe);return;}
+      setState(()=>busy=true);
+      try{
+        await supabase.auth.signOut();
+        await supabase.auth.signInWithOtp(email:mail,shouldCreateUser:true,data:{'first_name':first.text.trim(),'last_name':last.text.trim(),'full_name':'\${first.text.trim()} \${last.text.trim()}'});
+        if(mounted)Navigator.push(context,MaterialPageRoute(builder:(_)=>EmailVerificationPage(email:mail,verificationType:OtpType.email,allowCreateUser:true)));
+      }on AuthException catch(e){if(mounted)showMsg(context,'ثبت‌نام ناموفق بود: \${e.message}');}
+      finally{if(mounted)setState(()=>busy=false);}
+    }else{
+      final pe=passwordMessage(password.text);if(pe!=null){setState(()=>passwordError=pe);return;}
+      setState(()=>busy=true);
+      try{
+        await supabase.auth.signInWithPassword(email:mail,password:password.text);
+        await rememberCurrentSession();await appTheme.loadForUser();
+        if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);
+      }on AuthException catch(e){if(mounted)showMsg(context,'ورود ناموفق بود: \${e.message}');}
+      finally{if(mounted)setState(()=>busy=false);}
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 28, 22, 20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 82,
-                      height: 82,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.secondary,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 22,
-                            offset: const Offset(0, 10),
-                            color: theme.colorScheme.primary.withValues(alpha: 0.18),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.forum_rounded,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Arad Messenger',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 29, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    ownerMode ? 'ورود امن مالک' : (signup ? 'ساخت حساب جدید' : 'خوش آمدید'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 17,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    elevation: 0,
-                    margin: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (signup && !ownerMode) ...[
-                            TextField(
-                              controller: firstName,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelText: 'نام',
-                                prefixIcon: const Icon(Icons.person_outline),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: lastName,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelText: 'نام خانوادگی',
-                                prefixIcon: const Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<String>(
-                              initialValue: selectedCountry,
-                              decoration: const InputDecoration(
-                                labelText: 'کشور',
-                                prefixIcon: Icon(Icons.public),
-                                border: OutlineInputBorder(),
-                              ),
-                              items: const [
-                                'افغانستان',
-                                'ایران',
-                                'پاکستان',
-                                'هند',
-                                'ترکیه',
-                                'آلمان',
-                                'فرانسه',
-                                'انگلستان',
-                                'آمریکا',
-                                'کانادا',
-                                'استرالیا',
-                                'امارات متحده عربی',
-                                'عراق',
-                                'تاجیکستان',
-                                'ازبکستان',
-                                'صربستان',
-                              ].map((c) => DropdownMenuItem<String>(
-                                value: c,
-                                child: Text(c),
-                              )).toList(),
-                              onChanged: busy ? null : (value) {
-                                if (value != null) setState(() => selectedCountry = value);
-                              },
-                            ),
-                          ],
-                          TextField(
-                            controller: email,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: 'ایمیل',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (signup) ...[
-                            const SizedBox(height: 9),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 17,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 7),
-                                Expanded(
-                                  child: Text(
-                                    'پس از ارسال، یک کد دقیقاً ۶ رقمی به ایمیل شما می‌آید. کد فقط با زدن «تأیید و ورود» بررسی می‌شود.',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: 18),
-                          SizedBox(
-                            height: 52,
-                            child: FilledButton(
-                              onPressed: busy ? null : (ownerMode ? ownerLogin : submit),
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: busy
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : Text(
-                                      ownerMode ? 'ورود امن مالک' : (signup ? 'ثبت‌نام و دریافت کد' : 'ورود'),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          if (!ownerMode) ...[
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 52,
-                            child: OutlinedButton.icon(
-                              onPressed: busy ? null : signInWithGoogle,
-                              style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              icon: const Icon(Icons.g_mobiledata, size: 28),
-                              label: const Text(
-                                'ورود با حساب Google',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
-                          ],
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: busy
-                                ? null
-                                : () => setState(() {
-                                      ownerMode = !ownerMode;
-                                      signup = false;
-                                    }),
-                            icon: Icon(
-                              ownerMode
-                                  ? Icons.lock_open_rounded
-                                  : Icons.admin_panel_settings_outlined,
-                              size: 19,
-                            ),
-                            label: Text(
-                              ownerMode ? 'بازگشت به ورود عادی' : 'ورود مالک',
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    onPressed: busy || ownerMode ? null : () => setState(() => signup = !signup),
-                    child: Text(
-                      ownerMode ? 'ورود مالک فعال است' : (signup ? 'حساب دارم؛ ورود' : 'حساب ندارم؛ ثبت‌نام'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    firstName.dispose();
-    lastName.dispose();
-    email.dispose();
-    country.dispose();
-    super.dispose();
-  }
+  Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: \$e');}}
+  @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+    Container(height:82,decoration:BoxDecoration(gradient:LinearGradient(colors:[t.colorScheme.primary,t.colorScheme.secondary]),borderRadius:BorderRadius.circular(24)),child:const Icon(Icons.forum_rounded,size:46,color:Colors.white)),
+    const SizedBox(height:18),const Text('Arad Messenger',textAlign:TextAlign.center,style:TextStyle(fontSize:29,fontWeight:FontWeight.w800)),const SizedBox(height:20),
+    Card(child:Padding(padding:const EdgeInsets.all(18),child:Column(children:[
+      if(signup)...[TextField(controller:first,decoration:const InputDecoration(labelText:'نام',prefixIcon:Icon(Icons.person_outline))),const SizedBox(height:12),TextField(controller:last,decoration:const InputDecoration(labelText:'نام خانوادگی',prefixIcon:Icon(Icons.badge_outlined))),const SizedBox(height:12)],
+      TextField(controller:email,keyboardType:TextInputType.emailAddress,onChanged:(v)=>setState(()=>emailError=validEmail(v)?null:'ایمیل معتبر نیست'),decoration:InputDecoration(labelText:'ایمیل',errorText:emailError,prefixIcon:const Icon(Icons.email_outlined))),
+      const SizedBox(height:12),TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:const Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),
+      if(!signup)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:busy?null:forgotPassword,child:const Text('رمز را فراموش کرده‌ام'))),
+      const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود'))),
+      const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
+    ])))
+  ])))));}
+  @override void dispose(){email.dispose();password.dispose();first.dispose();last.dispose();super.dispose();}
 }
 
+class PasswordSetupPage extends StatefulWidget{const PasswordSetupPage({super.key});@override State<PasswordSetupPage> createState()=>_PasswordSetupPageState();}
+class _PasswordSetupPageState extends State<PasswordSetupPage>{
+ final p=TextEditingController(),c=TextEditingController();bool busy=false;
+ String? err(String v)=>v.length<8||!RegExp(r'[A-Z]').hasMatch(v)||!RegExp(r'[0-9]').hasMatch(v)?'حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد لازم است':null;
+ Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: \$e');}finally{if(mounted)setState(()=>busy=false);}}
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ساخت رمز عبور')),body:ListView(padding:const EdgeInsets.all(20),children:[const Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),const SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),const SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:const InputDecoration(labelText:'تکرار رمز عبور')),const SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]);
+ @override void dispose(){p.dispose();c.dispose();super.dispose();}
+}
 class EmailVerificationPage extends StatefulWidget {
   final String email;
   final OtpType verificationType;
@@ -883,7 +526,8 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
         }
       }
 
-      await _rememberAccount(widget.email);
+      if (widget.allowCreateUser) { if (!mounted) return; Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PasswordSetupPage())); return; }
+      await rememberCurrentSession();
       // Theme is private to the signed-in account, not shared between accounts.
       await appTheme.loadForUser();
 
