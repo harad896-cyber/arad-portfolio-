@@ -1,3 +1,4 @@
+# Clean Android build pipeline; current Dart patch chain is verified before APK creation.
 name: Android APK
 
 on:
