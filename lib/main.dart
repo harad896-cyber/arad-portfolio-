@@ -122,7 +122,7 @@ class AradMessenger extends StatelessWidget {
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Color(0xF2FFFFFF),
+          color: Color(0xCCFFFFFF),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -132,7 +132,7 @@ class AradMessenger extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xF2FFFFFF),
+          fillColor: Color(0xCCFFFFFF),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
@@ -202,7 +202,7 @@ class AradMessenger extends StatelessWidget {
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Color(0xE617191B),
+          color: Color(0xA617191B),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -212,7 +212,7 @@ class AradMessenger extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xE617191B),
+          fillColor: Color(0xA617191B),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
@@ -1360,15 +1360,23 @@ class _HomePageState extends State<HomePage> {
         child: navIndex == 0 ? chatsView() : navIndex == 1 ? contactsView() : navIndex == 2 ? settingsView() : const ProfilePage(),
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navIndex,
-        onDestinationSelected: (i) => setState(() => navIndex = i),
-        destinations: const [
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: NavigationBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            selectedIndex: navIndex,
+            onDestinationSelected: (i) => setState(() => navIndex = i),
+            destinations: const [
           NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
           NavigationDestination(icon: Icon(Icons.people_outline_rounded), selectedIcon: Icon(Icons.people_rounded), label: 'مخاطبین'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'تنظیمات'),
           NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'پروفایل'),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
