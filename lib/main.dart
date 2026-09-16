@@ -3100,8 +3100,20 @@ class _ChatPageState extends State<ChatPage> {
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
         callback: (_) => load(),
       )
-      .subscribe();
-  }
+      .onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'messages',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => load(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'message_user_deletions',
+        callback: (_) => load(),
+      )
+      .subscribe();  }
 
   @override
   void dispose() {
