@@ -39,7 +39,7 @@ class LanguageController extends ChangeNotifier {
 
 class AppThemeController extends ChangeNotifier {
   bool dark = false;
-  int seed = 0xFF4F46E5;
+  int seed = 0xFF5B6FB5;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -51,7 +51,7 @@ class AppThemeController extends ChangeNotifier {
     final p = await SharedPreferences.getInstance();
     final key = _scope;
     dark = p.getBool('dark_mode_$key') ?? false;
-    seed = p.getInt('accent_seed_$key') ?? 0xFF4F46E5;
+    seed = p.getInt('accent_seed_$key') ?? 0xFF5B6FB5;
     notifyListeners();
   }
   Future<void> setDark(bool value) async {
@@ -120,9 +120,9 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: const Color(0xFFF8FAFD),
+          surface: const Color(0xFFF4F6FA),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFD),
+        scaffoldBackgroundColor: const Color(0xFFF4F6FA),
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -134,19 +134,19 @@ class AradMessenger extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xE6F8FAFD),
+          backgroundColor: Color(0xDFF4F6FA),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF17181C),
+            color: Color(0xFF151821),
           ),
           iconTheme: IconThemeData(color: Color(0xFF30323A)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Color(0xCCFFFFFF),
+          color: Color(0xB8FFFFFF),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -156,11 +156,11 @@ class AradMessenger extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xCCFFFFFF),
+          fillColor: Color(0xB8FFFFFF),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0x1F30323A)),
+            borderSide: BorderSide(color: Color(0x26303746)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
@@ -214,19 +214,22 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: const Color(0xFF101214),
+          primary: const Color(0xFF6E83C4),
+          secondary: const Color(0xFF8B5FBF),
+          tertiary: const Color(0xFFB45CC8),
+          surface: const Color(0xFF111014),
         ),
-        scaffoldBackgroundColor: const Color(0xFF101214),
+        scaffoldBackgroundColor: const Color(0xFF111014),
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xE6101214),
+          backgroundColor: Color(0xE6111014),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Color(0xA617191B),
+          color: Color(0xB81C1A20),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -236,11 +239,11 @@ class AradMessenger extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xA617191B),
+          fillColor: Color(0xB81C1A20),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0x22FFFFFF)),
+            borderSide: BorderSide(color: Color(0x24FFFFFF)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
@@ -248,7 +251,7 @@ class AradMessenger extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0xFF7C83FF), width: 1.6),
+            borderSide: BorderSide(color: Color(0xFF7C8FD6), width: 1.6),
           ),
         ),
       ),
