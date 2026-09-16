@@ -2,8 +2,6 @@
 name: Android APK
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:
@@ -18,7 +16,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v5
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
