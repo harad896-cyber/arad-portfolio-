@@ -144,21 +144,26 @@ jobs:
         run: |
           set -euo pipefail
           echo "Checking Flutter APK output..."
-          APK="build/app/outputs/flutter-apk/app-release.apk"
-          if [ ! -s "$APK" ]; then
-            echo "Expected Flutter APK not found: $APK"
-            echo "Searching all generated APK files..."
-            find . -type f -name '*.apk' -size +1c -print -exec ls -lh {} \; || true
+          EXPECTED="build/app/outputs/flutter-apk/app-release.apk"
+          if [ -s "$EXPECTED" ]; then
+            echo "Verified APK already exists at: $EXPECTED"
+            ls -lh "$EXPECTED"
+          else
+            echo "Expected APK not found; searching generated APK files..."
             APK="$(find . -type f -name '*.apk' -size +1c -not -path './.git/*' | head -n 1)"
+            if [ -z "$APK" ]; then
+              echo "ERROR: No non-empty APK was produced."
+              find . -type f -name '*.apk' -print || true
+              exit 1
+            fi
+            echo "Found APK: $APK"
+            mkdir -p "$(dirname "$EXPECTED")"
+            if [ "$APK" != "$EXPECTED" ]; then
+              cp "$APK" "$EXPECTED"
+            fi
+            test -s "$EXPECTED"
+            ls -lh "$EXPECTED"
           fi
-          if [ -z "$APK" ] || [ ! -s "$APK" ]; then
-            echo "ERROR: No non-empty APK was produced."
-            exit 1
-          fi
-          mkdir -p build/app/outputs/flutter-apk
-          cp "$APK" build/app/outputs/flutter-apk/app-release.apk
-          test -s build/app/outputs/flutter-apk/app-release.apk
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
