@@ -5,11 +5,16 @@ p = Path('lib/main.dart')
 s = p.read_text(encoding='utf-8')
 
 # Shared delete-for-everyone: hide deleted rows for every participant.
-s = s.replace(
-    "loaded.removeWhere((m) => hidden.contains('${m['id']}'));",
-    "loaded.removeWhere((m) => hidden.contains('${m['id']}') || m['deleted_at'] != null);",
-    1,
-)
+lines = s.splitlines()
+for i, line in enumerate(lines):
+    if 'loaded.removeWhere' in line and 'hidden.contains' in line and 'deleted_at' not in line:
+        indent = line[:len(line) - len(line.lstrip())]
+        lines[i] = indent + "loaded.removeWhere((m) => hidden.contains('${m['id']}') || m['deleted_at'] != null);"
+        break
+else:
+    if "loaded.removeWhere((m) => hidden.contains('${m['id']}') || m['deleted_at'] != null);" not in s:
+        raise SystemExit('message load filter not found')
+s = '\n'.join(lines) + ('\n' if s.endswith('\n') else '')
 
 # Replace the current delete implementation regardless of minor formatting differences.
 pattern = re.compile(r"  Future<void> deleteForEveryone\(Map<String, dynamic> message\) async \{.*?\n  \}\n\n  Future<void> saveMessage", re.S)
@@ -134,4 +139,15 @@ if old_link in s:
     s = s.replace(old_link, new_link, 1)
 
 p.write_text(s, encoding='utf-8')
-print('chat visual, delete-for-everyone, and group management fixes applied')
+
+# Hard verification inside the patch itself.
+final_text = p.read_text(encoding='utf-8')
+required = [
+    "loaded.removeWhere((m) => hidden.contains('${m['id']}') || m['deleted_at'] != null);",
+    "پیام حذف نشد؛ مجوز حذف برای همه یا مالکیت پیام بررسی شود.",
+    "extendBodyBehindAppBar: false,",
+]
+missing = [x for x in required if x not in final_text]
+if missing:
+    raise SystemExit('patch verification failed: ' + ' | '.join(missing))
+print('final chat patch verified')
