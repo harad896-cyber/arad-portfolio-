@@ -2242,6 +2242,30 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
+  final List<String> quickReactions = const ['❤️','👍','😂','😮','😢','🙏'];
+  Future<void> _toggleReaction(String messageId, String emoji) async {
+    final uid=supabase.auth.currentUser?.id; if(uid==null)return;
+    try { final existing=await supabase.from('message_reactions').select('message_id,user_id,reaction').eq('message_id',messageId).eq('user_id',uid).eq('reaction',emoji).maybeSingle();
+      if(existing!=null) await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid).eq('reaction',emoji);
+      else { await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid); await supabase.from('message_reactions').insert({'message_id':messageId,'user_id':uid,'reaction':emoji}); } await load();
+    } catch(_) { if(mounted)showMsg(context,'واکنش ثبت نشد'); }
+  }
+  Future<void> _showReactionPicker(Map<String,dynamic> m) async {
+    final id = m['id'].toString();
+    await showModalBottomSheet<void>(context:context,backgroundColor:Colors.transparent,builder:(ctx){ final scheme=Theme.of(ctx).colorScheme;
+      return TweenAnimationBuilder<double>(tween:Tween(begin:.85,end:1),duration:const Duration(milliseconds:180),curve:Curves.easeOutBack,builder:(c,scale,child)=>Transform.scale(scale:scale,child:child),child:
+        Container(padding:const EdgeInsets.fromLTRB(12,10,12,18),decoration:BoxDecoration(color:scheme.surface,borderRadius:const BorderRadius.vertical(top:Radius.circular(28))),child:Row(mainAxisAlignment:MainAxisAlignment.spaceEvenly,children:[
+          ...quickReactions.map((e)=>InkWell(onTap:(){Navigator.pop(ctx);_toggleReaction(id,e);},borderRadius:BorderRadius.circular(18),child:Padding(padding:const EdgeInsets.all(8),child:Text(e,style:const TextStyle(fontSize:27))))),
+          IconButton(onPressed:(){Navigator.pop(ctx);_showReactionPeople(id);},icon:const Icon(Icons.add_circle_outline_rounded))]))); });
+  }
+  Future<void> _showReactionPeople(String messageId) async {
+    final rows=await supabase.from('message_reactions').select('user_id,reaction').eq('message_id',messageId); if(!mounted)return;
+    await showModalBottomSheet<void>(context:context,showDragHandle:true,builder:(ctx)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('واکنش‌ها',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),const SizedBox(height:10),...List<Map<String,dynamic>>.from(rows).map((r)=>ListTile(leading:Text(r['reaction'].toString(),style:const TextStyle(fontSize:25)),title:Text(r['user_id'].toString()))) ]));
+  }
+  Widget _reactionBar(String messageId) {
+    final rs=reactions[messageId]??[]; if(rs.isEmpty)return const SizedBox.shrink(); final grouped=<String,int>{}; for(final r in rs){final e=r['reaction'].toString();grouped[e]=(grouped[e]??0)+1;}
+    return Padding(padding:const EdgeInsets.only(top:3),child:Wrap(spacing:4,children:grouped.entries.map((e)=>InkWell(onTap:()=>_showReactionPeople(messageId),borderRadius:BorderRadius.circular(12),child:Container(padding:const EdgeInsets.symmetric(horizontal:7,vertical:3),decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(12)),child:Text(e.key+' '+(e.value>1?e.value.toString():'')))).toList()));
+  }
   Future<void> sendText() async {
     final value = text.text.trim();
     if (value.isEmpty || sending) return;
