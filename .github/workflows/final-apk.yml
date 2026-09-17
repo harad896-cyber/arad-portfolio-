@@ -33,8 +33,7 @@ jobs:
           s = s.replace("Row(children: List.generate(4, (i) {", "Row(children: List.generate(5, (i) {")
           s = s.replace("supabase.from('saved_messages').select('id, body, message_type, created_at').order('created_at', ascending: false)", "supabase.from('saved_messages').select('id, body, message_type, created_at').eq('user_id', supabase.auth.currentUser!.id).order('created_at', ascending: false)")
 
-          # Project 1 design tokens: Vazirmatn, #09090b/#f5f5f7 surfaces, purple-blue accent,
-          # subtle glass cards, 20-22px corners, low-contrast borders, clean typography.
+          # Project 1 design tokens.
           s = s.replace("int seed = 0xFF5B6FB5;", "int seed = 0xFF7C5CFF;")
           s = s.replace("p.getInt('accent_seed_$key') ?? 0xFF5B6FB5", "p.getInt('accent_seed_$key') ?? 0xFF7C5CFF")
           s = s.replace("surface: const Color(0xFFF4F6FA),", "surface: const Color(0xFFF5F5F7),")
@@ -52,8 +51,6 @@ jobs:
           s = s.replace("minimumSize: const Size.fromHeight(52),", "minimumSize: const Size.fromHeight(50),")
           s = s.replace("borderRadius: BorderRadius.circular(14)", "borderRadius: BorderRadius.circular(12)")
           s = s.replace("color: Color(0x16000000),", "color: Color(0x17000000),")
-
-          # Dark Project 1 tokens.
           s = s.replace("primary: const Color(0xFF6E83C4),\n          secondary: const Color(0xFF8B5FBF),\n          tertiary: const Color(0xFFB45CC8),\n          surface: const Color(0xFF111014),", "surface: const Color(0xFF111114),")
           s = s.replace("scaffoldBackgroundColor: const Color(0xFF111014),", "scaffoldBackgroundColor: Colors.transparent,")
           s = s.replace("backgroundColor: Color(0xE6111014),", "backgroundColor: Color(0xC209090B),")
@@ -64,14 +61,108 @@ jobs:
           s = s.replace("borderSide: BorderSide(color: Color(0x22FFFFFF)),", "borderSide: BorderSide(color: Color(0x14FFFFFF)),")
           s = s.replace("borderSide: BorderSide(color: Color(0xFF7C8FD6), width: 1.6),", "borderSide: BorderSide(color: Color(0xFFA996FF), width: 1.6),")
 
-          # Apply the Project 1 soft purple glow behind all messenger pages.
+          # Project 1 soft purple glow.
           if "builder: (context, child) => Container(" not in s:
               needle = "      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,"
-              replacement = """      builder: (context, child) => Container(\n        decoration: BoxDecoration(\n          color: Theme.of(context).scaffoldBackgroundColor,\n          gradient: RadialGradient(\n            center: const Alignment(0.85, -0.95),\n            radius: 1.15,\n            colors: [\n              Color(0x247C5CFF),\n              Theme.of(context).scaffoldBackgroundColor,\n            ],\n          ),\n        ),\n        child: child!,\n      ),\n      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,"""
+              replacement = """      builder: (context, child) => Container(\n        decoration: BoxDecoration(\n          color: Theme.of(context).scaffoldBackgroundColor,\n          gradient: RadialGradient(\n            center: const Alignment(0.85, -0.95),\n            radius: 1.15,\n            colors: [Color(0x247C5CFF), Theme.of(context).scaffoldBackgroundColor],\n          ),\n        ),\n        child: child!,\n      ),\n      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,"""
               s = s.replace(needle, replacement, 1)
-
-          # Global typography fallback to the same family name used by Project 1.
           s = s.replace("useMaterial3: true,\n        colorScheme:", "useMaterial3: true,\n        fontFamily: 'Vazirmatn',\n        colorScheme:")
+
+          # Chat header: load the real peer profile so name/avatar/bio/verified state are shown.
+          state_marker = "  String _chatType = 'direct';\n"
+          if "Map<String, dynamic> chatPeerProfile = {};" not in s:
+              s = s.replace(state_marker, state_marker + "  Map<String, dynamic> chatPeerProfile = {};\n")
+
+          method_marker = "  Future<void> _loadChatType() async {"
+          if "Future<void> _loadChatPeerProfile() async" not in s and method_marker in s:
+              peer_method = r'''  Future<void> _loadChatPeerProfile() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);
+      final ids = (members as List).map((e) => '${e['user_id']}').where((id) => id != uid).toList();
+      if (ids.isEmpty) return;
+      final row = await supabase.from('profiles').select('id,display_name,username,bio,avatar_url,is_verified,is_owner').eq('id', ids.first).maybeSingle();
+      if (!mounted) return;
+      setState(() => chatPeerProfile = row == null ? {} : Map<String, dynamic>.from(row));
+    } catch (_) {}
+  }
+
+'''
+              s = s.replace(method_marker, peer_method + method_marker, 1)
+
+          s = s.replace("    _loadChatType();\n", "    _loadChatType();\n    _loadChatPeerProfile();\n", 1)
+
+          # Verified badge for group sender names.
+          old_sender = """                      child: Text(sender, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.primary)),"""
+          new_sender = """                      child: Row(mainAxisSize: MainAxisSize.min, children: [\n                        Flexible(child: Text(sender, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.primary))),\n                        if (profiles['${m['sender_id']}']?['is_verified'] == true) ...[\n                          const SizedBox(width: 4),\n                          Icon(Icons.verified_rounded, color: scheme.primary, size: 15),\n                        ],\n                      ]),"""
+          s = s.replace(old_sender, new_sender, 1)
+
+          # Header call buttons + profile/bio/verified preview.
+          old_actions = """        actions: [\n          FutureBuilder<bool>(\n            future: _isGroupAdmin(),\n            builder: (_,snap) => snap.data==true\n                ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:const Icon(Icons.admin_panel_settings_rounded))\n                : const SizedBox.shrink(),\n          ),\n        ],\n        title: Row(\n          children: [\n            const CircleAvatar(radius: 17, child: Icon(Icons.person, size: 18)),\n            const SizedBox(width: 9),\n            Expanded(\n              child: Text(\n                widget.title,\n                overflow: TextOverflow.ellipsis,\n                style: const TextStyle(fontWeight: FontWeight.w800),\n              ),\n            ),\n          ],\n        ),"""
+          new_actions = """        actions: [\n          if (_chatType == 'direct') ...[\n            IconButton(onPressed: () => _startChatCall(video: false), tooltip: 'تماس صوتی', icon: const Icon(Icons.call_rounded)),\n            IconButton(onPressed: () => _startChatCall(video: true), tooltip: 'تماس تصویری', icon: const Icon(Icons.videocam_rounded)),\n          ],\n          FutureBuilder<bool>(\n            future: _isGroupAdmin(),\n            builder: (_,snap) => snap.data==true\n                ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:const Icon(Icons.admin_panel_settings_rounded))\n                : const SizedBox.shrink(),\n          ),\n        ],\n        title: InkWell(\n          borderRadius: BorderRadius.circular(18),\n          onTap: _showChatPeerProfile,\n          child: Row(\n            children: [\n              CircleAvatar(\n                radius: 18,\n                backgroundImage: '${chatPeerProfile['avatar_url'] ?? ''}'.isNotEmpty ? NetworkImage('${chatPeerProfile['avatar_url']}') : null,\n                child: '${chatPeerProfile['avatar_url'] ?? ''}'.isEmpty ? const Icon(Icons.person, size: 18) : null,\n              ),\n              const SizedBox(width: 9),\n              Expanded(\n                child: Column(\n                  crossAxisAlignment: CrossAxisAlignment.start,\n                  mainAxisSize: MainAxisSize.min,\n                  children: [\n                    Row(children: [\n                      Flexible(child: Text('${chatPeerProfile['display_name'] ?? widget.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),\n                      if (chatPeerProfile['is_verified'] == true) ...[\n                        const SizedBox(width: 4),\n                        Icon(Icons.verified_rounded, color: scheme.primary, size: 16),\n                      ],\n                    ]),\n                    if ('${chatPeerProfile['bio'] ?? ''}'.trim().isNotEmpty)\n                      Text('${chatPeerProfile['bio']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant)),\n                  ],\n                ),\n              ),\n            ],\n          ),\n        ),"""
+          if old_actions in s:
+              s = s.replace(old_actions, new_actions, 1)
+
+          # Profile/bio sheet opened by tapping the chat header.
+          if "void _showChatPeerProfile()" not in s:
+              profile_method = r'''  Future<void> _showChatPeerProfile() async {
+    if (chatPeerProfile.isEmpty) {
+      await _loadChatPeerProfile();
+    }
+    if (!mounted) return;
+    final p = chatPeerProfile;
+    final scheme = Theme.of(context).colorScheme;
+    final avatar = '${p['avatar_url'] ?? ''}'.trim();
+    final name = '${p['display_name'] ?? widget.title}'.trim();
+    final username = '${p['username'] ?? ''}'.trim();
+    final bio = '${p['bio'] ?? ''}'.trim();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheet) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            decoration: BoxDecoration(
+              color: scheme.surface.withValues(alpha: .94),
+              border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: .08))),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .20), borderRadius: BorderRadius.circular(4))),
+                const SizedBox(height: 18),
+                CircleAvatar(radius: 48, backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar.isEmpty ? const Icon(Icons.person_rounded, size: 48) : null),
+                const SizedBox(height: 12),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: Text(name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                  if (p['is_verified'] == true) ...[const SizedBox(width: 5), Icon(Icons.verified_rounded, color: scheme.primary, size: 21)],
+                ]),
+                if (username.isNotEmpty) ...[const SizedBox(height: 3), Text('@$username', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800))],
+                const SizedBox(height: 12),
+                Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .58), borderRadius: BorderRadius.circular(18)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.info_outline_rounded, color: scheme.primary), const SizedBox(width: 10), Expanded(child: Text(bio.isEmpty ? 'این کاربر هنوز بیویی ثبت نکرده است.' : bio, style: const TextStyle(height: 1.45)))])),
+                const SizedBox(height: 14),
+                Row(children: [
+                  Expanded(child: FilledButton.icon(onPressed: () { Navigator.pop(sheet); _startChatCall(video: false); }, icon: const Icon(Icons.call_rounded), label: const Text('تماس صوتی'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: OutlinedButton.icon(onPressed: () { Navigator.pop(sheet); _startChatCall(video: true); }, icon: const Icon(Icons.videocam_rounded), label: const Text('تماس تصویری'))),
+                ]),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+'''
+              marker = "  void _startChatCall({required bool video}) {"
+              s = s.replace(marker, profile_method + marker, 1)
+
           p.write_text(s, encoding='utf-8')
 
           # Keep profile/sheets on Project 1's compact 20-22px corner language.
@@ -97,7 +188,7 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add lib/main.dart lib/notifications_page.dart lib/*.dart
-            git commit -m 'style: align messenger pages with Project 1 design system'
+            git commit -m 'feat: add chat calls verified badges and profile bio'
             git push origin HEAD:main
           fi
 
