@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'group_moderation.dart';
 import 'group_advanced_admin.dart';
 import 'channel_management.dart';
@@ -70,6 +71,39 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     finally { if (mounted) setState(() => busy = false); }
   }
 
+  Future<void> changeGroupAvatar() async {
+    if (!admin || busy) return;
+    final source = await showModalBottomSheet<ImageSource>(context: context, builder: (s) => SafeArea(child: Wrap(children: [
+      ListTile(leading: const Icon(Icons.photo_library_rounded), title: const Text('انتخاب از گالری'), onTap: () => Navigator.pop(s, ImageSource.gallery)),
+      ListTile(leading: const Icon(Icons.camera_alt_rounded), title: const Text('دوربین'), onTap: () => Navigator.pop(s, ImageSource.camera)),
+    ])));
+    if (source == null) return;
+    final file = await ImagePicker().pickImage(source: source, imageQuality: 85, maxWidth: 1200);
+    if (file == null) return;
+    setState(() => busy = true);
+    try {
+      final bytes = await file.readAsBytes();
+      final path = 'groups/${widget.conversationId}/avatar-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await db.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+      final url = db.storage.from('avatars').getPublicUrl(path);
+      await db.rpc('update_group_settings', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_title': group?['title'],
+        'p_description': group?['description'],
+        'p_avatar_url': url,
+        'p_is_public': group?['is_public'] ?? false,
+        'p_username': group?['username'],
+        'p_join_approval': group?['join_approval'] ?? false,
+        'p_only_admins_can_post': group?['only_admins_can_post'] ?? false,
+        'p_only_admins_can_add': group?['only_admins_can_add'] ?? false,
+        'p_auto_delete_seconds': group?['auto_delete_seconds'] ?? 0,
+        'p_allow_reactions': group?['allow_reactions'] ?? true,
+      });
+      await load();
+    } catch (e) { toast('تغییر عکس گروه ناموفق بود: $e'); }
+    finally { if (mounted) setState(() => busy = false); }
+  }
+
   Future<void> openManagement() async {
     final changed = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => GroupManagementPage(conversationId: widget.conversationId, title: widget.title)));
     if (changed == true) await load();
@@ -82,7 +116,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final g = group!; final title = (g['title'] ?? widget.title).toString(); final desc = (g['description'] ?? '').toString().trim(); final image = (g['avatar_url'] ?? '').toString();
     return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: ListView(padding: const EdgeInsets.all(16), children: [
       Card(child: Padding(padding: const EdgeInsets.all(22), child: Column(children: [
-        CircleAvatar(radius: 54, backgroundImage: image.isNotEmpty ? NetworkImage(image) : null, child: image.isEmpty ? const Icon(Icons.groups_rounded, size: 50) : null),
+        GestureDetector(onTap: admin ? changeGroupAvatar : null, child: Stack(alignment: Alignment.bottomRight, children: [CircleAvatar(radius: 54, backgroundImage: image.isNotEmpty ? NetworkImage(image) : null, child: image.isEmpty ? const Icon(Icons.groups_rounded, size: 50) : null), if (admin) Container(padding: const EdgeInsets.all(7), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18))])),
         const SizedBox(height: 12), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
         if ((g['username'] ?? '').toString().trim().isNotEmpty) Text('@${g['username']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8), Text(desc.isEmpty ? 'بدون توضیحات' : desc, textAlign: TextAlign.center),
@@ -95,6 +129,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
         if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),
+        if (owner) ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست عضویت، محدودیت‌ها، محروم‌ها و پیام‌های سنجاق‌شده'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: title))),
         const Divider(height: 1),
         ListTile(leading: Icon(owner ? Icons.delete_forever_rounded : Icons.logout_rounded), title: Text(owner ? 'حذف کامل گروه' : 'خروج از گروه', style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(owner ? 'برای همه حذف می‌شود' : 'فقط شما خارج می‌شوید'), onTap: owner ? deleteGroup : leaveGroup),
       ])),
