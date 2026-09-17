@@ -24,13 +24,16 @@ jobs:
       - name: Apply verified group build fix
         run: python tools/fix_group_build.py
 
+      - name: Apply chat call controls
+        run: python tools/add_chat_call_controls.py
+
       - name: Commit build fixes to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/main.dart tools/fix_group_build.py .github/workflows/final-apk.yml
+          git add lib/main.dart lib/call_session.dart tools/fix_group_build.py tools/add_chat_call_controls.py .github/workflows/final-apk.yml
           if ! git diff --cached --quiet; then
-            git commit -m "fix: stabilize group management build"
+            git commit -m "feat: add chat audio and video call controls"
             git push origin HEAD:main
           fi
 
@@ -94,7 +97,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # Verified build path: remove the malformed inline group page before analysis.
       - name: Flutter analyze
         run: flutter analyze 2>&1 | tee flutter-analyze.txt
 
