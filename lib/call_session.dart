@@ -113,14 +113,14 @@ class _CallSessionPageState extends State<CallSessionPage> {
             right: 16,
             bottom: 24,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(22),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
                     color: scheme.surface.withValues(alpha: .78),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
                   ),
                   child: Row(

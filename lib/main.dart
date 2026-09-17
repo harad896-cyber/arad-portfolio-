@@ -259,6 +259,20 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
       ),
+      builder: (context, child) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          gradient: RadialGradient(
+            center: const Alignment(0.85, -0.95),
+            radius: 1.15,
+            colors: [
+              Color(0x247C5CFF),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: child!,
+      ),
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       home: const AuthGate(),
     ));

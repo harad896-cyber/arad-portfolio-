@@ -146,13 +146,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final s = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(22),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
           decoration: BoxDecoration(
             color: s.surface.withValues(alpha: dark ? .62 : .72),
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: s.onSurface.withValues(alpha: .09)),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 20, offset: const Offset(0, 7))],
           ),
