@@ -3307,22 +3307,7 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: dark
-                ? [
-                    scheme.surface,
-                    Color.alphaBlend(scheme.primary.withValues(alpha: .07), scheme.surface),
-                    scheme.surface,
-                  ]
-                : [
-                    scheme.surface,
-                    Color.alphaBlend(scheme.primary.withValues(alpha: .045), scheme.surface),
-                    scheme.surface,
-                  ],
-          ),
-        ),
+          color: dark ? const Color(0xFF17191D) : const Color(0xFFF0F2F5),
         child: Column(
           children: [
             Expanded(
