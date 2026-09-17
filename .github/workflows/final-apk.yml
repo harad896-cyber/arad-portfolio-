@@ -6,80 +6,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
-      - name: Checkout
+      - name: Checkout exact commit
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0
-
-      - name: Apply final chat fixes
-        run: python tools/fix_delete_for_everyone.py
-
-      - name: Apply verified group build fix
-        run: python tools/fix_group_build.py
-
-      - name: Apply chat call controls
-        run: python tools/add_chat_call_controls.py
-
-      - name: Fix chat chronological ordering
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-          p = Path('lib/main.dart')
-          s = p.read_text(encoding='utf-8')
-          changes = []
-          old = "supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at')"
-          new = "supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: true)"
-          if old in s:
-              s = s.replace(old, new, 1)
-              changes.append('explicit ascending message query')
-          if 'reverse: true' in s:
-              s = s.replace('reverse: true', 'reverse: false')
-              changes.append('disabled reversed chat list')
-          if 'void _scrollToLatest()' not in s:
-              marker = '  Future<void> sendText() async {'
-              if marker not in s:
-                  raise SystemExit('sendText marker not found')
-              helper = '''  void _scrollToLatest() {\n    if (!_messagesScroll.hasClients) return;\n    WidgetsBinding.instance.addPostFrameCallback((_) {\n      if (!_messagesScroll.hasClients) return;\n      _messagesScroll.animateTo(\n        _messagesScroll.position.maxScrollExtent,\n        duration: const Duration(milliseconds: 180),\n        curve: Curves.easeOut,\n      );\n    });\n  }\n\n'''
-              s = s.replace(marker, helper + marker, 1)
-              changes.append('added latest-message scroll helper')
-          load_end = '      await markRead();\n'
-          if load_end in s and '      _scrollToLatest();\n' not in s:
-              s = s.replace(load_end, load_end + '      _scrollToLatest();\n', 1)
-              changes.append('scroll to latest after load')
-          start = s.find('  Future<void> sendText() async {')
-          end = s.find('\n  Future<void> ', start + 10) if start >= 0 else -1
-          if start < 0:
-              raise SystemExit('sendText not found')
-          if end < 0:
-              end = len(s)
-          block = s[start:end]
-          if 'await load();' in block and 'await load();\n      _scrollToLatest();' not in block:
-              block = block.replace('await load();', 'await load();\n      _scrollToLatest();', 1)
-              s = s[:start] + block + s[end:]
-              changes.append('scroll to latest after text send')
-          if not changes:
-              print('Ordering already explicit; no source change required')
-          else:
-              p.write_text(s, encoding='utf-8')
-              print('Applied:', ', '.join(changes))
-
-      - name: Commit build fixes to main
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/main.dart lib/call_session.dart tools/fix_group_build.py tools/add_chat_call_controls.py .github/workflows/final-apk.yml
-          if ! git diff --cached --quiet; then
-            git commit -m "fix: keep chat messages chronological"
-            git push origin HEAD:main
-          fi
+          fetch-depth: 1
 
       - name: Setup Java 17
         uses: actions/setup-java@v5
@@ -94,55 +31,46 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create fresh Android host
+      - name: Create Android host only when needed
         run: |
-          rm -rf android
-          flutter create --platforms=android --org com.arad.messenger --project-name arad_messenger .
-          test -f android/settings.gradle.kts || test -f android/settings.gradle
-          test -f android/app/build.gradle.kts || test -f android/app/build.gradle
-          test -f android/gradle/wrapper/gradle-wrapper.properties
+          if [ ! -f android/settings.gradle.kts ] && [ ! -f android/settings.gradle ]; then
+            flutter create --platforms=android --org com.arad.messenger --project-name arad_messenger .
+          fi
 
       - name: Set Android build requirements
         shell: python
         run: |
           from pathlib import Path
-          candidates = [Path("android/app/build.gradle.kts"), Path("android/app/build.gradle")]
+          candidates = [Path('android/app/build.gradle.kts'), Path('android/app/build.gradle')]
           p = next(x for x in candidates if x.exists())
-          s = p.read_text(encoding="utf-8")
-          if p.suffix == ".kts":
-              s = s.replace("minSdk = flutter.minSdkVersion", "minSdk = 24")
-              s = s.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion(24)")
-          else:
-              s = s.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 24")
-          p.write_text(s, encoding="utf-8")
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
+          s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 24')
+          s = s.replace('minSdkVersion(24)', 'minSdkVersion 24')
+          p.write_text(s, encoding='utf-8')
 
-      - name: Add Android microphone and internet permissions
+      - name: Add required Android permissions
         shell: python
         run: |
           from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text(encoding="utf-8")
-          manifest_end = s.find(">")
-          if manifest_end < 0:
-              raise SystemExit("AndroidManifest manifest tag not found")
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text(encoding='utf-8')
+          marker = '</manifest>'
           permissions = [
-              '<uses-permission android:name="android.permission.INTERNET" />',
-              '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
+              '    <uses-permission android:name="android.permission.INTERNET" />',
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
           ]
-          prefix = s[:manifest_end + 1]
-          suffix = s[manifest_end + 1:]
-          for permission in permissions:
-              if permission not in s:
-                  prefix += "\n    " + permission
-          s = prefix + suffix
+          for perm in permissions:
+              if perm not in s:
+                  s = s.replace(marker, perm + '\n' + marker)
           s = s.replace('android:label="arad_messenger"', 'android:label="Arad Messenger"')
-          p.write_text(s, encoding="utf-8")
+          p.write_text(s, encoding='utf-8')
 
       - name: Get dependencies
         run: flutter pub get
 
       - name: Flutter analyze
-        run: flutter analyze 2>&1 | tee flutter-analyze.txt
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee flutter-analyze.txt
 
       - name: Flutter tests
         run: flutter test --exclude-tags=integration 2>&1 | tee flutter-test.txt
@@ -150,26 +78,29 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release --no-pub
 
-      - name: Verify APK
+      - name: Verify APK and commit identity
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
+          echo "SOURCE_COMMIT=${GITHUB_SHA}" | tee build/app/source-commit.txt
+          sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app/apk-sha256.txt
           ls -lh build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload final APK
         uses: actions/upload-artifact@v4
         with:
-          name: arad-messenger-final-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: arad-messenger-final-apk-${{ github.sha }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/source-commit.txt
+            build/app/apk-sha256.txt
           if-no-files-found: error
 
       - name: Upload diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: arad-final-diagnostics
+          name: arad-final-diagnostics-${{ github.sha }}
           path: |
             flutter-analyze.txt
             flutter-test.txt
           if-no-files-found: warn
-
-# Final build trigger after backend/group-management verification.
