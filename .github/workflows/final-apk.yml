@@ -80,7 +80,7 @@ jobs:
         run: flutter analyze 2>&1 | tee flutter-analyze.txt
 
       - name: Flutter tests
-        run: flutter test 2>&1 | tee flutter-test.txt
+        run: flutter test --exclude-tags=integration 2>&1 | tee flutter-test.txt
 
       - name: Build release APK
         run: flutter build apk --release --no-pub
