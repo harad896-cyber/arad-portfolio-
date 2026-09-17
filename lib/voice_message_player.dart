@@ -26,6 +26,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
   double _speed = 1.0;
   bool _loading = false;
   bool _playing = false;
+  bool _loaded = false;
 
   @override
   void initState() {
@@ -47,23 +48,26 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
     });
   }
 
+  Future<void> _ensureLoaded() async {
+    if (_loaded) return;
+    final bytes = await widget.loadAudio();
+    if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
+    await _player.setSource(BytesSource(bytes, mimeType: 'audio/mp4'));
+    _loaded = true;
+    await _player.setPlaybackRate(_speed);
+  }
+
   Future<void> _toggle() async {
     if (_loading) return;
     try {
+      setState(() => _loading = true);
+      await _ensureLoaded();
       if (_playing) {
         await _player.pause();
-        return;
-      }
-      if (_position >= _duration && _duration > Duration.zero) {
-        await _player.seek(Duration.zero);
-      }
-      if (_duration == Duration.zero) {
-        setState(() => _loading = true);
-        final bytes = await widget.loadAudio();
-        if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
-        await _player.play(BytesSource(bytes, mimeType: 'audio/mp4'), mode: PlayerMode.mediaPlayer);
-        await _player.setPlaybackRate(_speed);
       } else {
+        if (_position >= _duration && _duration > Duration.zero) {
+          await _player.seek(Duration.zero);
+        }
         await _player.resume();
       }
     } catch (e) {
@@ -79,31 +83,47 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
 
   Future<void> _seekBy(int seconds) async {
     if (_duration <= Duration.zero) return;
-    final target = _position + Duration(seconds: seconds);
-    final clamped = target < Duration.zero
-        ? Duration.zero
-        : target > _duration
-            ? _duration
-            : target;
-    await _player.seek(clamped);
+    try {
+      await _ensureLoaded();
+      final target = _position + Duration(seconds: seconds);
+      final clamped = target < Duration.zero
+          ? Duration.zero
+          : target > _duration
+              ? _duration
+              : target;
+      await _player.seek(clamped);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('جابه‌جایی ویس ناموفق بود: $e')));
+    }
   }
 
   Future<void> _seekTo(Duration value) async {
     if (_duration <= Duration.zero) return;
-    await _player.seek(value);
+    try {
+      await _ensureLoaded();
+      await _player.seek(value);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('جابه‌جایی ویس ناموفق بود: $e')));
+    }
   }
 
   Future<void> _changeSpeed() async {
     const speeds = [0.5, 1.0, 1.5, 2.0];
     final next = speeds[(speeds.indexOf(_speed) + 1) % speeds.length];
     setState(() => _speed = next);
-    await _player.setPlaybackRate(next);
+    if (_loaded) {
+      try {
+        await _player.setPlaybackRate(next);
+      } catch (_) {}
+    }
   }
 
   String _fmt(Duration d) {
     final total = d.inSeconds;
-    final m = total ~/ 60;
+    final h = total ~/ 3600;
+    final m = (total % 3600) ~/ 60;
     final s = total % 60;
+    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
