@@ -83,6 +83,7 @@ class _ConversationStatsPageState extends State<ConversationStatsPage> {
   List<Map<String, dynamic>> stats = [];
 
   Future<void> load() async {
+    rows = [];
     try {
       final db = Supabase.instance.client;
       final raw = await db.rpc('get_conversation_sender_stats', params: {'p_conversation_id': widget.conversationId});
