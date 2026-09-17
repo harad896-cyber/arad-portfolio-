@@ -25,7 +25,6 @@ jobs:
           grep -q "class GroupManagementPage extends StatefulWidget" lib/main.dart
           grep -q "QrImageView" lib/main.dart
           grep -q "qr_flutter:" pubspec.yaml
-          grep -q "group_invites" lib/main.dart || true
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
