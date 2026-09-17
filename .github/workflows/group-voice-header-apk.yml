@@ -1,0 +1,76 @@
+name: Group Chat Voice and Member Count APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+      - name: Apply group chat improvements
+        run: python3 tool/apply_group_voice_header.py
+      - name: Commit source changes
+        shell: bash
+        run: |
+          if git diff --quiet; then echo 'No source changes needed'; else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add lib/main.dart
+            git commit -m 'feat: add group member count and seekable voice player'
+            git push
+          fi
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Regenerate Android wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android
+          flutter create --platforms=android --org com.arad.messenger --project-name arad_messenger .
+          test -f android/gradlew
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle.kts')
+          if p.exists():
+              p.write_text(p.read_text(encoding='utf-8').replace('minSdk = flutter.minSdkVersion', 'minSdk = 24'), encoding='utf-8')
+          else:
+              p = Path('android/app/build.gradle')
+              p.write_text(p.read_text(encoding='utf-8').replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 24'), encoding='utf-8')
+          PY
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk -type f -name '*.apk' -size +1c | head -n 1)"
+          test -n "$APK"
+          mkdir -p ../build/app/outputs/flutter-apk
+          cp "$APK" ../build/app/outputs/flutter-apk/app-release.apk
+          test -s ../build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: messenger-group-voice-member-count
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
