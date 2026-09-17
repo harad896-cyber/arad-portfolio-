@@ -171,3 +171,5 @@ jobs:
             flutter-analyze.txt
             flutter-test.txt
           if-no-files-found: warn
+
+# Final build trigger after backend/group-management verification.
