@@ -296,7 +296,42 @@ class ChatFoldersPage extends StatefulWidget {
 }
 class _ChatFoldersPageState extends State<ChatFoldersPage> {
   final folders=<String>['همه گفتگوها','کار','خانواده','ناخوانده‌ها'];
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:ListView.builder(padding:const EdgeInsets.all(14),itemCount:folders.length,itemBuilder:(_,i)=>Card(child:ListTile(leading:Icon(i==0?Icons.chat_bubble_outline_rounded:Icons.folder_rounded),title:Text(folders[i])))),floatingActionButton:FloatingActionButton(onPressed:()=>showDialog(context:context,builder:(_){final c=TextEditingController();return AlertDialog(title:const Text('پوشه جدید'),content:TextField(controller:c,decoration:const InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('لغو')),FilledButton(onPressed:(){if(c.text.trim().isNotEmpty)setState(()=>folders.add(c.text.trim()));Navigator.pop(context);},child:const Text('افزودن'))];}),child:const Icon(Icons.add_rounded)));
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('پوشه‌های گفتگو')),
+    body: ListView.builder(
+      padding: const EdgeInsets.all(14),
+      itemCount: folders.length,
+      itemBuilder: (_, i) => Card(
+        child: ListTile(
+          leading: Icon(i == 0 ? Icons.chat_bubble_outline_rounded : Icons.folder_rounded),
+          title: Text(folders[i]),
+        ),
+      ),
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () => showDialog(
+        context: context,
+        builder: (_) {
+          final c = TextEditingController();
+          return AlertDialog(
+            title: const Text('پوشه جدید'),
+            content: TextField(controller: c, decoration: const InputDecoration(labelText: 'نام پوشه')),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('لغو')),
+              FilledButton(
+                onPressed: () {
+                  if (c.text.trim().isNotEmpty) setState(() => folders.add(c.text.trim()));
+                  Navigator.pop(context);
+                },
+                child: const Text('افزودن'),
+              ),
+            ],
+          );
+        },
+      ),
+      child: const Icon(Icons.add_rounded),
+    ),
+  );
 }
 class DataAndPermissionsPage extends StatefulWidget {
   const DataAndPermissionsPage({super.key});
@@ -360,8 +395,31 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     final q=search.text.trim();
     final filtered=items.where((x)=>q.isEmpty||x.values.any((v)=>v.contains(q))).toList();
     final groups=<String,List<Map<String,String>>>{};
-    for(final x in filtered)(groups[x['cat']]??=[]).add(x);
-    return Scaffold(appBar:AppBar(title:const Text('تنظیمات'),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(padding:const EdgeInsets.fromLTRB(14,4,14,10),child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:'جستجو در تنظیمات',prefixIcon:const Icon(Icons.search_rounded),filled:true,border:OutlineInputBorder(borderRadius:BorderRadius.circular(18),borderSide:BorderSide.none)))))),
+    for(final x in filtered){ final cat=x['cat'] ?? ''; (groups[cat] ??= <Map<String,String>>[]).add(x); }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('تنظیمات'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(66),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+            child: TextField(
+              controller: search,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'جستجو در تنظیمات',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body:
     body:ListView(padding:const EdgeInsets.fromLTRB(14,10,14,30),children:[
       ...groups.entries.expand((g)=>[Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:15,fontWeight:FontWeight.w800))),...g.value.map((x)=>Card(child:ListTile(
         contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:5),
@@ -1912,16 +1970,6 @@ class AdvancedMessagingPage extends StatelessWidget {const AdvancedMessagingPage
  const Card(child:ListTile(leading:Icon(Icons.location_on_rounded),title:Text('موقعیت مکانی زنده'))),
 ]));}
 
-class CallHistoryPage extends StatelessWidget {
-  const CallHistoryPage({super.key});
-  @override Widget build(BuildContext context) {
-    final c=Theme.of(context).colorScheme;
-    final items=[('تماس دریافتی',Icons.call_received_rounded),('تماس ارسالی',Icons.call_made_rounded),('تماس بی‌پاسخ',Icons.call_missed_rounded)];
-    return Scaffold(appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),body:ListView.separated(
-      padding:const EdgeInsets.all(14),itemCount:items.length,separatorBuilder:(_,__)=>const SizedBox(height:7),
-      itemBuilder:(_,i)=>Card(child:ListTile(leading:CircleAvatar(backgroundColor:c.primaryContainer,child:Icon(items[i].$2,color:i==2?c.error:c.primary)),title:Text(items[i].$1,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:const Text('امروز'),trailing:IconButton(icon:const Icon(Icons.call_rounded),onPressed:()=>showMsg(context,'تماس مجدد'))))));
-  }
-}
 
 class NotificationsPage extends StatefulWidget {
   final String id;
@@ -1949,10 +1997,7 @@ class SharedMediaPage extends StatelessWidget {
     body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
 }
 
-class GlobalSearchPage extends StatefulWidget {
-  const GlobalSearchPage({super.key});
-  @override State<GlobalSearchPage> createState()=>_GlobalSearchPageState();
-}
+
 class _GlobalSearchPageState extends State<GlobalSearchPage>{
   final q=TextEditingController();
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('جستجوی سراسری')),body:ListView(padding:const EdgeInsets.all(14),children:[
@@ -1960,7 +2005,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage>{
     const SizedBox(height:16),if(q.text.isNotEmpty)...const [Text('نتایج گفتگوها',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.forum_rounded),title:Text('نتیجه گفتگو')),Text('نتایج مخاطبین',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.person_rounded),title:Text('نتیجه مخاطب')),Text('نتایج پیام‌ها',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.message_rounded),title:Text('نتیجه پیام'))] ]));
 }
 
-class BackupPage extends StatefulWidget { const BackupPage({super.key}); @override State<BackupPage> createState()=>_BackupPageState(); }
+
 class _BackupPageState extends State<BackupPage>{bool auto=true; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(14),children:[
   Card(child:SwitchListTile(value:auto,onChanged:(v)=>setState(()=>auto=v),title:const Text('پشتیبان‌گیری خودکار'),subtitle:const Text('ذخیره نسخه پشتیبان در فضای ابری'))),
   const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('۰ مگابایت'))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی انجام نشده است'))),
