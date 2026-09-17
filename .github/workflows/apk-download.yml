@@ -23,6 +23,8 @@ jobs:
           flutter-version: '3.35.0'
           channel: stable
           cache: true
+      - name: Generate current Android wrapper
+        run: flutter create --platforms=android --project-name arad_messenger .
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze without blocking on existing warnings
