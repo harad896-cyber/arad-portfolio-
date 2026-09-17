@@ -3307,7 +3307,7 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     appTheme.addListener(_onAppThemeChanged);
     load();
-    _loadChatType();
+    _loadChatType().then((_) => _loadGroupMemberCount());
     channel = supabase.channel('chat-${widget.id}')
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
