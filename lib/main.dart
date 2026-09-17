@@ -2202,13 +2202,47 @@ class _ChatPageState extends State<ChatPage> {
     final a = attachments[messageId];
     final seconds = ((a?['duration_ms'] as num?)?.toInt() ?? 0) ~/ 1000;
     final bars = List<double>.generate(34, (i) => .25 + ((i * 17) % 70) / 100);
-    return SizedBox(width: 250, child: Row(children: [
-      IconButton(icon: const Icon(Icons.play_circle_fill_rounded, size: 40), tooltip: 'پخش پیام صوتی', onPressed: () => _playAttachment(messageId)),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(height: 38, child: GestureDetector(onTap: () => _playAttachment(messageId), child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: bars.map((v) => Expanded(child: Container(height: 8 + v * 24, margin: const EdgeInsets.symmetric(horizontal: 1), decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .65), borderRadius: BorderRadius.circular(8)))).toList()))),
-        Text('00:' + seconds.toString().padLeft(2,'0'), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha:.8))),
-      ])),
-    ]));
+    return SizedBox(
+      width: 250,
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.play_circle_fill_rounded, size: 40),
+            onPressed: () => _playAttachment(messageId),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 38,
+                  child: GestureDetector(
+                    onTap: () => _playAttachment(messageId),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: bars.map((v) => Expanded(
+                        child: Container(
+                          height: 8 + v * 24,
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .65),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      )).toList(),
+                    ),
+                  ),
+                ),
+                Text(
+                  '00:' + seconds.toString().padLeft(2, '0'),
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .8)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _time(dynamic value) {
