@@ -624,8 +624,90 @@ class AuthGate extends StatelessWidget {
           );
         }
 
+        return const AppBanGate();
+      },
+    );
+  }
+}
+
+class AppBanGate extends StatelessWidget {
+  const AppBanGate({super.key});
+
+  Future<bool> isBanned() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return false;
+    try {
+      final result = await supabase.rpc('is_current_user_app_banned');
+      return result == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: isBanned(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.data == true) return const AppBannedPage();
         return const ProfileGate();
       },
+    );
+  }
+}
+
+class AppBannedPage extends StatelessWidget {
+  const AppBannedPage({super.key});
+
+  Future<void> signOut(BuildContext context) async {
+    await supabase.auth.signOut();
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (_) => false,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 42,
+                backgroundColor: s.errorContainer,
+                child: Icon(Icons.block_rounded, color: s.error, size: 42),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'دسترسی این حساب به برنامه محروم شده است',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'اگر فکر می‌کنید این تصمیم اشتباه است، با پشتیبانی برنامه تماس بگیرید.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 22),
+              FilledButton.icon(
+                onPressed: () => signOut(context),
+                icon: const Icon(Icons.logout_rounded),
+                label: const Text('خروج از حساب'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

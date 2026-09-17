@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main.dart';
+import 'owner_admin_page.dart';
 
 const _profileSecureAccounts = FlutterSecureStorage();
 
@@ -266,7 +267,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.admin_panel_settings_rounded, color: s.primary)),
               title: const Text('مدیریت تیک آبی', style: TextStyle(fontWeight: FontWeight.w800)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerificationAdminPage())),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAdminPage())),
             ),
           ],
           const Divider(height: 1),
