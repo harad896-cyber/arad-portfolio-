@@ -21,16 +21,16 @@ jobs:
       - name: Apply final chat fixes
         run: python tools/fix_delete_for_everyone.py
 
-      - name: Apply complete group system
-        run: python tools/apply_complete_group_system.py
+      - name: Apply verified group build fix
+        run: python tools/fix_group_build.py
 
-      - name: Commit group system to main
+      - name: Commit build fixes to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/main.dart pubspec.yaml tools/apply_complete_group_system.py
+          git add lib/main.dart tools/fix_group_build.py .github/workflows/final-apk.yml
           if ! git diff --cached --quiet; then
-            git commit -m "feat: complete Telegram-like group management"
+            git commit -m "fix: stabilize group management build"
             git push origin HEAD:main
           fi
 
