@@ -3391,19 +3391,31 @@ class _ChatPageState extends State<ChatPage> {
                 : const SizedBox.shrink(),
           ),
         ],
-        title: Row(
-          children: [
-            const CircleAvatar(radius: 17, child: Icon(Icons.person, size: 18)),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                widget.title,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+        title: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () {
+            if (_chatType == 'group') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => GroupProfilePage(conversationId: widget.id, title: widget.title)));
+            }
+          },
+          child: Row(
+            children: [
+              const CircleAvatar(radius: 17, child: Icon(Icons.groups_rounded, size: 18)),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    if (_chatType == 'group')
+                      const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ), // GROUP_PROFILE_WIRED
       ),
       body: Container(
         decoration: BoxDecoration(
