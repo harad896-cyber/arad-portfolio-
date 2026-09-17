@@ -62,6 +62,15 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
     try { await ensureLoaded(); await player.seek(target); } catch (_) {}
   }
 
+  Future<void> seekToFraction(double fraction) async {
+    if (duration <= Duration.zero) return;
+    final f = fraction.clamp(0.0, 1.0);
+    try {
+      await ensureLoaded();
+      await player.seek(Duration(milliseconds: (duration.inMilliseconds * f).round()));
+    } catch (_) {}
+  }
+
   String formatTime(Duration d) {
     final s = d.inSeconds;
     final m = s ~/ 60;
@@ -71,26 +80,86 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
 
   @override
   Widget build(BuildContext context) {
-    final accent = widget.mine ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.primary;
-    final double maxValue = duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1.0;
-    final double currentValue = position.inMilliseconds.toDouble().clamp(0.0, maxValue).toDouble();
+    final accent = widget.mine ? Colors.white : Theme.of(context).colorScheme.primary;
+    final progress = duration.inMilliseconds > 0
+        ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+    const bars = <double>[.32,.55,.42,.72,.48,.86,.58,.38,.76,.52,.92,.45,.68,.36,.8,.5,.74,.44,.64,.34,.7,.48,.86,.56,.76,.4,.62,.5,.78,.44,.68,.35,.82,.5,.72,.42,.9,.58,.7,.38];
+
     return SizedBox(
-      width: 280,
+      width: 285,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              IconButton(onPressed: toggle, icon: loading ? CircularProgressIndicator(color: accent) : Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_fill, size: 40, color: accent)),
-              IconButton(onPressed: () => seekBy(-10), icon: Icon(Icons.replay_10, color: accent)),
-              Expanded(child: Slider(min: 0.0, max: maxValue, value: currentValue, onChanged: duration == Duration.zero ? null : (v) => player.seek(Duration(milliseconds: v.round())))),
-              IconButton(onPressed: () => seekBy(10), icon: Icon(Icons.forward_10, color: accent)),
-            ],
-          ),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(formatTime(position)),
-            TextButton(onPressed: () async { const values = <double>[0.5, 1.0, 1.5, 2.0]; final i = values.indexOf(speed); final next = values[(i + 1) % values.length]; setState(() => speed = next); if (loaded) await player.setPlaybackRate(next); }, child: Text('${speed}x')),
-            Text(formatTime(duration)),
+          Row(children: [
+            IconButton(
+              tooltip: playing ? 'مکث' : 'پخش',
+              onPressed: toggle,
+              icon: loading
+                  ? SizedBox(width: 30, height: 30, child: CircularProgressIndicator(strokeWidth: 2.5, color: accent))
+                  : Icon(playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, size: 42, color: accent),
+            ),
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragStart: (d) => seekToFraction((d.localPosition.dx / 220).clamp(0.0, 1.0)),
+                onHorizontalDragUpdate: (d) => seekToFraction((d.localPosition.dx / 220).clamp(0.0, 1.0)),
+                onTapDown: (d) => seekToFraction((d.localPosition.dx / 220).clamp(0.0, 1.0)),
+                child: SizedBox(
+                  height: 48,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: List.generate(bars.length, (i) {
+                      final active = i / bars.length <= progress;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 100),
+                        width: 3,
+                        height: 8 + bars[i] * 27,
+                        decoration: BoxDecoration(
+                          color: active ? accent : accent.withValues(alpha: .34),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+            ),
+            IconButton(onPressed: () => seekBy(10), tooltip: '+۱۰ ثانیه', icon: Icon(Icons.forward_10_rounded, color: accent)),
+          ]),
+          Row(children: [
+            const SizedBox(width: 50),
+            Text(formatTime(position), style: TextStyle(fontSize: 11, color: accent.withValues(alpha: .9), fontWeight: FontWeight.w700)),
+            Expanded(
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 3,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                ),
+                child: Slider(
+                  min: 0,
+                  max: duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1,
+                  value: duration.inMilliseconds > 0 ? position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble() : 0,
+                  onChanged: duration == Duration.zero ? null : (v) => player.seek(Duration(milliseconds: v.round())),
+                ),
+              ),
+            ),
+            Text(formatTime(duration), style: TextStyle(fontSize: 11, color: accent.withValues(alpha: .9), fontWeight: FontWeight.w700)),
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            TextButton.icon(
+              onPressed: () async {
+                const values = <double>[0.5, 1.0, 1.5, 2.0];
+                final i = values.indexOf(speed);
+                final next = values[(i + 1) % values.length];
+                setState(() => speed = next);
+                if (loaded) await player.setPlaybackRate(next);
+              },
+              icon: const Icon(Icons.speed_rounded, size: 16),
+              label: Text('${speed}x'),
+            ),
           ]),
         ],
       ),
