@@ -12,6 +12,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<Map<String, dynamic>> rows = [];
 
   Future<void> load() async {
+    rows = [];
     try {
       final supabase = Supabase.instance.client;
       final counts = await supabase.rpc('get_unread_counts');

@@ -1246,7 +1246,7 @@ class _HomePageState extends State<HomePage> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: Row(children: List.generate(4, (i) {
+          child: Row(children: List.generate(5, (i) {
             const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
             const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
             return Padding(
@@ -2030,7 +2030,7 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
   @override void initState() { super.initState(); _load(); }
   Future<void> _load() async {
     try {
-      final rows = await supabase.from('saved_messages').select('id, body, message_type, created_at').order('created_at', ascending: false);
+      final rows = await supabase.from('saved_messages').select('id, body, message_type, created_at').eq('user_id', supabase.auth.currentUser!.id).order('created_at', ascending: false);
       if (!mounted) return;
       setState(() { items = List<Map<String, dynamic>>.from(rows); loading = false; });
     } catch (e) {
@@ -2405,7 +2405,7 @@ class _ChatPageState extends State<ChatPage> {
     if (sending || recordingVoice) return;
     try {
       if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
-      final path = '\${Directory.systemTemp.path}/arad_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = '${Directory.systemTemp.path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _voiceRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
       _voiceStartedAt = DateTime.now();
       _voiceTimer?.cancel();
@@ -2430,7 +2430,7 @@ class _ChatPageState extends State<ChatPage> {
       final file=File(path); final bytes=await file.readAsBytes();
       if(bytes.isEmpty) throw Exception('فایل ویس خالی است');
       setState(()=>sending=true);
-      final storagePath='\${widget.id}/voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final storagePath='${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await supabase.storage.from('chat-media').uploadBinary(storagePath,bytes,fileOptions:const FileOptions(contentType:'audio/mp4',upsert:false));
       final msg=await supabase.from('messages').insert({'conversation_id':widget.id,'sender_id':supabase.auth.currentUser!.id,'body':'پیام صوتی','message_type':'audio','reply_to':replyMessage?['id']}).select().single();
       await supabase.from('message_attachments').insert({'message_id':msg['id'],'storage_path':storagePath,'file_name':storagePath.split('/').last,'mime_type':'audio/mp4','file_size':bytes.length,'duration_ms':voiceSeconds*1000});
