@@ -439,7 +439,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
               onTap: () => _open(x['title']!),
             ),
           )),
-        ]),
+        ]).toList(),
       ),
     );
   }
