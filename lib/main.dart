@@ -2367,7 +2367,7 @@ class _ChatPageState extends State<ChatPage> {
       if (uid != null && loaded.isNotEmpty) {
         final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
         final hidden = {for (final r in List<Map<String, dynamic>>.from(deletedRows)) '${r['message_id']}'};
-        loaded.removeWhere((m) => hidden.contains('${m['id']}'));
+        loaded.removeWhere((m) => hidden.contains('${m['id']}') || m['deleted_at'] != null);
       }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet().toList();
       if (senderIds.isNotEmpty) {
@@ -2795,10 +2795,20 @@ class _ChatPageState extends State<ChatPage> {
     );
     if (ok != true) return;
     try {
-      await supabase.from('messages').update({
+      final updated = await supabase.from('messages').update({
         'deleted_at': DateTime.now().toUtc().toIso8601String(),
         'body': null,
-      }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id);
+      }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id).select('id,deleted_at');
+      if ((updated as List).isEmpty) {
+        throw Exception('پیام حذف نشد؛ مجوز حذف برای همه یا مالکیت پیام بررسی شود.');
+      }
+      if (mounted) {
+        setState(() {
+          messages.removeWhere((m) => '${m['id']}' == '${message['id']}');
+          reactions.remove('${message['id']}');
+          attachments.remove('${message['id']}');
+        });
+      }
       await load();
     } catch (e) {
       if (mounted) showMsg(context, 'حذف برای همه ناموفق بود: $e');
@@ -3216,10 +3226,11 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.link_rounded, size: 28),
-            const SizedBox(height: 4),
-            Text(url, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
-            Text(Uri.tryParse(url)?.host ?? 'لینک', style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
+            Container(width: double.infinity, height: 92, decoration: BoxDecoration(color: mine ? Colors.white.withValues(alpha:.12) : scheme.primary.withValues(alpha:.08), borderRadius: BorderRadius.circular(12)), child: const Center(child: Icon(Icons.language_rounded, size: 34))),
+            const SizedBox(height: 8),
+            Text('پیش‌نمایش لینک', style: TextStyle(fontWeight: FontWeight.w800, color: textColor)),
+            const SizedBox(height: 2),
+            Text(Uri.tryParse(url)?.host ?? 'لینک', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: mine ? Colors.white70 : scheme.primary)),
           ],
         ),
       );
@@ -3336,9 +3347,14 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<bool> _isGroupAdmin() async {
     try {
-      final uid=supabase.auth.currentUser!.id;
-      final r=await supabase.from('conversation_admins').select('role').eq('conversation_id',widget.id).eq('user_id',uid).maybeSingle();
-      return r!=null;
+      final uid = supabase.auth.currentUser!.id;
+      final c = await supabase.from('conversations').select('created_by,type').eq('id', widget.id).maybeSingle();
+      if (c == null || !['group','channel'].contains('${c['type']}')) return false;
+      if ('${c['created_by']}' == uid) return true;
+      final m = await supabase.from('conversation_members').select('role').eq('conversation_id', widget.id).eq('user_id', uid).maybeSingle();
+      if (m?['role'] == 'admin') return true;
+      final a = await supabase.from('conversation_admins').select('role').eq('conversation_id', widget.id).eq('user_id', uid).maybeSingle();
+      return a?['role'] == 'owner' || a?['role'] == 'admin';
     } catch (_) { return false; }
   }
   Future<void> _openGroupManagement() async {
@@ -3351,22 +3367,12 @@ class _ChatPageState extends State<ChatPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: scheme.surface.withValues(alpha: .62),
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              color: scheme.surface.withValues(alpha: .20),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: scheme.onSurface.withValues(alpha: .07)),
-                ),
-              ),
-            ),
-          ),
-        ),
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(height: 1, color: scheme.onSurface.withValues(alpha: .07))),
         actions: [
           FutureBuilder<bool>(
             future: _isGroupAdmin(),
@@ -3391,7 +3397,7 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          color: dark ? const Color(0xFF17191D) : const Color(0xFFF0F2F5),
+          color: dark ? const Color(0xFF14171B) : const Color(0xFFEFF2F5),
         ),
         child: Column(
           children: [
@@ -3404,7 +3410,7 @@ class _ChatPageState extends State<ChatPage> {
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.fromLTRB(12, 92, 12, 12),
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                           reverse: false,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
@@ -3454,9 +3460,9 @@ class _ChatPageState extends State<ChatPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
                       decoration: BoxDecoration(
-                        color: scheme.surface.withValues(alpha: dark ? .72 : .78),
+                        color: dark ? const Color(0xFF20242A) : Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
+                        border: Border.all(color: scheme.onSurface.withValues(alpha: .10)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: .10),
