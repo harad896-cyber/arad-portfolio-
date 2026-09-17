@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -17,6 +17,38 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
+
+      - name: Repair messenger runtime features
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(r"'\${Directory.systemTemp.path}/arad_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a'", "'${Directory.systemTemp.path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a'")
+          s = s.replace(r"'\${widget.id}/voice_\${DateTime.now().millisecondsSinceEpoch}.m4a'", "'${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a'")
+          s = s.replace("Row(children: List.generate(4, (i) {", "Row(children: List.generate(5, (i) {")
+          s = s.replace("supabase.from('saved_messages').select('id, body, message_type, created_at').order('created_at', ascending: false)", "supabase.from('saved_messages').select('id, body, message_type, created_at').eq('user_id', supabase.auth.currentUser!.id).order('created_at', ascending: false)")
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('lib/notifications_page.dart')
+          s = p.read_text(encoding='utf-8')
+          needle = "Future<void> load() async {\n    try {"
+          if needle in s:
+              s = s.replace(needle, "Future<void> load() async {\n    rows = [];\n    try {", 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          if git diff --quiet; then
+            echo 'No runtime source repair needed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add lib/main.dart lib/notifications_page.dart
+            git commit -m 'fix: repair voice recording and messenger runtime filters'
+            git push origin HEAD:main
+          fi
 
       - name: Setup Java 17
         uses: actions/setup-java@v5
@@ -81,7 +113,7 @@ jobs:
       - name: Verify APK and commit identity
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
-          echo "SOURCE_COMMIT=${GITHUB_SHA}" | tee build/app/source-commit.txt
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" | tee build/app/source-commit.txt
           sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app/apk-sha256.txt
           ls -lh build/app/outputs/flutter-apk/app-release.apk
 
