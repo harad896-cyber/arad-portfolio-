@@ -44,3 +44,4 @@ jobs:
           retention-days: 14
 
 # Project 2 messenger build guard
+# Source-level workaround is applied during CI until the stale ChatPage call is removed from main.dart.
