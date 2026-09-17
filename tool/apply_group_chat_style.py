@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 p = Path('lib/main.dart')
 s = p.read_text(encoding='utf-8')
@@ -6,13 +7,10 @@ s = p.read_text(encoding='utf-8')
 marker = "  Widget _glassMessageBubble(Map<String, dynamic> m) {\n"
 if marker not in s:
     raise SystemExit('chat bubble marker not found')
-
-# Keep all existing message actions/attachments for normal chats, but give group
-# messages a dedicated visual treatment matching the supplied reference.
-if "_groupStyledMessageBubble(Map<String, dynamic> m)" not in s:
+if "if (_chatType == 'group') return _groupStyledMessageBubble(m);" not in s:
     s = s.replace(marker, marker + "    if (_chatType == 'group') return _groupStyledMessageBubble(m);\n", 1)
 
-    method = r'''  Widget _groupStyledMessageBubble(Map<String, dynamic> m) {
+method = r'''  Widget _groupStyledMessageBubble(Map<String, dynamic> m) {
     final mine = m['sender_id'] == supabase.auth.currentUser?.id;
     final senderId = m['sender_id']?.toString() ?? '';
     final profile = profiles[senderId];
@@ -78,14 +76,16 @@ if "_groupStyledMessageBubble(Map<String, dynamic> m)" not in s:
   }
 
 '''
+pattern = r"  Widget _groupStyledMessageBubble\(Map<String, dynamic> m\) \{.*?\n  \}\n\n(?=  @override\n  void initState\(\) \{)"
+if re.search(pattern, s, flags=re.S):
+    s = re.sub(pattern, method, s, count=1, flags=re.S)
+else:
     anchor = "  @override\n  void initState() {\n    super.initState();\n    load();\n    _loadChatType();"
     if anchor not in s:
         raise SystemExit('chat init anchor not found')
     s = s.replace(anchor, method + anchor, 1)
 
-# Dark group header/background. These replacements are intentionally narrow.
 s = s.replace("backgroundColor: scheme.surface,\n        surfaceTintColor: Colors.transparent,", "backgroundColor: _chatType == 'group' ? const Color(0xFF17171A) : scheme.surface,\n        surfaceTintColor: Colors.transparent,", 1)
-s = s.replace("color: scheme.onSurface.withValues(alpha: .07))),", "color: _chatType == 'group' ? Colors.white.withValues(alpha: .06) : scheme.onSurface.withValues(alpha: .07))),", 1)
 
 old = """      body: Container(\n        decoration: BoxDecoration(\n          color: dark ? const Color(0xFF14171B) : const Color(0xFFEFF2F5),\n        ),"""
 new = """      body: Container(\n        decoration: BoxDecoration(\n          color: _chatType == 'group' ? const Color(0xFF0B0D0F) : (dark ? const Color(0xFF14171B) : const Color(0xFFEFF2F5)),\n          gradient: _chatType == 'group' ? const RadialGradient(center: Alignment(0.82, -0.85), radius: 1.15, colors: [Color(0x222A1724), Color(0xFF0B0D0F)]) : null,\n        ),"""
