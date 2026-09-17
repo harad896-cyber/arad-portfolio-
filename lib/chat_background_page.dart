@@ -72,7 +72,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
                     ),
                     boxShadow: const [BoxShadow(blurRadius: 8, offset: Offset(0, 3), color: Color(0x22000000))],
                   ),
-                  child: active ? Icon(Icons.check_rounded, color: value == 0x20242B || value == 0x111827 ? Colors.white : Colors.black87) : null,
+                  child: active ? Icon(Icons.check_rounded, color: value == 0xFF20242B || value == 0xFF111827 ? Colors.white : Colors.black87) : null,
                 ),
               );
             }).toList(),

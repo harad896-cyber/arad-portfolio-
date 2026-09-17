@@ -3305,8 +3305,9 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    appTheme.addListener(_onAppThemeChanged);
     load();
-    _loadChatType().then((_) => _loadGroupMemberCount());
+    _loadChatType();
     channel = supabase.channel('chat-${widget.id}')
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
@@ -3330,8 +3331,13 @@ class _ChatPageState extends State<ChatPage> {
       )
       .subscribe();  }
 
+  void _onAppThemeChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    appTheme.removeListener(_onAppThemeChanged);
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
@@ -3434,7 +3440,15 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          color: dark ? const Color(0xFF14171B) : const Color(0xFFEFF2F5),
+          color: Color(appTheme.backgroundSeed),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(appTheme.backgroundSeed).withValues(alpha: .98),
+              Color(appTheme.backgroundSeed).withValues(alpha: .90),
+            ],
+          ),
         ),
         child: Column(
           children: [
