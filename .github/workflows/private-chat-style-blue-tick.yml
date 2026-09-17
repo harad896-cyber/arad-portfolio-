@@ -1,0 +1,97 @@
+name: Private Chat Style And Blue Tick
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply private chat and verified badge
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+
+          s = s.replace("  int _groupMemberCount = 0;\n", "  int _groupMemberCount = 0;\n  bool _peerVerified = false;\n  String _peerAvatarUrl = '';\n", 1) if '_peerVerified' not in s else s
+
+          s = s.replace("select('id,display_name,username,avatar_url').inFilter('id', senderIds)", "select('id,display_name,username,avatar_url,is_verified').inFilter('id', senderIds)", 1)
+
+          old = """  Future<void> _loadChatType() async {\n    try {\n      final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();\n      final type = (r?['type'] ?? 'direct').toString();\n      var count = 0;\n      if (type == 'group') {\n        final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);\n        count = (rows as List).length;\n      }\n      if (mounted) setState(() { _chatType = type; _groupMemberCount = count; });\n    } catch (_) {}\n  }\n"""
+          new = """  Future<void> _loadChatType() async {\n    try {\n      final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();\n      final type = (r?['type'] ?? 'direct').toString();\n      var count = 0;\n      var peerVerified = false;\n      var peerAvatar = '';\n      if (type == 'group') {\n        final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);\n        count = (rows as List).length;\n      } else if (type == 'direct') {\n        final uid = supabase.auth.currentUser?.id;\n        final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);\n        final peerIds = (rows as List).map((e) => '${e['user_id']}').where((id) => id != uid).toList();\n        if (peerIds.isNotEmpty) {\n          final peer = await supabase.from('profiles').select('id,avatar_url,is_verified').eq('id', peerIds.first).maybeSingle();\n          peerVerified = peer?['is_verified'] == true;\n          peerAvatar = peer?['avatar_url']?.toString() ?? '';\n        }\n      }\n      if (mounted) setState(() { _chatType = type; _groupMemberCount = count; _peerVerified = peerVerified; _peerAvatarUrl = peerAvatar; });\n    } catch (_) {}\n  }\n"""
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          old_header = """              const CircleAvatar(radius: 17, child: Icon(Icons.groups_rounded, size: 18)),\n              const SizedBox(width: 9),\n              Expanded(\n"""
+          new_header = """              CircleAvatar(\n                radius: 17,\n                backgroundImage: _chatType == 'direct' && _peerAvatarUrl.isNotEmpty ? NetworkImage(_peerAvatarUrl) : null,\n                child: _chatType == 'direct' && _peerAvatarUrl.isNotEmpty ? null : Icon(_chatType == 'group' ? Icons.groups_rounded : Icons.person_rounded, size: 18),\n              ),\n              const SizedBox(width: 9),\n              Expanded(\n"""
+          if old_header in s:
+              s = s.replace(old_header, new_header, 1)
+
+          old_title = """                    Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),\n"""
+          new_title = """                    Row(\n                      mainAxisSize: MainAxisSize.min,\n                      children: [\n                        Flexible(child: Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),\n                        if (_chatType == 'direct' && _peerVerified) ...[\n                          const SizedBox(width: 4),\n                          const Icon(Icons.verified_rounded, size: 17, color: Color(0xFF2F9BFF)),\n                        ],\n                      ],\n                    ),\n"""
+          if old_title in s:
+              s = s.replace(old_title, new_title, 1)
+
+          old_colors = """    final myBubble = scheme.primary;\n    final otherBubble = dark ? const Color(0xFF30343B) : const Color(0xFFF4F5F7);\n"""
+          new_colors = """    final myBubble = const Color(0xFFB85A86);\n    final otherBubble = dark ? const Color(0xFF24272C) : const Color(0xFFF0F1F4);\n"""
+          if old_colors in s:
+              s = s.replace(old_colors, new_colors, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Verify source
+        run: |
+          grep -n "_peerVerified" lib/main.dart
+          grep -n "verified_rounded" lib/main.dart
+          grep -n "B85A86" lib/main.dart
+
+      - name: Commit source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart
+          git diff --cached --quiet || git commit -m "feat: style private chat and show verified badge"
+          git push
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test
+        run: flutter test --no-pub
+
+      - name: Build APK
+        run: flutter build apk --release --no-pub
+
+      - name: Verify APK
+        run: test -s build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: messenger-private-chat-verified-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
