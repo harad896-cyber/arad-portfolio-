@@ -90,6 +90,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       const SizedBox(height: 12),
       Card(child: Column(children: [
         ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو'), trailing: const Icon(Icons.chevron_left), onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: [const Text('اعضای گروه', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), const SizedBox(height: 8), ...members.map((m) { final id = m['user_id'].toString(); final a = avatarOf(id); final o = g['created_by']?.toString() == id; return ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(o ? '👑 مالک' : (m['role'] ?? 'عضو').toString())); })]))),
+        if (admin) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا'), subtitle: const Text('جستجو و افزودن چند کاربر به‌صورت هم‌زمان'), trailing: const Icon(Icons.chevron_left), onTap: addMembers),
         if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
         if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),
@@ -129,6 +130,60 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       if (!mounted) return;
       setState(() { group = g; members = ms; profiles = {for (final p in ps) p['id'].toString(): p}; owner = uid != null && g['created_by']?.toString() == uid; admin = owner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role']))); loading = false; });
     } catch (_) { if (mounted) { setState(() => loading = false); toast('مدیریت گروه بارگذاری نشد.'); } }
+  }
+
+  Future<void> addMembers() async {
+    if (!admin || busy) return;
+    final search = TextEditingController();
+    final selected = <String>{};
+    try {
+      final added = await showModalBottomSheet<List<String>>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheet) {
+          List<Map<String, dynamic>> results = [];
+          bool loadingUsers = false;
+          return StatefulBuilder(builder: (sheet, setSheet) {
+            Future<void> findUsers(String q) async {
+              final term = q.trim();
+              if (term.length < 2) { setSheet(() => results = []); return; }
+              setSheet(() => loadingUsers = true);
+              try {
+                final rows = await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').or('display_name.ilike.%$term%,username.ilike.%$term%').limit(30);
+                final existing = members.map((m) => m['user_id'].toString()).toSet();
+                setSheet(() => results = List<Map<String, dynamic>>.from(rows).where((r) => !existing.contains(r['id'].toString())).toList());
+              } catch (_) { setSheet(() => results = []); }
+              finally { if (sheet.mounted) setSheet(() => loadingUsers = false); }
+            }
+            return SafeArea(child: Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: MediaQuery.viewInsetsOf(sheet).bottom + 16),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('افزودن اعضا', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 12),
+                TextField(controller: search, autofocus: true, onChanged: findUsers, decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), hintText: 'نام یا آیدی کاربر')),
+                const SizedBox(height: 8),
+                if (loadingUsers) const LinearProgressIndicator(minHeight: 2),
+                ConstrainedBox(constraints: const BoxConstraints(maxHeight: 360), child: ListView(shrinkWrap: true, children: results.map((u) {
+                  final id = u['id'].toString(); final checked = selected.contains(id); final avatar = (u['avatar_url'] ?? '').toString();
+                  return CheckboxListTile(value: checked, onChanged: (_) => setSheet(() => checked ? selected.remove(id) : selected.add(id)),
+                    secondary: CircleAvatar(backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar.isEmpty ? const Icon(Icons.person) : null),
+                    title: Text((u['display_name'] ?? u['username'] ?? 'کاربر').toString()), subtitle: Text((u['username'] ?? '').toString().isEmpty ? '' : '@${u['username']}'));
+                }).toList())),
+                const SizedBox(height: 10),
+                FilledButton.icon(onPressed: selected.isEmpty ? null : () => Navigator.pop(sheet, selected.toList()), icon: const Icon(Icons.person_add_alt_1_rounded), label: Text(selected.isEmpty ? 'انتخاب اعضا' : 'افزودن ${selected.length} نفر')),
+              ]),
+            ));
+          });
+        },
+      );
+      if (added == null || added.isEmpty) return;
+      setState(() => busy = true);
+      final count = await db.rpc('add_group_members', params: {'p_conversation_id': widget.conversationId, 'p_user_ids': added});
+      toast('${count ?? added.length} عضو به گروه اضافه شد.');
+      await load();
+    } catch (e) { toast('افزودن عضو ناموفق بود: $e'); }
+    finally { search.dispose(); if (mounted) setState(() => busy = false); }
   }
 
   Future<void> removeMember(String id) async {

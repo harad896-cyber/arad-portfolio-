@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main.dart';
 import 'owner_admin_page.dart';
+import 'chat_background_page.dart';
 
 const _profileSecureAccounts = FlutterSecureStorage();
 
@@ -270,6 +271,13 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAdminPage())),
             ),
           ],
+          const Divider(height: 1),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.palette_rounded, color: s.primary)),
+            title: const Text('پس‌زمینه چت', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('رنگ پس‌زمینه برای همین حساب روی این دستگاه'),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatBackgroundPage())),
+          ),
           const Divider(height: 1),
           ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.bookmark_rounded, color: s.primary)),

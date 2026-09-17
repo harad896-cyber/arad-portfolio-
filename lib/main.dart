@@ -21,6 +21,7 @@ import 'group_management.dart';
 import 'channel_management.dart';
 import 'invite.dart';
 import 'profile_page.dart';
+import 'chat_background_page.dart';
 import 'call_session.dart';
 import 'voice_message_player.dart';
 
@@ -47,6 +48,7 @@ class LanguageController extends ChangeNotifier {
 class AppThemeController extends ChangeNotifier {
   bool dark = false;
   int seed = 0xFF7C5CFF;
+  int backgroundSeed = 0xFFF5F5F7;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -59,12 +61,19 @@ class AppThemeController extends ChangeNotifier {
     final key = _scope;
     dark = p.getBool('dark_mode_$key') ?? false;
     seed = p.getInt('accent_seed_$key') ?? 0xFF7C5CFF;
+    backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFFF5F5F7;
     notifyListeners();
   }
   Future<void> setDark(bool value) async {
     dark = value;
     final p = await SharedPreferences.getInstance();
     await p.setBool('dark_mode_$_scope', value);
+    notifyListeners();
+  }
+  Future<void> setBackgroundSeed(int value) async {
+    backgroundSeed = value;
+    final p = await SharedPreferences.getInstance();
+    await p.setInt('chat_background_seed_$_scope', value);
     notifyListeners();
   }
   Future<void> setSeed(int value) async {
@@ -286,7 +295,7 @@ class AradMessenger extends StatelessWidget {
             center: const Alignment(0.85, -0.95),
             radius: 1.15,
             colors: [
-              Color(0x247C5CFF),
+              Color(appTheme.backgroundSeed).withValues(alpha: .30),
               Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
