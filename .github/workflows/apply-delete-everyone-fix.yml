@@ -34,5 +34,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add lib/main.dart tools/fix_delete_for_everyone.py .github/workflows/apply-delete-everyone-fix.yml
           git diff --cached --quiet && exit 0
-          git commit -m "fix: delete message for everyone on both sides"
+          git commit -m "fix: chat appearance group management and delete for everyone"
           git push origin HEAD:main
