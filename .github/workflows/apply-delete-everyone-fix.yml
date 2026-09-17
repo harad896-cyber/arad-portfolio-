@@ -50,19 +50,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/main.dart tools/fix_delete_for_everyone.py tools/fix_chat_order.py .github/workflows/apply-delete-for-everyone-fix.yml
+          git add lib/main.dart tools/fix_delete_for_everyone.py tools/fix_chat_order.py .github/workflows/apply-delete-everyone-fix.yml
           if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git commit -m "fix: repair messenger voice and runtime features"
           git push origin HEAD:main
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger final APK build from repaired source
+      - name: Final APK build is triggered by the resulting main push
         if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          curl -fsSL -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/final-apk.yml/dispatches \
-            -d '{"ref":"main"}'
+        run: echo "Source repaired and pushed to main; build workflows trigger from push."
