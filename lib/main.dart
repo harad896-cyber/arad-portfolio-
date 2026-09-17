@@ -151,7 +151,8 @@ class AradMessenger extends StatelessWidget {
           iconTheme: IconThemeData(color: Color(0xFF707078)),
         ),
         cardTheme: CardThemeData(
-          elevation: 0,
+          elevation: 2,
+          shadowColor: Color(0x18000000),
           color: Color(0xB8FFFFFF),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
@@ -159,6 +160,14 @@ class AradMessenger extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(20)),
             side: BorderSide(color: Color(0x1A4F46E5)),
           ),
+        ),
+        listTileTheme: ListTileThemeData(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          tileColor: const Color(0xB8FFFFFF),
+          selectedTileColor: const Color(0x1A7C5CFF),
+          iconColor: const Color(0xFF707078),
+          minVerticalPadding: 9,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -232,7 +241,8 @@ class AradMessenger extends StatelessWidget {
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         cardTheme: CardThemeData(
-          elevation: 0,
+          elevation: 1.5,
+          shadowColor: Color(0x55000000),
           color: Color(0x0AFFFFFF),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
@@ -240,6 +250,14 @@ class AradMessenger extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(20)),
             side: BorderSide(color: Color(0x1FFFFFFF)),
           ),
+        ),
+        listTileTheme: ListTileThemeData(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          tileColor: const Color(0x0DFFFFFF),
+          selectedTileColor: const Color(0x247C5CFF),
+          iconColor: const Color(0xFFB8B8C2),
+          minVerticalPadding: 9,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
