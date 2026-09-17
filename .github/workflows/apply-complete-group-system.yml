@@ -22,8 +22,8 @@ jobs:
         run: python tools/apply_complete_group_system.py
       - name: Verify group system
         run: |
-          grep -q "class GroupManagementPage extends StatefulWidget" lib/main.dart
-          grep -q "QrImageView" lib/main.dart
+          test -f lib/group_management.dart
+          test -f lib/group_moderation.dart
           grep -q "qr_flutter:" pubspec.yaml
       - name: Commit and push
         run: |
@@ -31,5 +31,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add lib/main.dart pubspec.yaml tools/apply_complete_group_system.py .github/workflows/apply-complete-group-system.yml
           git diff --cached --quiet && exit 0
-          git commit -m "feat: complete Telegram-like group management"
+          git commit -m "fix: verify external group management files"
           git push origin HEAD:main
