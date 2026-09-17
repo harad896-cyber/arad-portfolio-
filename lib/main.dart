@@ -34,6 +34,8 @@ String t(String key, String locale) {
 
 class LanguageController extends ChangeNotifier {
   Locale locale = const Locale('fa');
+  Future<void> _loadChatType() async { try { final r=await supabase.from('conversations').select('type').eq('id',widget.id).maybeSingle(); if(mounted) setState(()=>_chatType=(r?['type'] ?? 'direct').toString()); } catch (_) {} }
+
   Future<void> load() async { final p = await SharedPreferences.getInstance(); locale = Locale(p.getString('locale') ?? 'fa'); notifyListeners(); }
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
@@ -2145,6 +2147,7 @@ class _ChatPageState extends State<ChatPage> {
   bool recordingVoice = false;
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
+  String _chatType = 'direct';
   DateTime? _voiceStartedAt;
   Timer? _voiceTimer;
   int voiceSeconds = 0;
@@ -2196,17 +2199,16 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _voicePlayButton(String messageId) {
-    return IconButton(
-      icon: const Icon(Icons.play_circle_fill_rounded),
-      tooltip: 'پخش پیام صوتی',
-      onPressed: () async {
-        try {
-          await _playAttachment(messageId);
-        } catch (e) {
-          if (mounted) showMsg(context, 'پخش ویس ناموفق بود: $e');
-        }
-      },
-    );
+    final a = attachments[messageId];
+    final seconds = ((a?['duration_ms'] as num?)?.toInt() ?? 0) ~/ 1000;
+    final bars = List<double>.generate(34, (i) => .25 + ((i * 17) % 70) / 100);
+    return SizedBox(width: 250, child: Row(children: [
+      IconButton(icon: const Icon(Icons.play_circle_fill_rounded, size: 40), tooltip: 'پخش پیام صوتی', onPressed: () => _playAttachment(messageId)),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(height: 38, child: GestureDetector(onTap: () => _playAttachment(messageId), child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: bars.map((v) => Expanded(child: Container(height: 8 + v * 24, margin: const EdgeInsets.symmetric(horizontal: 1), decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .65), borderRadius: BorderRadius.circular(8)))).toList()))),
+        Text('00:' + seconds.toString().padLeft(2,'0'), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha:.8))),
+      ])),
+    ]));
   }
 
   String _time(dynamic value) {
@@ -3061,138 +3063,50 @@ class _ChatPageState extends State<ChatPage> {
     final sender = _senderName(m);
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
     final scheme = Theme.of(context).colorScheme;
-    final base = mine ? scheme.primary : scheme.surfaceContainerHighest;
-    return Align(
-      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        onLongPress: () => showMessageActions(m),
-        onDoubleTap: () => reactTo(m, '❤️'),
-        onHorizontalDragEnd: (details) {
-          if ((details.primaryVelocity ?? 0).abs() > 450) setReply(m);
-        },
-        child: Container(
-          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84),
-          margin: const EdgeInsets.only(bottom: 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (!mine) ...[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null,
-                ),
-                const SizedBox(width: 6),
-              ],
-              Flexible(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(mine ? 20 : 5),
-                    bottomRight: Radius.circular(mine ? 5 : 20),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            base.withValues(alpha: mine ? .88 : .76),
-                            scheme.primary.withValues(alpha: mine ? .20 : .10),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: scheme.onSurface.withValues(alpha: .11),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: scheme.primary.withValues(alpha: .10),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: .10),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!mine)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 3),
-                              child: Text(
-                                sender,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  color: scheme.primary,
-                                ),
-                              ),
-                            ),
-                          _replyPreview(m),
-                          if (m['message_type'] == 'image') _imageAttachment(m),
-                          if (m['message_type'] == 'audio') _voicePlayButton(m['id'].toString()),
-                          if (m['message_type'] == 'file') _fileAttachment(m),
-                          if (m['message_type'] != 'audio' &&
-                              m['message_type'] != 'image' &&
-                              m['message_type'] != 'file' &&
-                              '${m['body'] ?? ''}'.isNotEmpty)
-                            Text(
-                              '${m['body'] ?? ''}',
-                              style: TextStyle(
-                                fontSize: 15.5,
-                                height: 1.38,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                          const SizedBox(height: 3),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}',
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                              if (mine) ...[
-                                const SizedBox(width: 4),
-                                Icon(
-                                  m['read_at'] != null
-                                      ? Icons.done_all_rounded
-                                      : Icons.done_rounded,
-                                  size: 15,
-                                  color: m['read_at'] != null ? Colors.blue : null,
-                                ),
-                              ],
-                            ],
-                          ),
-                          _reactionRow(m),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final myBubble = scheme.primary;
+    final otherBubble = dark ? const Color(0xFF30343B) : const Color(0xFFF4F5F7);
+    final textColor = mine ? (ThemeData.estimateBrightnessForColor(myBubble) == Brightness.dark ? Colors.white : Colors.black) : (dark ? Colors.white : const Color(0xFF20242A));
+    final body = '${m['body'] ?? ''}';
+    final urlMatch = RegExp(r'https?://[^\\s]+').firstMatch(body);
+    final isGroup = _chatType != 'direct';
+    return Align(alignment: mine ? Alignment.centerRight : Alignment.centerLeft, child: GestureDetector(
+      onLongPress: () => showMessageActions(m), onDoubleTap: () => reactTo(m, '❤️'),
+      onHorizontalDragEnd: (details) { if ((details.primaryVelocity ?? 0).abs() > 450) setReply(m); },
+      child: Container(constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84), margin: const EdgeInsets.only(bottom: 7),
+        child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+          if (!mine && isGroup) ...[CircleAvatar(radius: 16, backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null), const SizedBox(width: 6)],
+          Flexible(child: Container(padding: const EdgeInsets.fromLTRB(13,9,11,7), decoration: BoxDecoration(
+            color: mine ? myBubble : otherBubble,
+            borderRadius: BorderRadius.only(topLeft: const Radius.circular(20), topRight: const Radius.circular(20), bottomLeft: Radius.circular(mine ? 20 : 5), bottomRight: Radius.circular(mine ? 5 : 20)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 8, offset: const Offset(0,2))]),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (!mine && isGroup) Padding(padding: const EdgeInsets.only(bottom:3), child: Text(sender, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.primary))),
+              _replyPreview(m),
+              if (m['message_type'] == 'image') _imageAttachment(m),
+              if (m['message_type'] == 'audio') _voicePlayButton(m['id'].toString()),
+              if (m['message_type'] == 'file') _fileAttachment(m),
+              if (m['message_type'] != 'audio' && m['message_type'] != 'image' && m['message_type'] != 'file' && body.isNotEmpty)
+                urlMatch != null && urlMatch.start == 0 ? Container(width:235,padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:(mine?Colors.white:scheme.primary).withValues(alpha:.10),borderRadius:BorderRadius.circular(16)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                  const Icon(Icons.link_rounded,size:28),const SizedBox(height:4),
+                  Text(body.substring(urlMatch.start).split(RegExp(r'\\s')).first,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontWeight:FontWeight.w700,color:textColor)),
+                  Text(Uri.tryParse(urlMatch.group(0) ?? '')?.host ?? 'لینک',style:TextStyle(fontSize:11,color:mine?Colors.white70:scheme.primary)),
+                ])) : Text(body,style:TextStyle(fontSize:15.5,height:1.38,color:textColor)),
+              const SizedBox(height:3),
+              Row(mainAxisSize:MainAxisSize.min,children:[
+                Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}',style:TextStyle(fontSize:10.5,color:mine?textColor.withValues(alpha:.75):scheme.onSurfaceVariant)),
+                if(mine)...[const SizedBox(width:4),Icon(m['read_at']!=null?Icons.done_all_rounded:Icons.done_rounded,size:15,color:m['read_at']!=null?const Color(0xFF62B7FF):textColor.withValues(alpha:.7))],
+              ]),
+              _reactionRow(m),
+            ]))),
+        ])));
   }
 
   @override
   void initState() {
     super.initState();
     load();
+    _loadChatType();
     channel = supabase.channel('chat-${widget.id}')
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
@@ -3311,7 +3225,7 @@ class _ChatPageState extends State<ChatPage> {
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.fromLTRB(12, 92, 12, 12),
-                          reverse: true,
+                          reverse: false,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
                         ),
