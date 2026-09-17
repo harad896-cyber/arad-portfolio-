@@ -18,6 +18,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'group_management.dart';
+import 'channel_management.dart';
 import 'invite.dart';
 import 'profile_page.dart';
 import 'call_session.dart';
@@ -3396,6 +3397,8 @@ class _ChatPageState extends State<ChatPage> {
           onTap: () {
             if (_chatType == 'group') {
               Navigator.push(context, MaterialPageRoute(builder: (_) => GroupProfilePage(conversationId: widget.id, title: widget.title)));
+            } else if (_chatType == 'channel') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelManagementPage(conversationId: widget.id, title: widget.title)));
             }
           },
           child: Row(
@@ -3410,6 +3413,8 @@ class _ChatPageState extends State<ChatPage> {
                     Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
                     if (_chatType == 'group')
                       const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
+                    if (_chatType == 'channel')
+                      const Text('مدیریت کانال', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
