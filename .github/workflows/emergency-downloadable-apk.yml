@@ -28,6 +28,8 @@ jobs:
           cache: true
       - name: Get dependencies
         run: flutter pub get
+      - name: Remove stale ChatPage member-count call
+        run: sed -i 's/_loadChatType().then((_) => _loadGroupMemberCount());/_loadChatType();/' lib/main.dart
       - name: Analyze diagnostics
         run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
       - name: Recreate supported Android host
