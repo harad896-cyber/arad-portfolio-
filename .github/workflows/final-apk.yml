@@ -94,6 +94,7 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      # Verified build path: remove the malformed inline group page before analysis.
       - name: Flutter analyze
         run: flutter analyze 2>&1 | tee flutter-analyze.txt
 
