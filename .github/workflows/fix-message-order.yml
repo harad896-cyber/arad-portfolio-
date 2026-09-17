@@ -1,0 +1,74 @@
+name: Fix chat message ordering
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'lib/main.dart'
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Patch ordering
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+          original = s
+          changes = []
+          # Chat lists must render oldest -> newest. The newest message belongs at the bottom.
+          s2 = re.sub(r"\.order\(\s*['\"]created_at['\"]\s*,\s*ascending\s*:\s*false\s*\)", ".order('created_at', ascending: true)", s)
+          if s2 != s:
+              changes.append('changed messages created_at query to ascending')
+              s = s2
+          s2 = s.replace('reverse: true', 'reverse: false')
+          if s2 != s:
+              changes.append('disabled reversed chat list')
+              s = s2
+          # Common optimistic insertion bug: newest item inserted at index 0 in a chronological list.
+          for old, new in [
+              ("loaded.insert(0, row)", "loaded.add(row)"),
+              ("messages.insert(0, row)", "messages.add(row)"),
+              ("_messages.insert(0, row)", "_messages.add(row)"),
+              ("_messages.insert(0, message)", "_messages.add(message)"),
+              ("messages.insert(0, message)", "messages.add(message)"),
+          ]:
+              if old in s:
+                  s = s.replace(old, new)
+                  changes.append(f'{old} -> {new}')
+          # Make every list named loaded chronological before it is committed to state.
+          sort_code = "loaded.sort((a, b) { final ta = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0); final tb = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0); return ta.compareTo(tb); });"
+          if 'final ta = DateTime.tryParse' not in s and 'loaded.sort((a, b)' not in s:
+              candidates = list(re.finditer(r"(^[ \t]*)setState\(\(\)\s*\{", s, re.M))
+              inserted = False
+              for m in reversed(candidates):
+                  start = m.end()
+                  window = s[start:start+1200]
+                  if 'loaded' in window and ('messages' in window or '_messages' in window):
+                      indent = m.group(1) + '  '
+                      s = s[:start] + '\n' + indent + sort_code + s[start:]
+                      changes.append('sorted loaded messages by created_at before state update')
+                      inserted = True
+                      break
+          if s == original:
+              raise SystemExit('No message-order pattern found; refusing to make a no-op commit')
+          p.write_text(s, encoding='utf-8')
+          print('PATCHED:', *changes, sep='\n- ')
+          PY
+          dart format lib/main.dart
+          git diff --check
+          git diff -- lib/main.dart
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/main.dart
+          git commit -m 'fix chat message chronological ordering' || exit 0
+          git push
