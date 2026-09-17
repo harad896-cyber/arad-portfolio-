@@ -1,0 +1,33 @@
+name: Apply professional messenger UX
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Apply professional UX patch
+        run: python tools/apply_professional_ux.py
+      - name: Verify source
+        run: |
+          test -f lib/chat_background_page.dart
+          grep -q "add_group_members" lib/group_management.dart
+          grep -q "ChatBackgroundPage" lib/profile_page.dart
+          grep -q "backgroundSeed" lib/main.dart
+      - name: Commit source changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart lib/profile_page.dart lib/group_management.dart lib/chat_background_page.dart tools/apply_professional_ux.py
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: complete profile background and group member UX"
+          git push origin HEAD:main
