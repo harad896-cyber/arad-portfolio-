@@ -1,6 +1,9 @@
 name: Implement real message status
 
 on:
+  push:
+    paths:
+      - '.github/workflows/implement-message-status.yml'
   workflow_dispatch:
 
 permissions:
@@ -40,14 +43,14 @@ jobs:
           .eq('conversation_id', widget.id)
           .neq('sender_id', uid);
       for (final row in rows) {
+        final now = DateTime.now().toUtc().toIso8601String();
         await supabase.from('message_reads').upsert({
           'message_id': row['id'],
           'user_id': uid,
-          'read_at': DateTime.now().toUtc().toIso8601String(),
+          'read_at': now,
         }, onConflict: 'message_id,user_id');
-        await supabase.from('messages').update({
-          'read_at': DateTime.now().toUtc().toIso8601String(),
-        }).eq('id', row['id']).neq('sender_id', uid);
+        await supabase.from('messages').update({'read_at': now})
+            .eq('id', row['id']).neq('sender_id', uid);
       }
     } catch (_) {}
   }
@@ -57,7 +60,7 @@ jobs:
     if (uid == null) return;
     try {
       final rows = await supabase.from('messages')
-          .select('id,sender_id,delivered_at')
+          .select('id,delivered_at')
           .eq('conversation_id', widget.id)
           .neq('sender_id', uid);
       for (final row in rows) {
@@ -101,33 +104,6 @@ jobs:
 '''
           if old not in s:
               raise SystemExit('tick widget not found')
-          s = s.replace(old, new, 1)
-
-          old = '''      .onPostgresChanges(
-        event: PostgresChangeEvent.insert,
-        schema: 'public',
-        table: 'message_user_deletions',
-        callback: (_) => load(),
-      )
-      .subscribe();  }
-'''
-          new = '''      .onPostgresChanges(
-        event: PostgresChangeEvent.insert,
-        schema: 'public',
-        table: 'message_user_deletions',
-        callback: (_) => load(),
-      )
-      .onPostgresChanges(
-        event: PostgresChangeEvent.update,
-        schema: 'public',
-        table: 'message_reads',
-        callback: (_) => load(),
-      )
-      .subscribe();
-  }
-'''
-          if old not in s:
-              raise SystemExit('realtime block not found')
           s = s.replace(old, new, 1)
 
           p.write_text(s, encoding='utf-8')
