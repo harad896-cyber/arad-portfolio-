@@ -1,9 +1,9 @@
 name: Fix chat message ordering
 on:
-  workflow_dispatch:
   push:
     paths:
-      - 'lib/main.dart'
+      - '.github/fix-order.trigger'
+  workflow_dispatch:
 jobs:
   fix:
     runs-on: ubuntu-latest
@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Patch ordering
+      - name: Patch chat ordering and latest-message position
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -23,44 +23,54 @@ jobs:
           s = p.read_text(encoding='utf-8')
           original = s
           changes = []
-          # Chat lists must render oldest -> newest. The newest message belongs at the bottom.
-          s2 = re.sub(r"\.order\(\s*['\"]created_at['\"]\s*,\s*ascending\s*:\s*false\s*\)", ".order('created_at', ascending: true)", s)
-          if s2 != s:
-              changes.append('changed messages created_at query to ascending')
-              s = s2
-          s2 = s.replace('reverse: true', 'reverse: false')
-          if s2 != s:
+
+          # Database order is explicitly chronological.
+          old = "supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at')"
+          new = "supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: true)"
+          if old in s:
+              s = s.replace(old, new, 1)
+              changes.append('explicit ascending created_at query')
+
+          # Never reverse the chronological chat list.
+          if 'reverse: true' in s:
+              s = s.replace('reverse: true', 'reverse: false')
               changes.append('disabled reversed chat list')
-              s = s2
-          # Common optimistic insertion bug: newest item inserted at index 0 in a chronological list.
-          for old, new in [
-              ("loaded.insert(0, row)", "loaded.add(row)"),
-              ("messages.insert(0, row)", "messages.add(row)"),
-              ("_messages.insert(0, row)", "_messages.add(row)"),
-              ("_messages.insert(0, message)", "_messages.add(message)"),
-              ("messages.insert(0, message)", "messages.add(message)"),
-          ]:
-              if old in s:
-                  s = s.replace(old, new)
-                  changes.append(f'{old} -> {new}')
-          # Make every list named loaded chronological before it is committed to state.
-          sort_code = "loaded.sort((a, b) { final ta = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0); final tb = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0); return ta.compareTo(tb); });"
-          if 'final ta = DateTime.tryParse' not in s and 'loaded.sort((a, b)' not in s:
-              candidates = list(re.finditer(r"(^[ \t]*)setState\(\(\)\s*\{", s, re.M))
-              inserted = False
-              for m in reversed(candidates):
-                  start = m.end()
-                  window = s[start:start+1200]
-                  if 'loaded' in window and ('messages' in window or '_messages' in window):
-                      indent = m.group(1) + '  '
-                      s = s[:start] + '\n' + indent + sort_code + s[start:]
-                      changes.append('sorted loaded messages by created_at before state update')
-                      inserted = True
-                      break
+
+          # Add a single, safe scroll helper to keep the newest message at the bottom.
+          helper = '''\n  void _scrollToLatest() {\n    if (!_messagesScroll.hasClients) return;\n    WidgetsBinding.instance.addPostFrameCallback((_) {\n      if (!_messagesScroll.hasClients) return;\n      _messagesScroll.animateTo(\n        _messagesScroll.position.maxScrollExtent,\n        duration: const Duration(milliseconds: 180),\n        curve: Curves.easeOut,\n      );\n    });\n  }\n'''
+          if 'void _scrollToLatest()' not in s:
+              marker = '  Future<void> sendText() async {'
+              if marker not in s:
+                  raise SystemExit('sendText marker not found')
+              s = s.replace(marker, helper + '\n' + marker, 1)
+              changes.append('added latest-message scroll helper')
+
+          # Scroll after initial/realtime load and after every successful text/media/voice send.
+          if 'messages = loaded;' in s and 'messages = loaded;\n          reactions' in s:
+              target = "messages = loaded;\n          reactions"
+              replacement = "messages = loaded;\n          reactions"
+              # no-op here; load() gets a scroll immediately after markRead below.
+          load_end = "      await markRead();\n"
+          if load_end in s and "await markRead();\n      _scrollToLatest();" not in s:
+              s = s.replace(load_end, "      await markRead();\n      _scrollToLatest();\n", 1)
+              changes.append('scrolls to latest after chat load')
+
+          # Patch sendText only: after its successful load, move to the newest item.
+          start = s.find('  Future<void> sendText() async {')
+          if start < 0:
+              raise SystemExit('sendText not found')
+          next_future = s.find('\n  Future<void> ', start + 10)
+          end = next_future if next_future >= 0 else len(s)
+          block = s[start:end]
+          if 'await load();' in block and 'await load();\n      _scrollToLatest();' not in block:
+              block = block.replace('await load();', 'await load();\n      _scrollToLatest();', 1)
+              s = s[:start] + block + s[end:]
+              changes.append('scrolls to latest after text send')
+
           if s == original:
-              raise SystemExit('No message-order pattern found; refusing to make a no-op commit')
+              raise SystemExit('No chat-order change was required; refusing no-op commit')
           p.write_text(s, encoding='utf-8')
-          print('PATCHED:', *changes, sep='\n- ')
+          print('\n'.join(['PATCHED:'] + ['- ' + x for x in changes]))
           PY
           dart format lib/main.dart
           git diff --check
@@ -70,5 +80,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add lib/main.dart
-          git commit -m 'fix chat message chronological ordering' || exit 0
+          git commit -m 'fix chat message ordering and latest position' || exit 0
           git push
