@@ -2263,9 +2263,27 @@ class _ChatPageState extends State<ChatPage> {
     await showModalBottomSheet<void>(context:context,showDragHandle:true,builder:(ctx)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('واکنش‌ها',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),const SizedBox(height:10),...List<Map<String,dynamic>>.from(rows).map((r)=>ListTile(leading:Text(r['reaction'].toString(),style:const TextStyle(fontSize:25)),title:Text(r['user_id'].toString()))) ]));
   }
   Widget _reactionBar(String messageId) {
-    final rs=reactions[messageId]??[]; if(rs.isEmpty)return const SizedBox.shrink(); final grouped=<String,int>{}; for(final r in rs){final e=r['reaction'].toString();grouped[e]=(grouped[e]??0)+1;}
-    return Padding(padding:const EdgeInsets.only(top:3),child:Wrap(spacing:4,children:grouped.entries.map((e)=>InkWell(onTap:()=>_showReactionPeople(messageId),borderRadius:BorderRadius.circular(12),child:Container(padding:const EdgeInsets.symmetric(horizontal:7,vertical:3),decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(12)),child:Text(e.key+' '+(e.value>1?e.value.toString():'')))).toList()));
+    final rs = reactions[messageId] ?? [];
+    if (rs.isEmpty) return const SizedBox.shrink();
+    final grouped = <String,int>{};
+    for (final r in rs) { final e = r['reaction'].toString(); grouped[e] = (grouped[e] ?? 0) + 1; }
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Wrap(
+        spacing: 4,
+        children: grouped.entries.map<Widget>((e) => InkWell(
+          onTap: () => _showReactionPeople(messageId),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+            child: Text(e.key + (e.value > 1 ? ' ${e.value}' : '')),
+          ),
+        )).toList(),
+      ),
+    );
   }
+
   Future<void> sendText() async {
     final value = text.text.trim();
     if (value.isEmpty || sending) return;
