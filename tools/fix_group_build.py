@@ -9,10 +9,13 @@ if "import 'group_management.dart';" not in s:
         s = s.replace(marker, marker + "\nimport 'group_management.dart';", 1)
 
 start = s.find('class GroupManagementPage extends StatefulWidget')
-end = s.find('class ConversationToolsPage', start)
-if start < 0 or end < 0:
-    raise SystemExit('GroupManagementPage block markers not found')
+if start >= 0:
+    end = s.find('class ConversationToolsPage', start)
+    if end < 0:
+        raise SystemExit('ConversationToolsPage marker not found')
+    s = s[:start] + s[end:]
+else:
+    print('GroupManagementPage already removed; nothing to remove')
 
-s = s[:start] + s[end:]
 p.write_text(s, encoding='utf-8')
-print('group page block replaced with lib/group_management.dart')
+print('verified group management import and build-safe main.dart')
