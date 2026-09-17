@@ -20,6 +20,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'group_management.dart';
 import 'invite.dart';
 import 'profile_page.dart';
+import 'call_session.dart';
 
 
 String t(String key, String locale) {
@@ -2601,6 +2602,16 @@ class _ChatPageState extends State<ChatPage> {
         title: const Text('ویرایش پیام'),
         content: TextField(controller: controller, autofocus: true, maxLines: 5),
         actions: [
+          IconButton(
+            onPressed: () => _startChatCall(video: false),
+            tooltip: 'تماس صوتی',
+            icon: const Icon(Icons.call_rounded),
+          ),
+          IconButton(
+            onPressed: () => _startChatCall(video: true),
+            tooltip: 'تماس تصویری',
+            icon: const Icon(Icons.videocam_rounded),
+          ),
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('ذخیره')),
         ],
@@ -3211,6 +3222,19 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _openGroupManagement() async {
     if (!await _isGroupAdmin()) { if(mounted) showMsg(context,'فقط مدیر گروه یا کانال می‌تواند مدیریت کند.'); return; }
     if (mounted) await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.id,title:widget.title)));
+  }
+
+  void _startChatCall({required bool video}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallSessionPage(
+          conversationId: widget.id,
+          title: widget.title,
+          video: video,
+        ),
+      ),
+    );
   }
 
   @override
