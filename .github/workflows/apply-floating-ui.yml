@@ -1,0 +1,68 @@
+name: Apply Floating Glass UI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Apply floating list and glass motion styling
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/main.dart')
+          s = p.read_text(encoding='utf-8')
+
+          # Give list rows a soft floating/glass surface without changing their behavior.
+          tile = """        listTileTheme: ListTileThemeData(\n          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),\n          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),\n          tileColor: const Color(0xB8FFFFFF),\n          selectedTileColor: const Color(0x1A7C5CFF),\n          iconColor: const Color(0xFF707078),\n          minVerticalPadding: 9,\n        ),\n"""
+          if 'listTileTheme: ListTileThemeData(' not in s:
+              s = s.replace('        inputDecorationTheme: InputDecorationTheme(\n', tile + '        inputDecorationTheme: InputDecorationTheme(\n', 1)
+              dark_tile = """        listTileTheme: ListTileThemeData(\n          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),\n          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),\n          tileColor: const Color(0x0DFFFFFF),\n          selectedTileColor: const Color(0x247C5CFF),\n          iconColor: const Color(0xFFB8B8C2),\n          minVerticalPadding: 9,\n        ),\n"""
+              # Put the dark variant before the second inputDecorationTheme.
+              idx = s.find('        inputDecorationTheme: InputDecorationTheme(\n', s.find('darkTheme:'))
+              if idx != -1:
+                  s = s[:idx] + dark_tile + s[idx:]
+
+          # Make cards feel lifted but still subtle and premium.
+          s = s.replace('          elevation: 0,\n          color: Color(0xB8FFFFFF),', '          elevation: 2,\n          shadowColor: Color(0x18000000),\n          color: Color(0xB8FFFFFF),', 1)
+          s = s.replace('          elevation: 0,\n          color: Color(0x0AFFFFFF),', '          elevation: 1.5,\n          shadowColor: Color(0x55000000),\n          color: Color(0x0AFFFFFF),', 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Verify source
+        run: |
+          grep -q "listTileTheme: ListTileThemeData" lib/main.dart
+          grep -q "elevation: 2" lib/main.dart
+
+      - name: Commit source change
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No source changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart
+          git commit -m "feat: add floating glass chat and contact lists"
+          git push
+
+      - name: Start final APK build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run final-apk.yml --repo "$GITHUB_REPOSITORY" --ref main
