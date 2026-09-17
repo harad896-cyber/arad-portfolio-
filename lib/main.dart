@@ -22,6 +22,7 @@ import 'channel_management.dart';
 import 'invite.dart';
 import 'profile_page.dart';
 import 'call_session.dart';
+import 'voice_message_player.dart';
 
 
 String t(String key, String locale) {
@@ -2197,6 +2198,7 @@ class _ChatPageState extends State<ChatPage> {
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
+  int _groupMemberCount = 0;
   DateTime? _voiceStartedAt;
   Timer? _voiceTimer;
   int voiceSeconds = 0;
@@ -2249,48 +2251,15 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _voicePlayButton(String messageId) {
     final a = attachments[messageId];
-    final seconds = ((a?['duration_ms'] as num?)?.toInt() ?? 0) ~/ 1000;
-    final bars = List<double>.generate(34, (i) => .25 + ((i * 17) % 70) / 100);
-    return SizedBox(
-      width: 250,
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.play_circle_fill_rounded, size: 40),
-            onPressed: () => _playAttachment(messageId),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 38,
-                  child: GestureDetector(
-                    onTap: () => _playAttachment(messageId),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: bars.map((v) => Expanded(
-                        child: Container(
-                          height: 8 + v * 24,
-                          margin: const EdgeInsets.symmetric(horizontal: 1),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .65),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      )).toList(),
-                    ),
-                  ),
-                ),
-                Text(
-                  '00:' + seconds.toString().padLeft(2, '0'),
-                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .8)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    final initialMs = ((a?['duration_ms'] as num?)?.toInt() ?? 0);
+    return VoiceMessagePlayer(
+      mine: true,
+      initialDurationMs: initialMs,
+      loadAudio: () async {
+        final path = attachments[messageId]?['storage_path']?.toString() ?? '';
+        if (path.isEmpty) throw Exception('مسیر فایل صوتی خالی است');
+        return supabase.storage.from('chat-media').download(path);
+      },
     );
   }
 
@@ -2321,7 +2290,13 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _loadChatType() async {
     try {
       final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();
-      if (mounted) setState(() { _chatType = (r?['type'] ?? 'direct').toString(); });
+      final type = (r?['type'] ?? 'direct').toString();
+      var count = 0;
+      if (type == 'group') {
+        final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);
+        count = (rows as List).length;
+      }
+      if (mounted) setState(() { _chatType = type; _groupMemberCount = count; });
     } catch (_) {}
   }
 
@@ -3412,7 +3387,7 @@ class _ChatPageState extends State<ChatPage> {
                   children: [
                     Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
                     if (_chatType == 'group')
-                      const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
+                      Text('$_groupMemberCount عضو', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
                     if (_chatType == 'channel')
                       const Text('مدیریت کانال', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
                   ],
