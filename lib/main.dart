@@ -419,14 +419,29 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
           ),
         ),
       ),
-      body:
-      ...groups.entries.expand((g)=>[Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:15,fontWeight:FontWeight.w800))),...g.value.map((x)=>Card(child:ListTile(
-        contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:5),
-        leading:Icon(_iconForSetting(x['title']!)),title:Text(x['title']!,style:const TextStyle(fontWeight:FontWeight.w700)),
-        subtitle:Text(x['desc']!),trailing:ConstrainedBox(constraints:const BoxConstraints(maxWidth:100),child:Text(x['value']!,textAlign:TextAlign.end,style:TextStyle(color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w700))),
-        onTap:()=>_open(x['title']!),
-      )))])
-    ]);
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+        children: groups.entries.expand<Widget>((g) => <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+            child: Text(g.key, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+          ),
+          ...g.value.map<Widget>((x) => Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              leading: Icon(_iconForSetting(x['title']!)),
+              title: Text(x['title']!, style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(x['desc']!),
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 100),
+                child: Text(x['value']!, textAlign: TextAlign.end, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
+              ),
+              onTap: () => _open(x['title']!),
+            ),
+          )),
+        ]),
+      ),
+    );
   }
   IconData _iconForSetting(String s)=>switch(s){'حساب کاربری'=>Icons.person_outline_rounded,'حریم خصوصی'=>Icons.visibility_outlined,'امنیت'=>Icons.shield_outlined,'اعلان‌ها'=>Icons.notifications_none_rounded,'ظاهر'=>Icons.palette_outlined,'زبان'=>Icons.language_rounded,'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.cloud_outlined,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
   void _open(String title){
