@@ -29,51 +29,10 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Patch HomePage with Invite drawer
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-
-          path = Path('lib/main.dart')
-          text = path.read_text(encoding='utf-8')
-
-          if "import 'invite.dart';" not in text:
-              marker = "import 'package:image_picker/image_picker.dart';"
-              if marker not in text:
-                  raise SystemExit('image_picker import marker not found')
-              text = text.replace(marker, marker + "\nimport 'invite.dart';", 1)
-
-          if 'drawer: const InviteDrawer(),' not in text:
-              m = re.search(r'class\s+HomePage\b[\s\S]*?(?=^class\s+|\Z)', text, re.MULTILINE)
-              if not m:
-                  raise SystemExit('HomePage class not found')
-              section = m.group(0)
-              scaffold = section.find('return Scaffold(')
-              if scaffold < 0:
-                  raise SystemExit('HomePage Scaffold not found')
-              insert_at = scaffold + len('return Scaffold(')
-              section = section[:insert_at] + "\n      drawer: const InviteDrawer()," + section[insert_at:]
-              text = text[:m.start()] + section + text[m.end():]
-
-          path.write_text(text, encoding='utf-8')
-
       - name: Verify dependencies and analyze
         run: |
           flutter pub get
-          flutter analyze --no-fatal-infos
-
-      - name: Commit source changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/main.dart lib/invite.dart pubspec.yaml
-          if git diff --cached --quiet; then
-            echo "No source changes needed."
-          else
-            git commit -m "Add invite friends feature"
-            git push
-          fi
+          flutter analyze
 
       - name: Build release APK
         run: flutter build apk --release
@@ -81,6 +40,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: arad-messenger-invite-release
+          name: arad-messenger-invite-build
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
