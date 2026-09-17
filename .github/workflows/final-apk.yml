@@ -38,12 +38,11 @@ jobs:
           s = s.replace("int seed = 0xFF5B6FB5;", "int seed = 0xFF7C5CFF;")
           s = s.replace("p.getInt('accent_seed_$key') ?? 0xFF5B6FB5", "p.getInt('accent_seed_$key') ?? 0xFF7C5CFF")
           s = s.replace("surface: const Color(0xFFF4F6FA),", "surface: const Color(0xFFF5F5F7),")
-          s = s.replace("scaffoldBackgroundColor: const Color(0xFFF4F6FA),", "scaffoldBackgroundColor: const Color(0xFFF5F5F7),")
+          s = s.replace("scaffoldBackgroundColor: const Color(0xFFF4F6FA),", "scaffoldBackgroundColor: Colors.transparent,")
           s = s.replace("backgroundColor: Color(0xDFF4F6FA),", "backgroundColor: Color(0xC2F5F5F7),")
           s = s.replace("color: Color(0xFF151821),", "color: Color(0xFF16161A),")
           s = s.replace("iconTheme: IconThemeData(color: Color(0xFF30323A)),", "iconTheme: IconThemeData(color: Color(0xFF707078)),")
           s = s.replace("borderSide: BorderSide(color: Color(0x1A4F46E5)),", "borderSide: BorderSide(color: Color(0x19000000)),")
-          s = s.replace("color: Color(0xB8FFFFFF),", "color: Color(0xB8FFFFFF),")
           s = s.replace("borderRadius: BorderRadius.all(Radius.circular(18)),", "borderRadius: BorderRadius.all(Radius.circular(20)),")
           s = s.replace("borderSide: BorderSide(color: Color(0x26303746)),", "borderSide: BorderSide(color: Color(0x19000000)),")
           s = s.replace("borderSide: BorderSide(color: Color(0x1F30323A)),", "borderSide: BorderSide(color: Color(0x17000000)),")
@@ -56,7 +55,7 @@ jobs:
 
           # Dark Project 1 tokens.
           s = s.replace("primary: const Color(0xFF6E83C4),\n          secondary: const Color(0xFF8B5FBF),\n          tertiary: const Color(0xFFB45CC8),\n          surface: const Color(0xFF111014),", "surface: const Color(0xFF111114),")
-          s = s.replace("scaffoldBackgroundColor: const Color(0xFF111014),", "scaffoldBackgroundColor: const Color(0xFF09090B),")
+          s = s.replace("scaffoldBackgroundColor: const Color(0xFF111014),", "scaffoldBackgroundColor: Colors.transparent,")
           s = s.replace("backgroundColor: Color(0xE6111014),", "backgroundColor: Color(0xC209090B),")
           s = s.replace("color: Color(0xB81C1A20),", "color: Color(0x0AFFFFFF),")
           s = s.replace("borderSide: BorderSide(color: Color(0x1FFFFFFF)),", "borderSide: BorderSide(color: Color(0x17FFFFFF)),")
@@ -65,10 +64,24 @@ jobs:
           s = s.replace("borderSide: BorderSide(color: Color(0x22FFFFFF)),", "borderSide: BorderSide(color: Color(0x14FFFFFF)),")
           s = s.replace("borderSide: BorderSide(color: Color(0xFF7C8FD6), width: 1.6),", "borderSide: BorderSide(color: Color(0xFFA996FF), width: 1.6),")
 
+          # Apply the Project 1 soft purple glow behind all messenger pages.
+          if "builder: (context, child) => Container(" not in s:
+              needle = "      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,"
+              replacement = """      builder: (context, child) => Container(\n        decoration: BoxDecoration(\n          color: Theme.of(context).scaffoldBackgroundColor,\n          gradient: RadialGradient(\n            center: const Alignment(0.85, -0.95),\n            radius: 1.15,\n            colors: [\n              Color(0x247C5CFF),\n              Theme.of(context).scaffoldBackgroundColor,\n            ],\n          ),\n        ),\n        child: child!,\n      ),\n      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,"""
+              s = s.replace(needle, replacement, 1)
+
           # Global typography fallback to the same family name used by Project 1.
           s = s.replace("useMaterial3: true,\n        colorScheme:", "useMaterial3: true,\n        fontFamily: 'Vazirmatn',\n        colorScheme:")
-
           p.write_text(s, encoding='utf-8')
+
+          # Keep profile/sheets on Project 1's compact 20-22px corner language.
+          for f in Path('lib').glob('*.dart'):
+              if f.name == 'main.dart':
+                  continue
+              x = f.read_text(encoding='utf-8')
+              x = x.replace('BorderRadius.circular(26)', 'BorderRadius.circular(22)')
+              x = x.replace('BorderRadius.circular(30)', 'BorderRadius.circular(22)')
+              f.write_text(x, encoding='utf-8')
 
           p = Path('lib/notifications_page.dart')
           s = p.read_text(encoding='utf-8')
@@ -83,8 +96,8 @@ jobs:
           else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add lib/main.dart lib/notifications_page.dart
-            git commit -m 'style: align messenger with Project 1 design system'
+            git add lib/main.dart lib/notifications_page.dart lib/*.dart
+            git commit -m 'style: align messenger pages with Project 1 design system'
             git push origin HEAD:main
           fi
 
