@@ -2199,6 +2199,8 @@ class _ChatPageState extends State<ChatPage> {
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
   int _groupMemberCount = 0;
+  bool _peerVerified = false;
+  String _peerAvatarUrl = '';
   DateTime? _voiceStartedAt;
   Timer? _voiceTimer;
   int voiceSeconds = 0;
@@ -2292,11 +2294,22 @@ class _ChatPageState extends State<ChatPage> {
       final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();
       final type = (r?['type'] ?? 'direct').toString();
       var count = 0;
+      var peerVerified = false;
+      var peerAvatar = '';
       if (type == 'group') {
         final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);
         count = (rows as List).length;
+      } else if (type == 'direct') {
+        final uid = supabase.auth.currentUser?.id;
+        final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);
+        final peerIds = (rows as List).map((e) => '${e['user_id']}').where((id) => id != uid).toList();
+        if (peerIds.isNotEmpty) {
+          final peer = await supabase.from('profiles').select('id,avatar_url,is_verified').eq('id', peerIds.first).maybeSingle();
+          peerVerified = peer?['is_verified'] == true;
+          peerAvatar = peer?['avatar_url']?.toString() ?? '';
+        }
       }
-      if (mounted) setState(() { _chatType = type; _groupMemberCount = count; });
+      if (mounted) setState(() { _chatType = type; _groupMemberCount = count; _peerVerified = peerVerified; _peerAvatarUrl = peerAvatar; });
     } catch (_) {}
   }
 
@@ -2317,7 +2330,7 @@ class _ChatPageState extends State<ChatPage> {
       }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet().toList();
       if (senderIds.isNotEmpty) {
-        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', senderIds);
+        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', senderIds);
         profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
       }
       final ids = loaded.map((m) => '${m['id']}').toList();
@@ -3171,8 +3184,8 @@ class _ChatPageState extends State<ChatPage> {
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final myBubble = scheme.primary;
-    final otherBubble = dark ? const Color(0xFF30343B) : const Color(0xFFF4F5F7);
+    final myBubble = const Color(0xFFB85A86);
+    final otherBubble = dark ? const Color(0xFF24272C) : const Color(0xFFF0F1F4);
     final textColor = mine
         ? (ThemeData.estimateBrightnessForColor(myBubble) == Brightness.dark ? Colors.white : Colors.black)
         : (dark ? Colors.white : const Color(0xFF20242A));
@@ -3378,14 +3391,27 @@ class _ChatPageState extends State<ChatPage> {
           },
           child: Row(
             children: [
-              const CircleAvatar(radius: 17, child: Icon(Icons.groups_rounded, size: 18)),
+              CircleAvatar(
+                radius: 17,
+                backgroundImage: _chatType == 'direct' && _peerAvatarUrl.isNotEmpty ? NetworkImage(_peerAvatarUrl) : null,
+                child: _chatType == 'direct' && _peerAvatarUrl.isNotEmpty ? null : Icon(_chatType == 'group' ? Icons.groups_rounded : Icons.person_rounded, size: 18),
+              ),
               const SizedBox(width: 9),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(child: Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+                        if (_chatType == 'direct' && _peerVerified) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.verified_rounded, size: 17, color: Color(0xFF2F9BFF)),
+                        ],
+                      ],
+                    ),
                     if (_chatType == 'group')
                       Text('$_groupMemberCount عضو', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
                     if (_chatType == 'channel')
