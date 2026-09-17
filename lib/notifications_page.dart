@@ -12,25 +12,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<Map<String, dynamic>> rows = [];
 
   Future<void> load() async {
-    rows = [];
     try {
-      final supabase = Supabase.instance.client;
-      final counts = await supabase.rpc('get_unread_counts');
-      final items = List<Map<String, dynamic>>.from(counts as List);
+      final db = Supabase.instance.client;
+      final raw = await db.rpc('get_unread_counts');
+      final items = List<Map<String, dynamic>>.from(raw as List);
       final ids = items.map((e) => '${e['conversation_id']}').toList();
-      if (ids.isEmpty) {
-        if (mounted) setState(() { rows = []; loading = false; });
-        return;
+      final result = <Map<String, dynamic>>[];
+      if (ids.isNotEmpty) {
+        final conversations = await db.from('conversations').select('id,type,title').inFilter('id', ids);
+        final byId = {for (final c in conversations) '${c['id']}': Map<String, dynamic>.from(c)};
+        for (final item in items) {
+          final c = byId['${item['conversation_id']}'];
+          if (c != null) result.add({...c, 'unread_count': item['unread_count']});
+        }
       }
-      final conversations = await supabase.from('conversations').select('id,type,title').inFilter('id', ids);
-      final byId = {for (final c in conversations) '${c['id']}': Map<String, dynamic>.from(c)};
-      for (final item in items) {
-        final c = byId['${item['conversation_id']}'];
-        if (c != null) rows.add({...c, 'unread_count': item['unread_count']});
-      }
-      if (mounted) setState(() => loading = false);
+      if (mounted) setState(() { rows = result; loading = false; });
     } catch (e) {
-      if (mounted) { setState(() => loading = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('اعلان‌ها بارگذاری نشد: $e'))); }
+      if (mounted) {
+        setState(() => loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('اعلان‌ها بارگذاری نشد: $e')));
+      }
     }
   }
 
@@ -41,13 +42,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('اعلان‌ها')),
-      body: RefreshIndicator(
-        onRefresh: () async { rows = []; loading = true; setState(() {}); await load(); },
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : rows.isEmpty
-                ? ListView(children: const [SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 64), SizedBox(height: 14), Center(child: Text('اعلان خوانده‌نشده‌ای ندارید'))])
-                : ListView.separated(
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : rows.isEmpty
+              ? ListView(children: const [SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 64), SizedBox(height: 14), Center(child: Text('اعلان خوانده‌نشده‌ای ندارید'))])
+              : RefreshIndicator(
+                  onRefresh: load,
+                  child: ListView.separated(
                     padding: const EdgeInsets.all(12),
                     itemCount: rows.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -59,11 +60,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         leading: CircleAvatar(child: Icon(type == 'group' ? Icons.group : type == 'channel' ? Icons.campaign : Icons.person)),
                         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
                         subtitle: Text('${r['unread_count']} پیام خوانده‌نشده'),
-                        trailing: Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(20)), child: Text('${r['unread_count']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900))),
+                        trailing: Text('${r['unread_count']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900)),
                       ));
                     },
                   ),
-      ),
+                ),
     );
   }
 }
@@ -81,20 +82,23 @@ class _ConversationStatsPageState extends State<ConversationStatsPage> {
   List<Map<String, dynamic>> stats = [];
 
   Future<void> load() async {
-    rows = [];
     try {
-      final supabase = Supabase.instance.client;
-      final raw = await supabase.rpc('get_conversation_sender_stats', params: {'p_conversation_id': widget.conversationId});
+      final db = Supabase.instance.client;
+      final raw = await db.rpc('get_conversation_sender_stats', params: {'p_conversation_id': widget.conversationId});
       final base = List<Map<String, dynamic>>.from(raw as List);
       final ids = base.map((e) => '${e['sender_id']}').toList();
+      final result = <Map<String, dynamic>>[];
       if (ids.isNotEmpty) {
-        final profiles = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
-        final byId = {for (final p in profiles) '${p['id']}': Map<String, dynamic>.from(p)};
-        stats = base.map((e) => {...e, 'profile': byId['${e['sender_id']}']}).toList();
-      } else { stats = []; }
-      if (mounted) setState(() => loading = false);
+        final people = await db.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
+        final byId = {for (final p in people) '${p['id']}': Map<String, dynamic>.from(p)};
+        result.addAll(base.map((e) => {...e, 'profile': byId['${e['sender_id']}']}));
+      }
+      if (mounted) setState(() { stats = result; loading = false; });
     } catch (e) {
-      if (mounted) { setState(() => loading = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('آمار پیام‌ها بارگذاری نشد: $e'))); }
+      if (mounted) {
+        setState(() => loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('آمار پیام‌ها بارگذاری نشد: $e')));
+      }
     }
   }
 
@@ -114,23 +118,16 @@ class _ConversationStatsPageState extends State<ConversationStatsPage> {
                   itemCount: stats.length,
                   itemBuilder: (_, i) {
                     final s = stats[i];
-                    final p = s['profile'] as Map<String, dynamic>? ?? {};
-                    final name = '${p['display_name'] ?? p['username'] ?? 'کاربر'}';
+                    final p = s['profile'] is Map ? Map<String, dynamic>.from(s['profile']) : <String, dynamic>{};
+                    final avatar = '${p['avatar_url'] ?? ''}';
                     return ListTile(
-                      leading: CircleAvatar(backgroundImage: '${p['avatar_url'] ?? ''}'.isNotEmpty ? NetworkImage('${p['avatar_url']}') : null, child: '${p['avatar_url'] ?? ''}'.isEmpty ? const Icon(Icons.person) : null),
-                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                      leading: CircleAvatar(backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar.isEmpty ? const Icon(Icons.person) : null),
+                      title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', style: const TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('@${p['username'] ?? ''}'),
-                      trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${s['message_count']} پیام', style: const TextStyle(fontWeight: FontWeight.w900)), Text('آخرین ارسال: ${_shortDate(s['last_message_at'])}', style: const TextStyle(fontSize: 11))]),
+                      trailing: Text('${s['message_count']} پیام'),
                     );
                   },
                 ),
     );
-  }
-
-  String _shortDate(dynamic value) {
-    if (value == null) return '—';
-    final d = DateTime.tryParse('$value')?.toLocal();
-    if (d == null) return '—';
-    return '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 }
