@@ -16,6 +16,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Apply final chat fixes
+        run: python tools/fix_delete_for_everyone.py
+
       - name: Setup Java 17
         uses: actions/setup-java@v5
         with:
@@ -106,5 +109,3 @@ jobs:
             flutter-analyze.txt
             flutter-test.txt
           if-no-files-found: warn
-
-# Trigger final APK validation after Flutter source repair.
