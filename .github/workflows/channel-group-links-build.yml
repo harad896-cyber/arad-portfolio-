@@ -23,7 +23,7 @@ jobs:
           flutter-version: '3.35.0'
           channel: stable
           cache: true
-      - name: Wire group link and channel management UI
+      - name: Wire product-quality group and channel management
         shell: bash
         run: |
           set -e
@@ -35,15 +35,10 @@ jobs:
           s = main.read_text(encoding='utf-8')
           if "import 'channel_management.dart';" not in s:
               s = s.replace("import 'group_management.dart';", "import 'group_management.dart';\nimport 'channel_management.dart';", 1)
-
-          # Add channel navigation beside the existing group header navigation.
           if 'ChannelManagementPage(conversationId: widget.id' not in s:
               pattern = r"(if \(_chatType == 'group'\) \{\s*Navigator\.push\(context, MaterialPageRoute\(builder: \(_\) => GroupProfilePage\(conversationId: widget\.id, title: widget\.title\)\)\);\s*\})"
-              s, n = re.subn(pattern, r"\1 else if (_chatType == 'channel') {\n              Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelManagementPage(conversationId: widget.id, title: widget.title)));\n            }", s, count=1)
-              print('main navigation replacements:', n)
-
+              s = re.sub(pattern, r"\1 else if (_chatType == 'channel') {\n              Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelManagementPage(conversationId: widget.id, title: widget.title)));\n            }", s, count=1)
           if 'مدیریت کانال' not in s:
-              # Keep the existing subtitle for groups and add a channel subtitle near it.
               s = s.replace("const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),", "const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),\n                    if (_chatType == 'channel')\n                      const Text('مدیریت کانال', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),", 1)
           main.write_text(s, encoding='utf-8')
 
@@ -56,6 +51,20 @@ jobs:
               replacement = "        if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),\n" + marker
               g = g.replace(marker, replacement, 1)
           gp.write_text(g, encoding='utf-8')
+
+          cp = Path('lib/channel_management.dart')
+          c = cp.read_text(encoding='utf-8')
+          if 'bool canManage=false;' not in c:
+              c = c.replace("final db=Supabase.instance.client; Map<String,dynamic>? c; bool loading=true,busy=false;", "final db=Supabase.instance.client; Map<String,dynamic>? c; bool loading=true,busy=false,canManage=false;")
+          if "final m=await db.from('conversation_members').select('role')" not in c:
+              c = c.replace("final r=await db.from('conversations').select('id,type,title,description,avatar_url,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id',widget.conversationId).single();", "final r=await db.from('conversations').select('id,type,title,description,avatar_url,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id',widget.conversationId).single(); final uid=db.auth.currentUser?.id; final m=uid==null?null:await db.from('conversation_members').select('role').eq('conversation_id',widget.conversationId).eq('user_id',uid).maybeSingle(); final memberAdmin=m?['role']=='admin'||m?['role']=='owner';")
+              c = c.replace("if(mounted)setState(()=>c=Map<String,dynamic>.from(r)..['loading']=false);", "if(mounted)setState((){c=Map<String,dynamic>.from(r)..['loading']=false;canManage=owner||memberAdmin==true;});")
+          c = c.replace("if(!owner||c==null||busy)return;", "if(!canManage||c==null||busy)return;")
+          c = c.replace("if(!owner||c==null)return;", "if(!canManage||c==null)return;")
+          c = c.replace("onTap:owner?edit:null", "onTap:canManage?edit:null")
+          c = c.replace("onTap:owner?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ConversationInvitePage", "onTap:canManage?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ConversationInvitePage")
+          c = c.replace("onChanged:owner?", "onChanged:canManage?")
+          cp.write_text(c, encoding='utf-8')
           PY
       - name: Commit wired source
         shell: bash
@@ -64,7 +73,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add lib/main.dart lib/group_management.dart lib/channel_management.dart
-          git commit -m 'feat: wire group invite links and channel management'
+          git commit -m 'feat: wire group links and channel admin controls'
           git push
       - name: Get dependencies
         run: flutter pub get
