@@ -2213,7 +2213,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> load() async {
     try {
-      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at');
+      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: true);
       final loaded = List<Map<String, dynamic>>.from(rows);
       final uid = supabase.auth.currentUser?.id;
       if (uid != null && loaded.isNotEmpty) {
@@ -2249,6 +2249,7 @@ class _ChatPageState extends State<ChatPage> {
         // Keep chat ordered from top to bottom; do not force the list back to the bottom.
       }
       await markRead();
+      _scrollToLatest();
     } catch (e) {
       if (mounted) {
         setState(() => loading = false);
@@ -2308,6 +2309,18 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  void _scrollToLatest() {
+    if (!_messagesScroll.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_messagesScroll.hasClients) return;
+      _messagesScroll.animateTo(
+        _messagesScroll.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Future<void> sendText() async {
     final value = text.text.trim();
     if (value.isEmpty || sending) return;
@@ -2323,6 +2336,7 @@ class _ChatPageState extends State<ChatPage> {
       text.clear();
       if (mounted) setState(() => replyMessage = null);
       await load();
+      _scrollToLatest();
     } catch (e) {
       if (mounted) showMsg(context, 'ارسال نشد: $e');
     } finally {
