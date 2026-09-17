@@ -130,17 +130,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> switchAccount() async {
     if (!mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => AccountSwitcherPage()));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSwitcherPage()));
     if (mounted) await loadProfile();
   }
 
   Future<void> logoutThisAccount() async {
-    final email=supabase.auth.currentUser?.email?.trim().toLowerCase();
-    if(email!=null && email.isNotEmpty) await _profileSecureAccounts.delete(key:'account_refresh_\${email}');
-    if(email!=null && email.isNotEmpty) await _profileSecureAccounts.delete(key:'account_refresh_${email}');
+    final email = supabase.auth.currentUser?.email?.trim().toLowerCase();
+    if (email != null && email.isNotEmpty) await _profileSecureAccounts.delete(key: 'account_refresh_$email');
     await supabase.auth.signOut();
-    if(!mounted)return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>LoginPage()),(_)=>false);
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => LoginPage()), (_) => false);
   }
 
   Widget glass(Widget child) {
@@ -235,7 +234,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
               if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
             ]),
-            if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)), IconButton(tooltip: 'کپی آیدی', icon: const Icon(Icons.copy_rounded, size: 18), onPressed: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); }),
+            if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
+            IconButton(tooltip: 'کپی آیدی', icon: const Icon(Icons.copy_rounded, size: 18), onPressed: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); }),
             const SizedBox(height: 9),
             Text(b.isEmpty ? 'هنوز بیویی ثبت نشده است.' : b, textAlign: TextAlign.center, style: TextStyle(color: s.onSurfaceVariant, height: 1.4)),
             const SizedBox(height: 16),
@@ -252,7 +252,7 @@ class _ProfilePageState extends State<ProfilePage> {
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.person_add_alt_1_rounded, color: s.primary)),
             title: const Text('افزودن حساب', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: const Text('تا ۳ حساب روی دستگاه'),
-            onTap: logoutThisAccount,
+            onTap: switchAccount,
           ),
           const Divider(height: 1),
           ListTile(
@@ -266,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.admin_panel_settings_rounded, color: s.primary)),
               title: const Text('مدیریت تیک آبی', style: TextStyle(fontWeight: FontWeight.w800)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VerificationAdminPage())),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerificationAdminPage())),
             ),
           ],
           const Divider(height: 1),
@@ -286,7 +286,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-
 
 class ProfileOptionPage extends StatefulWidget {
   final String title;
@@ -431,14 +430,14 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
   Future<void> load()async{emails=await rememberedAccountEmails();active=supabase.auth.currentUser?.email?.toLowerCase();if(mounted)setState(()=>loading=false);}
   Future<void> select(String mail)async{
     if(mail.toLowerCase()==active){Navigator.pop(context);return;}
-    final token=await _profileSecureAccounts.read(key:'account_refresh_\${mail.toLowerCase()}');
+    final token=await _profileSecureAccounts.read(key:'account_refresh_${mail.toLowerCase()}');
     if(token==null||token.isEmpty){showMsg(context,'نشست ذخیره‌شده این حساب پیدا نشد.');return;}
     try{
       final res=await supabase.auth.setSession(token);
       if(res.session==null)throw const AuthException('نشست حساب منقضی شده است.');
       await rememberCurrentSession();await appTheme.loadForUser();
       if(mounted)Navigator.of(context).pop();
-    }catch(e){if(mounted)showMsg(context,'تغییر حساب ناموفق بود: \$e');}
+    }catch(e){if(mounted)showMsg(context,'تغییر حساب ناموفق بود: $e');}
   }
   Future<void> addAccount()async{
     if(emails.length>=3){showMsg(context,'حداکثر ۳ حساب مجاز است.');return;}
@@ -453,7 +452,6 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
       trailing:mail.toLowerCase()==active?const Icon(Icons.check_circle_rounded):const Icon(Icons.touch_app_rounded),
       onTap:()=>select(mail),
     ))),
-    if(!loading&&emails.length<3)Card(child:ListTile(leading:const Icon(Icons.add_circle_outline_rounded),title:Text('افزودن حساب \${emails.length+1}'),subtitle:const Text('ورود با ایمیل دیگر'),onTap:addAccount)),
+    if(!loading&&emails.length<3)Card(child:ListTile(leading:const Icon(Icons.add_circle_outline_rounded),title:Text('افزودن حساب ${emails.length+1}'),subtitle:const Text('ورود با ایمیل دیگر'),onTap:addAccount)),
   ]));
 }
-
