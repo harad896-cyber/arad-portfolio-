@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
 
+# Real group invite links + channel management build
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,16 +43,14 @@ jobs:
             } else if (_chatType == 'channel') {
               Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelManagementPage(conversationId: widget.id, title: widget.title)));
             }"""
-          if old in s:
-              s = s.replace(old, new, 1)
+          if old in s: s = s.replace(old, new, 1)
           old2 = """if (_chatType == 'group')
                       const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),"""
           new2 = """if (_chatType == 'group')
                       const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
                     if (_chatType == 'channel')
                       const Text('مدیریت کانال', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),"""
-          if old2 in s:
-              s = s.replace(old2, new2, 1)
+          if old2 in s: s = s.replace(old2, new2, 1)
           main.write_text(s, encoding='utf-8')
 
           gp = Path('lib/group_management.dart')
@@ -63,8 +62,7 @@ jobs:
           replacement = """        if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
         if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),"""
-          if marker in g:
-              g = g.replace(marker, replacement, 1)
+          if marker in g: g = g.replace(marker, replacement, 1)
           gp.write_text(g, encoding='utf-8')
           PY
       - name: Commit wired source
