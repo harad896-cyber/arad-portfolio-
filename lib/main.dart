@@ -420,7 +420,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
         ),
       ),
       body:
-    body:ListView(padding:const EdgeInsets.fromLTRB(14,10,14,30),children:[
       ...groups.entries.expand((g)=>[Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:15,fontWeight:FontWeight.w800))),...g.value.map((x)=>Card(child:ListTile(
         contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:5),
         leading:Icon(_iconForSetting(x['title']!)),title:Text(x['title']!,style:const TextStyle(fontWeight:FontWeight.w700)),
@@ -1997,19 +1996,6 @@ class SharedMediaPage extends StatelessWidget {
     body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
 }
 
-
-class _GlobalSearchPageState extends State<GlobalSearchPage>{
-  final q=TextEditingController();
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('جستجوی سراسری')),body:ListView(padding:const EdgeInsets.all(14),children:[
-    TextField(controller:q,onChanged:(_)=>setState((){}),textDirection:TextDirection.rtl,decoration:const InputDecoration(hintText:'جستجوی گفتگو، مخاطب و پیام',prefixIcon:Icon(Icons.search_rounded))),
-    const SizedBox(height:16),if(q.text.isNotEmpty)...const [Text('نتایج گفتگوها',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.forum_rounded),title:Text('نتیجه گفتگو')),Text('نتایج مخاطبین',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.person_rounded),title:Text('نتیجه مخاطب')),Text('نتایج پیام‌ها',style:TextStyle(fontWeight:FontWeight.w900)),ListTile(leading:Icon(Icons.message_rounded),title:Text('نتیجه پیام'))] ]));
-}
-
-
-class _BackupPageState extends State<BackupPage>{bool auto=true; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(14),children:[
-  Card(child:SwitchListTile(value:auto,onChanged:(v)=>setState(()=>auto=v),title:const Text('پشتیبان‌گیری خودکار'),subtitle:const Text('ذخیره نسخه پشتیبان در فضای ابری'))),
-  const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('۰ مگابایت'))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی انجام نشده است'))),
-]));}
 
 class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی')),body:ListView(padding:const EdgeInsets.all(14),children:[
   Card(child:ListTile(leading:const Icon(Icons.emoji_emotions_rounded),title:const Text('مدیریت پک‌های استیکر'),onTap:()=>showMsg(context,'مدیریت پک‌ها آماده است'))),
