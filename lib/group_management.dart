@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'group_moderation.dart';
+import 'group_advanced_admin.dart';
 import 'channel_management.dart';
 
 class GroupProfilePage extends StatefulWidget {
@@ -269,6 +270,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         SwitchListTile(title: const Text('واکنش به پیام‌ها'), value: group!['allow_reactions'] != false, onChanged: admin ? (v) => updateSettings(reactions: v) : null),
       ])),
       if (admin) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
+      if (owner) Card(child: ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست‌های عضویت، محروم‌ها، محدودیت‌ها، سنجاق پیام و اختیارات مدیران'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.delete_forever_rounded), title: const Text('حذف کامل گروه', style: TextStyle(fontWeight: FontWeight.w900)), subtitle: const Text('این گزینه هیچ ارتباطی با حذف/محروم کردن اعضا ندارد.'), onTap: deleteGroup)),
       if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
     ]));
