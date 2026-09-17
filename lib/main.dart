@@ -3308,6 +3308,7 @@ class _ChatPageState extends State<ChatPage> {
       body: Container(
         decoration: BoxDecoration(
           color: dark ? const Color(0xFF17191D) : const Color(0xFFF0F2F5),
+        ),
         child: Column(
           children: [
             Expanded(
