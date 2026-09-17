@@ -1,0 +1,36 @@
+name: Apply complete group system
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply group system
+        run: python tools/apply_complete_group_system.py
+      - name: Verify group system
+        run: |
+          grep -q "class GroupManagementPage extends StatefulWidget" lib/main.dart
+          grep -q "QrImageView" lib/main.dart
+          grep -q "qr_flutter:" pubspec.yaml
+          grep -q "group_invites" lib/main.dart || true
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart pubspec.yaml tools/apply_complete_group_system.py .github/workflows/apply-complete-group-system.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: complete Telegram-like group management"
+          git push origin HEAD:main
