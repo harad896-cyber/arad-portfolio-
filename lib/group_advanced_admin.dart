@@ -21,7 +21,7 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
       final ms=List<Map<String,dynamic>>.from(await db.from('messages').select('id,sender_id,body,message_type,created_at').eq('conversation_id',widget.conversationId).order('created_at',ascending:false).limit(60));
       final ids=<String>{...rs.map((x)=>x['user_id'].toString()),...bs.map((x)=>x['user_id'].toString()),...ms.map((x)=>x['sender_id'].toString())};
       final prof=ids.isEmpty?<Map<String,dynamic>>[]:List<Map<String,dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id',ids.toList()));
-      if(!mounted)return; setState(()=>{requests=rs;banned=bs;pinned=ps;messages=ms;profiles={for(final p in prof)p['id'].toString():p};loading=false;});
+      if(!mounted)return; setState(() { requests=rs; banned=bs; pinned=ps; messages=ms; profiles={for(final p in prof)p['id'].toString():p}; loading=false; });
     }catch(e){if(mounted){setState(()=>loading=false);toast('مدیریت پیشرفته بارگذاری نشد: $e');}}
   }
   Future<void> review(String id,bool approve)async{if(busy)return;setState(()=>busy=true);try{await db.rpc('review_group_join_request',params:{'p_request_id':id,'p_approve':approve});toast(approve?'درخواست پذیرفته شد.':'درخواست رد شد.');await load();}catch(e){toast('عملیات ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
@@ -30,7 +30,7 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
     final form=await showDialog<Map<String,bool>>(context:context,builder:(d){bool msg=true,media=true,links=true;return StatefulBuilder(builder:(d,setD)=>AlertDialog(title:Text('محدودیت '+nameOf(id)),content:Column(mainAxisSize:MainAxisSize.min,children:[
       SwitchListTile(title:const Text('ارسال پیام'),value:msg,onChanged:(v)=>setD(()=>msg=v)),SwitchListTile(title:const Text('ارسال رسانه'),value:media,onChanged:(v)=>setD(()=>media=v)),SwitchListTile(title:const Text('ارسال لینک'),value:links,onChanged:(v)=>setD(()=>links=v))]),
       actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(d,{'msg':msg,'media':media,'links':links}),child:const Text('اعمال'))]));});
-    if(form==null)return;try{await db.rpc('restrict_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id,'p_can_send_messages':form['msg'],'p_can_send_media':form['media'],'p_can_send_links':form['links'],'p_expires_at':null});toast('محدودیت اعمال شد.');}catch(e){toast('اعمال محدودیت ناموفق بود: $e');}
+    if(form==null)return;try{await db.rpc('restrict_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id,'p_can_send_messages':form['msg'] ?? true,'p_can_send_media':form['media'] ?? true,'p_can_send_links':form['links'] ?? true,'p_expires_at':null});toast('محدودیت اعمال شد.');}catch(e){toast('اعمال محدودیت ناموفق بود: $e');}
   }
   Future<void> pin(String id)async{try{await db.rpc('pin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('پیام سنجاق شد.');await load();}catch(e){toast('سنجاق کردن ناموفق بود: $e');}}
   Future<void> unpin(String id)async{try{await db.rpc('unpin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('سنجاق برداشته شد.');await load();}catch(e){toast('برداشتن سنجاق ناموفق بود: $e');}}
