@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
-  @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
+  @override State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
@@ -12,7 +11,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<Map<String, dynamic>> rows = [];
 
   Future<void> load() async {
-    rows = [];
     try {
       final db = Supabase.instance.client;
       final raw = await db.rpc('get_unread_counts');
@@ -36,11 +34,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  @override
-  void initState() { super.initState(); load(); }
+  @override void initState() { super.initState(); load(); }
 
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('اعلان‌ها')),
       body: loading
@@ -74,8 +70,7 @@ class ConversationStatsPage extends StatefulWidget {
   final String conversationId;
   final String title;
   const ConversationStatsPage({super.key, required this.conversationId, required this.title});
-  @override
-  State<ConversationStatsPage> createState() => _ConversationStatsPageState();
+  @override State<ConversationStatsPage> createState() => _ConversationStatsPageState();
 }
 
 class _ConversationStatsPageState extends State<ConversationStatsPage> {
@@ -83,7 +78,6 @@ class _ConversationStatsPageState extends State<ConversationStatsPage> {
   List<Map<String, dynamic>> stats = [];
 
   Future<void> load() async {
-    rows = [];
     try {
       final db = Supabase.instance.client;
       final raw = await db.rpc('get_conversation_sender_stats', params: {'p_conversation_id': widget.conversationId});
@@ -104,11 +98,9 @@ class _ConversationStatsPageState extends State<ConversationStatsPage> {
     }
   }
 
-  @override
-  void initState() { super.initState(); load(); }
+  @override void initState() { super.initState(); load(); }
 
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('آمار پیام‌ها — ${widget.title}')),
       body: loading
