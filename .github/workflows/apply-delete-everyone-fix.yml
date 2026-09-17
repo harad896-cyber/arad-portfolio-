@@ -1,0 +1,36 @@
+name: Apply delete-for-everyone fix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Apply patch
+        run: python tools/fix_delete_for_everyone.py
+
+      - name: Verify patch
+        run: |
+          grep -q "loaded.removeWhere((m) => hidden.contains('\${m['id']}') || m['deleted_at'] != null);" lib/main.dart
+          grep -q "پیام حذف نشد؛ مجوز حذف برای همه یا مالکیت پیام بررسی شود." lib/main.dart
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart tools/fix_delete_for_everyone.py .github/workflows/apply-delete-everyone-fix.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: delete message for everyone on both sides"
+          git push origin HEAD:main
