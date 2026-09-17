@@ -1,0 +1,93 @@
+name: Group Links and Channel Management APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+      - name: Wire group link and channel management UI
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+
+          main = Path('lib/main.dart')
+          s = main.read_text(encoding='utf-8')
+          if "import 'channel_management.dart';" not in s:
+              s = s.replace("import 'group_management.dart';", "import 'group_management.dart';\nimport 'channel_management.dart';", 1)
+          old = """if (_chatType == 'group') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => GroupProfilePage(conversationId: widget.id, title: widget.title)));
+            }"""
+          new = """if (_chatType == 'group') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => GroupProfilePage(conversationId: widget.id, title: widget.title)));
+            } else if (_chatType == 'channel') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelManagementPage(conversationId: widget.id, title: widget.title)));
+            }"""
+          if old in s:
+              s = s.replace(old, new, 1)
+          old2 = """if (_chatType == 'group')
+                      const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),"""
+          new2 = """if (_chatType == 'group')
+                      const Text('پروفایل گروه', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
+                    if (_chatType == 'channel')
+                      const Text('مدیریت کانال', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),"""
+          if old2 in s:
+              s = s.replace(old2, new2, 1)
+          main.write_text(s, encoding='utf-8')
+
+          gp = Path('lib/group_management.dart')
+          g = gp.read_text(encoding='utf-8')
+          if "import 'channel_management.dart';" not in g:
+              g = g.replace("import 'group_moderation.dart';", "import 'group_moderation.dart';\nimport 'channel_management.dart';", 1)
+          marker = """        if (admin) const Divider(height: 1),
+        if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),"""
+          replacement = """        if (admin) const Divider(height: 1),
+        if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
+        if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),"""
+          if marker in g:
+              g = g.replace(marker, replacement, 1)
+          gp.write_text(g, encoding='utf-8')
+          PY
+      - name: Commit wired source
+        shell: bash
+        run: |
+          if git diff --quiet; then echo 'No source changes needed'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/main.dart lib/group_management.dart lib/channel_management.dart
+          git commit -m 'feat: wire group invite links and channel management'
+          git push
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+      - name: Build release APK
+        run: flutter build apk --release --no-pub
+      - name: Verify APK
+        run: test -s build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: messenger-group-links-channel-management
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
