@@ -53,11 +53,13 @@ jobs:
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
-      - name: Verify and stage APK
+      - name: Locate and stage APK
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find android/app/build/outputs/apk -type f -name '*.apk' -size +1c | head -n 1)"
+          echo "APK files produced by Gradle:"
+          find . -type f -name '*.apk' -size +1c -print
+          APK="$(find build android -type f -name '*.apk' -size +1c 2>/dev/null | head -n 1)"
           test -n "$APK"
           mkdir -p build/app/outputs/flutter-apk
           cp "$APK" build/app/outputs/flutter-apk/app-release.apk
