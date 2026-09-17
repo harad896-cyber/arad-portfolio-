@@ -2328,6 +2328,11 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: true);
       final loaded = List<Map<String, dynamic>>.from(rows);
+      loaded.sort((a, b) {
+        final ad = DateTime.tryParse('${a['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = DateTime.tryParse('${b['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return ad.compareTo(bd);
+      });
       final uid = supabase.auth.currentUser?.id;
       if (uid != null && loaded.isNotEmpty) {
         final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
@@ -2359,7 +2364,10 @@ class _ChatPageState extends State<ChatPage> {
           attachments = loadedAttachments;
           loading = false;
         });
-        // Keep chat ordered from top to bottom; do not force the list back to the bottom.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_messagesScroll.hasClients) return;
+          _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+        });
       }
       await markRead();
       _scrollToLatest();
