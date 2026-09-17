@@ -27,10 +27,39 @@ jobs:
         run: flutter pub get
       - name: Analyze (diagnostic only)
         run: flutter analyze --no-fatal-warnings --no-fatal-infos || true
+      - name: Recreate supported Android host
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android
+          flutter create --platforms=android --org com.arad.messenger --project-name arad_messenger .
+          test -f android/gradlew
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle.kts')
+          if p.exists():
+              s = p.read_text(encoding='utf-8')
+              s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
+              p.write_text(s, encoding='utf-8')
+          else:
+              p = Path('android/app/build.gradle')
+              s = p.read_text(encoding='utf-8')
+              s = s.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 24')
+              p.write_text(s, encoding='utf-8')
+          PY
       - name: Build release APK
-        run: flutter build apk --release --no-pub
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
       - name: Verify APK
-        run: test -s build/app/outputs/flutter-apk/app-release.apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find android/app/build/outputs/apk -type f -name '*.apk' -size +1c | head -n 1)"
+          test -n "$APK"
+          mkdir -p build/app/outputs/flutter-apk
+          cp "$APK" build/app/outputs/flutter-apk/app-release.apk
+          test -s build/app/outputs/flutter-apk/app-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
