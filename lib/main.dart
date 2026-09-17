@@ -44,7 +44,7 @@ class LanguageController extends ChangeNotifier {
 
 class AppThemeController extends ChangeNotifier {
   bool dark = false;
-  int seed = 0xFF5B6FB5;
+  int seed = 0xFF7C5CFF;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -56,7 +56,7 @@ class AppThemeController extends ChangeNotifier {
     final p = await SharedPreferences.getInstance();
     final key = _scope;
     dark = p.getBool('dark_mode_$key') ?? false;
-    seed = p.getInt('accent_seed_$key') ?? 0xFF5B6FB5;
+    seed = p.getInt('accent_seed_$key') ?? 0xFF7C5CFF;
     notifyListeners();
   }
   Future<void> setDark(bool value) async {
@@ -122,12 +122,13 @@ class AradMessenger extends StatelessWidget {
       title: 'Arad Messenger',
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: const Color(0xFFF4F6FA),
+          surface: const Color(0xFFF5F5F7),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF4F6FA),
+        scaffoldBackgroundColor: const Color(0xFFF5F5F7),
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -139,15 +140,15 @@ class AradMessenger extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xDFF4F6FA),
+          backgroundColor: Color(0xC2F5F5F7),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF151821),
+            color: Color(0xFF16161A),
           ),
-          iconTheme: IconThemeData(color: Color(0xFF30323A)),
+          iconTheme: IconThemeData(color: Color(0xFF707078)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -155,7 +156,7 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(18)),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
             side: BorderSide(color: Color(0x1A4F46E5)),
           ),
         ),
@@ -165,15 +166,15 @@ class AradMessenger extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0x26303746)),
+            borderSide: BorderSide(color: Color(0x19000000)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0x1F30323A)),
+            borderSide: BorderSide(color: Color(0x17000000)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0xFF4F46E5), width: 1.6),
+            borderSide: BorderSide(color: Color(0xFF7C5CFF), width: 1.6),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
@@ -186,15 +187,15 @@ class AradMessenger extends StatelessWidget {
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             side: const BorderSide(color: Color(0x2630323A)),
             textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
@@ -205,58 +206,56 @@ class AradMessenger extends StatelessWidget {
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           insetPadding: const EdgeInsets.all(16),
         ),
         dividerTheme: const DividerThemeData(
           space: 1,
           thickness: 1,
-          color: Color(0x16000000),
+          color: Color(0x17000000),
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          primary: const Color(0xFF6E83C4),
-          secondary: const Color(0xFF8B5FBF),
-          tertiary: const Color(0xFFB45CC8),
-          surface: const Color(0xFF111014),
+          surface: const Color(0xFF111114),
         ),
-        scaffoldBackgroundColor: const Color(0xFF111014),
+        scaffoldBackgroundColor: const Color(0xFF09090B),
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xE6111014),
+          backgroundColor: Color(0xC209090B),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Color(0xB81C1A20),
+          color: Color(0x0AFFFFFF),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(18)),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
             side: BorderSide(color: Color(0x1FFFFFFF)),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xB81C1A20),
+          fillColor: Color(0x0AFFFFFF),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0x24FFFFFF)),
+            borderSide: BorderSide(color: Color(0x17FFFFFF)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0x22FFFFFF)),
+            borderSide: BorderSide(color: Color(0x14FFFFFF)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)),
-            borderSide: BorderSide(color: Color(0xFF7C8FD6), width: 1.6),
+            borderSide: BorderSide(color: Color(0xFFA996FF), width: 1.6),
           ),
         ),
       ),
@@ -3017,11 +3016,11 @@ class _ChatPageState extends State<ChatPage> {
       child: Wrap(
         spacing: 4,
         children: counts.entries.map((e) => InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           onTap: () => reactTo(message, e.key),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
             child: Text('${e.key} ${e.value}', style: const TextStyle(fontSize: 12)),
           ),
         )).toList(),
@@ -3042,7 +3041,7 @@ class _ChatPageState extends State<ChatPage> {
         return GestureDetector(
           onTap: () => _openImage(m),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: Image.network(
               url,
               width: 220,
