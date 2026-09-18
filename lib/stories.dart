@@ -66,7 +66,7 @@ class _StoryAddTile extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
     Container(width: 62, height: 62, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2)), child: const Icon(Icons.add_rounded, size: 30)),
     const SizedBox(height: 5), const Text('استوری من', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
-  ]));
+  ])));
 }
 
 class _StoryTile extends StatelessWidget {
@@ -82,7 +82,7 @@ class _StoryTile extends StatelessWidget {
       Container(width: 62, height: 62, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2.5)),
       child: CircleAvatar(backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null)),
       const SizedBox(height: 5), Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
-    ]));
+    ])));
   }
 }
 
