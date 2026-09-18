@@ -3495,9 +3495,16 @@ class _ChatPageState extends State<ChatPage> {
 
   void _jumpToMessage(String messageId) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final target = _messageKeys[messageId]?.currentContext;
-      if (target == null) return;
-      await Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 280), curve: Curves.easeOut, alignment: .45);
+      for (var attempt = 0; attempt < 8; attempt++) {
+        final target = _messageKeys[messageId]?.currentContext;
+        if (target != null) {
+          await Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 280), curve: Curves.easeOut, alignment: .45);
+          return;
+        }
+        if (!_hasOlderMessages || _loadingOlder) return;
+        await _loadOlderMessages();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+      }
     });
   }
 
