@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'polish_widgets.dart';
 
 class GroupAdvancedAdminPage extends StatefulWidget {
   final String conversationId; final String title;
@@ -43,7 +44,7 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
   }
   @override void initState(){super.initState();load();}
   @override Widget build(BuildContext context){
-    if(loading)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:const Center(child:CircularProgressIndicator()));
+    if(loading)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:const AppSkeletonList(count: 6));
     final pinnedIds=pinned.map((p)=>p['message_id'].toString()).toSet();
     return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:ListView(padding:const EdgeInsets.all(12),children:[
       Card(child:ListTile(leading:const Icon(Icons.how_to_reg_rounded),title:const Text('درخواست‌های عضویت',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text(requests.length.toString()+' درخواست در انتظار بررسی'))),
