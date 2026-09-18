@@ -1,0 +1,89 @@
+name: Repair chat build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Repair helper placement
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("lib/main.dart")
+          s = p.read_text(encoding="utf-8")
+          helper = """  Future<void> _loadGroupMemberCount() async {
+              if (_chatType != 'group') return;
+              try {
+                final rows = await supabase
+                    .from('conversation_members')
+                    .select('user_id')
+                    .eq('conversation_id', widget.id);
+                if (!mounted) return;
+                setState(() {
+                  _groupMemberCount = (rows as List).length;
+                });
+              } catch (_) {}
+            }
+
+          """
+          if helper in s:
+              s = s.replace(helper, "", 1)
+          marker = "class _ChatPageState extends State<ChatPage> {"
+          if "_loadGroupMemberCount" not in s:
+              if marker not in s:
+                  raise SystemExit("ChatPage state marker not found")
+              s = s.replace(marker, marker + "\n\n" + helper, 1)
+          p.write_text(s, encoding="utf-8")
+          print("chat helper repaired")
+          PY
+
+      - name: Commit repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart
+          if git diff --cached --quiet; then
+            echo "No source changes required"
+          else
+            git commit -m "fix: place group member count helper in ChatPage [skip ci]"
+            git push
+          fi
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Flutter tests
+        run: flutter test --no-pub
+
+      - name: Build release APK
+        run: flutter build apk --release --no-pub
+
+      - name: Verify APK
+        run: |
+          test -s build/app/outputs/flutter-apk/app-release.apk
