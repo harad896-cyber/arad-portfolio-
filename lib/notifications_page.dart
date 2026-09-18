@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'polish_widgets.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -33,7 +34,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override void initState() { super.initState(); load(); }
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('اعلان‌ها')),
-    body: loading ? const Center(child: CircularProgressIndicator()) : rows.isEmpty
+    body: loading ? const AppSkeletonList(count: 5) : rows.isEmpty
       ? ListView(children: const [SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 64), SizedBox(height: 14), Center(child: Text('اعلان خوانده‌نشده‌ای ندارید'))])
       : RefreshIndicator(onRefresh: load, child: ListView.separated(
           padding: const EdgeInsets.all(12), itemCount: rows.length,
