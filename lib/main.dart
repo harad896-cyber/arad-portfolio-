@@ -30,6 +30,15 @@ import 'voice_message_player.dart';
 const double kAppRadius = 16.0;
 const Duration kFastMotion = Duration(milliseconds: 180);
 
+bool _isNetworkFailure(Object error) {
+  final value = error.toString().toLowerCase();
+  return value.contains('socketexception') ||
+      value.contains('failed host lookup') ||
+      value.contains('network is unreachable') ||
+      value.contains('connection refused') ||
+      value.contains('clientexception');
+}
+
 String _friendlyError(String message) {
   final raw = message.replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
   final lower = raw.toLowerCase();
@@ -2900,8 +2909,11 @@ class _ChatPageState extends State<ChatPage> {
       _scrollToLatest();
     } catch (e) {
       if (mounted) {
-        await _queuePendingText(value);
-        showMsg(context, 'اتصال برقرار نیست؛ پیام در صف ارسال قرار گرفت.');
+        if (_isNetworkFailure(e)) {
+          await _queuePendingText(value);
+        } else {
+          showMsg(context, 'ارسال پیام ناموفق بود: $e');
+        }
       }
     } finally {
       if (mounted) setState(() => sending = false);
