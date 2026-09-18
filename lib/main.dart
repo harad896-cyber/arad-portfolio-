@@ -453,7 +453,7 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('پوشه‌های گفتگو')),
     body: ListView.builder(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       itemCount: folders.length,
       itemBuilder: (_, i) => Card(
         child: ListTile(
@@ -493,7 +493,7 @@ class DataAndPermissionsPage extends StatefulWidget {
 }
 class _DataAndPermissionsPageState extends State<DataAndPermissionsPage> {
   bool lowData=false,wifiOnly=false,highContrast=false; double fontScale=1;
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('داده و دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('داده و دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(16),children:[
     Card(child:SwitchListTile(title:const Text('حالت کم‌مصرف'),value:lowData,onChanged:(v)=>setState(()=>lowData=v))),
     Card(child:SwitchListTile(title:const Text('دانلود خودکار فقط با وای‌فای'),value:wifiOnly,onChanged:(v)=>setState(()=>wifiOnly=v))),
     Card(child:SwitchListTile(title:const Text('کنتراست بالا'),value:highContrast,onChanged:(v)=>setState(()=>highContrast=v))),
@@ -556,7 +556,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(66),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+            padding: const EdgeInsets.fromLTRB(16, 4, 14, 10),
             child: TextField(
               controller: search,
               onChanged: (_) => setState(() {}),
@@ -565,7 +565,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(kAppRadius),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -618,7 +618,7 @@ class AppAppearancePage extends StatefulWidget {
 }
 class _AppAppearancePageState extends State<AppAppearancePage>{
   String mode='خودکار';
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ظاهر برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ظاهر برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
     Card(child:RadioListTile(value:'روشن',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('روشن'))),
     Card(child:RadioListTile(value:'تاریک',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('تاریک'))),
     Card(child:RadioListTile(value:'خودکار',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('خودکار'))),
@@ -662,14 +662,14 @@ class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
   @override State<BackupPage> createState()=>_BackupPageState();
 }
-class _BackupPageState extends State<BackupPage>{bool auto=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(14),children:[Card(child:SwitchListTile(title:const Text('پشتیبان‌گیری خودکار'),value:auto,onChanged:(v)=>setState(()=>auto=v))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی ثبت نشده'),trailing:Text('—'))),const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('محاسبه پس از اولین پشتیبان'),trailing:Text('—'))),FilledButton(onPressed:(){},child:const Text('پشتیبان‌گیری اکنون'))]));}
+class _BackupPageState extends State<BackupPage>{bool auto=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(16),children:[Card(child:SwitchListTile(title:const Text('پشتیبان‌گیری خودکار'),value:auto,onChanged:(v)=>setState(()=>auto=v))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی ثبت نشده'),trailing:Text('—'))),const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('محاسبه پس از اولین پشتیبان'),trailing:Text('—'))),FilledButton(onPressed:(){},child:const Text('پشتیبان‌گیری اکنون'))]));}
 class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
   @override Widget build(BuildContext context)=>DefaultTabController(length:3,child:Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی'),bottom:const TabBar(tabs:[Tab(text:'استیکرها'),Tab(text:'GIF'),Tab(text:'ایموجی')])),body:TabBarView(children:[ListView(children:const[ListTile(leading:Icon(Icons.stars_rounded),title:Text('پک‌های استیکر من')),ListTile(leading:Icon(Icons.add_rounded),title:Text('افزودن پک'))]),Center(child:TextField(decoration:InputDecoration(hintText:'جستجوی GIF',prefixIcon:Icon(Icons.search_rounded)))),GridView.count(crossAxisCount:6,children:List.generate(24,(i)=>Center(child:Text(['😀','❤️','👍','😂','🔥','🎉'][i%6],style:const TextStyle(fontSize:25)))))])));
 }
 class SecurityCenterPage extends StatelessWidget {
   const SecurityCenterPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
     Card(child:SwitchListTile(title:const Text('تأیید دومرحله‌ای'),value:false,onChanged:(_){},secondary:const Icon(Icons.verified_user_rounded))),
     const Card(child:ListTile(title:Text('دستگاه‌های متصل'),subtitle:Text('مدیریت نشست‌های فعال'),trailing:Icon(Icons.chevron_left_rounded))),
     const Card(child:ListTile(title:Text('مخاطبین مسدودشده'),trailing:Icon(Icons.chevron_left_rounded))),
@@ -680,10 +680,10 @@ class GroupAdvancedPage extends StatefulWidget {
   const GroupAdvancedPage({super.key});
   @override State<GroupAdvancedPage> createState()=>_GroupAdvancedPageState();
 }
-class _GroupAdvancedPageState extends State<GroupAdvancedPage>{final q=TextEditingController();@override void dispose(){q.dispose();super.dispose();}@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی گروهی')),body:ListView(padding:const EdgeInsets.all(14),children:[Card(child:ListTile(leading:const Icon(Icons.poll_rounded),title:const Text('نظرسنجی'),onTap:()=>showDialog(context:context,builder:(_)=>AlertDialog(title:const Text('نظرسنجی جدید'),content:TextField(controller:q,decoration:const InputDecoration(labelText:'سؤال')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ساخت'))])))),const Card(child:ListTile(leading:Icon(Icons.push_pin_rounded),title:Text('پیام‌های پین‌شده'))),const Card(child:ListTile(leading:Icon(Icons.alternate_email_rounded),title:Text('ذکر اعضا با @')))]));}
+class _GroupAdvancedPageState extends State<GroupAdvancedPage>{final q=TextEditingController();@override void dispose(){q.dispose();super.dispose();}@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی گروهی')),body:ListView(padding:const EdgeInsets.all(16),children:[Card(child:ListTile(leading:const Icon(Icons.poll_rounded),title:const Text('نظرسنجی'),onTap:()=>showDialog(context:context,builder:(_)=>AlertDialog(title:const Text('نظرسنجی جدید'),content:TextField(controller:q,decoration:const InputDecoration(labelText:'سؤال')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ساخت'))])))),const Card(child:ListTile(leading:Icon(Icons.push_pin_rounded),title:Text('پیام‌های پین‌شده'))),const Card(child:ListTile(leading:Icon(Icons.alternate_email_rounded),title:Text('ذکر اعضا با @')))]));}
 class AboutAppPage extends StatelessWidget {
   const AboutAppPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه 1.0.0'))),const Card(child:ListTile(title:Text('حریم خصوصی'),trailing:Icon(Icons.chevron_left_rounded))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'),trailing:Icon(Icons.chevron_left_rounded))),Card(child:ListTile(title:const Text('امتیاز به برنامه'),trailing:Icon(Icons.star_rounded,color:Colors.amber),onTap:(){}))]));}
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه 1.0.0'))),const Card(child:ListTile(title:Text('حریم خصوصی'),trailing:Icon(Icons.chevron_left_rounded))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'),trailing:Icon(Icons.chevron_left_rounded))),Card(child:ListTile(title:const Text('امتیاز به برنامه'),trailing:Icon(Icons.star_rounded,color:Colors.amber),onTap:(){}))]));}
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   final url = profile['avatar_url']?.toString() ?? '';
   return CircleAvatar(
@@ -1496,13 +1496,13 @@ class _ChatSkeleton extends StatelessWidget {
       width: w, height: h,
       decoration: BoxDecoration(
         color: s.onSurface.withValues(alpha: .07),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(kAppRadius),
       ),
     );
     return Card(
       margin: const EdgeInsets.only(bottom: 7),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Row(children: [
           CircleAvatar(radius: 25, backgroundColor: s.onSurface.withValues(alpha: .07)),
           const SizedBox(width: 12),
@@ -1603,14 +1603,14 @@ class _HomePageState extends State<HomePage> {
       children: [
         const _StoriesStrip(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 4, 14, 6),
+          padding: const EdgeInsets.fromLTRB(16, 4, 14, 6),
           child: Row(children: [
             const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
             IconButton.filledTonal(onPressed: createDirect, icon: const Icon(Icons.edit_rounded)),
           ]),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+          padding: const EdgeInsets.fromLTRB(16, 0, 14, 6),
           child: TextField(
             controller: chatSearch,
             onChanged: (v) => setState(() => chatQuery = v),
@@ -1674,7 +1674,7 @@ class _HomePageState extends State<HomePage> {
                               color: theme.colorScheme.surface.withValues(alpha: .66),
                               margin: const EdgeInsets.only(bottom: 7),
                               child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                                 leading: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
@@ -1694,7 +1694,7 @@ class _HomePageState extends State<HomePage> {
                                   if (unread) Container(
                                     margin: const EdgeInsets.only(right: 6),
                                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                    decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                                    decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(kAppRadius)),
                                     child: Text(unreadCount > 0 ? '$unreadCount' : 'جدید', style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w800)),
                                   ),
                                 ]),
@@ -1716,14 +1716,14 @@ class _HomePageState extends State<HomePage> {
     final scheme = Theme.of(context).colorScheme;
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+        padding: const EdgeInsets.fromLTRB(16, 12, 14, 6),
         child: Row(children: [
           const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
           IconButton.filledTonal(onPressed: () => showSearch(context: context, delegate: ContactSearchDelegate()), icon: const Icon(Icons.person_add_alt_1_rounded)),
         ]),
       ),
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(children: [
           Expanded(child: _glassAction(Icons.person_add_rounded, 'افزودن مخاطب', () => showSearch(context: context, delegate: ContactSearchDelegate()))),
           const SizedBox(width: 8),
@@ -1731,7 +1731,7 @@ class _HomePageState extends State<HomePage> {
         ]),
       ),
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChannelCreatePage())).then((_) => load())),
       ),
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
@@ -1798,7 +1798,7 @@ class _HomePageState extends State<HomePage> {
   Widget settingsView() => Scaffold(
     backgroundColor: Colors.transparent,
     appBar: AppBar(title: const Text('تنظیمات')),
-    body: ListView(padding: const EdgeInsets.all(14), children: [
+    body: ListView(padding: const EdgeInsets.all(16), children: [
       Card(child: Column(children: [
         ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.manage_accounts_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('حساب کاربری', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('پروفایل، حساب‌ها و امنیت'), onTap: () => setState(() => navIndex = 3)),
         const Divider(height: 1),
@@ -1927,7 +1927,7 @@ class _StoriesStripState extends State<_StoriesStrip> {
           decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary])),
           child: story == null ? CircleAvatar(backgroundColor: theme.colorScheme.surface, child: Icon(Icons.add_rounded, color: theme.colorScheme.primary)) : avatar(p, size: 58),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 4),
         Text(mine ? (story == null ? 'استوری شما' : 'استوری من') : (p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
       ])),
     );
@@ -2247,7 +2247,7 @@ class ConversationToolsPage extends StatefulWidget {
 }
 class _ConversationToolsPageState extends State<ConversationToolsPage>{
   bool pinned=false,archived=false,muted=false;
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مدیریت گفتگو')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مدیریت گفتگو')),body:ListView(padding:const EdgeInsets.all(16),children:[
     Card(child:SwitchListTile(value:pinned,onChanged:(v)=>setState(()=>pinned=v),title:const Text('پین کردن گفتگو'),secondary:const Icon(Icons.push_pin_rounded))),
     Card(child:SwitchListTile(value:archived,onChanged:(v)=>setState(()=>archived=v),title:const Text('آرشیو گفتگو'),secondary:const Icon(Icons.archive_rounded))),
     Card(child:SwitchListTile(value:muted,onChanged:(v)=>setState(()=>muted=v),title:const Text('بی‌صدا کردن'),secondary:const Icon(Icons.notifications_off_rounded))),
@@ -2259,7 +2259,7 @@ class _ConversationToolsPageState extends State<ConversationToolsPage>{
 
 class ContactsToolsPage extends StatelessWidget {
   const ContactsToolsPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مخاطبین')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مخاطبین')),body:ListView(padding:const EdgeInsets.all(16),children:[
     Card(child:ListTile(leading:const Icon(Icons.qr_code_scanner_rounded),title:const Text('اسکن QR Code'),onTap:()=>showMsg(context,'اسکن QR'))),
     Card(child:ListTile(leading:const Icon(Icons.qr_code_rounded),title:const Text('QR کد پروفایل من'),onTap:()=>showMsg(context,'QR پروفایل'))),
     Card(child:ListTile(leading:const Icon(Icons.share_rounded),title:const Text('دعوت دوستان'),subtitle:const Text('لینک اختصاصی دعوت'),onTap:()=>showMsg(context,'لینک دعوت آماده است'))),
@@ -2268,7 +2268,7 @@ class ContactsToolsPage extends StatelessWidget {
 
 class WalletPage extends StatelessWidget {
   const WalletPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('کیف پول')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('کیف پول')),body:ListView(padding:const EdgeInsets.all(16),children:[
     const Card(child:ListTile(title:Text('موجودی'),subtitle:Text('۰'),leading:Icon(Icons.account_balance_wallet_rounded))),
     const Card(child:ListTile(title:Text('تاریخچه تراکنش‌ها'),leading:Icon(Icons.receipt_long_rounded))),
     Card(child:ListTile(title:const Text('انتقال وجه'),subtitle:const Text('انتقال به مخاطبین'),leading:const Icon(Icons.send_to_mobile_rounded),onTap:()=>showMsg(context,'انتقال وجه'))),
@@ -2276,24 +2276,24 @@ class WalletPage extends StatelessWidget {
 }
 
 class DataSettingsPage extends StatefulWidget {const DataSettingsPage({super.key});@override State<DataSettingsPage> createState()=>_DataSettingsPageState();}
-class _DataSettingsPageState extends State<DataSettingsPage>{bool low=false,wifi=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مصرف داده')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class _DataSettingsPageState extends State<DataSettingsPage>{bool low=false,wifi=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مصرف داده')),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:SwitchListTile(value:low,onChanged:(v)=>setState(()=>low=v),title:const Text('حالت کم‌مصرف'))),
  Card(child:SwitchListTile(value:wifi,onChanged:(v)=>setState(()=>wifi=v),title:const Text('دانلود خودکار فقط با وای‌فای'))),
 ]));}
 
 class AccessibilityPage extends StatefulWidget {const AccessibilityPage({super.key});@override State<AccessibilityPage> createState()=>_AccessibilityPageState();}
-class _AccessibilityPageState extends State<AccessibilityPage>{double size=1;bool contrast=false;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class _AccessibilityPageState extends State<AccessibilityPage>{double size=1;bool contrast=false;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:ListTile(title:const Text('اندازه متن'),subtitle:Slider(value:size,min:.8,max:1.5,divisions:7,onChanged:(v)=>setState(()=>size=v)))),
  Card(child:SwitchListTile(value:contrast,onChanged:(v)=>setState(()=>contrast=v),title:const Text('کنتراست بالا'))),
 ]));}
 
-class PermissionScreensPage extends StatelessWidget {const PermissionScreensPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌های برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class PermissionScreensPage extends StatelessWidget {const PermissionScreensPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌های برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
  const Card(child:ListTile(leading:Icon(Icons.contacts_rounded),title:Text('مخاطبین'),subtitle:Text('برای پیدا کردن دوستان لازم است.'))),
  const Card(child:ListTile(leading:Icon(Icons.notifications_rounded),title:Text('اعلان‌ها'),subtitle:Text('برای پیام‌ها و تماس‌های جدید لازم است.'))),
  const Card(child:ListTile(leading:Icon(Icons.camera_alt_rounded),title:Text('دوربین و میکروفون'),subtitle:Text('برای تماس، عکس و پیام صوتی لازم است.'))),
 ]));}
 
-class AdvancedMessagingPage extends StatelessWidget {const AdvancedMessagingPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی پیشرفته')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class AdvancedMessagingPage extends StatelessWidget {const AdvancedMessagingPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
  const Card(child:ListTile(leading:Icon(Icons.graphic_eq_rounded),title:Text('Waveform پیام صوتی'))),
  const Card(child:ListTile(leading:Icon(Icons.video_camera_front_rounded),title:Text('ویدیو-پیام دایره‌ای'))),
  const Card(child:ListTile(leading:Icon(Icons.translate_rounded),title:Text('ترجمه با یک ضربه'))),
@@ -2313,7 +2313,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   final List<bool> read=[false,true,false];
   final List<String> titles=['پیام جدید','درخواست عضویت گروه','به‌روزرسانی برنامه'];
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(
-    padding:const EdgeInsets.all(14),itemCount:titles.length,itemBuilder:(_,i)=>Card(child:ListTile(
+    padding:const EdgeInsets.all(16),itemCount:titles.length,itemBuilder:(_,i)=>Card(child:ListTile(
       leading:Icon(read[i]?Icons.notifications_none_rounded:Icons.notifications_active_rounded),
       title:Text(titles[i],style:TextStyle(fontWeight:read[i]?FontWeight.w500:FontWeight.w900)),
       subtitle:Text(read[i]?'خوانده شده':'جدید'),
@@ -2328,20 +2328,20 @@ class SharedMediaPage extends StatelessWidget {
 }
 
 
-class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی')),body:ListView(padding:const EdgeInsets.all(16),children:[
   Card(child:ListTile(leading:const Icon(Icons.emoji_emotions_rounded),title:const Text('مدیریت پک‌های استیکر'),onTap:()=>showMsg(context,'مدیریت پک‌ها آماده است'))),
   Card(child:ListTile(leading:const Icon(Icons.gif_box_rounded),title:const Text('جستجوی GIF'),onTap:()=>showMsg(context,'جستجوی GIF'))),
 ]));}
 
 class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
-class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:const Text('تأیید دومرحله‌ای'))),
  const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text('دستگاه‌های متصل'))),
  const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text('مخاطبین مسدودشده'))),
  Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:const Text('پیام‌های خودتخریب‌شونده'))),
 ]));}
 
-class AboutPage extends StatelessWidget { const AboutPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(14),children:[
+class AboutPage extends StatelessWidget { const AboutPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
  const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه حرفه‌ای پیام‌رسان'))),
  const Card(child:ListTile(title:Text('حریم خصوصی و قوانین'))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'))),const Card(child:ListTile(title:Text('امتیاز به برنامه'))),
 ]));}
@@ -2551,7 +2551,7 @@ class _ChatPageState extends State<ChatPage> {
         insetPadding: const EdgeInsets.all(12),
         child: GestureDetector(
           onTap: () => Navigator.pop(dialogContext),
-          child: InteractiveViewer(minScale: .8, maxScale: 4, child: ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.network(url, fit: BoxFit.contain))),
+          child: InteractiveViewer(minScale: .8, maxScale: 4, child: ClipRRect(borderRadius: BorderRadius.circular(kAppRadius), child: Image.network(url, fit: BoxFit.contain))),
         ),
       ),
     );
@@ -2777,7 +2777,7 @@ class _ChatPageState extends State<ChatPage> {
     await showModalBottomSheet<void>(context:context,backgroundColor:Colors.transparent,builder:(ctx){ final scheme=Theme.of(ctx).colorScheme;
       return TweenAnimationBuilder<double>(tween:Tween(begin:.85,end:1),duration:const Duration(milliseconds:180),curve:Curves.easeOutBack,builder:(c,scale,child)=>Transform.scale(scale:scale,child:child),child:
         Container(padding:const EdgeInsets.fromLTRB(12,10,12,18),decoration:BoxDecoration(color:scheme.surface,borderRadius:const BorderRadius.vertical(top:Radius.circular(28))),child:Row(mainAxisAlignment:MainAxisAlignment.spaceEvenly,children:[
-          ...quickReactions.map((e)=>InkWell(onTap:(){Navigator.pop(ctx);_toggleReaction(id,e);},borderRadius:BorderRadius.circular(18),child:Padding(padding:const EdgeInsets.all(8),child:Text(e,style:const TextStyle(fontSize:27))))),
+          ...quickReactions.map((e)=>InkWell(onTap:(){Navigator.pop(ctx);_toggleReaction(id,e);},borderRadius:BorderRadius.circular(kAppRadius),child:Padding(padding:const EdgeInsets.all(8),child:Text(e,style:const TextStyle(fontSize:27))))),
           IconButton(onPressed:(){Navigator.pop(ctx);_showReactionPeople(id);},icon:const Icon(Icons.add_circle_outline_rounded))]))); });
   }
   Future<void> _showReactionPeople(String messageId) async {
@@ -2795,10 +2795,10 @@ class _ChatPageState extends State<ChatPage> {
         spacing: 4,
         children: grouped.entries.map<Widget>((e) => InkWell(
           onTap: () => _showReactionPeople(messageId),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(kAppRadius),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(kAppRadius)),
             child: Text(e.key + (e.value > 1 ? ' ${e.value}' : '')),
           ),
         )).toList(),
@@ -2969,7 +2969,7 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30), bottom: Radius.circular(24)),
           child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22), child: Container(
             decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .94), border: Border.all(color: scheme.onSurface.withValues(alpha: .08))),
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+            padding: const EdgeInsets.fromLTRB(16, 12, 14, 20),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 18),
@@ -3052,7 +3052,7 @@ class _ChatPageState extends State<ChatPage> {
                 color: scheme.surface.withValues(alpha: .88),
                 border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: .10))),
               ),
-              padding: const EdgeInsets.fromLTRB(14, 4, 14, 18),
+              padding: const EdgeInsets.fromLTRB(16, 4, 14, 18),
               child: GridView.builder(
                 shrinkWrap: true,
                 itemCount: emojis.length,
@@ -3353,7 +3353,7 @@ class _ChatPageState extends State<ChatPage> {
           color: Colors.transparent,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 14, 16),
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF20384A),
@@ -3514,11 +3514,11 @@ class _ChatPageState extends State<ChatPage> {
       child: Wrap(
         spacing: 4,
         children: counts.entries.map((e) => InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(kAppRadius),
           onTap: () => reactTo(message, e.key),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(kAppRadius)),
             child: Text('${e.key} ${e.value}', style: const TextStyle(fontSize: 12)),
           ),
         )).toList(),
@@ -3539,7 +3539,7 @@ class _ChatPageState extends State<ChatPage> {
         return GestureDetector(
           onTap: () => _openImage(m),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(kAppRadius),
             child: Image.network(
               url,
               width: 220,
@@ -3616,7 +3616,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(width: double.infinity, height: 92, decoration: BoxDecoration(color: mine ? Colors.white.withValues(alpha:.12) : scheme.primary.withValues(alpha:.08), borderRadius: BorderRadius.circular(12)), child: const Center(child: Icon(Icons.language_rounded, size: 34))),
+            Container(width: double.infinity, height: 92, decoration: BoxDecoration(color: mine ? Colors.white.withValues(alpha:.12) : scheme.primary.withValues(alpha:.08), borderRadius: BorderRadius.circular(kAppRadius)), child: const Center(child: Icon(Icons.language_rounded, size: 34))),
             const SizedBox(height: 8),
             Text('پیش‌نمایش لینک', style: TextStyle(fontWeight: FontWeight.w800, color: textColor)),
             const SizedBox(height: 2),
@@ -3675,7 +3675,7 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     _replyPreview(m),
                     content,
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -3792,7 +3792,7 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
         title: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(kAppRadius),
           onTap: () {
             if (_chatType == 'group') {
               Navigator.push(context, MaterialPageRoute(builder: (_) => GroupProfilePage(conversationId: widget.id, title: widget.title)));
@@ -3887,7 +3887,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
             if (replyMessage != null)
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(kAppRadius)),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                   child: Container(
@@ -3980,7 +3980,7 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 3),
+                          const SizedBox(width: 4),
                           IconButton.filled(
                             onPressed: sending ? null : sendText,
                             icon: const Icon(Icons.send_rounded),
