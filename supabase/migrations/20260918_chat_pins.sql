@@ -12,3 +12,5 @@ drop policy if exists "chat_pins_insert_own" on public.chat_pins;
 create policy "chat_pins_insert_own" on public.chat_pins for insert to authenticated with check ((select auth.uid())=user_id and exists(select 1 from public.conversation_members cm where cm.conversation_id=chat_pins.conversation_id and cm.user_id=(select auth.uid())));
 drop policy if exists "chat_pins_delete_own" on public.chat_pins;
 create policy "chat_pins_delete_own" on public.chat_pins for delete to authenticated using ((select auth.uid())=user_id);
+
+-- CI verification trigger: keep schema unchanged.
