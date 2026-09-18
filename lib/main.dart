@@ -3074,19 +3074,285 @@ class _SearchSectionHeader extends StatelessWidget {
 }
 class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   final String conversationId;
+
+  String contentType = 'all';
+  String? senderId;
+  DateTime? fromDate;
+  DateTime? toDate;
+
+  late final Future<List<Map<String,dynamic>>> _sendersFuture = _loadSenders();
+
   MessageSearchDelegate(this.conversationId);
-  @override List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed:()=>query='',icon:const Icon(Icons.clear))];
-  @override Widget buildLeading(BuildContext context) => IconButton(onPressed:()=>close(context,null),icon:const Icon(Icons.arrow_back));
-  @override Widget buildResults(BuildContext context) => _build(context);
-  @override Widget buildSuggestions(BuildContext context) => _build(context);
-  Widget _build(BuildContext context) => FutureBuilder(
-    future: query.trim().isEmpty ? Future.value([]) : supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id',conversationId).ilike('body','%'+query.trim()+'%').order('created_at',ascending:false).limit(50),
-    builder:(context,snap){
-      if(query.trim().isEmpty) return const Center(child:Text('متن پیام را جستجو کنید.'));
-      if(!snap.hasData) return const Center(child:CircularProgressIndicator());
-      final rows=List<Map<String,dynamic>>.from(snap.data as List);
-      if(rows.isEmpty) return const Center(child:Text('نتیجه‌ای پیدا نشد.'));
-      return ListView.separated(itemCount:rows.length,separatorBuilder:(_,__)=>const Divider(height:1),itemBuilder:(_,i)=>ListTile(leading:const Icon(Icons.search_rounded),title:Text('${rows[i]['body']??'پیام'}',maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(_homeTime(rows[i]['created_at'])),onTap:()=>close(context,rows[i])));
+
+  Future<List<Map<String,dynamic>>> _loadSenders() async {
+    final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', conversationId);
+    final ids = (members as List).map((e) => e['user_id'].toString()).toSet().toList();
+    if (ids.isEmpty) return [];
+    final rows = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
+    final result = List<Map<String,dynamic>>.from(rows);
+    result.sort((a,b) => '${a['display_name'] ?? a['username'] ?? ''}'.compareTo('${b['display_name'] ?? b['username'] ?? ''}'));
+    return result;
+  }
+
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+    if (_hasFilters)
+      IconButton(
+        tooltip: 'حذف فیلترها',
+        onPressed: () {
+          contentType = 'all';
+          senderId = null;
+          fromDate = null;
+          toDate = null;
+          showSuggestions(context);
+        },
+        icon: const Icon(Icons.filter_alt_off_rounded),
+      ),
+    IconButton(
+      tooltip: 'فیلتر جستجو',
+      onPressed: () => _openFilters(context),
+      icon: Badge(isLabelVisible: _hasFilters, smallSize: 7, child: const Icon(Icons.tune_rounded)),
+    ),
+    if (query.isNotEmpty)
+      IconButton(tooltip: 'پاک کردن متن', onPressed: () => query = '', icon: const Icon(Icons.clear)),
+  ];
+
+  bool get _hasFilters => contentType != 'all' || senderId != null || fromDate != null || toDate != null;
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case 'image': return 'تصویر';
+      case 'video': return 'ویدئو';
+      case 'audio': return 'صوت';
+      case 'file': return 'فایل';
+      default: return 'متن';
+    }
+  }
+
+  String _dateValue(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+
+  Future<List<Map<String,dynamic>>> _search() async {
+    final term = query.trim();
+    dynamic request = supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id', conversationId);
+    if (term.isNotEmpty) request = request.ilike('body', '%$term%');
+    if (contentType != 'all') request = request.eq('message_type', contentType);
+    if (senderId != null) request = request.eq('sender_id', senderId!);
+    if (fromDate != null) {
+      request = request.gte('created_at', DateTime(fromDate!.year, fromDate!.month, fromDate!.day).toUtc().toIso8601String());
+    }
+    if (toDate != null) {
+      request = request.lt('created_at', DateTime(toDate!.year, toDate!.month, toDate!.day + 1).toUtc().toIso8601String());
+    }
+    final rows = await request.order('created_at', ascending: false).limit(100);
+    return List<Map<String,dynamic>>.from(rows);
+  }
+
+  Future<void> _openFilters(BuildContext context) async {
+    var nextType = contentType;
+    var nextSender = senderId;
+    var nextFrom = fromDate;
+    var nextTo = toDate;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final scheme = Theme.of(context).colorScheme;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(child: Text('فیلتر پیشرفته جستجو', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                        TextButton(
+                          onPressed: () => setSheetState(() {
+                            nextType = 'all';
+                            nextSender = null;
+                            nextFrom = null;
+                            nextTo = null;
+                          }),
+                          child: const Text('پاک کردن'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text('نوع محتوا', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ['all', 'همه', Icons.all_inclusive_rounded],
+                        ['text', 'متن', Icons.chat_bubble_outline_rounded],
+                        ['image', 'عکس', Icons.image_outlined],
+                        ['video', 'ویدئو', Icons.videocam_outlined],
+                        ['audio', 'صوت', Icons.mic_none_rounded],
+                        ['file', 'فایل', Icons.attach_file_rounded],
+                      ].map((item) {
+                        final selected = nextType == item[0];
+                        return ChoiceChip(
+                          selected: selected,
+                          avatar: Icon(item[2] as IconData, size: 17),
+                          label: Text(item[1] as String),
+                          onSelected: (_) => setSheetState(() => nextType = item[0] as String),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+                    Text('فرستنده', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    FutureBuilder<List<Map<String,dynamic>>>(
+                      future: _sendersFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
+                        final people = snapshot.data ?? [];
+                        return DropdownButtonFormField<String?>(
+                          value: nextSender,
+                          isExpanded: true,
+                          decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
+                          items: [
+                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
+                            ...people.map((p) => DropdownMenuItem<String?>(
+                              value: p['id'].toString(),
+                              child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
+                            )),
+                          ],
+                          onChanged: (value) => setSheetState(() => nextSender = value),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    Text('بازه زمانی', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.calendar_today_rounded),
+                            label: Text(nextFrom == null ? 'از تاریخ' : _dateValue(nextFrom!)),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now(),
+                                initialDate: nextFrom ?? DateTime.now(),
+                              );
+                              if (picked != null) setSheetState(() => nextFrom = picked);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.event_rounded),
+                            label: Text(nextTo == null ? 'تا تاریخ' : _dateValue(nextTo!)),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now(),
+                                initialDate: nextTo ?? DateTime.now(),
+                              );
+                              if (picked != null) setSheetState(() => nextTo = picked);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (nextFrom != null && nextTo != null && nextFrom!.isAfter(nextTo!))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text('تاریخ شروع باید قبل از تاریخ پایان باشد.', style: TextStyle(color: scheme.error)),
+                      ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: nextFrom != null && nextTo != null && nextFrom!.isAfter(nextTo!)
+                          ? null
+                          : () {
+                              contentType = nextType;
+                              senderId = nextSender;
+                              fromDate = nextFrom;
+                              toDate = nextTo;
+                              Navigator.pop(sheetContext);
+                              showResults(context);
+                            },
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('اعمال فیلتر'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(
+    tooltip: 'بازگشت',
+    onPressed: () => close(context, null),
+    icon: const Icon(Icons.arrow_back),
+  );
+
+  @override
+  Widget buildResults(BuildContext context) => _build(context);
+  @override
+  Widget buildSuggestions(BuildContext context) => _build(context);
+
+  Widget _build(BuildContext context) => FutureBuilder<List<Map<String,dynamic>>>(
+    future: (query.trim().isEmpty && !_hasFilters) ? Future.value(const <Map<String,dynamic>>[]) : _search(),
+    builder: (context, snap) {
+      if (query.trim().isEmpty && !_hasFilters) {
+        return const Center(child: Text('متن یا فیلترهای جستجو را وارد کنید.'));
+      }
+      if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+      if (snap.hasError) {
+        return const Center(child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('جستجو ناموفق بود. اتصال یا دسترسی را بررسی کنید.', textAlign: TextAlign.center),
+        ));
+      }
+      final rows = snap.data ?? const <Map<String,dynamic>>[];
+      if (rows.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
+      return FutureBuilder<List<Map<String,dynamic>>>(
+        future: _sendersFuture,
+        builder: (context, peopleSnap) {
+          final people = {for (final p in peopleSnap.data ?? const <Map<String,dynamic>>[]) p['id'].toString(): '${p['display_name'] ?? p['username'] ?? 'کاربر'}'};
+          return ListView.separated(
+            itemCount: rows.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final row = rows[i];
+              final type = row['message_type']?.toString() ?? 'text';
+              final body = '${row['body'] ?? ''}'.trim();
+              final title = body.isEmpty ? _typeLabel(type) : body;
+              final sender = people[row['sender_id']?.toString()] ?? 'کاربر';
+              return ListTile(
+                leading: CircleAvatar(
+                  child: Icon(
+                    type == 'image' ? Icons.image_rounded :
+                    type == 'video' ? Icons.videocam_rounded :
+                    type == 'audio' ? Icons.mic_rounded :
+                    type == 'file' ? Icons.insert_drive_file_rounded : Icons.search_rounded,
+                  ),
+                ),
+                title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text('$sender • ${_typeLabel(type)} • ${_homeTime(row['created_at'])}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                onTap: () => close(context, row),
+              );
+            },
+          );
+        },
+      );
     },
   );
 }
