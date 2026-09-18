@@ -863,7 +863,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
           foregroundColor: scheme.primary,
           child: Icon(icon, size: 21),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w750)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 3),
           child: Text(subtitle),
