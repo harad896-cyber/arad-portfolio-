@@ -1992,13 +1992,32 @@ class _HomePageState extends State<HomePage> {
         if (mounted) setState(() { chats = []; loading = false; });
         return;
       }
-      final rows = await supabase.from('conversations').select().inFilter('id', ids).order('created_at', ascending: false);
-      if (mounted) setState(() { chats = List<Map<String, dynamic>>.from(rows); loading = false; });
+      final rows = List<Map<String,dynamic>>.from(await supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids));
+      final enriched = <Map<String,dynamic>>[];
+      for (final c in rows) {
+        final type = '${c['type'] ?? 'direct'}';
+        final lastRows = await supabase.from('messages').select('id,sender_id,body,message_type,created_at,read_at').eq('conversation_id', c['id']).order('created_at', ascending: false).limit(1);
+        final last = (lastRows as List).isEmpty ? null : Map<String,dynamic>.from((lastRows as List).first);
+        Map<String,dynamic>? peer;
+        if (type == 'direct') {
+          final cm = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']);
+          final peerId = (cm as List).map((x) => x['user_id'].toString()).firstWhere((x) => x != uid, orElse: () => '');
+          if (peerId.isNotEmpty) peer = await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,last_seen,is_verified').eq('id', peerId).maybeSingle();
+        }
+        final unreadRows = await supabase.from('messages').select('id').eq('conversation_id', c['id']).neq('sender_id', uid).isFilter('read_at', null).limit(50);
+        final preview = last == null ? 'هنوز پیامی ارسال نشده' : ((last['body'] ?? '').toString().trim().isNotEmpty ? '${last['body']}' : last['message_type'] == 'image' ? '📷 تصویر' : last['message_type'] == 'video' ? '🎬 ویدیو' : last['message_type'] == 'audio' ? '🎙️ پیام صوتی' : last['message_type'] == 'file' ? '📎 فایل' : 'پیام');
+        enriched.add({...c, '_peer': peer, '_last': last, '_preview': preview, 'unread_count': (unreadRows as List).length, 'is_online': peer?['is_online'] == true});
+      }
+      enriched.sort((a,b) {
+        final ad = DateTime.tryParse('${a['_last']?['created_at'] ?? a['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = DateTime.tryParse('${b['_last']?['created_at'] ?? b['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bd.compareTo(ad);
+      });
+      if (mounted) setState(() { chats = enriched; loading = false; });
     } catch (e) {
-      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: ' + e.toString()); }
+      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: ' + _friendlyError(e.toString())); }
     }
   }
-
   Future<void> createDirect() async {
     final result = await showSearch<Map<String, dynamic>?>(context: context, delegate: UserSearchDelegate());
     if (result == null) return;
