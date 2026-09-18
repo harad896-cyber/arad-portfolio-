@@ -189,7 +189,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
   Future<void> _setupChannel() async {
     final callId = _callId;
     if (callId == null) throw Exception('شناسه تماس ایجاد نشد.');
-    final channel = supabase.channel('call:$callId', const RealtimeChannelConfig(private: true));
+    final channel = supabase.channel('call:$callId', opts: const RealtimeChannelConfig(private: true));
     channel.onBroadcast(event: 'signal', callback: (payload) {
       unawaited(_handleSignal(payload));
     });
