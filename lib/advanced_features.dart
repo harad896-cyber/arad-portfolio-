@@ -51,6 +51,7 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
       _FeatureItem(Icons.check_circle_outline, 'رسید خواندن', 'تنظیم ترجیح محلی برای رسید خواندن', () async { setState(() => readReceipts = !readReceipts); await _save('read_receipts', readReceipts); }),
       _FeatureItem(Icons.folder_copy_outlined, 'پوشه‌های واقعی گفتگو', 'ساخت، ویرایش و دسته‌بندی گفتگوها با همگام‌سازی حساب', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatFolderManagerPage()))),
       _FeatureItem(Icons.lock_rounded, 'Secret Chat', 'گفتگوی محرمانه با رمزنگاری سرتاسری برای چت‌های دونفره', () => _openSecretChat()),
+      _FeatureItem(Icons.timer_outlined, 'حذف خودکار پیام‌ها', 'تعیین زمان حذف واقعی پیام‌های جدید در هر گفتگو', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageAutoDeletePage()))),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('قابلیت‌های برنامه')),
@@ -87,6 +88,52 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
 
 }
 
+
+
+class MessageAutoDeletePage extends StatefulWidget {
+  const MessageAutoDeletePage({super.key});
+  @override State<MessageAutoDeletePage> createState() => _MessageAutoDeletePageState();
+}
+class _MessageAutoDeletePageState extends State<MessageAutoDeletePage> {
+  final supabase = Supabase.instance.client;
+  bool loading = true, saving = false;
+  List<Map<String,dynamic>> chats = [];
+  Map<String,int> ttl = {};
+  String? selected;
+  static const options = <int, String>{0:'خاموش',86400:'۱ روز',604800:'۷ روز',2592000:'۳۰ روز'};
+  @override void initState(){super.initState();_load();}
+  Future<void> _load() async {
+    try {
+      final uid=supabase.auth.currentUser?.id; if(uid==null)return;
+      final ms=List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('conversation_id').eq('user_id',uid));
+      final ids=ms.map((e)=>e['conversation_id']).toList();
+      if(ids.isEmpty){if(mounted)setState(()=>loading=false);return;}
+      chats=List<Map<String,dynamic>>.from(await supabase.from('conversations').select('id,type,title').inFilter('id',ids));
+      final rows=List<Map<String,dynamic>>.from(await supabase.from('message_ttl').select('conversation_id,ttl_seconds').inFilter('conversation_id',ids));
+      ttl={for(final r in rows) r['conversation_id'].toString():(r['ttl_seconds'] as num).toInt()};
+      selected=chats.first['id'].toString();
+    }catch(e){if(mounted)showMsg(context,'بارگذاری حذف خودکار ناموفق بود: $e');}
+    if(mounted)setState(()=>loading=false);
+  }
+  Future<void> _save(int seconds) async {
+    final id=selected; final uid=supabase.auth.currentUser?.id; if(id==null||uid==null)return;
+    setState(()=>saving=true);
+    try {
+      if(seconds==0){await supabase.from('message_ttl').delete().eq('conversation_id',id);} else {await supabase.from('message_ttl').upsert({'conversation_id':id,'ttl_seconds':seconds,'enabled_by':uid,'updated_at':DateTime.now().toUtc().toIso8601String()});}
+      ttl[id]=seconds; if(mounted){setState((){});showMsg(context,'تنظیم حذف خودکار ذخیره شد.');}
+    }catch(e){if(mounted)showMsg(context,'ذخیره تنظیم ناموفق بود: $e');}finally{if(mounted)setState(()=>saving=false);}
+  }
+  @override Widget build(BuildContext context){
+    final current=ttl[selected]??0;
+    return Scaffold(appBar:AppBar(title:const Text('حذف خودکار پیام‌ها')),body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(16),children:[
+      const Card(child:Padding(padding:EdgeInsets.all(16),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(Icons.timer_outlined),SizedBox(width:12),Expanded(child:Text('پس از انتخاب زمان، پیام‌های جدید این گفتگو در Backend زمان انقضا می‌گیرند و حذف آن‌ها توسط سرویس زمان‌بندی‌شده انجام می‌شود.'))]))),
+      const SizedBox(height:12),
+      DropdownButtonFormField<String>(value:selected,decoration:const InputDecoration(labelText:'گفتگو'),items:chats.map((c)=>DropdownMenuItem(value:c['id'].toString(),child:Text((c['title']??(c['type']=='group'?'گروه':c['type']=='channel'?'کانال':'گفتگو')).toString()))).toList(),onChanged:(v)=>setState(()=>selected=v)),
+      const SizedBox(height:18),
+      ...options.entries.map((e)=>Card(child:RadioListTile<int>(value:e.key,groupValue:current,title:Text(e.value,style:const TextStyle(fontWeight:FontWeight.w700)),subtitle:e.key==0?const Text('پیام‌ها حذف خودکار نمی‌شوند.'):const Text('برای پیام‌های جدید'),onChanged:saving?null:(v){if(v!=null)_save(v);}))),
+    ]);
+  }
+}
 
 class ChatFolderManagerPage extends StatefulWidget {
   const ChatFolderManagerPage({super.key});
