@@ -797,8 +797,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 child: Row(
                   children: [
-                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),                    const SizedBox(width: 10),
-                    Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),                    const SizedBox(width: 10),                    Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
                   ],
                 ),
               ),
@@ -1597,8 +1596,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       code.clear();
       showMsg(context, 'کد ۶ رقمی جدید ارسال شد.');
     } on AuthException catch (e) {      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ${e.message}');
-    } catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: $e');
+    } catch (e) {      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: $e');
     } finally {
       if (mounted) setState(() => resending = false);
     }
@@ -2397,8 +2395,7 @@ class _StoriesStripState extends State<_StoriesStrip> {
           Navigator.push(context, MaterialPageRoute(builder: (_) => StoryViewerPage(story: story)));
         } else {          Navigator.push(context, MaterialPageRoute(builder: (_) => const StoryComposerPage()));
         }
-      },
-      child: SizedBox(width: 78, child: Column(children: [
+      },      child: SizedBox(width: 78, child: Column(children: [
         Container(
           width: 64, height: 64, padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary])),
@@ -3197,8 +3194,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                         return DropdownButtonFormField<String?>(                          value: nextSender,
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
-                          items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
+                          items: [                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
@@ -3354,12 +3350,11 @@ class _ScheduledMessagesPageState extends State<ScheduledMessagesPage> {
   Future<void> _load() async {
     try {
       var query = supabase.from('scheduled_messages')
-          .select('id,conversation_id,body,reply_to,scheduled_for,status,error_message,created_at,sent_at,cancelled_at')
-          .order('scheduled_for', ascending: true);
+          .select('id,conversation_id,body,reply_to,scheduled_for,status,error_message,created_at,sent_at,cancelled_at');
       if (widget.conversationId != null && widget.conversationId!.isNotEmpty) {
         query = query.eq('conversation_id', widget.conversationId!);
       }
-      final rows = await query;
+      final rows = await query.order('scheduled_for', ascending: true);
       if (!mounted) return;
       setState(() { items = List<Map<String, dynamic>>.from(rows); loading = false; });
     } catch (e) {
@@ -3997,8 +3992,7 @@ class _ChatPageState extends State<ChatPage> {
       child: InkWell(
         onTap: _openPinnedMessages,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal:14,vertical:8),
-          decoration: BoxDecoration(border:Border(bottom:BorderSide(color:scheme.onSurface.withValues(alpha:.08)))),
+          padding: const EdgeInsets.symmetric(horizontal:14,vertical:8),          decoration: BoxDecoration(border:Border(bottom:BorderSide(color:scheme.onSurface.withValues(alpha:.08)))),
           child: Row(children:[
             Icon(Icons.push_pin_rounded,size:19,color:scheme.primary),
             const SizedBox(width:9),
@@ -4797,8 +4791,7 @@ class _ChatPageState extends State<ChatPage> {
       }
     } catch (e) {
       if (mounted) showMsg(context, 'فوروارد پیام ناموفق بود: $e');
-    }
-  }
+    }  }
 
   Future<void> showMessageActions(Map<String, dynamic> message) async {
     const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
