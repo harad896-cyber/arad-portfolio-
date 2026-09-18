@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'polish_widgets.dart';
 
 class InviteDrawer extends StatelessWidget {
   const InviteDrawer({super.key});
