@@ -2435,7 +2435,6 @@ class _HomePageState extends State<HomePage> {
                                   if(action=='unread') _toggleManualUnread(c);
                                   if(action=='pin') _togglePin(c);
                                 },itemBuilder:(_)=>[PopupMenuItem(value:'open',child:Text('باز کردن گفتگو')),PopupMenuItem(value:'info',child:Text('پروفایل و اطلاعات')),PopupMenuItem(value:'pin',child:Text(pinnedChatIds.contains(c['id'].toString()) ? 'برداشتن سنجاق' : 'سنجاق کردن')),PopupMenuItem(value:'unread',child:Text(manuallyUnreadChatIds.contains(c['id'].toString()) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),PopupMenuItem(value:'archive',child:Text(archivedChatIds.contains(c['id'].toString()) ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو'))],
-                                onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load())),
                               ),
                             ),
                           ),
@@ -4595,12 +4594,14 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                            value: nextSender,
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
-                          items: [                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
+                          items: [
+                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
-                            )).toList(),
-                            onChanged: (v) => setSheetState(() => nextSender = v),
+                            )),
+                          ],
+                          onChanged: (v) => setSheetState(() => nextSender = v),
                           );
                         },
                       ),
