@@ -775,7 +775,17 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
 
   Future<void> _save(String key, dynamic value) async {
     try {
-      await saveUserSettings({key: value});
+      final values = <String, dynamic>{key: value};
+      // Keep the original boolean flags in sync so older runtime checks remain compatible.
+      if (key == 'last_seen_visibility') {
+        values['show_last_seen'] = value != 'nobody';
+        values['show_online'] = value != 'nobody';
+      } else if (key == 'phone_visibility') {
+        values['show_phone'] = value != 'nobody';
+      } else if (key == 'profile_photo_visibility') {
+        values['show_profile'] = value != 'nobody';
+      }
+      await saveUserSettings(values);
     } catch (e) {
       if (!mounted) return;
       showMsg(context, 'ذخیره تنظیمات انجام نشد: ${_friendlyError(e.toString())}');
