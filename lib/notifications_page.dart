@@ -72,7 +72,7 @@ class _ConversationStatsPageState extends State<ConversationStatsPage> {
   @override void initState() { super.initState(); load(); }
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text('آمار پیام‌ها — ${widget.title}')),
-    body: loading ? const Center(child: CircularProgressIndicator()) : stats.isEmpty ? const Center(child: Text('هنوز پیامی ارسال نشده است.')) : ListView.builder(
+    body: loading ? const AppSkeletonList(count: 5) : stats.isEmpty ? const Center(child: Text('هنوز پیامی ارسال نشده است.')) : ListView.builder(
       padding: const EdgeInsets.all(12), itemCount: stats.length,
       itemBuilder: (_, i) { final s = stats[i]; final p = s['profile'] is Map ? Map<String, dynamic>.from(s['profile']) : <String, dynamic>{}; final avatar = '${p['avatar_url'] ?? ''}'; return ListTile(
         leading: CircleAvatar(backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar.isEmpty ? const Icon(Icons.person) : null),
