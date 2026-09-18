@@ -299,7 +299,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   @override void initState() { super.initState(); load(); }
 
   @override Widget build(BuildContext context) {
-    if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const Center(child: CircularProgressIndicator()));
+    if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
     return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (admin) IconButton(onPressed: editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
       Card(child: ListTile(leading: CircleAvatar(backgroundImage: (group!['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(group!['avatar_url'].toString()) : null, child: (group!['avatar_url'] ?? '').toString().isEmpty ? const Icon(Icons.groups) : null), title: Text((group!['title'] ?? widget.title).toString(), style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(owner ? 'مالک گروه' : 'مدیر گروه'))),
       const SizedBox(height: 8),
