@@ -1952,6 +1952,7 @@ class _HomePageState extends State<HomePage> {
   String? selectedFolderId;
   List<Map<String, dynamic>> chatFolders = [];
   Map<String, Set<String>> folderAssignments = {};
+  Set<String> archivedChatIds = <String>{};
   final TextEditingController chatSearch = TextEditingController();
   String chatQuery = '';
   RealtimeChannel? _homeChannel;
@@ -1965,6 +1966,7 @@ class _HomePageState extends State<HomePage> {
         : null;
     final unreadOnly = selectedFilter == 4;
     final folderId = selectedFolderId;
+    final archivedOnly = selectedFilter == 5;
     final folderSet = folderId == null ? null : (folderAssignments[folderId] ?? <String>{});
     return chats.where((c) {
       final matchesType = type == null || c['type'].toString() == type;
@@ -1976,7 +1978,8 @@ class _HomePageState extends State<HomePage> {
       final title = (c['title'] ?? peer?['display_name'] ?? peer?['username'] ?? '').toString().toLowerCase();
       final last = (c['_preview'] ?? c['last_message'] ?? '').toString().toLowerCase();
       final username = (peer?['username'] ?? c['username'] ?? '').toString().toLowerCase();
-      return matchesType && matchesFolder && (!unreadOnly || isUnread) &&
+      final isArchived = archivedChatIds.contains(c['id'].toString());
+      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread) &&
           (q.isEmpty || title.contains(q) || username.contains(q) || last.contains(q));
     }).toList();
   }
@@ -2012,6 +2015,9 @@ class _HomePageState extends State<HomePage> {
         return bd.compareTo(ad);
       });
 
+      final archiveRows = await supabase.from('chat_archives').select('conversation_id').eq('user_id', uid);
+      final archived = (archiveRows as List).map((r) => r['conversation_id'].toString()).toSet();
+
       final folderRows = List<Map<String, dynamic>>.from(
         await supabase.from('chat_folders').select('id,name,icon_name,sort_order').eq('user_id', uid).order('sort_order').order('created_at'),
       );
@@ -2031,12 +2037,34 @@ class _HomePageState extends State<HomePage> {
         chats = enriched;
         chatFolders = folderRows;
         folderAssignments = assignmentMap;
+        archivedChatIds = archived;
         loading = false;
       });
     } catch (e) {
       if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: ' + _friendlyError(e.toString())); }
     }
   }
+  Future<void> _toggleArchive(Map<String,dynamic> chat) async {
+    final uid = supabase.auth.currentUser?.id;
+    final id = chat['id']?.toString();
+    if(uid == null || id == null || id.isEmpty) return;
+    final archived = archivedChatIds.contains(id);
+    try {
+      if(archived) {
+        await supabase.from('chat_archives').delete().eq('user_id', uid).eq('conversation_id', id);
+      } else {
+        await supabase.from('chat_archives').insert({'user_id':uid,'conversation_id':id});
+      }
+      if(!mounted) return;
+      setState(() {
+        if(archived) { archivedChatIds.remove(id); } else { archivedChatIds.add(id); }
+      });
+      showMsg(context, archived ? 'گفتگو از آرشیو خارج شد.' : 'گفتگو به آرشیو منتقل شد.');
+    } catch(e) {
+      if(mounted) showMsg(context, 'تغییر وضعیت آرشیو ناموفق بود: '+_friendlyError(e.toString()));
+    }
+  }
+
   Future<void> createDirect() async {
     final result = await showSearch<Map<String, dynamic>?>(context: context, delegate: UserSearchDelegate());
     if (result == null) return;
@@ -2289,8 +2317,8 @@ class _HomePageState extends State<HomePage> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
             child: Row(children: List.generate(5, (i) {
-              const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
-              const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
+              const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده', 'آرشیو'];
+              const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded, Icons.archive_rounded];
               return Padding(
                 padding: const EdgeInsets.only(left: 7),
                 child: ChoiceChip(
@@ -2362,7 +2390,8 @@ class _HomePageState extends State<HomePage> {
                                 trailing: PopupMenuButton<String>(onSelected:(action){
                                   if(action=='open') Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load()));
                                   if(action=='info') Navigator.push(context,MaterialPageRoute(builder:(_)=>ConversationInfoPage(conversationId:c['id'].toString(),fallbackTitle:title)));
-                                },itemBuilder:(_)=>const [PopupMenuItem(value:'open',child:Text('باز کردن گفتگو')),PopupMenuItem(value:'info',child:Text('پروفایل و اطلاعات'))]),
+                                  if(action=='archive') _toggleArchive(c);
+                                },itemBuilder:(_)=>const [PopupMenuItem(value:'open',child:Text('باز کردن گفتگو')),PopupMenuItem(value:'info',child:Text('پروفایل و اطلاعات')),PopupMenuItem(value:'archive',child:Text(archivedChatIds.contains(c['id'].toString()) ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو'))]),
                                 onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load())),
                               ),
                             ),
