@@ -2480,6 +2480,8 @@ class _ChatPageState extends State<ChatPage> {
 
 
 
+
+
   final text = TextEditingController();
   List<Map<String, dynamic>> messages = [];
   Map<String, Map<String, dynamic>> profiles = {};
