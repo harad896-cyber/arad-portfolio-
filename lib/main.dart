@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,6 +26,22 @@ import 'chat_background_page.dart';
 import 'call_session.dart';
 import 'voice_message_player.dart';
 
+
+const double kAppRadius = 16.0;
+const Duration kFastMotion = Duration(milliseconds: 180);
+
+String _friendlyError(String message) {
+  final raw = message.replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+  final lower = raw.toLowerCase();
+  if (lower.contains('socketexception') || lower.contains('failed host lookup') || lower.contains('network is unreachable') || lower.contains('connection refused') || lower.contains('clientexception')) {
+    return 'اتصال اینترنت برقرار نیست. اتصال را بررسی کنید و دوباره تلاش کنید.';
+  }
+  if (lower.contains('413') || lower.contains('payload too large') || lower.contains('file too large')) return 'این فایل خیلی بزرگ است.';
+  if (lower.contains('permission denied') || lower.contains('not authorized') || lower.contains('unauthorized')) return 'دسترسی لازم برای انجام این کار را ندارید.';
+  if (lower.contains('duplicate') || lower.contains('already exists')) return 'این مورد قبلاً وجود دارد.';
+  if (raw.length > 180) return 'عملیات انجام نشد. لطفاً دوباره تلاش کنید.';
+  return raw;
+}
 
 String t(String key, String locale) {
   const data = {
@@ -309,7 +326,10 @@ class AradMessenger extends StatelessWidget {
 }
 
 void showMsg(BuildContext context, String text) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  final message = _friendlyError(text);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message, maxLines: 3, overflow: TextOverflow.ellipsis)));
 }
 
 String normalizeOtpDigits(String value) {
