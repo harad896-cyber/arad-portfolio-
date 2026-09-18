@@ -137,6 +137,92 @@ Future<void> main() async {
   runApp(const AradMessenger());
 }
 
+class _NetworkStatusBanner extends StatefulWidget {
+  final Widget child;
+  const _NetworkStatusBanner({required this.child});
+  @override
+  State<_NetworkStatusBanner> createState() => _NetworkStatusBannerState();
+}
+
+class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
+  final Connectivity _connectivity = Connectivity();
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
+  bool offline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+    _subscription = _connectivity.onConnectivityChanged.listen(_update);
+  }
+
+  Future<void> _check() async {
+    try {
+      _update(await _connectivity.checkConnectivity());
+    } catch (_) {}
+  }
+
+  void _update(List<ConnectivityResult> results) {
+    final next = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+    if (mounted && next != offline) setState(() => offline = next);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      children: [
+        widget.child,
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            child: SafeArea(
+              bottom: false,
+              child: AnimatedSwitcher(
+                duration: kFastMotion,
+                transitionBuilder: (child, animation) => SizeTransition(
+                  sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                  axisAlignment: -1,
+                  child: child,
+                ),
+                child: offline
+                    ? Container(
+                        key: const ValueKey('offline'),
+                        margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest.withValues(alpha: .96),
+                          borderRadius: BorderRadius.circular(kAppRadius),
+                          border: Border.all(color: scheme.outline.withValues(alpha: .16)),
+                          boxShadow: const [BoxShadow(blurRadius: 12, offset: Offset(0, 3), color: Color(0x22000000))],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.cloud_off_rounded, size: 17, color: scheme.error),
+                            const SizedBox(width: 8),
+                            Text('در حال اتصال...', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                          ],
+                        ),
+                      )
+                    : const SizedBox(key: ValueKey('online')),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class AradMessenger extends StatelessWidget {
   const AradMessenger({super.key});
 
@@ -305,7 +391,9 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
       ),
-      builder: (context, child) => Container(
+      builder: (context, child) => Directionality(
+        textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+        child: _NetworkStatusBanner(child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           gradient: RadialGradient(
@@ -318,7 +406,7 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
         child: child!,
-      ),
+      )),
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       home: const AuthGate(),
     ));
