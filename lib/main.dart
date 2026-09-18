@@ -3177,7 +3177,7 @@ class _ChatPageState extends State<ChatPage> {
         content: const Text('این پیام برای همه اعضای گفتگو حذف می‌شود.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
+          FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error, foregroundColor: Theme.of(dialogContext).colorScheme.onError), onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
         ],
       ),
     );
