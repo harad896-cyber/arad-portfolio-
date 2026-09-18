@@ -2438,7 +2438,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
-                        );                      },
+                        ));                      },
                     ),
         ),
       ],
@@ -4750,6 +4750,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
       const Text('Arad Messenger قفل است',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
       const SizedBox(height:8),const Text('برای ادامه، PIN یا احراز هویت بیومتریک را تأیید کنید.'),
       const SizedBox(height:20),FilledButton.icon(onPressed:_unlock,icon:const Icon(Icons.lock_open_rounded),label:const Text('باز کردن'))
-    ])));
+    ]))));
   }
 }
