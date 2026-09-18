@@ -48,6 +48,7 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
       _FeatureItem(Icons.wallpaper_outlined, 'والپیپر گفتگو', 'تنظیم ظاهر گفتگو روی دستگاه', () => _showWallpaper()),
       _FeatureItem(Icons.backup_outlined, 'پشتیبان‌گیری و بازیابی', 'وضعیت فعلی پشتیبان‌گیری دستگاه', () async { setState(() => autoBackup = !autoBackup); await _save('auto_backup', autoBackup); }),
       _FeatureItem(Icons.check_circle_outline, 'رسید خواندن', 'تنظیم ترجیح محلی برای رسید خواندن', () async { setState(() => readReceipts = !readReceipts); await _save('read_receipts', readReceipts); }),
+      _FeatureItem(Icons.folder_copy_outlined, 'پوشه‌های واقعی گفتگو', 'ساخت، ویرایش و دسته‌بندی گفتگوها با همگام‌سازی حساب', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatFolderManagerPage()))),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('قابلیت‌های برنامه')),
@@ -64,6 +65,290 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
 
   void _showWallpaper() => showModalBottomSheet(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [for (final w in wallpapers) RadioListTile<String>(value: w, groupValue: wallpaper, title: Text(w), onChanged: (v) async { if (v == null) return; setState(() => wallpaper = v); await _save('chat_wallpaper', v); if (mounted) Navigator.pop(context); })])));
 
+}
+
+
+class ChatFolderManagerPage extends StatefulWidget {
+  const ChatFolderManagerPage({super.key});
+  @override State<ChatFolderManagerPage> createState() => _ChatFolderManagerPageState();
+}
+
+class _ChatFolderManagerPageState extends State<ChatFolderManagerPage> {
+  final supabase = Supabase.instance.client;
+  bool loading = true;
+  List<Map<String, dynamic>> folders = [];
+  List<Map<String, dynamic>> conversations = [];
+  Map<String, Set<String>> assignments = {};
+  String? selectedFolderId;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final folderRows = List<Map<String, dynamic>>.from(
+        await supabase.from('chat_folders').select('id,name,icon_name,sort_order').eq('user_id', uid).order('sort_order').order('created_at'),
+      );
+      final memberRows = List<Map<String, dynamic>>.from(
+        await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid),
+      );
+      final ids = memberRows.map((e) => e['conversation_id']).toList();
+      final convRows = ids.isEmpty
+          ? <Map<String, dynamic>>[]
+          : List<Map<String, dynamic>>.from(
+              await supabase.from('conversations').select('id,type,title,avatar_url,description,username').inFilter('id', ids),
+            );
+
+      final peerIds = <String>{};
+      final membersByConversation = <String, List<String>>{};
+      if (ids.isNotEmpty) {
+        final allMembers = List<Map<String, dynamic>>.from(
+          await supabase.from('conversation_members').select('conversation_id,user_id').inFilter('conversation_id', ids),
+        );
+        for (final row in allMembers) {
+          final cid = row['conversation_id'].toString();
+          final uidValue = row['user_id'].toString();
+          (membersByConversation[cid] ??= <String>[]).add(uidValue);
+          if (uidValue != uid && convRows.any((c) => c['id'].toString() == cid && c['type'] == 'direct')) {
+            peerIds.add(uidValue);
+          }
+        }
+      }
+
+      final profiles = peerIds.isEmpty
+          ? <Map<String, dynamic>>[]
+          : List<Map<String, dynamic>>.from(
+              await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', peerIds.toList()),
+            );
+      final profileMap = {for (final p in profiles) p['id'].toString(): p};
+
+      final enriched = convRows.map((c) {
+        final copy = Map<String, dynamic>.from(c);
+        if (copy['type'] == 'direct') {
+          final peerId = (membersByConversation[copy['id'].toString()] ?? const <String>[])
+              .firstWhere((id) => id != uid, orElse: () => '');
+          copy['_title'] = profileMap[peerId]?['display_name'] ?? profileMap[peerId]?['username'] ?? 'گفتگوی خصوصی';
+          copy['_avatar'] = profileMap[peerId]?['avatar_url'] ?? '';
+        } else {
+          copy['_title'] = copy['title'] ?? (copy['type'] == 'group' ? 'گروه' : 'کانال');
+          copy['_avatar'] = copy['avatar_url'] ?? '';
+        }
+        return copy;
+      }).toList()
+        ..sort((a, b) => a['_title'].toString().compareTo(b['_title'].toString()));
+
+      final itemRows = folderRows.isEmpty
+          ? <Map<String, dynamic>>[]
+          : List<Map<String, dynamic>>.from(
+              await supabase.from('chat_folder_items').select('folder_id,conversation_id').inFilter('folder_id', folderRows.map((f) => f['id']).toList()),
+            );
+      final map = <String, Set<String>>{};
+      for (final f in folderRows) {
+        map[f['id'].toString()] = <String>{};
+      }
+      for (final row in itemRows) {
+        (map[row['folder_id'].toString()] ??= <String>{}).add(row['conversation_id'].toString());
+      }
+
+      if (!mounted) return;
+      setState(() {
+        folders = folderRows;
+        conversations = enriched;
+        assignments = map;
+        selectedFolderId = selectedFolderId != null && map.containsKey(selectedFolderId) ? selectedFolderId : (folderRows.isEmpty ? null : folderRows.first['id'].toString());
+        loading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('پوشه‌ها بارگذاری نشد: ' + e.toString())));
+      }
+    }
+  }
+
+  Future<void> _createFolder() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('پوشه جدید'),
+        content: TextField(controller: controller, autofocus: true, maxLength: 40, decoration: const InputDecoration(labelText: 'نام پوشه')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لغو')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('ساخت')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.trim().isEmpty) return;
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      await supabase.from('chat_folders').insert({'user_id': uid, 'name': name.trim(), 'sort_order': folders.length});
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ساخت پوشه ناموفق بود: ' + e.toString())));
+    }
+  }
+
+  Future<void> _renameFolder(Map<String, dynamic> folder) async {
+    final controller = TextEditingController(text: folder['name']?.toString() ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ویرایش نام پوشه'),
+        content: TextField(controller: controller, autofocus: true, maxLength: 40, decoration: const InputDecoration(labelText: 'نام پوشه')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لغو')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('ذخیره')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty) return;
+    try {
+      await supabase.from('chat_folders').update({'name': name}).eq('id', folder['id']);
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ویرایش پوشه ناموفق بود: ' + e.toString())));
+    }
+  }
+
+  Future<void> _deleteFolder(Map<String, dynamic> folder) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف پوشه؟'),
+        content: Text('پوشه «' + (folder['name']?.toString() ?? '') + '» و فقط تنظیم دسته‌بندی آن حذف می‌شود. گفتگوها حذف نمی‌شوند.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لغو')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('حذف')),
+        ],
+      ),
+    ) ?? false;
+    if (!ok) return;
+    try {
+      await supabase.from('chat_folders').delete().eq('id', folder['id']);
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حذف پوشه ناموفق بود: ' + e.toString())));
+    }
+  }
+
+  Future<void> _toggleConversation(String conversationId, bool selected) async {
+    final folderId = selectedFolderId;
+    if (folderId == null) return;
+    try {
+      if (selected) {
+        await supabase.from('chat_folder_items').upsert({'folder_id': folderId, 'conversation_id': conversationId});
+      } else {
+        await supabase.from('chat_folder_items').delete().eq('folder_id', folderId).eq('conversation_id', conversationId);
+      }
+      setState(() {
+        final set = assignments[folderId] ??= <String>{};
+        if (selected) {
+          set.add(conversationId);
+        } else {
+          set.remove(conversationId);
+        }
+      });
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تغییر دسته‌بندی ناموفق بود: ' + e.toString())));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = selectedFolderId;
+    final assigned = selected == null ? <String>{} : (assignments[selected] ?? <String>{});
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('پوشه‌های گفتگو'),
+        actions: [
+          IconButton(onPressed: _createFolder, tooltip: 'پوشه جدید', icon: const Icon(Icons.create_new_folder_outlined)),
+          if (selected != null)
+            PopupMenuButton<String>(
+              onSelected: (v) {
+                final folder = folders.firstWhere((f) => f['id'].toString() == selected);
+                if (v == 'rename') _renameFolder(folder);
+                if (v == 'delete') _deleteFolder(folder);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'rename', child: Text('تغییر نام')),
+                PopupMenuItem(value: 'delete', child: Text('حذف پوشه')),
+              ],
+            ),
+        ],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                if (folders.isNotEmpty)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: Row(
+                      children: folders.map((folder) {
+                        final id = folder['id'].toString();
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 7),
+                          child: ChoiceChip(
+                            selected: id == selected,
+                            avatar: const Icon(Icons.folder_rounded, size: 17),
+                            label: Text(folder['name'].toString()),
+                            onSelected: (_) => setState(() => selectedFolderId = id),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('هنوز پوشه‌ای نساخته‌اید. از دکمه + یک پوشه بسازید.', textAlign: TextAlign.center),
+                  ),
+                if (selected != null)
+                  Expanded(
+                    child: conversations.isEmpty
+                        ? const Center(child: Text('گفتگویی برای دسته‌بندی وجود ندارد.'))
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+                            itemCount: conversations.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 6),
+                            itemBuilder: (_, i) {
+                              final c = conversations[i];
+                              final id = c['id'].toString();
+                              final checked = assigned.contains(id);
+                              final title = c['_title']?.toString() ?? 'گفتگو';
+                              final type = c['type']?.toString() ?? 'direct';
+                              final avatarUrl = c['_avatar']?.toString() ?? '';
+                              final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                              return Card(
+                                child: CheckboxListTile(
+                                  value: checked,
+                                  onChanged: (v) => _toggleConversation(id, v == true),
+                                  secondary: CircleAvatar(
+                                    backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                                    child: avatarUrl.isEmpty ? Icon(icon) : null,
+                                  ),
+                                  title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  subtitle: Text(type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی خصوصی'),
+                                ),
+                              );
+                            },
+                          ),
+                  )
+                else
+                  const Expanded(child: Center(child: Icon(Icons.folder_copy_outlined, size: 72))),
+              ],
+            ),
+    );
+  }
 }
 
 class _FeatureItem {
