@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'polish_widgets.dart';
 import 'main.dart';
 
 class ChatBackgroundPage extends StatefulWidget {
@@ -40,7 +41,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary.withValues(alpha: .13),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(kPolishRadius),
                 ),
                 child: const Text('پیش‌نمایش پس‌زمینه پیام‌ها', textAlign: TextAlign.center),
               ),
