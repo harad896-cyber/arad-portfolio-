@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'group_moderation.dart';
 import 'group_advanced_admin.dart';
 import 'channel_management.dart';
+import 'polish_widgets.dart';
 
 class GroupProfilePage extends StatefulWidget {
   final String conversationId;
@@ -112,7 +113,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   @override void initState() { super.initState(); load(); }
 
   @override Widget build(BuildContext context) {
-    if (loading) return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: const Center(child: CircularProgressIndicator()));
+    if (loading) return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: const AppSkeletonList(count: 6));
     final g = group!; final title = (g['title'] ?? widget.title).toString(); final desc = (g['description'] ?? '').toString().trim(); final image = (g['avatar_url'] ?? '').toString();
     return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: ListView(padding: const EdgeInsets.all(16), children: [
       Card(child: Padding(padding: const EdgeInsets.all(22), child: Column(children: [
