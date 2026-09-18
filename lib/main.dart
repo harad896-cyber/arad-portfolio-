@@ -692,20 +692,25 @@ class _AppAppearancePageState extends State<AppAppearancePage>{
 }
 class CallHistoryPage extends StatelessWidget {
   const CallHistoryPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),body:ListView(children:[
-    ListTile(leading:Icon(Icons.call_received_rounded,color:Theme.of(context).colorScheme.primary),title:const Text('تماس صوتی'),subtitle:const Text('دریافتی • امروز'),trailing:IconButton(onPressed:(){},icon:const Icon(Icons.call_rounded))),
-    ListTile(leading:Icon(Icons.videocam_rounded,color:Theme.of(context).colorScheme.secondary),title:const Text('تماس تصویری'),subtitle:const Text('ارسالی • دیروز'),trailing:IconButton(onPressed:(){},icon:const Icon(Icons.videocam_rounded))),
-    ListTile(leading:Icon(Icons.call_missed_rounded,color:Theme.of(context).colorScheme.error),title:const Text('تماس بی‌پاسخ'),subtitle:const Text('امروز'),trailing:IconButton(onPressed:(){},icon:const Icon(Icons.call_rounded))),
-  ]));
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),
+    body:const AppEmptyState(
+      icon:Icons.call_log_rounded,
+      title:'هنوز تاریخچه تماس ثبت نشده است',
+      subtitle:'وقتی تماس‌های واقعی ثبت شوند، سابقه آن‌ها در اینجا نمایش داده می‌شود.',
+    ),
+  );
 }
-class NotificationsCenterPage extends StatefulWidget {
+class NotificationsCenterPage extends StatelessWidget {
   const NotificationsCenterPage({super.key});
-  @override State<NotificationsCenterPage> createState()=>_NotificationsCenterPageState();
-}
-class _NotificationsCenterPageState extends State<NotificationsCenterPage>{
-  final read=<bool>[false,false,true];
-  final items=<String>['پیام جدید دریافت شد','درخواست عضویت در گروه','به‌روزرسانی برنامه'];
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(itemCount:items.length,itemBuilder:(_,i)=>ListTile(onTap:()=>setState(()=>read[i]=true),leading:Icon(read[i]?Icons.notifications_none_rounded:Icons.notifications_active_rounded,color:read[i]?null:Theme.of(context).colorScheme.primary),title:Text(items[i],style:TextStyle(fontWeight:read[i]?FontWeight.w400:FontWeight.w800)),subtitle:Text(read[i]?'خوانده شده':'خوانده نشده'))));
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('مرکز اعلان‌ها')),
+    body:const AppEmptyState(
+      icon:Icons.notifications_none_rounded,
+      title:'اعلان جدیدی وجود ندارد',
+      subtitle:'اعلان‌های واقعی حساب و گفتگوها پس از دریافت در این بخش نمایش داده می‌شوند.',
+    ),
+  );
 }
 class SharedMediaFilesPage extends StatelessWidget {
   const SharedMediaFilesPage({super.key});
@@ -728,28 +733,88 @@ class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
   @override State<BackupPage> createState()=>_BackupPageState();
 }
-class _BackupPageState extends State<BackupPage>{bool auto=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),body:ListView(padding:const EdgeInsets.all(16),children:[Card(child:SwitchListTile(title:const Text('پشتیبان‌گیری خودکار'),value:auto,onChanged:(v)=>setState(()=>auto=v))),const Card(child:ListTile(title:Text('آخرین پشتیبان'),subtitle:Text('هنوز پشتیبانی ثبت نشده'),trailing:Text('—'))),const Card(child:ListTile(title:Text('حجم پشتیبان'),subtitle:Text('محاسبه پس از اولین پشتیبان'),trailing:Text('—'))),FilledButton(onPressed:(){},child:const Text('پشتیبان‌گیری اکنون'))]));}
+class _BackupPageState extends State<BackupPage>{
+  bool auto=true;
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),
+    body:ListView(padding:const EdgeInsets.all(16),children:[
+      Card(child:SwitchListTile(
+        title:const Text('پشتیبان‌گیری خودکار'),
+        subtitle:const Text('تنظیم فعلی فقط روی همین دستگاه ذخیره می‌شود.'),
+        value:auto,
+        onChanged:(v)=>setState(()=>auto=v),
+      )),
+      const AppEmptyState(
+        icon:Icons.cloud_off_rounded,
+        title:'پشتیبان‌گیری ابری هنوز فعال نشده است',
+        subtitle:'تا زمانی که سرویس پشتیبان‌گیری واقعی متصل نشود، دکمه یا عملیات ساخت نسخهٔ جعلی نمایش داده نمی‌شود.',
+      ),
+    ]),
+  );
+}
 class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
   @override Widget build(BuildContext context)=>DefaultTabController(length:3,child:Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی'),bottom:const TabBar(tabs:[Tab(text:'استیکرها'),Tab(text:'GIF'),Tab(text:'ایموجی')])),body:TabBarView(children:[ListView(children:const[ListTile(leading:Icon(Icons.stars_rounded),title:Text('پک‌های استیکر من')),ListTile(leading:Icon(Icons.add_rounded),title:Text('افزودن پک'))]),Center(child:TextField(decoration:InputDecoration(hintText:'جستجوی GIF',prefixIcon:Icon(Icons.search_rounded)))),GridView.count(crossAxisCount:6,children:List.generate(24,(i)=>Center(child:Text(['😀','❤️','👍','😂','🔥','🎉'][i%6],style:const TextStyle(fontSize:25)))))])));
 }
 class SecurityCenterPage extends StatelessWidget {
   const SecurityCenterPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:SwitchListTile(title:const Text('تأیید دومرحله‌ای'),value:false,onChanged:(_){},secondary:const Icon(Icons.verified_user_rounded))),
-    const Card(child:ListTile(title:Text('دستگاه‌های متصل'),subtitle:Text('مدیریت نشست‌های فعال'),trailing:Icon(Icons.chevron_left_rounded))),
-    const Card(child:ListTile(title:Text('مخاطبین مسدودشده'),trailing:Icon(Icons.chevron_left_rounded))),
-    const Card(child:ListTile(title:Text('پیام‌های خودتخریب‌شونده'),subtitle:Text('تنظیم زمان حذف خودکار'),trailing:Icon(Icons.timer_rounded))),
-  ]));
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('امنیت پیشرفته')),
+    body:ListView(padding:const EdgeInsets.all(16),children:[
+      const AppEmptyState(
+        icon:Icons.verified_user_outlined,
+        title:'قابلیت‌های امنیتی پیشرفته',
+        subtitle:'تأیید دومرحله‌ای، مدیریت دستگاه‌ها و حذف خودکار پیام‌ها فقط پس از اتصال به سرویس واقعی فعال خواهند شد.',
+      ),
+      Card(child:ListTile(
+        leading:const Icon(Icons.logout_rounded),
+        title:const Text('خروج از همه نشست‌ها'),
+        subtitle:const Text('نشست‌های فعال حساب را از سمت سرویس پایان می‌دهد.'),
+        onTap:() async {
+          final ok=await showDialog<bool>(
+            context:context,
+            builder:(ctx)=>AlertDialog(
+              title:const Text('خروج از همه دستگاه‌ها؟'),
+              content:const Text('این عملیات نشست‌های فعال حساب را پایان می‌دهد.'),
+              actions:[
+                TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('لغو')),
+                FilledButton(
+                  style:FilledButton.styleFrom(backgroundColor:Theme.of(ctx).colorScheme.error),
+                  onPressed:()=>Navigator.pop(ctx,true),
+                  child:const Text('خروج'),
+                ),
+              ],
+            ),
+          ) ?? false;
+          if(!ok || !context.mounted) return;
+          await supabase.auth.signOut(scope:SignOutScope.global);
+        },
+      )),
+    ]),
+  );
 }
-class GroupAdvancedPage extends StatefulWidget {
+class GroupAdvancedPage extends StatelessWidget {
   const GroupAdvancedPage({super.key});
-  @override State<GroupAdvancedPage> createState()=>_GroupAdvancedPageState();
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('پیام‌رسانی گروهی')),
+    body:const AppEmptyState(
+      icon:Icons.groups_rounded,
+      title:'قابلیت‌های پیشرفته گروه',
+      subtitle:'نظرسنجی، پین پیشرفته و ابزارهای @ فقط بعد از اتصال کامل به داده و مجوزهای سرور در رابط برنامه فعال می‌شوند.',
+    ),
+  );
 }
-class _GroupAdvancedPageState extends State<GroupAdvancedPage>{final q=TextEditingController();@override void dispose(){q.dispose();super.dispose();}@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی گروهی')),body:ListView(padding:const EdgeInsets.all(16),children:[Card(child:ListTile(leading:const Icon(Icons.poll_rounded),title:const Text('نظرسنجی'),onTap:()=>showDialog(context:context,builder:(_)=>AlertDialog(title:const Text('نظرسنجی جدید'),content:TextField(controller:q,decoration:const InputDecoration(labelText:'سؤال')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ساخت'))])))),const Card(child:ListTile(leading:Icon(Icons.push_pin_rounded),title:Text('پیام‌های پین‌شده'))),const Card(child:ListTile(leading:Icon(Icons.alternate_email_rounded),title:Text('ذکر اعضا با @')))]));}
 class AboutAppPage extends StatelessWidget {
   const AboutAppPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه 1.0.0'))),const Card(child:ListTile(title:Text('حریم خصوصی'),trailing:Icon(Icons.chevron_left_rounded))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'),trailing:Icon(Icons.chevron_left_rounded))),Card(child:ListTile(title:const Text('امتیاز به برنامه'),trailing:Icon(Icons.star_rounded,color:Colors.amber),onTap:(){}))]));}
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('درباره برنامه')),
+    body:ListView(padding:const EdgeInsets.all(16),children:[
+      const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه 1.0.1+17'))),
+      const Card(child:ListTile(title:Text('معماری'),subtitle:Text('Flutter + Supabase + GitHub Actions'))),
+      const Card(child:ListTile(title:Text('اصل محصول'),subtitle:Text('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.'))),
+    ]),
+  );
+}
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   final url = profile['avatar_url']?.toString() ?? '';
   return CircleAvatar(
