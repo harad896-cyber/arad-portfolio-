@@ -1952,6 +1952,13 @@ class _ChatSkeleton extends StatelessWidget {
   }
 }
 
+String _homeTime(dynamic value) {
+  final dt = DateTime.tryParse('$value')?.toLocal();
+  if (dt == null) return '';
+  final now = DateTime.now();
+  if (dt.year == now.year && dt.month == now.month && dt.day == now.day) return dt.hour.toString().padLeft(2, '0') + ':' + dt.minute.toString().padLeft(2, '0');
+  return dt.day.toString().padLeft(2, '0') + '/' + dt.month.toString().padLeft(2, '0');
+}
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   @override
@@ -1976,10 +1983,12 @@ class _HomePageState extends State<HomePage> {
       final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
       final isUnread = unreadCount > 0 || c['unread'] == true;
       final q = chatQuery.trim().toLowerCase();
-      final title = (c['title'] ?? '').toString().toLowerCase();
-      final last = (c['last_message'] ?? '').toString().toLowerCase();
+      final peer = c['_peer'] as Map<String,dynamic>?;
+      final title = (c['title'] ?? peer?['display_name'] ?? peer?['username'] ?? '').toString().toLowerCase();
+      final last = (c['_preview'] ?? c['last_message'] ?? '').toString().toLowerCase();
+      final username = (peer?['username'] ?? c['username'] ?? '').toString().toLowerCase();
       return matchesType && (!unreadOnly || isUnread) &&
-          (q.isEmpty || title.contains(q) || last.contains(q));
+          (q.isEmpty || title.contains(q) || username.contains(q) || last.contains(q));
     }).toList();
   }
 
@@ -2118,10 +2127,16 @@ class _HomePageState extends State<HomePage> {
                       itemBuilder: (context, i) {
                         final c = visibleChats[i];
                         final type = c['type'].toString();
-                        final title = (c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString();
+                        final peer = c['_peer'] as Map<String,dynamic>?;
+                        final title = (type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? 'گفتگو') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
+                        final bio = (type == 'direct' ? (peer?['bio'] ?? '') : (c['description'] ?? '')).toString().trim();
+                        final avatarUrl = (type == 'direct' ? (peer?['avatar_url'] ?? '') : (c['avatar_url'] ?? '')).toString();
                         final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
-                        final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
-                        final unread = unreadCount > 0 || c['unread'] == true;
+                        final last = c['_last'] as Map<String,dynamic>?;
+                        final preview = (c['_preview'] ?? 'شروع گفتگو').toString();
+                        final lastAt = last?['created_at'];
+                        final unreadCount = int.tryParse('${c['unread_count'] ?? 0}') ?? 0;
+                        final unread = unreadCount > 0;
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(kAppRadius),
                           child: BackdropFilter(
@@ -2130,38 +2145,31 @@ class _HomePageState extends State<HomePage> {
                               color: theme.colorScheme.surface.withValues(alpha: .66),
                               margin: const EdgeInsets.only(bottom: 7),
                               child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                                 leading: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
-                                    CircleAvatar(backgroundColor: theme.colorScheme.primaryContainer, child: Icon(icon, color: theme.colorScheme.primary)),
-                                    if (c['is_online'] == true) Positioned(
-                                      right: -1, bottom: -1,
-                                      child: Container(width: 12, height: 12, decoration: BoxDecoration(
-                                        color: const Color(0xFF22C55E),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: theme.colorScheme.surface, width: 2),
-                                      )),
-                                    ),
+                                    CircleAvatar(radius: 27, backgroundColor: theme.colorScheme.primaryContainer, backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon, color: theme.colorScheme.primary) : null),
+                                    if (c['is_online'] == true) Positioned(right: -1,bottom: -1,child: Container(width: 12,height: 12,decoration: BoxDecoration(color: const Color(0xFF22C55E),shape: BoxShape.circle,border: Border.all(color: theme.colorScheme.surface,width: 2)))),
                                   ],
                                 ),
                                 title: Row(children: [
-                                  Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
-                                  if (unread) Container(
-                                    margin: const EdgeInsets.only(right: 6),
-                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                    decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(kAppRadius)),
-                                    child: Text(unreadCount > 0 ? '$unreadCount' : 'جدید', style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w800)),
-                                  ),
+                                  Expanded(child: Row(children: [Flexible(child: Text(title,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800))),if(type=='direct'&&peer?['is_verified']==true) const Padding(padding:EdgeInsets.only(right:4),child:Icon(Icons.verified_rounded,size:16,color:Color(0xFF2F9BFF)))])),
+                                  if(lastAt!=null) Text(_homeTime(lastAt),style:TextStyle(fontSize:10.5,color:theme.colorScheme.onSurfaceVariant)),
                                 ]),
-                                subtitle: Text((c['last_message'] ?? 'شروع گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                trailing: const Icon(Icons.chevron_left_rounded),
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: c['id'].toString(), title: title))),
+                                subtitle: Row(children: [
+                                  Expanded(child: Text(bio.isNotEmpty && last==null ? bio : preview,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:unread?theme.colorScheme.onSurface:theme.colorScheme.onSurfaceVariant,fontWeight:unread?FontWeight.w700:FontWeight.w400))),
+                                  if(unread) Container(margin:const EdgeInsets.only(right:5),constraints:const BoxConstraints(minWidth:22),padding:const EdgeInsets.symmetric(horizontal:6,vertical:3),decoration:BoxDecoration(color:theme.colorScheme.primary,shape:BoxShape.circle),child:Text('$unreadCount',textAlign:TextAlign.center,style:TextStyle(color:theme.colorScheme.onPrimary,fontSize:10,fontWeight:FontWeight.w900))),
+                                ]),
+                                trailing: PopupMenuButton<String>(onSelected:(action){
+                                  if(action=='open') Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load()));
+                                  if(action=='info') Navigator.push(context,MaterialPageRoute(builder:(_)=>ConversationInfoPage(conversationId:c['id'].toString(),fallbackTitle:title)));
+                                },itemBuilder:(_)=>const [PopupMenuItem(value:'open',child:Text('باز کردن گفتگو')),PopupMenuItem(value:'info',child:Text('پروفایل و اطلاعات'))]),
+                                onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load())),
                               ),
                             ),
                           ),
-                        );
-                      },
+                        );                      },
                     ),
         ),
       ],
