@@ -8,12 +8,16 @@ class CallSessionPage extends StatefulWidget {
   final String conversationId;
   final String title;
   final bool video;
+  final String? existingCallId;
+  final bool incoming;
 
   const CallSessionPage({
     super.key,
     required this.conversationId,
     required this.title,
     required this.video,
+    this.existingCallId,
+    this.incoming = false,
   });
 
   @override
@@ -37,6 +41,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
   bool _muted = false;
   bool _speaker = true;
   bool _ending = false;
+  bool _acceptedIncoming = false;
+  String? _pendingOfferSdp;
   String _status = 'در حال آماده‌سازی تماس...';
 
   final List<RTCIceCandidate> _pendingRemoteCandidates = [];
@@ -45,7 +51,71 @@ class _CallSessionPageState extends State<CallSessionPage> {
   @override
   void initState() {
     super.initState();
-    _startOutgoingCall();
+    if (widget.incoming && widget.existingCallId != null) {
+      _startIncomingCall();
+    } else {
+      _startOutgoingCall();
+    }
+  }
+
+  Future<void> _startIncomingCall() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) throw Exception('برای تماس باید وارد حساب شوید.');
+      _callId = widget.existingCallId;
+      if (_callId == null) throw Exception('شناسه تماس نامعتبر است.');
+      final row = await supabase.from('call_sessions').select('caller_id,status').eq('id', _callId!).single();
+      _peerUserId = row['caller_id']?.toString();
+      if (_peerUserId == null || _peerUserId == uid) throw Exception('تماس‌کننده نامعتبر است.');
+      await _setupChannel();
+      await _createPeerConnection();
+      if (mounted) {
+        setState(() {
+          _starting = false;
+          _status = 'تماس ورودی';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _starting = false; _status = 'تماس برقرار نشد'; });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      }
+      await _cleanup();
+    }
+  }
+
+  Future<void> _acceptIncoming() async {
+    final sdp = _pendingOfferSdp;
+    final peer = _peer;
+    if (sdp == null || peer == null) {
+      if (mounted) setState(() => _status = 'در انتظار اطلاعات تماس...');
+      return;
+    }
+    try {
+      _acceptedIncoming = true;
+      await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
+      _remoteDescriptionSet = true;
+      await _flushRemoteCandidates();
+      final answer = await peer.createAnswer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': 0});
+      await peer.setLocalDescription(answer);
+      await _sendSignal({'type': 'answer', 'sdp': answer.sdp});
+      if (_callId != null) {
+        await supabase.from('call_sessions').update({
+          'status': 'accepted',
+          'accepted_at': DateTime.now().toUtc().toIso8601String(),
+        }).eq('id', _callId!);
+      }
+      if (mounted) setState(() => _status = 'در حال اتصال...');
+    } catch (_) {
+      await _failCall('پذیرش تماس ناموفق بود.');
+    }
+  }
+
+  Future<void> _rejectIncoming() async {
+    try { await _sendSignal({'type': 'reject'}); } catch (_) {}
+    await _finishStatus('rejected');
+    await _cleanup();
+    if (mounted) Navigator.of(context).maybePop();
   }
 
   Future<String?> _findPeerUserId() async {
@@ -175,7 +245,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
     if (peer == null) return;
 
     try {
-      if (type == 'answer') {
+      if (type == 'offer' && widget.incoming) {
+        _pendingOfferSdp = payload['sdp']?.toString();
+        if (mounted && !_acceptedIncoming) setState(() => _status = 'تماس ورودی — آماده پاسخ');
+      } else if (type == 'answer') {
         final sdp = payload['sdp']?.toString();
         if (sdp == null) return;
         await peer.setRemoteDescription(RTCSessionDescription(sdp, 'answer'));
@@ -375,6 +448,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    if (widget.incoming && !_acceptedIncoming) ...[
+                      FilledButton.icon(onPressed: _rejectIncoming, icon: const Icon(Icons.call_end_rounded), label: const Text('رد تماس')),
+                      FilledButton.icon(onPressed: _acceptIncoming, icon: const Icon(Icons.call_rounded), label: const Text('پاسخ')),
+                    ] else ...[
                     _control(Icons.mic_off_rounded, _muted, _toggleMute),
                     _control(_speaker ? Icons.volume_up_rounded : Icons.volume_off_rounded, _speaker, _toggleSpeaker),
                     Material(
@@ -389,6 +466,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
                         ),
                       ),
                     ),
+                    ],
                   ],
                 ),
               ),
