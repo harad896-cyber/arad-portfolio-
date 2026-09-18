@@ -27,6 +27,7 @@ import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
 import 'advanced_features.dart';
+import 'stories.dart';
 
 
 const double kAppRadius = 16.0;
@@ -2182,7 +2183,7 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
     return Column(
       children: [
-        const _StoriesStrip(),
+        const StoriesTray(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 14, 6),
           child: Row(children: [
@@ -2488,160 +2489,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _StoriesStrip extends StatefulWidget {
-  const _StoriesStrip();
-  @override State<_StoriesStrip> createState() => _StoriesStripState();
-}
-
-class _StoriesStripState extends State<_StoriesStrip> {
-  List<Map<String, dynamic>> stories = [];
-  bool loading = true;
-
-  Future<void> load() async {
-    try {
-      final rows = await supabase.from('stories').select('id,user_id,text,background,created_at,expires_at').gt('expires_at', DateTime.now().toUtc().toIso8601String()).order('created_at', ascending: false).limit(30);
-      final raw = List<Map<String, dynamic>>.from(rows);
-      final ids = raw.map((x) => x['user_id']).toSet().toList();
-      final people = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
-      final map = {for (final p in people) p['id'].toString(): p};
-      if (mounted) setState(() { stories = raw.map((s) => {...s, '_profile': map[s['user_id'].toString()] ?? {}}).toList(); loading = false; });
-    } catch (_) {
-      if (mounted) setState(() { stories = []; loading = false; });
-    }
-  }
-
-  @override void initState() { super.initState(); load(); }
-
-  @override
-  Widget build(BuildContext context) {
-    final uid = supabase.auth.currentUser?.id;
-    final mine = stories.where((s) => s['user_id'].toString() == uid).toList();
-    final others = stories.where((s) => s['user_id'].toString() != uid).toList();
-    return SizedBox(
-      height: 110,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(12, 9, 12, 2),
-        children: [
-          _storyItem(context, mine.isEmpty ? null : mine.first, true),
-          ...others.map((s) => _storyItem(context, s, false)),
-        ],
-      ),
-    );
-  }
-
-  Widget _storyItem(BuildContext context, Map<String, dynamic>? story, bool mine) {
-    final theme = Theme.of(context);
-    final p = story == null ? <String, dynamic>{} : Map<String, dynamic>.from(story['_profile'] ?? {});
-    return GestureDetector(
-      onTap: () async {
-        if (mine) {
-          final changed = await Navigator.push(context, MaterialPageRoute(builder: (_) => StoryComposerPage(existing: story)));
-          if (changed == true) load();
-        } else if (story != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => StoryViewerPage(story: story)));
-        } else {          Navigator.push(context, MaterialPageRoute(builder: (_) => const StoryComposerPage()));
-        }
-      },      child: SizedBox(width: 78, child: Column(children: [
-        Container(
-          width: 64, height: 64, padding: const EdgeInsets.all(3),          decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary])),
-          child: story == null ? CircleAvatar(backgroundColor: theme.colorScheme.surface, child: Icon(Icons.add_rounded, color: theme.colorScheme.primary)) : avatar(p, size: 58),
-        ),
-        const SizedBox(height: 4),
-        Text(mine ? (story == null ? 'استوری شما' : 'استوری من') : (p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-      ])),
-    );
-  }
-}
-
-class StoryComposerPage extends StatefulWidget {
-  final Map<String, dynamic>? existing;
-  const StoryComposerPage({super.key, this.existing});
-  @override State<StoryComposerPage> createState() => _StoryComposerPageState();
-}
-
-class _StoryComposerPageState extends State<StoryComposerPage> {
-  late TextEditingController text;
-  int background = 0xFF2563EB;
-  bool busy = false;
-  static const colors = [0xFF2563EB, 0xFF7C3AED, 0xFFDB2777, 0xFFEA580C, 0xFF059669, 0xFF0F172A];
-
-  @override void initState() {
-    super.initState();
-    text = TextEditingController(text: (widget.existing?['text'] ?? '').toString());
-    background = int.tryParse((widget.existing?['background'] ?? '').toString()) ?? background;
-  }
-
-  Future<void> save() async {
-    final value = text.text.trim();
-    if (value.isEmpty) { showMsg(context, 'یک جمله برای استوری بنویسید.'); return; }
-    if (value.length > 180) { showMsg(context, 'استوری حداکثر ۱۸۰ کاراکتر باشد.'); return; }
-    setState(() => busy = true);
-    try {
-      final uid = supabase.auth.currentUser!.id;
-      final data = {'user_id': uid, 'text': value, 'background': background.toString(), 'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String()};
-      if (widget.existing != null) {
-        await supabase.from('stories').update(data).eq('id', widget.existing!['id']).eq('user_id', uid);
-      } else {
-        await supabase.from('stories').insert(data);
-      }
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره استوری انجام نشد. ابتدا migration استوری را در Supabase اجرا کنید.');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
-  @override Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('استوری یک‌جمله‌ای')),
-      body: ListView(padding: const EdgeInsets.all(18), children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 290,
-          decoration: BoxDecoration(color: Color(background), borderRadius: BorderRadius.circular(kAppRadius)),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(28),
-          child: Text(text.text.isEmpty ? 'جمله استوری شما' : text.text, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, height: 1.3)),
-        ),
-        const SizedBox(height: 18),
-        TextField(controller: text, maxLength: 180, maxLines: 2, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'یک جمله بنویسید', prefixIcon: Icon(Icons.edit_rounded))),
-        const SizedBox(height: 8),
-        const Text('رنگ استوری', style: TextStyle(fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8),
-        Wrap(spacing: 10, children: colors.map((c) => GestureDetector(onTap: () => setState(() => background = c), child: Container(width: 42, height: 42, decoration: BoxDecoration(color: Color(c), shape: BoxShape.circle, border: background == c ? Border.all(color: Colors.white, width: 4) : null)))).toList()),
-        const SizedBox(height: 22),
-        FilledButton.icon(onPressed: busy ? null : save, icon: const Icon(Icons.check_rounded), label: Text(busy ? 'در حال ذخیره...' : 'انتشار استوری')),
-      ]),
-    );
-  }
-
-  @override void dispose() { text.dispose(); super.dispose(); }
-}
-
-class StoryViewerPage extends StatelessWidget {
-  final Map<String, dynamic> story;
-  const StoryViewerPage({super.key, required this.story});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Map<String, dynamic>.from(story['_profile'] ?? {});
-    final bg = int.tryParse(story['background'].toString()) ?? 0xFF2563EB;
-    return Scaffold(
-      backgroundColor: Color(bg),
-      body: SafeArea(child: Stack(children: [
-        Center(child: Padding(padding: const EdgeInsets.all(30), child: Text(story['text'].toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 31, fontWeight: FontWeight.w900, height: 1.35)))),
-        Positioned(top: 10, left: 16, right: 16, child: Row(children: [
-          avatar(p, size: 42),
-          const SizedBox(width: 10),
-          Expanded(child: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
-          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white)),
-        ])),
-      ])),
-    );
-  }
-}
 
 class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
   @override
