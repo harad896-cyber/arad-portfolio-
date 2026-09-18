@@ -1236,10 +1236,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   XFile? avatarImage;
   Uint8List? avatarBytes;
   String? existingAvatarUrl;
-  bool loading = true;
-  bool busy = false;
   String? nameError;
   String? usernameError;
+  bool loading = true;
+  bool busy = false;
 
   Future<void> load() async {
     try {
@@ -1285,8 +1285,14 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   Future<void> save() async {
     final displayName = name.text.trim();
     final userName = username.text.trim().replaceFirst('@', '');
-    if (displayName.isEmpty) { setState(() => nameError = 'نام نمایشی را وارد کنید.'); return; }
-    if (userName.isNotEmpty && !RegExp(r'^[A-Za-z0-9_]{3,32}
+    if (displayName.isEmpty) {
+      setState(() => nameError = 'نام نمایشی را وارد کنید.');
+      return;
+    }
+    if (userName.isNotEmpty && !RegExp(r'^[A-Za-z0-9_]{3,32}$').hasMatch(userName)) {
+      setState(() => usernameError = 'نام کاربری باید ۳ تا ۳۲ کاراکتر و فقط شامل حروف انگلیسی، عدد یا _ باشد.');
+      return;
+    }
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
@@ -1313,8 +1319,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       if (mounted) setState(() => busy = false);
     }
   }
+
   @override
   void initState() { super.initState(); load(); }
+
   @override
   void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
 
@@ -1326,165 +1334,41 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Center(child: GestureDetector(
-            onTap: chooseAvatar,
-            child: Stack(clipBehavior: Clip.none, children: [
-              CircleAvatar(
-                radius: 58,
-                backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
-                child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
+          Center(
+            child: GestureDetector(
+              onTap: chooseAvatar,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 58,
+                    backgroundImage: avatarBytes != null
+                        ? MemoryImage(avatarBytes!)
+                        : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
+                    child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty)
+                        ? const Icon(Icons.person, size: 58)
+                        : null,
+                  ),
+                  const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
+                ],
               ),
-              const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
-            ]),
-          )),
+            ),
+          ),
           const SizedBox(height: 22),
-          TextField(controller: name, onChanged: (v) => setState(() => nameError = v.trim().isEmpty ? 'نام نمایشی را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام نمایشی', errorText: nameError, border: const OutlineInputBorder())),
+          TextField(
+            controller: name,
+            onChanged: (v) => setState(() => nameError = v.trim().isEmpty ? 'نام نمایشی را وارد کنید.' : null),
+            decoration: InputDecoration(labelText: 'نام نمایشی', errorText: nameError, border: const OutlineInputBorder()),
+          ),
           const SizedBox(height: 12),
-          TextField(controller: username, onChanged: (v) { final u = v.trim().replaceFirst('@', ''); setState(() => usernameError = u.isEmpty || RegExp(r'^[A-Za-z0-9_]{3,32}
-          const SizedBox(height: 12),
-          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
-        ],
-      ),
-    );
-  }
-}
-
-
-).hasMatch(userName)) { setState(() => usernameError = 'نام کاربری باید ۳ تا ۳۲ کاراکتر و فقط شامل حروف انگلیسی، عدد یا _ باشد.'); return; }
-    setState(() => busy = true);
-    try {
-      final uid = supabase.auth.currentUser!.id;
-      final data = <String, dynamic>{
-        'id': uid,
-        'display_name': displayName,
-        'username': userName,
-        'bio': bio.text.trim(),
-        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
-        'is_online': true,
-        'last_seen': DateTime.now().toIso8601String(),
-      };
-      if (avatarImage != null) {
-        final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
-        final path = '$uid/avatar.jpg';
-        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
-        data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
-      }
-      await supabase.from('profiles').upsert(data);
-      if (mounted) { showMsg(context, 'پروفایل با موفقیت ذخیره شد.'); Navigator.pop(context); }
-    } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-  @override
-  void initState() { super.initState(); load(); }
-  @override
-  void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    return Scaffold(
-      appBar: AppBar(title: const Text('پروفایل شما')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(child: GestureDetector(
-            onTap: chooseAvatar,
-            child: Stack(clipBehavior: Clip.none, children: [
-              CircleAvatar(
-                radius: 58,
-                backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
-                child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
-              ),
-              const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
-            ]),
-          )),
-          const SizedBox(height: 22),
-          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: username, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
-        ],
-      ),
-    );
-  }
-}
-
-
-).hasMatch(u) ? null : 'نام کاربری نامعتبر است.'); }, decoration: InputDecoration(labelText: 'نام کاربری', errorText: usernameError, prefixText: '@', border: const OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
-        ],
-      ),
-    );
-  }
-}
-
-
-).hasMatch(userName)) { setState(() => usernameError = 'نام کاربری باید ۳ تا ۳۲ کاراکتر و فقط شامل حروف انگلیسی، عدد یا _ باشد.'); return; }
-    setState(() => busy = true);
-    try {
-      final uid = supabase.auth.currentUser!.id;
-      final data = <String, dynamic>{
-        'id': uid,
-        'display_name': displayName,
-        'username': userName,
-        'bio': bio.text.trim(),
-        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
-        'is_online': true,
-        'last_seen': DateTime.now().toIso8601String(),
-      };
-      if (avatarImage != null) {
-        final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
-        final path = '$uid/avatar.jpg';
-        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
-        data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
-      }
-      await supabase.from('profiles').upsert(data);
-      if (mounted) { showMsg(context, 'پروفایل با موفقیت ذخیره شد.'); Navigator.pop(context); }
-    } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-  @override
-  void initState() { super.initState(); load(); }
-  @override
-  void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    return Scaffold(
-      appBar: AppBar(title: const Text('پروفایل شما')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(child: GestureDetector(
-            onTap: chooseAvatar,
-            child: Stack(clipBehavior: Clip.none, children: [
-              CircleAvatar(
-                radius: 58,
-                backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
-                child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
-              ),
-              const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
-            ]),
-          )),
-          const SizedBox(height: 22),
-          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: username, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', border: OutlineInputBorder())),
+          TextField(
+            controller: username,
+            onChanged: (v) {
+              final u = v.trim().replaceFirst('@', '');
+              setState(() => usernameError = u.isEmpty || RegExp(r'^[A-Za-z0-9_]{3,32}$').hasMatch(u) ? null : 'نام کاربری نامعتبر است.');
+            },
+            decoration: InputDecoration(labelText: 'نام کاربری', errorText: usernameError, prefixText: '@', border: const OutlineInputBorder()),
+          ),
           const SizedBox(height: 12),
           TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
           const SizedBox(height: 16),
