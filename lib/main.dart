@@ -260,11 +260,11 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(appTheme.seed),
+          seedColor: const Color(0xFF8B5CF6),
           brightness: Brightness.light,
           surface: const Color(0xFFF5F5F7),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF5F5F7),
+        scaffoldBackgroundColor: const Color(0xFFF3F1F6),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -276,7 +276,7 @@ class AradMessenger extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xC2F5F5F7),
+          backgroundColor: Color(0xE6F3F1F6),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(
@@ -300,14 +300,14 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
-          tileColor: const Color(0xB8FFFFFF),
-          selectedTileColor: const Color(0x1A7C5CFF),
+          tileColor: const Color(0xFFFFFFFF),
+          selectedTileColor: const Color(0x1A8B5CF6),
           iconColor: const Color(0xFF707078),
           minVerticalPadding: 9,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xB8FFFFFF),
+          fillColor: const Color(0xFFFFFFFF),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
@@ -364,7 +364,7 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(appTheme.seed),
+          seedColor: const Color(0xFF8B5CF6),
           brightness: Brightness.dark,
           surface: const Color(0xFF111114),
         ),
@@ -377,9 +377,9 @@ class AradMessenger extends StatelessWidget {
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         cardTheme: CardThemeData(
-          elevation: 1.5,
-          shadowColor: Color(0x55000000),
-          color: Color(0x0AFFFFFF),
+          elevation: 2,
+          shadowColor: Color(0x70000000),
+          color: Color(0xFF171922),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -388,29 +388,64 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
         listTileTheme: ListTileThemeData(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
-          tileColor: const Color(0x0DFFFFFF),
-          selectedTileColor: const Color(0x247C5CFF),
-          iconColor: const Color(0xFFB8B8C2),
-          minVerticalPadding: 9,
+          tileColor: const Color(0xFF171922),
+          selectedTileColor: const Color(0x248B5CF6),
+          iconColor: const Color(0xFFC5BFCE),
+          minVerticalPadding: 8,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0x0AFFFFFF),
+          fillColor: const Color(0xFF171922),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
-            borderSide: BorderSide(color: Color(0x17FFFFFF)),
+            borderSide: BorderSide(color: Color(0x22FFFFFF)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
-            borderSide: BorderSide(color: Color(0x14FFFFFF)),
+            borderSide: BorderSide(color: Color(0x22FFFFFF)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
-            borderSide: BorderSide(color: Color(0xFFA996FF), width: 1.6),
+            borderSide: BorderSide(color: Color(0xFFB99CFF), width: 1.6),
           ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
+            borderSide: BorderSide(color: Color(0xFFFF6B7A), width: 1.4),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
+            borderSide: BorderSide(color: Color(0xFFFF6B7A), width: 1.6),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
+            side: const BorderSide(color: Color(0x33FFFFFF)),
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF242733),
+          contentTextStyle: const TextStyle(color: Color(0xFFF5F3F8), fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
+          insetPadding: const EdgeInsets.all(16),
+        ),
+        dividerTheme: const DividerThemeData(space: 1, thickness: 1, color: Color(0x22FFFFFF)),
+        progressIndicatorTheme: const ProgressIndicatorThemeData(strokeWidth: 3),
+        dialogTheme: DialogThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
         ),
       ),
       builder: (context, child) => _NetworkStatusBanner(
