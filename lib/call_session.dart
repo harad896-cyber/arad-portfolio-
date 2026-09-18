@@ -41,6 +41,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
   bool _muted = false;
   bool _speaker = true;
   bool _ending = false;
+  RTCVideoRenderer? _localRenderer;
+  RTCVideoRenderer? _remoteRenderer;
   bool _acceptedIncoming = false;
   String? _pendingOfferSdp;
   String _status = 'در حال آماده‌سازی تماس...';
@@ -51,11 +53,23 @@ class _CallSessionPageState extends State<CallSessionPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.video) {
+      _localRenderer = RTCVideoRenderer();
+      _remoteRenderer = RTCVideoRenderer();
+      _initRenderers();
+    }
     if (widget.incoming && widget.existingCallId != null) {
       _startIncomingCall();
     } else {
       _startOutgoingCall();
     }
+  }
+
+  Future<void> _initRenderers() async {
+    try {
+      await _localRenderer?.initialize();
+      await _remoteRenderer?.initialize();
+    } catch (_) {}
   }
 
   Future<void> _startIncomingCall() async {
@@ -97,7 +111,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
       _remoteDescriptionSet = true;
       await _flushRemoteCandidates();
-      final answer = await peer.createAnswer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': 0});
+      final answer = await peer.createAnswer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': widget.video ? 1 : 0});
       await peer.setLocalDescription(answer);
       await _sendSignal({'type': 'answer', 'sdp': answer.sdp});
       if (_callId != null) {
@@ -221,12 +235,20 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'noiseSuppression': true,
         'autoGainControl': true,
       },
-      'video': false,
+      'video': widget.video,
     });
 
-    for (final track in _localStream!.getAudioTracks()) {
+    if (widget.video && _localRenderer != null) {
+      _localRenderer!.srcObject = _localStream;
+    }
+    for (final track in _localStream!.getTracks()) {
       await peer.addTrack(track, _localStream!);
     }
+    peer.onTrack = (event) {
+      if (event.streams.isNotEmpty && _remoteRenderer != null) {
+        _remoteRenderer!.srcObject = event.streams.first;
+      }
+    };
   }
 
   Future<void> _createAndSendOffer() async {
@@ -373,6 +395,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
     } catch (_) {}
     try { await _localStream?.dispose(); } catch (_) {}
     _localStream = null;
+    try { await _localRenderer?.dispose(); } catch (_) {}
+    try { await _remoteRenderer?.dispose(); } catch (_) {}
+    _localRenderer = null;
+    _remoteRenderer = null;
 
     try {
       await _peer?.close();
@@ -390,7 +416,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
   String _formatDuration(Duration d) {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '${{d.inHours > 0 ? '${{d.inHours.toString().padLeft(2, '0')}:' : ''}${{m}:${{s}';
+    return '${d.inHours > 0 ? '${d.inHours.toString().padLeft(2, '0')}:' : ''}$m:$s';
   }
 
   @override
@@ -415,10 +441,26 @@ class _CallSessionPageState extends State<CallSessionPage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
+            if (widget.video && _remoteRenderer != null)
+              Positioned.fill(
+                child: RTCVideoView(_remoteRenderer!, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+              ),
+            if (widget.video && _localRenderer != null)
+              Positioned(
+                top: 18,
+                right: 18,
+                width: 120,
+                height: 170,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: RTCVideoView(_localRenderer!, mirror: true, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+                ),
+              ),
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (!widget.video)
                   Container(
                     width: 164,
                     height: 164,
@@ -429,15 +471,11 @@ class _CallSessionPageState extends State<CallSessionPage> {
                     ),
                     child: Icon(Icons.person_rounded, size: 86, color: scheme.primary),
                   ),
-                  const SizedBox(height: 22),
+                  if (!widget.video) const SizedBox(height: 22),
                   Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 8),
                   Text(_connected ? _formatDuration(_duration) : _status, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                  if (widget.video)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: Text('تماس تصویری در این مرحله غیرفعال است.', textAlign: TextAlign.center),
-                    ),
+
                 ],
               ),
             ),
