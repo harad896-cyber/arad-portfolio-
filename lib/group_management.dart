@@ -47,7 +47,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     if (owner) { toast('مالک نمی‌تواند خارج شود؛ برای مالک فقط حذف کامل گروه فعال است.'); return; }
     final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
       title: const Text('خروج از گروه'), content: const Text('فقط حساب شما از گروه خارج می‌شود.'),
-      actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')), FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('خروج'))],
+      actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')), FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError), onPressed: () => Navigator.pop(d, true), child: const Text('خروج'))],
     )) ?? false;
     if (!ok || busy) return;
     setState(() => busy = true);
@@ -62,7 +62,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
       title: const Text('حذف کامل گروه'),
       content: Column(mainAxisSize: MainAxisSize.min, children: [const Text('این گزینه خود گروه و محتوای آن را برای همه حذف می‌کند.'), const SizedBox(height: 10), TextField(controller: c, decoration: const InputDecoration(labelText: 'برای تأیید: حذف گروه'))]),
-      actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')), FilledButton(onPressed: () => Navigator.pop(d, c.text.trim() == 'حذف گروه'), child: const Text('حذف دائمی'))],
+      actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')), FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError), onPressed: () => Navigator.pop(d, c.text.trim() == 'حذف گروه'), child: const Text('حذف دائمی'))],
     )) ?? false;
     c.dispose();
     if (!ok) return;
