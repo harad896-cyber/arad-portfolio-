@@ -1955,6 +1955,8 @@ class _HomePageState extends State<HomePage> {
   String chatQuery = '';
   RealtimeChannel? _homeChannel;
   Timer? _homeRefreshTimer;
+  RealtimeChannel? _callChannel;
+  final Set<String> _handledIncomingCalls = <String>{};
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -2091,12 +2093,87 @@ class _HomePageState extends State<HomePage> {
       .onPostgresChanges(event: PostgresChangeEvent.delete, schema: 'public', table: 'conversation_members', callback: (_) => _scheduleHomeRefresh())
       .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'conversations', callback: (_) => _scheduleHomeRefresh())
       .subscribe();
+    _callChannel = supabase.channel('incoming-calls-' + (supabase.auth.currentUser?.id ?? 'guest'))
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'call_sessions',
+        callback: (payload) => _handleIncomingCall(payload.newRecord),
+      )
+      .subscribe();
+  }
+
+  Future<void> _handleIncomingCall(Map<String, dynamic> row) async {
+    final uid = supabase.auth.currentUser?.id;
+    final callId = row['id']?.toString();
+    if (uid == null || callId == null || callId.isEmpty) return;
+    if (row['callee_id']?.toString() != uid || row['status']?.toString() != 'ringing') return;
+    if (_handledIncomingCalls.contains(callId)) return;
+    _handledIncomingCalls.add(callId);
+
+    String title = 'تماس ورودی';
+    try {
+      final c = await supabase.from('conversations').select('type,title').eq('id', row['conversation_id']).maybeSingle();
+      if (c != null && (c['title'] ?? '').toString().trim().isNotEmpty) {
+        title = c['title'].toString();
+      } else {
+        final callerId = row['caller_id']?.toString();
+        if (callerId != null) {
+          final p = await supabase.from('profiles').select('display_name,username').eq('id', callerId).maybeSingle();
+          title = (p?['display_name'] ?? p?['username'] ?? title).toString();
+        }
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تماس صوتی ورودی'),
+        content: Text('$title با شما تماس می‌گیرد.'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await supabase.from('call_sessions').update({
+                  'status': 'rejected',
+                  'ended_at': DateTime.now().toUtc().toIso8601String(),
+                }).eq('id', callId);
+              } catch (_) {}
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            child: const Text('رد'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CallSessionPage(
+                    conversationId: row['conversation_id'].toString(),
+                    title: title,
+                    video: false,
+                    existingCallId: callId,
+                    incoming: true,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.call_rounded),
+            label: const Text('پاسخ'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
     _homeRefreshTimer?.cancel();
     if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
+    if (_callChannel != null) supabase.removeChannel(_callChannel!);
     chatSearch.dispose();
     super.dispose();
   }
