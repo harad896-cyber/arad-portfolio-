@@ -961,6 +961,20 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     }
   }
 
+  Future<void> _loadGroupMemberCount() async {
+    if (_chatType != 'group') return;
+    try {
+      final rows = await supabase
+          .from('conversation_members')
+          .select('user_id')
+          .eq('conversation_id', widget.id);
+      if (!mounted) return;
+      setState(() {
+        _groupMemberCount = (rows as List).length;
+      });
+    } catch (_) {}
+  }
+
   @override
   void initState() {
     super.initState();
