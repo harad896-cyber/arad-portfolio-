@@ -4443,6 +4443,13 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }}
+class _SearchSectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SearchSectionHeader({required this.title, required this.icon});
+  @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(8, 14, 8, 6), child: Row(children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w900))]));
+}
+
 class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   final String conversationId;
 
@@ -4584,7 +4591,8 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
                         final people = snapshot.data ?? [];
-                        return DropdownButtonFormField<String?>(                          value: nextSender,
+                        return DropdownButtonFormField<String?>(
+                           value: nextSender,
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
