@@ -1955,6 +1955,7 @@ class _HomePageState extends State<HomePage> {
   Map<String, Set<String>> folderAssignments = {};
   Set<String> archivedChatIds = <String>{};
   Set<String> manuallyUnreadChatIds = <String>{};
+  Set<String> pinnedChatIds = <String>{};
   final TextEditingController chatSearch = TextEditingController();
   String chatQuery = '';
   RealtimeChannel? _homeChannel;
@@ -2019,6 +2020,8 @@ class _HomePageState extends State<HomePage> {
 
       final unreadRows = await supabase.from('chat_unread_marks').select('conversation_id').eq('user_id', uid);
       final manualUnread = (unreadRows as List).map((r) => r['conversation_id'].toString()).toSet();
+      final pinRows = await supabase.from('chat_pins').select('conversation_id').eq('user_id', uid);
+      final pinned = (pinRows as List).map((r) => r['conversation_id'].toString()).toSet();
       final archiveRows = await supabase.from('chat_archives').select('conversation_id').eq('user_id', uid);
       final archived = (archiveRows as List).map((r) => r['conversation_id'].toString()).toSet();
 
@@ -2043,6 +2046,7 @@ class _HomePageState extends State<HomePage> {
         folderAssignments = assignmentMap;
         archivedChatIds = archived;
         manuallyUnreadChatIds = manualUnread;
+        pinnedChatIds = pinned;
         loading = false;
       });
     } catch (e) {
@@ -3106,6 +3110,16 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   }
 }
 
+class ChatPage extends StatefulWidget {
+  final String id;
+  final String title;
+
+  const ChatPage({super.key, required this.id, required this.title});
+
+  @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
 class _SearchSectionHeader extends StatelessWidget {
   final String title; final IconData icon;
   const _SearchSectionHeader({required this.title, required this.icon});
@@ -3259,6 +3273,89 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
+
+                              value: p['id'].toString(),
+                              child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
+                            ))).toList(),
+                            onChanged: (v) => setSheetState(() => nextSender = v),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ListTile(
+                      leading: const Icon(Icons.date_range_rounded),
+                      title: Text(nextFrom == null ? 'از تاریخ' : 'از ${nextFrom!.year}/${nextFrom!.month}/${nextFrom!.day}'),
+                      onTap: () async {
+                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextFrom ?? DateTime.now());
+                        if (d != null) setSheetState(() => nextFrom = d);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.event_rounded),
+                      title: Text(nextTo == null ? 'تا تاریخ' : 'تا ${nextTo!.year}/${nextTo!.month}/${nextTo!.day}'),
+                      onTap: () async {
+                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextTo ?? DateTime.now());
+                        if (d != null) setSheetState(() => nextTo = d);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        contentType = nextType;
+                        senderId = nextSender;
+                        fromDate = nextFrom;
+                        toDate = nextTo;
+                        Navigator.pop(sheetContext);
+                        showSuggestions(context);
+                      },
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('اعمال فیلتر'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) => _messageResults(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _messageResults(context);
+
+  Widget _messageResults(BuildContext context) => FutureBuilder<List<Map<String,dynamic>>>(
+    future: _search(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+      if (snapshot.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snapshot.error}')));
+      final rows = snapshot.data ?? const <Map<String,dynamic>>[];
+      if (rows.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
+      return ListView.builder(
+        itemCount: rows.length,
+        itemBuilder: (context, index) {
+          final m = rows[index];
+          return ListTile(
+            leading: const CircleAvatar(child: Icon(Icons.message_rounded)),
+            title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Text('${m['message_type'] ?? 'text'} • ${m['created_at'] ?? ''}'),
+            onTap: () => close(context, m),
+          );
+        },
+      );
+    },
+  );
+
+  @override
+  Widget? buildLeading(BuildContext context) => IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () => close(context, null),
+  );
+}
 
 class AppLockGate extends StatefulWidget {
   final Widget child;
