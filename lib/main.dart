@@ -2115,8 +2115,27 @@ class _HomePageState extends State<HomePage> {
                   load();
                 } else if (kind == 'user') {
                   final uid = supabase.auth.currentUser?.id;
-                  if (uid == null || result['id'].toString() == uid) return;
-                  await Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(userId: result['id'].toString())));
+                  final targetId = result['id']?.toString() ?? '';
+                  if (uid == null || targetId.isEmpty || targetId == uid) return;
+                  final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+                  String? conversationId;
+                  for (final row in (existing as List)) {
+                    final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', row['conversation_id']);
+                    if ((members as List).length == 2 && members.any((m) => m['user_id'].toString() == targetId)) {
+                      conversationId = row['conversation_id'].toString();
+                      break;
+                    }
+                  }
+                  if (conversationId == null) {
+                    final created = await supabase.from('conversations').insert({'type': 'direct', 'created_by': uid}).select().single();
+                    conversationId = created['id'].toString();
+                    await supabase.from('conversation_members').insert([
+                      {'conversation_id': conversationId, 'user_id': uid},
+                      {'conversation_id': conversationId, 'user_id': targetId},
+                    ]);
+                  }
+                  final title = (result['display_name'] ?? result['username'] ?? 'گفتگو').toString();
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId!, title: title)));
                   load();
                 }
               },
