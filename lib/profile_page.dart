@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main.dart';
 import 'owner_admin_page.dart';
 import 'chat_background_page.dart';
+import 'polish_widgets.dart';
 
 const _profileSecureAccounts = FlutterSecureStorage();
 
@@ -209,7 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Center(child: CircularProgressIndicator());
+    if (loading) return const AppSkeletonList(count: 5);
     final s = Theme.of(context).colorScheme;
     final display = '${profile['display_name'] ?? 'کاربر'}';
     final un = '${profile['username'] ?? ''}'.trim();
@@ -389,7 +390,7 @@ class _VerificationAdminPageState extends State<VerificationAdminPage> {
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading) return const Scaffold(body: AppSkeletonList(count: 5));
     return Scaffold(
       appBar: AppBar(title: const Text('درخواست‌های تیک آبی')),
       body: rows.isEmpty
