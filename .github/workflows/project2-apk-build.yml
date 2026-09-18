@@ -26,6 +26,18 @@ jobs:
       - name: Generate supported Android project
         run: flutter create --platforms=android --project-name arad_messenger .
       - run: flutter pub get
+      - name: Add Android call permissions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          marker = '<application'
+          permissions = '    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.BLUETOOTH" />\n'
+          if 'android.permission.CAMERA' not in s:
+              s = s.replace(marker, permissions + marker, 1)
+          p.write_text(s)
+          PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test --no-pub
       - run: flutter build apk --release --no-pub
