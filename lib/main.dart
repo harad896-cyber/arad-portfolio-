@@ -4992,10 +4992,7 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ), // GROUP_PROFILE_WIRED
       ),
-      body: Column(children: [
-        _pinnedBanner(),
-        Expanded(child: Container(),
-      ]),
+      body: Container(
         decoration: BoxDecoration(
           color: dark ? const Color(0xFF0F1117) : const Color(0xFFF1EEF5),
           gradient: LinearGradient(
