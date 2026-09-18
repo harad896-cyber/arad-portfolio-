@@ -243,7 +243,7 @@ class AradMessenger extends StatelessWidget {
           surface: const Color(0xFFF5F5F7),
         ),
         scaffoldBackgroundColor: const Color(0xFFF5F5F7),
-        visualDensity: VisualDensity.standard,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
@@ -271,13 +271,13 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             side: BorderSide(color: Color(0x1A4F46E5)),
           ),
         ),
         listTileTheme: ListTileThemeData(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
           tileColor: const Color(0xB8FFFFFF),
           selectedTileColor: const Color(0x1A7C5CFF),
           iconColor: const Color(0xFF707078),
@@ -286,39 +286,39 @@ class AradMessenger extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Color(0xB8FFFFFF),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0x19000000)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0x17000000)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0xFF7C5CFF), width: 1.6),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0xFFD32F2F)),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0xFFD32F2F), width: 1.6),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
             textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
             side: const BorderSide(color: Color(0x2630323A)),
             textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
@@ -329,7 +329,7 @@ class AradMessenger extends StatelessWidget {
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
           insetPadding: const EdgeInsets.all(16),
         ),
         dividerTheme: const DividerThemeData(
@@ -361,13 +361,13 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             side: BorderSide(color: Color(0x1FFFFFFF)),
           ),
         ),
         listTileTheme: ListTileThemeData(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
           tileColor: const Color(0x0DFFFFFF),
           selectedTileColor: const Color(0x247C5CFF),
           iconColor: const Color(0xFFB8B8C2),
@@ -376,17 +376,17 @@ class AradMessenger extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Color(0x0AFFFFFF),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0x17FFFFFF)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0x14FFFFFF)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0xFFA996FF), width: 1.6),
           ),
         ),
