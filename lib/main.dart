@@ -3425,6 +3425,9 @@ class _ChatPageState extends State<ChatPage> {
   int _groupMemberCount = 0;
   bool _peerVerified = false;
   String _peerAvatarUrl = '';
+  bool _peerOnline = false;
+  DateTime? _peerLastSeen;
+  Timer? _presenceTimer;
   DateTime? _voiceStartedAt;
   Timer? _voiceTimer;
   int voiceSeconds = 0;
@@ -3547,12 +3550,15 @@ class _ChatPageState extends State<ChatPage> {
         final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);
         final peerIds = (rows as List).map((e) => '${e['user_id']}').where((id) => id != uid).toList();
         if (peerIds.isNotEmpty) {
-          final peer = await supabase.from('profiles').select('id,avatar_url,is_verified').eq('id', peerIds.first).maybeSingle();
+          final peer = await supabase.from('profiles').select('id,avatar_url,is_verified,is_online,last_seen').eq('id', peerIds.first).maybeSingle();
           peerVerified = peer?['is_verified'] == true;
           peerAvatar = peer?['avatar_url']?.toString() ?? '';
+          _peerOnline = peer?['is_online'] == true;
+          _peerLastSeen = DateTime.tryParse(peer?['last_seen']?.toString() ?? '')?.toLocal();
         }
       }
       if (mounted) setState(() { _chatType = type; _groupMemberCount = count; _peerVerified = peerVerified; _peerAvatarUrl = peerAvatar; });
+      if (type == 'direct') _startPresenceHeartbeat();
     } catch (_) {}
   }
 
@@ -4992,6 +4998,8 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _presenceTimer?.cancel();
+    _updateOwnPresence(false);
     appTheme.removeListener(_onAppThemeChanged);
     if (channel != null) supabase.removeChannel(channel!);
     _chatConnectivitySub?.cancel();
@@ -5015,6 +5023,54 @@ class _ChatPageState extends State<ChatPage> {
       return a?['role'] == 'owner' || a?['role'] == 'admin';
     } catch (_) { return false; }
   }
+  Future<void> _updateOwnPresence(bool online) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await supabase.from('profiles').update({
+        'is_online': online,
+        'last_seen': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', uid);
+    } catch (_) {}
+  }
+
+  void _startPresenceHeartbeat() {
+    _presenceTimer?.cancel();
+    _updateOwnPresence(true);
+    _presenceTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      await _updateOwnPresence(true);
+      await _refreshPeerPresence();
+    });
+  }
+
+  Future<void> _refreshPeerPresence() async {
+    if (_chatType != 'direct') return;
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      final rows = await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.id);
+      final peerId = (rows as List).map((e) => e['user_id'].toString()).firstWhere((id) => id != uid, orElse: () => '');
+      if (peerId.isEmpty) return;
+      final peer = await supabase.from('profiles').select('is_online,last_seen').eq('id', peerId).maybeSingle();
+      if (!mounted) return;
+      setState(() {
+        _peerOnline = peer?['is_online'] == true;
+        _peerLastSeen = DateTime.tryParse(peer?['last_seen']?.toString() ?? '')?.toLocal();
+      });
+    } catch (_) {}
+  }
+
+  String _presenceLabel() {
+    if (_peerOnline) return 'آنلاین';
+    final seen = _peerLastSeen;
+    if (seen == null) return 'آخرین بازدید نامشخص';
+    final diff = DateTime.now().difference(seen);
+    if (diff.inMinutes < 1) return 'آخرین بازدید همین الان';
+    if (diff.inMinutes < 60) return 'آخرین بازدید ' + diff.inMinutes.toString() + ' دقیقه پیش';
+    if (diff.inHours < 24) return 'آخرین بازدید ' + diff.inHours.toString() + ' ساعت پیش';
+    if (diff.inDays == 1) return 'آخرین بازدید دیروز';
+    return 'آخرین بازدید ' + seen.year.toString() + '/' + seen.month.toString().padLeft(2, '0') + '/' + seen.day.toString().padLeft(2, '0');
+  }
+
   Future<void> _openGroupManagement() async {
     if (!await _isGroupAdmin()) { if(mounted) showMsg(context,'فقط مدیر گروه یا کانال می‌تواند مدیریت کند.'); return; }
     if (mounted) await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.id,title:widget.title)));
@@ -5108,7 +5164,7 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     if (_chatType == 'direct')
                       Text(
-                        _peerVerified ? 'حساب تأییدشده' : 'پروفایل و بیو',
+                        _presenceLabel(),
                         style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500),
                       ),
                     if (_chatType == 'group')
