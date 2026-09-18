@@ -50,3 +50,30 @@ create index if not exists call_sessions_conversation_idx
 on public.call_sessions(conversation_id, created_at desc);
 
 alter publication supabase_realtime add table public.call_sessions;
+
+
+drop policy if exists call_sessions_broadcast_read on realtime.messages;
+create policy call_sessions_broadcast_read
+on realtime.messages
+for select to authenticated
+using (
+  extension in ('broadcast')
+  and exists (
+    select 1 from public.call_sessions cs
+    where ('call:' || cs.id::text) = realtime.topic()
+      and (cs.caller_id = (select auth.uid()) or cs.callee_id = (select auth.uid()))
+  )
+);
+
+drop policy if exists call_sessions_broadcast_send on realtime.messages;
+create policy call_sessions_broadcast_send
+on realtime.messages
+for insert to authenticated
+with check (
+  extension in ('broadcast')
+  and exists (
+    select 1 from public.call_sessions cs
+    where ('call:' || cs.id::text) = realtime.topic()
+      and (cs.caller_id = (select auth.uid()) or cs.callee_id = (select auth.uid()))
+  )
+);
