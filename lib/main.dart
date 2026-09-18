@@ -2855,6 +2855,100 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
         }),
   );
 }
+class ConversationInfoPage extends StatefulWidget {
+  final String conversationId;
+  final String fallbackTitle;
+  const ConversationInfoPage({super.key, required this.conversationId, required this.fallbackTitle});
+  @override State<ConversationInfoPage> createState() => _ConversationInfoPageState();
+}
+
+class _ConversationInfoPageState extends State<ConversationInfoPage> {
+  bool loading = true;
+  Map<String,dynamic> conversation = {};
+  Map<String,dynamic> peer = {};
+  List<Map<String,dynamic>> members = [];
+
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final c = await supabase.from('conversations').select().eq('id', widget.conversationId).single();
+      final type = '${c['type'] ?? 'direct'}';
+      final memberRows = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId));
+      final ids = memberRows.map((m) => m['user_id']).toList();
+      Map<String,dynamic> p = {};
+      var ms = <Map<String,dynamic>>[];
+      if (ids.isNotEmpty) {
+        final people = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,last_seen,is_verified').inFilter('id', ids));
+        final map = {for(final x in people) x['id'].toString(): x};
+        ms = memberRows.map((m) => {...m, '_profile': map[m['user_id'].toString()] ?? {}}).toList();
+        if (type == 'direct') {
+          final other = ms.firstWhere((m) => '${m['user_id']}' != uid, orElse: () => {'_profile': {}});
+          p = Map<String,dynamic>.from(other['_profile'] as Map);
+        }
+      }
+      if (!mounted) return;
+      setState(() { conversation = Map<String,dynamic>.from(c); peer = p; members = ms; loading = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      showMsg(context, 'اطلاعات گفتگو بارگذاری نشد: ' + _friendlyError(e.toString()));
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    final type = '${conversation['type'] ?? 'direct'}';
+    final title = type == 'direct' ? '${peer['display_name'] ?? peer['username'] ?? widget.fallbackTitle}' : '${conversation['title'] ?? widget.fallbackTitle}';
+    final bio = type == 'direct' ? '${peer['bio'] ?? ''}' : '${conversation['description'] ?? ''}';
+    final avatarUrl = type == 'direct' ? '${peer['avatar_url'] ?? ''}' : '${conversation['avatar_url'] ?? ''}';
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل گفتگو')),
+      body: loading ? const Center(child: CircularProgressIndicator()) : ListView(
+        padding: const EdgeInsets.fromLTRB(16,12,16,32),
+        children: [
+          Center(child: Column(children: [
+            CircleAvatar(radius:54,backgroundColor:scheme.primaryContainer,backgroundImage:avatarUrl.isNotEmpty?NetworkImage(avatarUrl):null,child:avatarUrl.isEmpty?Icon(type=='group'?Icons.groups_rounded:type=='channel'?Icons.campaign_rounded:Icons.person_rounded,size:46,color:scheme.primary):null),
+            const SizedBox(height:12),
+            Row(mainAxisAlignment:MainAxisAlignment.center,children:[Flexible(child:Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w900))),if(type=='direct'&&peer['is_verified']==true) const Padding(padding:EdgeInsets.only(right:5),child:Icon(Icons.verified_rounded,color:Color(0xFF2F9BFF)))]),
+            if(type=='direct'&&'${peer['username'] ?? ''}'.isNotEmpty) Text('@'+'${peer['username']}',style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w700)),
+            if(type=='direct') Text(peer['is_online']==true?'آنلاین':'آخرین بازدید: '+_homeTime(peer['last_seen']),style:TextStyle(color:scheme.onSurfaceVariant)),
+            if(bio.trim().isNotEmpty) Padding(padding:const EdgeInsets.only(top:10),child:Text(bio,textAlign:TextAlign.center,style:TextStyle(height:1.45,color:scheme.onSurfaceVariant))),
+          ])),
+          const SizedBox(height:22),
+          if(type=='group'||type=='channel') Card(child:ListTile(leading:Icon(type=='group'?Icons.groups_rounded:Icons.campaign_rounded),title:Text(type=='group'?'اعضای گروه':'اعضای کانال'),subtitle:Text(members.length.toString()+' نفر'),trailing:const Icon(Icons.chevron_left_rounded),onTap:type=='group'?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupProfilePage(conversationId:widget.conversationId,title:title))):null)),
+          Card(child:Column(children:[
+            ListTile(leading:const Icon(Icons.search_rounded),title:const Text('جستجوی داخل گفتگو'),onTap:()=>showSearch(context:context,delegate:MessageSearchDelegate(widget.conversationId))),
+            ListTile(leading:const Icon(Icons.photo_library_outlined),title:const Text('رسانه‌ها و فایل‌های مشترک'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SharedMediaPage()))),
+            ListTile(leading:const Icon(Icons.notifications_off_outlined),title:const Text('اعلان‌ها و بی‌صدا کردن'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>NotificationsPage(id:widget.conversationId,title:title)))),
+          ])),
+          if(type=='group') Card(child:ExpansionTile(leading:const Icon(Icons.people_alt_outlined),title:const Text('اعضای گروه'),children:members.take(50).map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text('${m['role']??'member'}'));}).toList())),
+        ],
+      ),
+    );
+  }
+}
+
+class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
+  final String conversationId;
+  MessageSearchDelegate(this.conversationId);
+  @override List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed:()=>query='',icon:const Icon(Icons.clear))];
+  @override Widget buildLeading(BuildContext context) => IconButton(onPressed:()=>close(context,null),icon:const Icon(Icons.arrow_back));
+  @override Widget buildResults(BuildContext context) => _build(context);
+  @override Widget buildSuggestions(BuildContext context) => _build(context);
+  Widget _build(BuildContext context) => FutureBuilder(
+    future: query.trim().isEmpty ? Future.value([]) : supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id',conversationId).ilike('body','%'+query.trim()+'%').order('created_at',ascending:false).limit(50),
+    builder:(context,snap){
+      if(query.trim().isEmpty) return const Center(child:Text('متن پیام را جستجو کنید.'));
+      if(!snap.hasData) return const Center(child:CircularProgressIndicator());
+      final rows=List<Map<String,dynamic>>.from(snap.data as List);
+      if(rows.isEmpty) return const Center(child:Text('نتیجه‌ای پیدا نشد.'));
+      return ListView.separated(itemCount:rows.length,separatorBuilder:(_,__)=>const Divider(height:1),itemBuilder:(_,i)=>ListTile(leading:const Icon(Icons.search_rounded),title:Text('${rows[i]['body']??'پیام'}',maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(_homeTime(rows[i]['created_at'])),onTap:()=>close(context,rows[i])));
+    },
+  );
+}
+
 class ChatPage extends StatefulWidget {
   final String id;
   final String title;
