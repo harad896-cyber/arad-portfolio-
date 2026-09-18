@@ -596,83 +596,148 @@ class ProfessionalSettingsPage extends StatefulWidget {
 }
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   final search=TextEditingController();
-  String theme='خودکار',language='فارسی',privacy='مخاطبینم',layout='راحت',backup='هفتگی';
-  double font=1;
-  bool dnd=false,highContrast=false,reducedMotion=false,wifiOnly=true;
+  String theme='تاریک',language='فارسی';
+  @override void initState(){super.initState();_load();}
   @override void dispose(){search.dispose();super.dispose();}
+  Future<void> _load() async {
+    if(!mounted)return;
+    setState((){theme=appTheme.dark?'تاریک':'روشن';language=AppStrings.names[aradLanguageController.locale.languageCode]??'فارسی';});
+  }
   List<Map<String,String>> get items=>[
-    {'cat':'حساب کاربری','title':'حساب کاربری','desc':'نام، نام کاربری، ایمیل، بیو و عکس پروفایل','value':'ویرایش اطلاعات'},
-    {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'کنترل اینکه چه کسانی اطلاعات شما را ببینند','value':privacy},
-    {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'قفل برنامه، تأیید دومرحله‌ای و دستگاه‌های متصل','value':'مدیریت امنیت'},
-    {'cat':'اعلان‌ها','title':'اعلان‌ها','desc':'صدای پیام، لرزش و پیش‌نمایش برای هر نوع اعلان','value':'شخصی‌سازی'},
-    {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم و رنگ برنامه را انتخاب کنید','value':theme},
-    {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری برنامه','value':language},
-    {'cat':'داده و ذخیره‌سازی','title':'داده و ذخیره‌سازی','desc':'مصرف رسانه و دانلود خودکار را کنترل کنید','value':wifiOnly?'فقط Wi-Fi':'آزاد'},
-    {'cat':'پشتیبان‌گیری','title':'پشتیبان‌گیری','desc':'زمان‌بندی و مقصد ذخیره نسخه پشتیبان','value':backup},
-    {'cat':'درباره','title':'درباره برنامه','desc':'نسخه، حریم خصوصی و پشتیبانی','value':'نسخه 1.0.0'},
+    {'cat':'حساب کاربری','title':'حساب کاربری','desc':'نام، نام کاربری، ایمیل، بیو و عکس پروفایل'},
+    {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل'},
+    {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی'},
+    {'cat':'اعلان‌ها','title':'اعلان‌ها','desc':'اعلان پیام‌ها، گروه‌ها و گفتگوهای بی‌صدا'},
+    {'cat':'تماس‌ها','title':'تماس‌ها','desc':'تماس صوتی و تصویری و سابقه تماس'},
+    {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم روشن/تاریک و رنگ رابط برنامه'},
+    {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری'},
+    {'cat':'گفتگو و پیام‌ها','title':'تنظیمات گفتگو','desc':'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا'},
+    {'cat':'گفتگو و پیام‌ها','title':'پوشه‌های گفتگو','desc':'ساخت و مدیریت پوشه‌های گفتگو'},
+    {'cat':'گفتگو و پیام‌ها','title':'پیام‌های ذخیره‌شده','desc':'پیام‌هایی که برای خودتان ذخیره کرده‌اید'},
+    {'cat':'داده و ذخیره‌سازی','title':'داده و ذخیره‌سازی','desc':'دانلود خودکار، مصرف داده و دسترسی‌پذیری'},
+    {'cat':'داده و ذخیره‌سازی','title':'پشتیبان‌گیری','desc':'وضعیت پشتیبان‌گیری و تنظیم محلی آن'},
+    {'cat':'محتوا','title':'استیکر و ایموجی','desc':'استیکرها، GIF و ایموجی'},
+    {'cat':'محتوا','title':'پیام‌رسانی پیشرفته','desc':'ابزارهای پیشرفته متصل به Backend'},
+    {'cat':'درباره','title':'درباره برنامه','desc':'نسخه، معماری و اطلاعات برنامه'},
   ];
   @override Widget build(BuildContext context){
-    final q=search.text.trim();
-    final filtered=items.where((x)=>q.isEmpty||x.values.any((v)=>v.contains(q))).toList();
+    final q=search.text.trim().toLowerCase();
+    final filtered=items.where((x)=>q.isEmpty||x.values.any((v)=>v.toLowerCase().contains(q))).toList();
     final groups=<String,List<Map<String,String>>>{};
-    for(final x in filtered){ final cat=x['cat'] ?? ''; (groups[cat] ??= <Map<String,String>>[]).add(x); }
+    for(final x in filtered){final cat=x['cat']!;(groups[cat]??=<Map<String,String>>[]).add(x);}
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('تنظیمات'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(66),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 14, 10),
-            child: TextField(
-              controller: search,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'جستجو در تنظیمات',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(kAppRadius),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-        children: groups.entries.expand<Widget>((g) => <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
-            child: Text(g.key, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-          ),
-          ...g.value.map<Widget>((x) => Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              leading: Icon(_iconForSetting(x['title']!)),
-              title: Text(x['title']!, style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text(x['desc']!),
-              trailing: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 100),
-                child: Text(x['value']!, textAlign: TextAlign.end, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
-              ),
-              onTap: () => _open(x['title']!),
-            ),
-          )),
-        ]).toList(),
-      ),
+      appBar:AppBar(title:const Text('تنظیمات'),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
+        padding:const EdgeInsets.fromLTRB(16,4,14,10),
+        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:const InputDecoration(hintText:'جستجو در تنظیمات',prefixIcon:Icon(Icons.search_rounded))),
+      ))),
+      body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
+        Card(child:ListTile(
+          leading:CircleAvatar(backgroundColor:Theme.of(context).colorScheme.primaryContainer,child:Icon(Icons.person_rounded,color:Theme.of(context).colorScheme.primary)),
+          title:const Text('حساب شما',style:TextStyle(fontWeight:FontWeight.w900)),
+          subtitle:Text(supabase.auth.currentUser?.email??'حساب واردشده'),
+          trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open('حساب کاربری'),
+        )),
+        ...groups.entries.expand<Widget>((g)=><Widget>[
+          Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w900))),
+          ...g.value.map<Widget>((x)=>Card(margin:const EdgeInsets.only(bottom:6),child:ListTile(
+            leading:Icon(_iconForSetting(x['title']!)),title:Text(x['title']!,style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text(x['desc']!),trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open(x['title']!),
+          ))),
+        ]),
+        Card(child:ListTile(
+          leading:Icon(Icons.logout_rounded,color:Theme.of(context).colorScheme.error),
+          title:const Text('خروج از حساب',style:TextStyle(fontWeight:FontWeight.w800)),
+          subtitle:const Text('خروج امن از این دستگاه'),onTap:_signOut,
+        )),
+      ]),
     );
   }
-  IconData _iconForSetting(String s)=>switch(s){'حساب کاربری'=>Icons.person_outline_rounded,'حریم خصوصی'=>Icons.visibility_outlined,'امنیت'=>Icons.shield_outlined,'اعلان‌ها'=>Icons.notifications_none_rounded,'ظاهر'=>Icons.palette_outlined,'زبان'=>Icons.language_rounded,'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.cloud_outlined,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
+  IconData _iconForSetting(String s)=>switch(s){
+    'حساب کاربری'=>Icons.manage_accounts_rounded,'حریم خصوصی'=>Icons.lock_outline_rounded,'امنیت'=>Icons.security_rounded,
+    'اعلان‌ها'=>Icons.notifications_none_rounded,'تماس‌ها'=>Icons.call_rounded,'ظاهر'=>Icons.palette_outlined,'زبان'=>Icons.language_rounded,
+    'تنظیمات گفتگو'=>Icons.chat_bubble_outline_rounded,'پوشه‌های گفتگو'=>Icons.folder_copy_outlined,'پیام‌های ذخیره‌شده'=>Icons.bookmark_outline_rounded,
+    'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.backup_outlined,'استیکر و ایموجی'=>Icons.emoji_emotions_outlined,
+    'پیام‌رسانی پیشرفته'=>Icons.auto_awesome_rounded,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
   void _open(String title){
-    if(title=='ظاهر'){showModalBottomSheet(context:context,builder:(_)=>_ChoiceSheet(title:'ظاهر',options:['روشن','تاریک','خودکار'],value:theme,onChanged:(v){setState(()=>theme=v);Navigator.pop(context);},));}
-    else if(title=='زبان'){showModalBottomSheet(context:context,builder:(_)=>_ChoiceSheet(title:'زبان',options:['فارسی','English','العربية'],value:language,onChanged:(v){setState(()=>language=v);Navigator.pop(context);}));}
-    else if(title=='پشتیبان‌گیری'){showModalBottomSheet(context:context,builder:(_)=>_ChoiceSheet(title:'پشتیبان‌گیری',options:['روزانه','هفتگی','ماهانه'],value:backup,onChanged:(v){setState(()=>backup=v);Navigator.pop(context);}));}
-    else if(title=='داده و ذخیره‌سازی'){setState(()=>wifiOnly=!wifiOnly);}
-    else if(title=='امنیت'){Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage()));}
-    else if(title=='درباره برنامه'){Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutAppPage()));}
+    switch(title){
+      case 'حساب کاربری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ProfilePage())); break;
+      case 'حریم خصوصی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const PrivacySettingsPage())); break;
+      case 'امنیت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage())); break;
+      case 'اعلان‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsPage())); break;
+      case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage())); break;
+      case 'ظاهر': _showThemeSheet(); break;
+      case 'زبان': _showLanguageSheet(); break;
+      case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatSettingsPage())); break;
+      case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())); break;
+      case 'پیام‌های ذخیره‌شده': Navigator.push(context,MaterialPageRoute(builder:(_)=>SavedMessagesPage())); break;
+      case 'داده و ذخیره‌سازی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const DataAndPermissionsPage())); break;
+      case 'پشتیبان‌گیری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const BackupPage())); break;
+      case 'استیکر و ایموجی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const StickersGifsPage())); break;
+      case 'پیام‌رسانی پیشرفته': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedFeaturesPage())); break;
+      case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutAppPage())); break;
+    }
+  }
+  void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
+    const Padding(padding:EdgeInsets.all(18),child:Text('ظاهر برنامه',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+    RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('تاریک')),
+    RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('روشن')),
+  ])));
+  void _showLanguageSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
+    const Padding(padding:EdgeInsets.all(18),child:Text('زبان',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+    ...AppStrings.supported.map((code)=>RadioListTile<String>(value:code,groupValue:aradLanguageController.locale.languageCode,title:Text(AppStrings.names[code]??code),onChanged:(v)async{if(v==null)return;await aradLanguageController.setLocale(v);if(mounted){setState(()=>language=AppStrings.names[v]??v);Navigator.pop(context);}})),
+  ])));
+  Future<void> _signOut()async{
+    final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+      title:const Text('خروج از حساب؟'),content:const Text('نشست این دستگاه پایان داده می‌شود.'),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('لغو')),FilledButton(style:FilledButton.styleFrom(backgroundColor:Theme.of(ctx).colorScheme.error),onPressed:()=>Navigator.pop(ctx,true),child:const Text('خروج'))],
+    ))??false;
+    if(ok)await supabase.auth.signOut();
   }
 }
+
+class PrivacySettingsPage extends StatefulWidget {
+  const PrivacySettingsPage({super.key});
+  @override State<PrivacySettingsPage> createState()=>_PrivacySettingsPageState();
+}
+class _PrivacySettingsPageState extends State<PrivacySettingsPage>{
+  late final String keyPrefix;
+  bool online=true,phone=false,profile=true,lastSeen=true;
+  @override void initState(){super.initState();keyPrefix='privacy_${supabase.auth.currentUser?.id??'guest'}';_load();}
+  Future<void> _load()async{final p=await SharedPreferences.getInstance();if(!mounted)return;setState((){
+    online=p.getBool('${keyPrefix}_online')??true;lastSeen=p.getBool('${keyPrefix}_last_seen')??true;phone=p.getBool('${keyPrefix}_phone')??false;profile=p.getBool('${keyPrefix}_profile')??true;
+  });}
+  Future<void> _set(String key,bool value)async{final p=await SharedPreferences.getInstance();await p.setBool('${keyPrefix}_${key}',value);}
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('حریم خصوصی')),body:ListView(padding:const EdgeInsets.all(12),children:[
+    const Padding(padding:EdgeInsets.fromLTRB(4,8,4,6),child:Text('دیده‌شدن اطلاعات',style:TextStyle(fontSize:15,fontWeight:FontWeight.w900))),
+    Card(child:SwitchListTile(title:const Text('نمایش آنلاین بودن'),value:online,onChanged:(v){setState(()=>online=v);_set('online',v);})),
+    Card(child:SwitchListTile(title:const Text('نمایش آخرین بازدید'),value:lastSeen,onChanged:(v){setState(()=>lastSeen=v);_set('last_seen',v);})),
+    Card(child:SwitchListTile(title:const Text('نمایش شماره تلفن'),value:phone,onChanged:(v){setState(()=>phone=v);_set('phone',v);})),
+    Card(child:SwitchListTile(title:const Text('نمایش پروفایل'),value:profile,onChanged:(v){setState(()=>profile=v);_set('profile',v);})),
+    const Card(child:Padding(padding:EdgeInsets.all(16),child:Text('این گزینه‌ها در این نسخه ترجیح خصوصی روی دستگاه هستند؛ اعمال سراسری نیازمند اتصال به تنظیمات حساب در Backend است.'))),
+  ]));
+}
+
+class ChatSettingsPage extends StatefulWidget {
+  const ChatSettingsPage({super.key});
+  @override State<ChatSettingsPage> createState()=>_ChatSettingsPageState();
+}
+class _ChatSettingsPageState extends State<ChatSettingsPage>{
+  final uid=supabase.auth.currentUser?.id??'guest';
+  bool receipts=true,preview=true,enterSend=false,autoplay=true,saveGallery=false;
+  @override void initState(){super.initState();_load();}
+  Future<void> _load()async{final p=await SharedPreferences.getInstance();if(!mounted)return;setState((){
+    receipts=p.getBool('chat_receipts_${uid}')??true;preview=p.getBool('chat_preview_${uid}')??true;enterSend=p.getBool('chat_enter_send_${uid}')??false;autoplay=p.getBool('chat_autoplay_${uid}')??true;saveGallery=p.getBool('chat_save_gallery_${uid}')??false;
+  });}
+  Future<void> _set(String key,bool value)async{final p=await SharedPreferences.getInstance();await p.setBool('chat_${key}_${uid}',value);}
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تنظیمات گفتگو')),body:ListView(padding:const EdgeInsets.all(12),children:[
+    Card(child:SwitchListTile(title:const Text('رسید خواندن'),subtitle:const Text('نمایش وضعیت خوانده‌شدن پیام‌ها'),value:receipts,onChanged:(v){setState(()=>receipts=v);_set('receipts',v);})),
+    Card(child:SwitchListTile(title:const Text('پیش‌نمایش لینک'),value:preview,onChanged:(v){setState(()=>preview=v);_set('preview',v);})),
+    Card(child:SwitchListTile(title:const Text('ارسال با Enter'),value:enterSend,onChanged:(v){setState(()=>enterSend=v);_set('enter_send',v);})),
+    Card(child:SwitchListTile(title:const Text('پخش خودکار صدا'),value:autoplay,onChanged:(v){setState(()=>autoplay=v);_set('autoplay',v);})),
+    Card(child:SwitchListTile(title:const Text('ذخیره رسانه در گالری'),value:saveGallery,onChanged:(v){setState(()=>saveGallery=v);_set('save_gallery',v);})),
+  ]));
+}
+
 class _ChoiceSheet extends StatelessWidget{
   final String title,value; final List<String> options; final ValueChanged<String> onChanged;
   const _ChoiceSheet({required this.title,required this.options,required this.value,required this.onChanged});
@@ -1810,45 +1875,7 @@ class _HomePageState extends State<HomePage> {
     ));
   }
 
-  Widget settingsView() => Scaffold(
-    backgroundColor: Colors.transparent,
-    appBar: AppBar(title: const Text('تنظیمات')),
-    body: ListView(padding: const EdgeInsets.all(16), children: [
-      Card(child: Column(children: [
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.manage_accounts_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('حساب کاربری', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('پروفایل، حساب‌ها و امنیت'), onTap: () => setState(() => navIndex = 3)),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.lock_outline_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('حریم خصوصی'), subtitle: const Text('کنترل نمایش و دسترسی‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'حریم خصوصی', icon: Icons.lock_outline_rounded)))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('اعلان‌ها'), subtitle: const Text('اعلان پیام‌ها و گفتگوها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'اعلان‌ها', icon: Icons.notifications_none_rounded)))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.storage_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('ذخیره‌سازی'), subtitle: const Text('مدیریت فایل‌ها و رسانه‌ها'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'ذخیره‌سازی', icon: Icons.storage_rounded)))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.palette_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('ظاهر برنامه'), subtitle: const Text('رنگ اصلی و حالت تاریک'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'ظاهر برنامه', icon: Icons.palette_rounded)))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.language_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('زبان'), subtitle: Text(aradLanguageController.locale.languageCode), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'زبان', icon: Icons.language_rounded)))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.call_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تماس‌ها'), subtitle: const Text('تماس صوتی و تصویری'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CallsPage()))),
-        const Divider(height: 1),
-        ListTile(title: const Text('تاریخچه تماس‌ها'), leading: const Icon(Icons.history_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage()))),
-        ListTile(title: const Text('مرکز اعلان‌ها'), leading: const Icon(Icons.notifications_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsPage()))),
-        ListTile(title: const Text('پشتیبان‌گیری'), leading: const Icon(Icons.backup_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const BackupPage()))),
-        ListTile(title: const Text('استیکر و ایموجی'), leading: const Icon(Icons.emoji_emotions_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const StickersPage()))),
-        ListTile(title: const Text('امنیت پیشرفته'), leading: const Icon(Icons.security_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityPage()))),
-        ListTile(title: const Text('درباره برنامه'), leading: const Icon(Icons.info_outline_rounded), onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutPage()))),
-        ListTile(title: const Text('مدیریت گفتگو'),leading: const Icon(Icons.tune_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ConversationToolsPage(conversationId:'global')))),
-        ListTile(title: const Text('افزودن مخاطب و دعوت'),leading: const Icon(Icons.person_add_alt_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ContactsToolsPage()))),
-        ListTile(title: const Text('کیف پول'),leading: const Icon(Icons.account_balance_wallet_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const WalletPage()))),
-        ListTile(title: const Text('مصرف داده'),leading: const Icon(Icons.data_usage_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const DataSettingsPage()))),
-        ListTile(title: const Text('دسترسی‌پذیری'),leading: const Icon(Icons.accessibility_new_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccessibilityPage()))),
-        ListTile(title: const Text('دسترسی‌های برنامه'),leading: const Icon(Icons.verified_user_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const PermissionScreensPage()))),
-        ListTile(title: const Text('پیام‌رسانی پیشرفته'),leading: const Icon(Icons.auto_awesome_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedMessagingPage()))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.chat_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('تنظیمات گفتگو'), subtitle: const Text('نمایش پیام‌ها و رفتار چت'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileOptionPage(title: 'تنظیمات چت', icon: Icons.chat_rounded)))),
-        const Divider(height: 1),
-        ListTile(leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer, child: Icon(Icons.bookmark_rounded, color: Theme.of(context).colorScheme.primary)), title: const Text('پیام‌های ذخیره‌شده'), subtitle: const Text('پیام‌های مهم را یکجا نگه دارید'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()))),
-      ])),
-    ]),
-  );
+  Widget settingsView() => const ProfessionalSettingsPage();
 
   @override
   Widget build(BuildContext context) {
