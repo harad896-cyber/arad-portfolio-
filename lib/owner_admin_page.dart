@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main.dart';
+import 'polish_widgets.dart';
 
 class OwnerAdminPage extends StatefulWidget {
   const OwnerAdminPage({super.key});
@@ -142,7 +143,7 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
         actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded))],
       ),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppSkeletonList(count: 7)
           : Column(
               children: [
                 Padding(
