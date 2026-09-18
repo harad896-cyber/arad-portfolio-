@@ -400,10 +400,11 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
       ),
-      builder: (context, child) => Directionality(
-        textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
-        child: _NetworkStatusBanner(child: Container(
-        decoration: BoxDecoration(
+      builder: (context, child) => _NetworkStatusBanner(
+        child: Directionality(
+          textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+          child: Container(
+            decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           gradient: RadialGradient(
             center: const Alignment(0.85, -0.95),
@@ -414,11 +415,13 @@ class AradMessenger extends StatelessWidget {
             ],
           ),
         ),
-        child: child!,
-      )),
+            child: child!,
+          ),
+        ),
+      ),
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       home: const AuthGate(),
-    ));
+    );
   }
 }
 
@@ -2403,9 +2406,6 @@ class _ChatPageState extends State<ChatPage> {
   Map<String, dynamic>? replyMessage;
   final AudioRecorder _voiceRecorder = AudioRecorder();
   final AudioPlayer _voicePlayer = AudioPlayer();
-  static const int _messagePageSize = 40;
-  bool _loadingOlder = false;
-  bool _hasOlderMessages = false;
   bool recordingVoice = false;
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
