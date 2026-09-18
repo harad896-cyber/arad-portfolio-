@@ -26,6 +26,7 @@ import 'chat_background_page.dart';
 import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
+import 'advanced_features.dart';
 
 
 const double kAppRadius = 16.0;
@@ -255,11 +256,12 @@ class AradMessenger extends StatelessWidget {
       locale: aradLanguageController.locale,
       supportedLocales: AppStrings.supported.map((x) => Locale(x)),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) {
-        final code = aradLanguageController.locale.languageCode;
-        final direction = (code == 'fa' || code == 'ar') ? TextDirection.rtl : TextDirection.ltr;
-        return Directionality(textDirection: direction, child: child ?? const SizedBox.shrink());
-      },
+      builder: (context, child) => _NetworkStatusBanner(
+        child: Directionality(
+          textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+          child: child ?? const SizedBox.shrink(),
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       title: 'Arad Messenger',
       theme: ThemeData(
@@ -454,25 +456,7 @@ class AradMessenger extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
         ),
       ),
-      builder: (context, child) => _NetworkStatusBanner(
-        child: Directionality(
-          textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              gradient: RadialGradient(
-                center: const Alignment(0.85, -0.95),
-                radius: 1.15,
-                colors: [
-                  Color(appTheme.backgroundSeed).withValues(alpha: .30),
-                  Theme.of(context).scaffoldBackgroundColor,
-                ],
-              ),
-            ),
-            child: child!,
-          ),
-        ),
-      ),
+
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       home: const AuthGate(),
     ));
@@ -1117,7 +1101,7 @@ class CallHistoryPage extends StatelessWidget {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),
     body:const AppEmptyState(
-      icon:Icons.call_log_rounded,
+      icon:Icons.phone_in_talk_rounded,
       title:'هنوز تاریخچه تماس ثبت نشده است',
       subtitle:'وقتی تماس‌های واقعی ثبت شوند، سابقه آن‌ها در اینجا نمایش داده می‌شود.',
     ),
