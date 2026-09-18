@@ -186,8 +186,39 @@ class _StoriesPageState extends State<StoriesPage> {
           if (url == null) const Center(child: CircularProgressIndicator())
           else if (s['media_type'] == 'video') StoryVideo(url: url)
           else InteractiveViewer(child: Image.network(url, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)))),
-          Positioned(top: 10, left: 12, right: 12, child: Row(children: List.generate(_stories.length, (i) => Expanded(child: Container(height: 3, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(color: i <= _index ? Colors.white : Colors.white24, borderRadius: BorderRadius.circular(3))))),),
-          if ((s['caption'] ?? '').toString().trim().isNotEmpty) Positioned(bottom: 30, left: 18, right: 18, child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(14)), child: Text(s['caption'].toString(), style: const TextStyle(color: Colors.white, fontSize: 16))))
+          Positioned(
+            top: 10, left: 12, right: 12,
+            child: Row(
+              children: List.generate(
+                _stories.length,
+                (i) => Expanded(
+                  child: Container(
+                    height: 3,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: i <= _index ? Colors.white : Colors.white24,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if ((s['caption'] ?? '').toString().trim().isNotEmpty)
+            Positioned(
+              bottom: 30, left: 18, right: 18,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  s['caption'].toString(),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
         ]),
       ),
     );
