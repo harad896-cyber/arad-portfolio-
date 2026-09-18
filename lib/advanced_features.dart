@@ -11,7 +11,6 @@ class AdvancedFeaturesPage extends StatefulWidget {
 
 class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
   final supabase = Supabase.instance.client;
-  final folders = <String>['کار', 'خانواده', 'ناخوانده‌ها'];
   final wallpapers = <String>['پیش‌فرض', 'آرام', 'تیره', 'شفاف'];
   bool notifications = true;
   bool readReceipts = true;
@@ -42,25 +41,13 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
     if (value is String) await p.setString(key, value);
   }
 
-  void _soon(String title) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title فعال شد')));
-  }
-
   @override
   Widget build(BuildContext context) {
     final items = <_FeatureItem>[
-      _FeatureItem(Icons.bookmark_outline, 'پیام‌های ذخیره‌شده', 'ذخیره و دسترسی سریع به پیام‌های مهم', () => _soon('پیام‌های ذخیره‌شده')),
-      _FeatureItem(Icons.call_outlined, 'تماس‌ها', 'تماس صوتی و تصویری و سابقه تماس', () => _soon('تماس‌ها')),
-      _FeatureItem(Icons.notifications_none, 'اعلان‌ها', 'کنترل اعلان‌های پیام و تماس', () async { setState(() => notifications = !notifications); await _save('notifications', notifications); }),
-      _FeatureItem(Icons.folder_open, 'پوشه‌های گفتگو', 'کار، خانواده و ناخوانده‌ها', () => _showFolders()),
+      _FeatureItem(Icons.notifications_none, 'اعلان‌ها', 'تنظیم اعلان‌های محلی برنامه', () async { setState(() => notifications = !notifications); await _save('notifications', notifications); }),
       _FeatureItem(Icons.wallpaper_outlined, 'والپیپر گفتگو', 'تنظیم ظاهر گفتگو روی دستگاه', () => _showWallpaper()),
-      _FeatureItem(Icons.backup_outlined, 'پشتیبان‌گیری و بازیابی', 'ذخیره تنظیمات و اطلاعات قابل پشتیبان', () async { setState(() => autoBackup = !autoBackup); await _save('auto_backup', autoBackup); }),
-      _FeatureItem(Icons.photo_library_outlined, 'رسانه و فایل‌های مشترک', 'تصاویر، ویدیوها، فایل‌ها، لینک‌ها و صدا', () => _soon('رسانه و فایل‌های مشترک')),
-      _FeatureItem(Icons.search, 'جستجوی سراسری', 'جستجوی کاربران و گفتگوها', () => _showSearch()),
-      _FeatureItem(Icons.emoji_emotions_outlined, 'استیکر و GIF', 'دسترسی سریع به محتوای واکنشی', () => _soon('استیکر و GIF')),
-      _FeatureItem(Icons.reply_outlined, 'ریپلای، فوروارد و ویرایش', 'ابزارهای کامل پیام', () => _soon('ابزارهای پیام')),
-      _FeatureItem(Icons.mic_none, 'پیام صوتی', 'ضبط و ارسال پیام صوتی', () => _soon('پیام صوتی')),
-      _FeatureItem(Icons.check_circle_outline, 'رسید خواندن', 'نمایش وضعیت تحویل و خوانده‌شدن', () async { setState(() => readReceipts = !readReceipts); await _save('read_receipts', readReceipts); }),
+      _FeatureItem(Icons.backup_outlined, 'پشتیبان‌گیری و بازیابی', 'وضعیت فعلی پشتیبان‌گیری دستگاه', () async { setState(() => autoBackup = !autoBackup); await _save('auto_backup', autoBackup); }),
+      _FeatureItem(Icons.check_circle_outline, 'رسید خواندن', 'تنظیم ترجیح محلی برای رسید خواندن', () async { setState(() => readReceipts = !readReceipts); await _save('read_receipts', readReceipts); }),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('قابلیت‌های برنامه')),
@@ -75,13 +62,8 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
     );
   }
 
-  void _showFolders() => showModalBottomSheet(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [for (final f in folders) ListTile(leading: const Icon(Icons.folder_outlined), title: Text(f), onTap: () { Navigator.pop(context); _soon('پوشه $f'); })])));
-
   void _showWallpaper() => showModalBottomSheet(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [for (final w in wallpapers) RadioListTile<String>(value: w, groupValue: wallpaper, title: Text(w), onChanged: (v) async { if (v == null) return; setState(() => wallpaper = v); await _save('chat_wallpaper', v); if (mounted) Navigator.pop(context); })])));
 
-  void _showSearch() {
-    showSearch(context: context, delegate: _FeatureSearchDelegate());
-  }
 }
 
 class _FeatureItem {
