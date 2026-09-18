@@ -1445,7 +1445,7 @@ class _ChatSkeleton extends StatelessWidget {
       ),
     );
     return Card(
-      margin: const EdgeInsets.only(bottom: 7),
+      margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(children: [
@@ -1987,10 +1987,10 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: supabase.rpc('search_profiles', params: {'search_text': q}).then((v) => List<Map<String, dynamic>>.from(v)),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-        if (snapshot.hasError) return Center(child: Text('جستجو ناموفق بود: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting) return const AppSkeletonList(count: 5);
+        if (snapshot.hasError) return AppEmptyState(icon: Icons.search_off_rounded, title: 'جستجو ناموفق بود', subtitle: _friendlyError('${snapshot.error}'));
         final rows = snapshot.data ?? [];
-        if (rows.isEmpty) return const Center(child: Text('کاربری پیدا نشد'));
+        if (rows.isEmpty) return const AppEmptyState(icon: Icons.person_search_rounded, title: 'کاربری پیدا نشد', subtitle: 'نام یا نام کاربری دیگری را امتحان کنید.');
         return ListView(
           children: rows.map((p) {
             return ListTile(
@@ -3021,7 +3021,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _attachmentItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(borderRadius: BorderRadius.circular(24), onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+    return InkWell(borderRadius: BorderRadius.circular(kAppRadius), onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Container(width: 68, height: 68, decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .72), shape: BoxShape.circle), child: Icon(icon, size: 32, color: scheme.primary)),
       const SizedBox(height: 8), Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
     ]));
@@ -3683,14 +3683,14 @@ class _ChatPageState extends State<ChatPage> {
               child: Container(
                 constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84),
                 margin: const EdgeInsets.only(bottom: 7),
-                padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                 decoration: BoxDecoration(
                   color: mine ? myBubble : otherBubble,
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(mine ? 20 : 5),
-                    bottomRight: Radius.circular(mine ? 5 : 20),
+                    topLeft: const Radius.circular(kAppRadius),
+                    topRight: const Radius.circular(kAppRadius),
+                    bottomLeft: Radius.circular(mine ? kAppRadius : 4),
+                    bottomRight: Radius.circular(mine ? 4 : kAppRadius),
                   ),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 8, offset: const Offset(0, 2)),
@@ -3701,7 +3701,7 @@ class _ChatPageState extends State<ChatPage> {
                   children: [
                     if (!mine && isGroup)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 3),
+                        padding: const EdgeInsets.only(bottom: 4),
                         child: Text(sender, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.primary)),
                       ),
                     _replyPreview(m),
@@ -3909,7 +3909,7 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     )
                   : messages.isEmpty
-                      ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
+                      ? const AppEmptyState(icon: Icons.forum_outlined, title: 'هنوز پیامی وجود ندارد', subtitle: 'اولین پیام این گفتگو را ارسال کنید.')
                       : NotificationListener<ScrollNotification>(
                           onNotification: (notification) {
                             if (notification.metrics.pixels <= 120 && notification is ScrollUpdateNotification) _loadOlderMessages();
@@ -3962,13 +3962,13 @@ class _ChatPageState extends State<ChatPage> {
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 5, 8, 8),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: dark ? const Color(0xFF20242A) : Colors.white,
                         borderRadius: BorderRadius.circular(24),
@@ -4013,10 +4013,10 @@ class _ChatPageState extends State<ChatPage> {
                                 filled: true,
                                 fillColor: scheme.surface.withValues(alpha: .48),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(19),
+                                  borderRadius: BorderRadius.circular(kAppRadius),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 isDense: true,
                               ),
                             ),
