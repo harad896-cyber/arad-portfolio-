@@ -26,7 +26,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   share_plus: ^10.1.4
   qr_flutter: ^4.1.0
-  video_player: ^2.14.0
+  video_player: ^2.10.1
   local_auth: ^2.3.0
 
 dev_dependencies:
