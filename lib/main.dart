@@ -5005,6 +5005,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
         child: Column(
           children: [
+            _pinnedBanner(),
             Expanded(
               child: loading
                   ? ListView.builder(
