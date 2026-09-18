@@ -3850,7 +3850,23 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             Expanded(
               child: loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? ListView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 6,
+                      itemBuilder: (_, i) => Align(
+                        alignment: i.isEven ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          width: 96 + (i % 3) * 56,
+                          height: 44,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .06),
+                            borderRadius: BorderRadius.circular(kAppRadius),
+                          ),
+                        ),
+                      ),
+                    )
                   : messages.isEmpty
                       ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
                       : NotificationListener<ScrollNotification>(
