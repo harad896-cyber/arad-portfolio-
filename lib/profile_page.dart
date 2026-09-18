@@ -219,7 +219,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 110),
+      padding: const EdgeInsets.fromLTRB(16, 18, 14, 110),
       children: [
         glass(Padding(
           padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
@@ -312,7 +312,7 @@ class _ProfileOptionPageState extends State<ProfileOptionPage> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
       body: ListView(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
@@ -453,7 +453,7 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
     await Navigator.push(context,MaterialPageRoute(builder:(_)=>const LoginPage(addAccount:true)));
     if(mounted)await load();
   }
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تغییر حساب')),body:ListView(padding:const EdgeInsets.all(14),children:[
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تغییر حساب')),body:ListView(padding:const EdgeInsets.all(16),children:[
     if(loading)const Center(child:Padding(padding:EdgeInsets.all(30),child:CircularProgressIndicator())),
     if(!loading)...emails.map((mail)=>Card(child:ListTile(
       leading:CircleAvatar(child:Text(mail.isEmpty?'?':mail[0].toUpperCase())),
