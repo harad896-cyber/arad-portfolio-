@@ -713,40 +713,342 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
 
 class PrivacySettingsPage extends StatefulWidget {
   const PrivacySettingsPage({super.key});
-  @override State<PrivacySettingsPage> createState()=>_PrivacySettingsPageState();
+  @override
+  State<PrivacySettingsPage> createState() => _PrivacySettingsPageState();
 }
-class _PrivacySettingsPageState extends State<PrivacySettingsPage>{
-  bool online=true,phone=false,profile=true,lastSeen=true,loading=true;
-  @override void initState(){super.initState();_load();}
-  Future<void> _load()async{
-    try{
-      final s=await loadUserSettings();
-      if(!mounted)return;
-      setState((){
-        online=s['show_online']??true;
-        lastSeen=s['show_last_seen']??true;
-        phone=s['show_phone']??false;
-        profile=s['show_profile']??true;
-        loading=false;
+
+class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
+  bool loading = true;
+  bool discoverByPhone = true;
+  String phoneVisibility = 'contacts';
+  String lastSeenVisibility = 'everybody';
+  String profilePhotoVisibility = 'everybody';
+  String bioVisibility = 'everybody';
+  String forwardsVisibility = 'everybody';
+  String callsVisibility = 'everybody';
+  String groupsVisibility = 'everybody';
+  String voiceMessagesVisibility = 'everybody';
+  String p2pVisibility = 'contacts';
+
+  static const _visibilityOptions = <String, String>{
+    'everybody': 'همه',
+    'contacts': 'مخاطبین من',
+    'nobody': 'هیچ‌کس',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final s = await loadUserSettings();
+      if (!mounted) return;
+      setState(() {
+        discoverByPhone = s['discover_by_phone'] ?? true;
+        phoneVisibility = _safeVisibility(s['phone_visibility'], 'contacts');
+        lastSeenVisibility = _safeVisibility(s['last_seen_visibility'], 'everybody');
+        profilePhotoVisibility = _safeVisibility(s['profile_photo_visibility'], 'everybody');
+        bioVisibility = _safeVisibility(s['bio_visibility'], 'everybody');
+        forwardsVisibility = _safeVisibility(s['forwards_visibility'], 'everybody');
+        callsVisibility = _safeVisibility(s['calls_visibility'], 'everybody');
+        groupsVisibility = _safeVisibility(s['groups_visibility'], 'everybody');
+        voiceMessagesVisibility = _safeVisibility(s['voice_messages_visibility'], 'everybody');
+        p2pVisibility = _safeVisibility(s['p2p_visibility'], 'contacts');
+        loading = false;
       });
-    }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'تنظیمات حریم خصوصی بارگذاری نشد: $e');}}
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      showMsg(context, 'تنظیمات حریم خصوصی بارگذاری نشد: ${_friendlyError(e.toString())}');
+    }
   }
-  Future<void> _set(String key,bool value)async{
-    setState(()=>loading=false);
-    try{await saveUserSettings({key:value});}catch(e){if(mounted)showMsg(context,'ذخیره تنظیمات انجام نشد: $e');}
+
+  String _safeVisibility(dynamic value, String fallback) {
+    final v = value?.toString();
+    return _visibilityOptions.containsKey(v) ? v! : fallback;
   }
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('حریم خصوصی')),
-    body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
-      const Padding(padding:EdgeInsets.fromLTRB(4,8,4,6),child:Text('دیده‌شدن اطلاعات',style:TextStyle(fontSize:15,fontWeight:FontWeight.w900))),
-      Card(child:SwitchListTile(title:const Text('نمایش آنلاین بودن'),subtitle:const Text('این ترجیح در حساب شما ذخیره می‌شود.'),value:online,onChanged:(v){setState(()=>online=v);_set('show_online',v);})),
-      Card(child:SwitchListTile(title:const Text('نمایش آخرین بازدید'),value:lastSeen,onChanged:(v){setState(()=>lastSeen=v);_set('show_last_seen',v);})),
-      Card(child:SwitchListTile(title:const Text('نمایش شماره تلفن'),value:phone,onChanged:(v){setState(()=>phone=v);_set('show_phone',v);})),
-      Card(child:SwitchListTile(title:const Text('نمایش پروفایل'),value:profile,onChanged:(v){setState(()=>profile=v);_set('show_profile',v);})),
-      const SizedBox(height:12),
-      const Card(child:Padding(padding:EdgeInsets.all(16),child:Text('این گزینه‌ها اکنون در Backend حساب ذخیره می‌شوند و می‌توانند مبنای اعمال حریم خصوصی در همه دستگاه‌های واردشده باشند.'))),
-    ]),
-  );
+
+  String _label(String value) => _visibilityOptions[value] ?? 'مخاطبین من';
+
+  Future<void> _save(String key, dynamic value) async {
+    try {
+      await saveUserSettings({key: value});
+    } catch (e) {
+      if (!mounted) return;
+      showMsg(context, 'ذخیره تنظیمات انجام نشد: ${_friendlyError(e.toString())}');
+      await _load();
+    }
+  }
+
+  Future<void> _chooseVisibility({
+    required String title,
+    required String key,
+    required String current,
+    required ValueChanged<String> onChanged,
+  }) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                  ],
+                ),
+              ),
+              ..._visibilityOptions.entries.map(
+                (entry) => RadioListTile<String>(
+                  value: entry.key,
+                  groupValue: current,
+                  title: Text(entry.value),
+                  subtitle: Text(_visibilityDescription(entry.key)),
+                  secondary: Icon(
+                    entry.key == 'everybody'
+                        ? Icons.public_rounded
+                        : entry.key == 'contacts'
+                            ? Icons.people_alt_outlined
+                            : Icons.visibility_off_outlined,
+                  ),
+                  onChanged: (value) => Navigator.pop(sheetContext, value),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected == null || selected == current) return;
+    onChanged(selected);
+    await _save(key, selected);
+  }
+
+  String _visibilityDescription(String value) {
+    switch (value) {
+      case 'everybody':
+        return 'هر کاربر مجاز به دیدن یا تماس با شما است.';
+      case 'contacts':
+        return 'فقط افرادی که در مخاطبین شما هستند.';
+      default:
+        return 'برای دیگران مخفی یا مسدود است.';
+    }
+  }
+
+  Widget _visibilityTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String value,
+    required String key,
+    required ValueChanged<String> onChanged,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: scheme.primary.withValues(alpha: .13),
+          foregroundColor: scheme.primary,
+          child: Icon(icon, size: 21),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w750)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: Text(subtitle),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_label(value), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_left_rounded),
+          ],
+        ),
+        onTap: () => _chooseVisibility(
+          title: title,
+          key: key,
+          current: value,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Widget _section(String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 3),
+          Text(subtitle, style: TextStyle(fontSize: 12.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('حریم خصوصی')),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 28),
+              children: [
+                _section(
+                  'شماره تلفن و پیدا شدن حساب',
+                  'کنترل کنید چه کسانی شماره شما را ببینند و چه کسانی بتوانند با شماره تلفن شما را پیدا کنند.',
+                ),
+                _visibilityTile(
+                  icon: Icons.phone_rounded,
+                  title: 'شماره تلفن',
+                  subtitle: 'چه کسانی شماره تلفن شما را ببینند',
+                  value: phoneVisibility,
+                  key: 'phone_visibility',
+                  onChanged: (v) => setState(() => phoneVisibility = v),
+                ),
+                Card(
+                  child: SwitchListTile.adaptive(
+                    secondary: const Icon(Icons.contact_phone_outlined),
+                    title: const Text('پیدا کردن من با شماره تلفن'),
+                    subtitle: const Text('اجازه می‌دهد کاربران با شماره ذخیره‌شده شما، حسابتان را پیدا کنند.'),
+                    value: discoverByPhone,
+                    onChanged: (v) {
+                      setState(() => discoverByPhone = v);
+                      _save('discover_by_phone', v);
+                    },
+                  ),
+                ),
+
+                _section(
+                  'حضور و فعالیت',
+                  'تنظیمات آنلاین بودن و آخرین بازدید را جداگانه کنترل کنید.',
+                ),
+                _visibilityTile(
+                  icon: Icons.access_time_rounded,
+                  title: 'آخرین بازدید و آنلاین بودن',
+                  subtitle: 'چه کسانی زمان فعالیت شما را ببینند',
+                  value: lastSeenVisibility,
+                  key: 'last_seen_visibility',
+                  onChanged: (v) => setState(() => lastSeenVisibility = v),
+                ),
+
+                _section(
+                  'پروفایل',
+                  'اطلاعات عمومی پروفایل را برای گروه‌های مختلف کاربران تنظیم کنید.',
+                ),
+                _visibilityTile(
+                  icon: Icons.account_circle_outlined,
+                  title: 'عکس پروفایل',
+                  subtitle: 'چه کسانی عکس و ویدیوهای پروفایل شما را ببینند',
+                  value: profilePhotoVisibility,
+                  key: 'profile_photo_visibility',
+                  onChanged: (v) => setState(() => profilePhotoVisibility = v),
+                ),
+                _visibilityTile(
+                  icon: Icons.info_outline_rounded,
+                  title: 'بیوگرافی',
+                  subtitle: 'چه کسانی متن معرفی شما را ببینند',
+                  value: bioVisibility,
+                  key: 'bio_visibility',
+                  onChanged: (v) => setState(() => bioVisibility = v),
+                ),
+
+                _section(
+                  'ارتباط با شما',
+                  'کنترل کنید چه کسانی بتوانند از قابلیت‌های ارتباطی پیام‌رسان استفاده کنند.',
+                ),
+                _visibilityTile(
+                  icon: Icons.call_rounded,
+                  title: 'تماس‌ها',
+                  subtitle: 'چه کسانی بتوانند با شما تماس صوتی یا تصویری بگیرند',
+                  value: callsVisibility,
+                  key: 'calls_visibility',
+                  onChanged: (v) => setState(() => callsVisibility = v),
+                ),
+                _visibilityTile(
+                  icon: Icons.groups_rounded,
+                  title: 'گروه‌ها و کانال‌ها',
+                  subtitle: 'چه کسانی بتوانند شما را به گفتگوهای گروهی اضافه کنند',
+                  value: groupsVisibility,
+                  key: 'groups_visibility',
+                  onChanged: (v) => setState(() => groupsVisibility = v),
+                ),
+                _visibilityTile(
+                  icon: Icons.mic_rounded,
+                  title: 'پیام‌های صوتی',
+                  subtitle: 'چه کسانی بتوانند برای شما پیام صوتی یا ویدیویی بفرستند',
+                  value: voiceMessagesVisibility,
+                  key: 'voice_messages_visibility',
+                  onChanged: (v) => setState(() => voiceMessagesVisibility = v),
+                ),
+
+                _section(
+                  'پیام‌های فورواردشده',
+                  'کنترل کنید هنگام فوروارد پیام‌های شما، چه میزان ارتباط با حساب شما نمایش داده شود.',
+                ),
+                _visibilityTile(
+                  icon: Icons.forward_rounded,
+                  title: 'پیام‌های فورواردشده',
+                  subtitle: 'چه کسانی بتوانند ارتباط پیام فورواردشده را با پروفایل شما ببینند',
+                  value: forwardsVisibility,
+                  key: 'forwards_visibility',
+                  onChanged: (v) => setState(() => forwardsVisibility = v),
+                ),
+
+                _section(
+                  'تماس‌های همتا‌به‌همتا',
+                  'اتصال مستقیم می‌تواند کیفیت تماس را تغییر دهد؛ سطح اشتراک‌گذاری را انتخاب کنید.',
+                ),
+                _visibilityTile(
+                  icon: Icons.hub_outlined,
+                  title: 'اتصال مستقیم در تماس',
+                  subtitle: 'چه کسانی اجازه استفاده از اتصال مستقیم را داشته باشند',
+                  value: p2pVisibility,
+                  key: 'p2p_visibility',
+                  onChanged: (v) => setState(() => p2pVisibility = v),
+                ),
+
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'همه این انتخاب‌ها برای همین حساب در Supabase ذخیره می‌شوند و بین دستگاه‌های واردشده قابل همگام‌سازی هستند. اعمال نهایی هر محدودیت باید در لایهٔ نمایش و مجوزهای سرور نیز رعایت شود.',
+                            style: TextStyle(
+                              height: 1.45,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }
 
 class ChatSettingsPage extends StatefulWidget {
