@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -103,6 +105,21 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       if (mounted) showMsg(context, 'تغییر عکس ناموفق بود: $e');
     }
+  }
+
+  Future<void> showProfileQr() async {
+    final un='${profile['username'] ?? ''}'.trim();
+    if(un.isEmpty){showMsg(context,'ابتدا یک آیدی برای پروفایل تنظیم کنید.');return;}
+    final link='https://arad-messenger.app/u/$un';
+    await showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
+      title:const Text('QR پروفایل'),
+      content:Column(mainAxisSize:MainAxisSize.min,children:[
+        Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(18)),child:QrImageView(data:link,size:220,version:QrVersions.auto)),
+        const SizedBox(height:12),Text('@$un',style:const TextStyle(fontWeight:FontWeight.w900)),
+        const SizedBox(height:6),Text(link,textAlign:TextAlign.center,style:TextStyle(color:Theme.of(ctx).colorScheme.onSurfaceVariant,fontSize:12)),
+      ]),
+      actions:[TextButton(onPressed:()=>Clipboard.setData(ClipboardData(text:link)),child:const Text('کپی لینک')),FilledButton.icon(onPressed:()=>Share.share(link),icon:const Icon(Icons.share_rounded),label:const Text('اشتراک‌گذاری'))],
+    ));
   }
 
   Future<void> requestVerification() async {
@@ -245,8 +262,10 @@ class _ProfilePageState extends State<ProfilePage> {
             Row(children: [
               Expanded(child: FilledButton.icon(onPressed: editProfile, icon: const Icon(Icons.edit_rounded), label: const Text('ویرایش پروفایل'))),
               const SizedBox(width: 8),
-              Expanded(child: OutlinedButton.icon(onPressed: switchAccount, icon: const Icon(Icons.swap_horiz_rounded), label: const Text('تغییر حساب'))),
+              Expanded(child: OutlinedButton.icon(onPressed: showProfileQr, icon: const Icon(Icons.qr_code_rounded), label: const Text('QR پروفایل'))),
             ]),
+            const SizedBox(height: 8),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: switchAccount, icon: const Icon(Icons.swap_horiz_rounded), label: const Text('تغییر حساب'))),
           ]),
         )),
         const SizedBox(height: 12),
