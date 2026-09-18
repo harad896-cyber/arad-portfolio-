@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'polish_widgets.dart';
 
 class GroupModerationPage extends StatefulWidget {
   final String conversationId;
@@ -77,7 +78,7 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
   @override void initState() { super.initState(); load(); }
 
   @override Widget build(BuildContext context) {
-    if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const Center(child: CircularProgressIndicator()));
+    if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
     if (!isAdmin) return Scaffold(appBar: AppBar(title: Text(widget.title)), body: const Center(child: Text('دسترسی مدیریت گروه ندارید.')));
     final active = messages.where((m) => m['deleted_at'] == null).toList();
     return Scaffold(
