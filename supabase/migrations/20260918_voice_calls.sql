@@ -9,6 +9,8 @@ create table if not exists public.call_sessions (
   accepted_at timestamptz,
   ended_at timestamptz,
   created_at timestamptz not null default now(),
+  offer_sdp text,
+  answer_sdp text,
   constraint call_sessions_users_different check (caller_id <> callee_id)
 );
 
