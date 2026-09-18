@@ -3396,6 +3396,23 @@ class _ChatPageState extends State<ChatPage> {
               width: 220,
               height: 180,
               fit: BoxFit.cover,
+              cacheWidth: 660,
+              filterQuality: FilterQuality.low,
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) => AnimatedOpacity(
+                opacity: wasSynchronouslyLoaded || frame != null ? 1 : 0,
+                duration: kFastMotion,
+                child: child,
+              ),
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  width: 220,
+                  height: 180,
+                  alignment: Alignment.center,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              },
               errorBuilder: (_, __, ___) => const SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42))),
             ),
           ),
