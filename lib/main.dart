@@ -2111,7 +2111,7 @@ class _HomePageState extends State<HomePage> {
                   if (conversationId == null || conversationId.isEmpty) return;
                   final found = chats.where((c) => c['id'].toString() == conversationId).toList();
                   final title = found.isEmpty ? 'گفتگو' : ((found.first['title'] ?? 'گفتگو').toString());
-                  await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title)));
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title, targetMessageId: result['id']?.toString())));
                   load();
                 } else if (kind == 'user') {
                   final uid = supabase.auth.currentUser?.id;
@@ -3094,8 +3094,9 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 class ChatPage extends StatefulWidget {
   final String id;
   final String title;
+  final String? targetMessageId;
 
-  const ChatPage({super.key, required this.id, required this.title});
+  const ChatPage({super.key, required this.id, required this.title, this.targetMessageId});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -3161,6 +3162,7 @@ class _ChatPageState extends State<ChatPage> {
   Map<String, Map<String, dynamic>> attachments = {};
   RealtimeChannel? channel;
   final ScrollController _messagesScroll = ScrollController();
+  final Map<String, GlobalKey> _messageKeys = {};
   bool loading = true;
   bool sending = false;
   Map<String, dynamic>? replyMessage;
@@ -3385,7 +3387,11 @@ class _ChatPageState extends State<ChatPage> {
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_messagesScroll.hasClients) return;
-          _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+          if (widget.targetMessageId != null) {
+            _jumpToMessage(widget.targetMessageId!);
+          } else {
+            _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+          }
         });
       }
       await markRead();
@@ -3485,6 +3491,14 @@ class _ChatPageState extends State<ChatPage> {
         )).toList(),
       ),
     );
+  }
+
+  void _jumpToMessage(String messageId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final target = _messageKeys[messageId]?.currentContext;
+      if (target == null) return;
+      await Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 280), curve: Curves.easeOut, alignment: .45);
+    });
   }
 
   void _scrollToLatest() {
@@ -4650,7 +4664,7 @@ class _ChatPageState extends State<ChatPage> {
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                           reverse: false,
                           itemCount: messages.length,
-                          itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
+                          itemBuilder: (context, i) { final id = messages[i]['id'].toString(); final key = _messageKeys.putIfAbsent(id, () => GlobalKey()); return Container(key: key, child: _glassMessageBubble(messages[i])); },
                           ),
                         ),
             ),
