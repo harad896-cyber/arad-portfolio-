@@ -45,4 +45,5 @@ jobs:
           git add lib/main.dart lib/notifications_page.dart
           if git diff --cached --quiet; then echo 'No source changes required'; exit 0; fi
           git commit -m 'fix: repair messenger voice, filters and saved messages'
+          git pull --rebase origin main
           git push origin HEAD:main
