@@ -1972,6 +1972,8 @@ class _HomePageState extends State<HomePage> {
   int navIndex = 0;
   final TextEditingController chatSearch = TextEditingController();
   String chatQuery = '';
+  RealtimeChannel? _homeChannel;
+  Timer? _homeRefreshTimer;
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -2056,11 +2058,33 @@ class _HomePageState extends State<HomePage> {
     load();
   }
 
-  @override
-  void initState() { super.initState(); load(); }
+  void _scheduleHomeRefresh() {
+    _homeRefreshTimer?.cancel();
+    _homeRefreshTimer = Timer(const Duration(milliseconds: 260), () {
+      if (mounted) load();
+    });
+  }
 
   @override
-  void dispose() { chatSearch.dispose(); super.dispose(); }
+  void initState() {
+    super.initState();
+    load();
+    _homeChannel = supabase.channel('home-' + (supabase.auth.currentUser?.id ?? 'guest'))
+      .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'conversation_members', callback: (_) => _scheduleHomeRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.delete, schema: 'public', table: 'conversation_members', callback: (_) => _scheduleHomeRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'conversations', callback: (_) => _scheduleHomeRefresh())
+      .subscribe();
+  }
+
+  @override
+  void dispose() {
+    _homeRefreshTimer?.cancel();
+    if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
+    chatSearch.dispose();
+    super.dispose();
+  }
 
   Widget chatsView() {
     final theme = Theme.of(context);
@@ -2071,6 +2095,33 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.fromLTRB(16, 4, 14, 6),
           child: Row(children: [
             const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
+            IconButton.filledTonal(
+              tooltip: 'جستجوی سراسری',
+              onPressed: () async {
+                final result = await showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate());
+                if (!mounted || result == null) return;
+                final kind = result['_kind'];
+                if (kind == 'chat') {
+                  final type = (result['type'] ?? 'direct').toString();
+                  final title = (result['title'] ?? result['username'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString();
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: result['id'].toString(), title: title)));
+                  load();
+                } else if (kind == 'message') {
+                  final conversationId = result['conversation_id']?.toString();
+                  if (conversationId == null || conversationId.isEmpty) return;
+                  final found = chats.where((c) => c['id'].toString() == conversationId).toList();
+                  final title = found.isEmpty ? 'گفتگو' : ((found.first['title'] ?? 'گفتگو').toString());
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title)));
+                  load();
+                } else if (kind == 'user') {
+                  final uid = supabase.auth.currentUser?.id;
+                  if (uid == null || result['id'].toString() == uid) return;
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(userId: result['id'].toString())));
+                  load();
+                }
+              },
+              icon: const Icon(Icons.search_rounded),
+            ),
             IconButton.filledTonal(onPressed: createDirect, icon: const Icon(Icons.edit_rounded)),
           ]),
         ),
@@ -2930,6 +2981,78 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
   }
 }
 
+class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+    if (query.isNotEmpty) IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear_rounded)),
+  ];
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: const Icon(Icons.arrow_back_rounded));
+  @override
+  Widget buildResults(BuildContext context) => _results(context);
+  @override
+  Widget buildSuggestions(BuildContext context) => _results(context);
+
+  Future<Map<String,dynamic>> _search(String value) async {
+    final q = value.trim();
+    if (q.isEmpty) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[]};
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[]};
+    final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid).limit(150);
+    final ids = (memberRows as List).map((e) => e['conversation_id']).where((e) => e != null).toList();
+    final usersFuture = supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,is_verified').or('display_name.ilike.%$q%,username.ilike.%$q%').limit(30);
+    if (ids.isEmpty) {
+      final users = List<Map<String,dynamic>>.from(await usersFuture);
+      return {'messages': <Map<String,dynamic>>[], 'users': users, 'chats': <Map<String,dynamic>>[]};
+    }
+    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids).or('title.ilike.%$q%,username.ilike.%$q%').limit(30);
+    final messagesFuture = supabase.from('messages').select('id,conversation_id,body,message_type,created_at,sender_id').inFilter('conversation_id', ids).ilike('body', '%$q%').order('created_at', ascending: false).limit(50);
+    final results = await Future.wait([usersFuture, chatsFuture, messagesFuture]);
+    return {'users': List<Map<String,dynamic>>.from(results[0] as List), 'chats': List<Map<String,dynamic>>.from(results[1] as List), 'messages': List<Map<String,dynamic>>.from(results[2] as List)};
+  }
+
+  Widget _avatar(Map<String,dynamic> row) {
+    final url = (row['avatar_url'] ?? '').toString().trim();
+    return CircleAvatar(radius: 21, backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? const Icon(Icons.person_rounded) : null);
+  }
+
+  Widget _results(BuildContext context) {
+    final q = query.trim();
+    if (q.isEmpty) return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.search_rounded, size: 54), SizedBox(height: 12), Text('جستجوی سراسری آراد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text('کاربر، گفتگو و پیام را یکجا پیدا کنید.') ]));
+    return FutureBuilder<Map<String,dynamic>>(
+      future: _search(q),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snap.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snap.error}')));
+        final data = snap.data ?? {};
+        final users = List<Map<String,dynamic>>.from(data['users'] ?? const []);
+        final chats = List<Map<String,dynamic>>.from(data['chats'] ?? const []);
+        final messages = List<Map<String,dynamic>>.from(data['messages'] ?? const []);
+        if (users.isEmpty && chats.isEmpty && messages.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
+        return ListView(padding: const EdgeInsets.fromLTRB(8, 8, 8, 24), children: [
+          if (users.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'کاربران', icon: Icons.people_alt_rounded),
+            ...users.map((p) => ListTile(leading: _avatar(p), title: Row(children: [Flexible(child: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))), if (p['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 5), child: Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2F9BFF))) ]), subtitle: Text((p['username'] ?? '').toString().isEmpty ? (p['bio'] ?? '').toString() : '@' + p['username'].toString()), onTap: () => close(context, {...p, '_kind': 'user'}))),
+          ],
+          if (chats.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'گفتگوها', icon: Icons.forum_rounded),
+            ...chats.map((c) { final type = (c['type'] ?? 'direct').toString(); final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded; final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(icon) : null), title: Text((c['title'] ?? c['username'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString(), style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(type == 'channel' ? 'کانال' : type == 'group' ? 'گروه' : 'گفتگوی خصوصی'), onTap: () => close(context, {...c, '_kind': 'chat'})); }),
+          ],
+          if (messages.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'پیام‌ها', icon: Icons.chat_bubble_outline_rounded),
+            ...messages.map((m) => ListTile(leading: const CircleAvatar(child: Icon(Icons.message_rounded)), title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(_homeTime(m['created_at'])), onTap: () => close(context, {...m, '_kind': 'message'}))),
+          ],
+        ]);
+      },
+    );
+  }
+}
+
+class _SearchSectionHeader extends StatelessWidget {
+  final String title; final IconData icon;
+  const _SearchSectionHeader({required this.title, required this.icon});
+  @override Widget build(BuildContext context) { final scheme = Theme.of(context).colorScheme; return Padding(padding: const EdgeInsets.fromLTRB(12, 14, 12, 5), child: Row(children: [Icon(icon, size: 18, color: scheme.primary), const SizedBox(width: 7), Text(title, style: TextStyle(fontWeight: FontWeight.w900, color: scheme.primary))])); }
+}
 class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   final String conversationId;
   MessageSearchDelegate(this.conversationId);
