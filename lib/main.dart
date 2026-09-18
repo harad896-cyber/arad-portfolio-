@@ -2510,6 +2510,9 @@ class _ChatPageState extends State<ChatPage> {
   double voiceAmplitude = 0;
   List<double> voiceWaveform = [];
   StreamSubscription<Amplitude>? _voiceAmplitudeSub;
+  final List<Map<String, dynamic>> _pendingMessages = [];
+  StreamSubscription<List<ConnectivityResult>>? _chatConnectivitySub;
+  bool _chatOffline = false;
   static const int _messagePageSize = 50;
   bool _loadingOlder = false;
   bool _hasOlderMessages = true;
@@ -2703,7 +2706,7 @@ class _ChatPageState extends State<ChatPage> {
       }
       if (mounted) {
         setState(() {
-          messages = loaded;
+          messages = [...loaded, ..._pendingMessages];
           reactions = loadedReactions;
           attachments = loadedAttachments;
           loading = false;
@@ -2824,9 +2827,64 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  Future<void> _queuePendingText(String value) async {
+    final pending = <String, dynamic>{
+      'id': 'pending-${DateTime.now().microsecondsSinceEpoch}',
+      'conversation_id': widget.id,
+      'sender_id': supabase.auth.currentUser!.id,
+      'body': value,
+      'message_type': 'text',
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'pending': true,
+    };
+    if (!mounted) return;
+    setState(() {
+      _pendingMessages.add(pending);
+      messages = [...messages, pending];
+    });
+    text.clear();
+    if (mounted) showMsg(context, 'پیام در صف ارسال قرار گرفت و بعد از اتصال ارسال می‌شود.');
+  }
+
+  Future<void> _flushPendingMessages() async {
+    if (_chatOffline || _pendingMessages.isEmpty || sending) return;
+    final queued = List<Map<String, dynamic>>.from(_pendingMessages);
+    for (final pending in queued) {
+      try {
+        await supabase.from('messages').insert({
+          'conversation_id': widget.id,
+          'sender_id': supabase.auth.currentUser!.id,
+          'body': pending['body'],
+          'message_type': 'text',
+        });
+        _pendingMessages.removeWhere((m) => m['id'] == pending['id']);
+      } catch (_) {
+        break;
+      }
+    }
+    if (mounted) {
+      await load();
+      _scrollToLatest();
+    }
+  }
+
+  void _handleChatConnectivity(List<ConnectivityResult> results) {
+    final offline = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+    if (!mounted) return;
+    setState(() => _chatOffline = offline);
+    if (!offline) _flushPendingMessages();
+  }
+
   Future<void> sendText() async {
     final value = text.text.trim();
     if (value.isEmpty || sending) return;
+    try {
+      final connection = await Connectivity().checkConnectivity();
+      if (connection.isEmpty || connection.every((r) => r == ConnectivityResult.none)) {
+        await _queuePendingText(value);
+        return;
+      }
+    } catch (_) {}
     setState(() => sending = true);
     try {
       await supabase.from('messages').insert({
@@ -2841,7 +2899,10 @@ class _ChatPageState extends State<ChatPage> {
       await load();
       _scrollToLatest();
     } catch (e) {
-      if (mounted) showMsg(context, 'ارسال نشد: $e');
+      if (mounted) {
+        await _queuePendingText(value);
+        showMsg(context, 'اتصال برقرار نیست؛ پیام در صف ارسال قرار گرفت.');
+      }
     } finally {
       if (mounted) setState(() => sending = false);
     }
@@ -3688,7 +3749,15 @@ class _ChatPageState extends State<ChatPage> {
                         Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10.5, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
                         if (mine) ...[
                           const SizedBox(width: 4),
-                          Icon(m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
+                          Icon(
+                            m['pending'] == true
+                                ? Icons.schedule_rounded
+                                : (m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded),
+                            size: 15,
+                            color: m['pending'] == true
+                                ? textColor.withValues(alpha: .65)
+                                : (m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
+                          ),
                         ],
                       ],
                     ),
@@ -3709,6 +3778,8 @@ class _ChatPageState extends State<ChatPage> {
     appTheme.addListener(_onAppThemeChanged);
     load();
     _loadChatType().then((_) => _loadGroupMemberCount());
+    _chatConnectivitySub = Connectivity().onConnectivityChanged.listen(_handleChatConnectivity);
+    Connectivity().checkConnectivity().then(_handleChatConnectivity).catchError((_) {});
     channel = supabase.channel('chat-${widget.id}')
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
@@ -3740,6 +3811,7 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     appTheme.removeListener(_onAppThemeChanged);
     if (channel != null) supabase.removeChannel(channel!);
+    _chatConnectivitySub?.cancel();
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
     _messagesScroll.dispose();
