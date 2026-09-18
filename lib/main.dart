@@ -2411,6 +2411,12 @@ class _HomePageState extends State<HomePage> {
                               color: theme.colorScheme.surface.withValues(alpha: .66),
                               margin: const EdgeInsets.only(bottom: 7),
                               child: ListTile(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatPage(id: c['id'].toString(), title: title),
+                                  ),
+                                ).then((_) => load()),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                                 leading: Stack(
                                   clipBehavior: Clip.none,
@@ -3189,48 +3195,19 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _voicePlayButton(String messageId) {
     final a = attachments[messageId];
-    final seconds = ((a?['duration_ms'] as num?)?.toInt() ?? 0) ~/ 1000;
-    final bars = List<double>.generate(34, (i) => .25 + ((i * 17) % 70) / 100);
-    return SizedBox(
-      width: 250,
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.play_circle_fill_rounded, size: 40),
-            onPressed: () => _playAttachment(messageId),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 38,
-                  child: GestureDetector(
-                    onTap: () => _playAttachment(messageId),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: bars.map((v) => Expanded(
-                        child: Container(
-                          height: 8 + v * 24,
-                          margin: const EdgeInsets.symmetric(horizontal: 1),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .65),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      )).toList(),
-                    ),
-                  ),
-                ),
-                Text(
-                  '00:' + seconds.toString().padLeft(2, '0'),
-                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .8)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    final durationMs = (a?['duration_ms'] as num?)?.toInt() ?? 0;
+    final path = a?['storage_path']?.toString() ?? '';
+    if (path.isEmpty) {
+      return const SizedBox(width: 250, child: Text('فایل صوتی در دسترس نیست.'));
+    }
+    return VoiceMessagePlayer(
+      initialDurationMs: durationMs,
+      mine: true,
+      loadAudio: () async {
+        final bytes = await supabase.storage.from('chat-media').download(path);
+        if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
+        return bytes;
+      },
     );
   }
 
@@ -4325,7 +4302,7 @@ class _ChatPageState extends State<ChatPage> {
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.fromLTRB(12, 92, 12, 12),
-                          reverse: false,
+                          reverse: true,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
                         ),
