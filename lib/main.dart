@@ -797,8 +797,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 child: Row(
                   children: [
-                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),
-                    const SizedBox(width: 10),
+                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),                    const SizedBox(width: 10),
                     Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
                   ],
                 ),
@@ -1597,8 +1596,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       startResendCooldown();
       code.clear();
       showMsg(context, 'کد ۶ رقمی جدید ارسال شد.');
-    } on AuthException catch (e) {
-      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ${e.message}');
+    } on AuthException catch (e) {      if (mounted) showMsg(context, 'ارسال کد ناموفق بود: ${e.message}');
     } catch (e) {
       if (mounted) showMsg(context, 'ارسال کد ناموفق بود: $e');
     } finally {
@@ -2397,8 +2395,7 @@ class _StoriesStripState extends State<_StoriesStrip> {
           if (changed == true) load();
         } else if (story != null) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => StoryViewerPage(story: story)));
-        } else {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const StoryComposerPage()));
+        } else {          Navigator.push(context, MaterialPageRoute(builder: (_) => const StoryComposerPage()));
         }
       },
       child: SizedBox(width: 78, child: Column(children: [
@@ -3197,8 +3194,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
                         final people = snapshot.data ?? [];
-                        return DropdownButtonFormField<String?>(
-                          value: nextSender,
+                        return DropdownButtonFormField<String?>(                          value: nextSender,
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [
@@ -3339,6 +3335,131 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
       );
     },
   );
+}
+
+
+class ScheduledMessagesPage extends StatefulWidget {
+  final String? conversationId;
+  final String? conversationTitle;
+  const ScheduledMessagesPage({super.key, this.conversationId, this.conversationTitle});
+  @override State<ScheduledMessagesPage> createState() => _ScheduledMessagesPageState();
+}
+
+class _ScheduledMessagesPageState extends State<ScheduledMessagesPage> {
+  bool loading = true;
+  List<Map<String, dynamic>> items = [];
+
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      var query = supabase.from('scheduled_messages')
+          .select('id,conversation_id,body,reply_to,scheduled_for,status,error_message,created_at,sent_at,cancelled_at')
+          .order('scheduled_for', ascending: true);
+      if (widget.conversationId != null && widget.conversationId!.isNotEmpty) {
+        query = query.eq('conversation_id', widget.conversationId!);
+      }
+      final rows = await query;
+      if (!mounted) return;
+      setState(() { items = List<Map<String, dynamic>>.from(rows); loading = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      showMsg(context, 'پیام‌های زمان‌بندی‌شده بارگذاری نشد: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'pending': return 'در انتظار ارسال';
+      case 'processing': return 'در حال ارسال';
+      case 'sent': return 'ارسال شد';
+      case 'cancelled': return 'لغو شد';
+      case 'failed': return 'ناموفق';
+      default: return status;
+    }
+  }
+
+  Color _statusColor(String status, ColorScheme scheme) {
+    switch (status) {
+      case 'sent': return scheme.primary;
+      case 'cancelled': return scheme.onSurfaceVariant;
+      case 'failed': return scheme.error;
+      default: return scheme.tertiary;
+    }
+  }
+
+  String _dateTimeLabel(dynamic value) {
+    final dt = DateTime.tryParse('$value')?.toLocal();
+    if (dt == null) return 'زمان نامشخص';
+    return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _cancel(Map<String, dynamic> item) async {
+    if ('${item['status'] ?? ''}' != 'pending') return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('لغو پیام زمان‌بندی‌شده'),
+        content: const Text('این پیام دیگر به‌صورت خودکار ارسال نمی‌شود.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('لغو ارسال')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await supabase.from('scheduled_messages').update({
+        'status': 'cancelled',
+        'cancelled_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', item['id']).eq('status', 'pending');
+      await _load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'لغو پیام ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.conversationTitle == null ? 'پیام‌های زمان‌بندی‌شده' : 'زمان‌بندی‌شده‌ها'),
+        actions: [IconButton(onPressed: _load, tooltip: 'به‌روزرسانی', icon: const Icon(Icons.refresh_rounded))],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : items.isEmpty
+              ? const AppEmptyState(icon: Icons.schedule_send_rounded, title: 'پیام زمان‌بندی‌شده‌ای وجود ندارد', subtitle: 'برای ارسال خودکار، روی دکمه ارسال پیام نگه دارید.')
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) {
+                      final item = items[i];
+                      final status = '${item['status'] ?? 'pending'}';
+                      final color = _statusColor(status, scheme);
+                      return Card(
+                        child: ListTile(
+                          leading: CircleAvatar(backgroundColor: color.withValues(alpha: .14), child: Icon(Icons.schedule_send_rounded, color: color)),
+                          title: Text('${item['body'] ?? ''}', maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Text('${widget.conversationTitle ?? 'این گفتگو'}\n${_dateTimeLabel(item['scheduled_for'])} • ${_statusLabel(status)}', maxLines: 3, overflow: TextOverflow.ellipsis),
+                          ),
+                          isThreeLine: true,
+                          trailing: status == 'pending'
+                              ? IconButton(tooltip: 'لغو', onPressed: () => _cancel(item), icon: const Icon(Icons.close_rounded))
+                              : Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+    );
+  }
 }
 
 class ChatPage extends StatefulWidget {
@@ -3997,8 +4118,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendFile() async {
     if (sending) return;
     try {
-      final result = await FilePicker.platform.pickFiles(withData: false);
-      if (result == null) return;
+      final result = await FilePicker.platform.pickFiles(withData: false);      if (result == null) return;
       final f = result.files.single;
       final localPath = f.path;
       if (localPath == null || localPath.isEmpty) throw Exception('مسیر فایل از Android دریافت نشد');
@@ -4208,6 +4328,107 @@ class _ChatPageState extends State<ChatPage> {
       const SizedBox(height: 2),
       Text('${votes.length} رأی${poll['allows_multiple'] == true ? ' • چند انتخابی' : ''}${poll['is_anonymous'] == true ? ' • ناشناس' : ''}', style: TextStyle(color: textColor.withValues(alpha: .65), fontSize: 11)),
     ]));
+  }
+
+
+  Future<void> _scheduleMessageFromMessage(Map<String, dynamic> message) async {
+    final body = message['body']?.toString().trim() ?? '';
+    if (body.isEmpty || message['deleted_at'] != null || message['message_type'] != 'text') {
+      if (mounted) showMsg(context, 'فقط پیام متنی قابل زمان‌بندی است.');
+      return;
+    }
+    await _scheduleMessage(body, replyTo: message['id']?.toString());
+  }
+
+  Future<void> _scheduleTextFromComposer() async {
+    final value = text.text.trim();
+    if (value.isEmpty || sending) return;
+    await _scheduleMessage(value, replyTo: replyMessage?['id']?.toString());
+  }
+
+  Future<void> _scheduleMessage(String body, {String? replyTo}) async {
+    if (body.trim().isEmpty || sending) return;
+    final now = DateTime.now();
+    DateTime selectedDate = DateTime(now.year, now.month, now.day);
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(now.add(const Duration(minutes: 2)));
+    final result = await showDialog<DateTime>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('ارسال زمان‌بندی‌شده'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today_rounded),
+                title: const Text('تاریخ ارسال'),
+                subtitle: Text('${selectedDate.year}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.day.toString().padLeft(2, '0')}'),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: dialogContext,
+                    firstDate: DateTime(now.year, now.month, now.day),
+                    lastDate: now.add(const Duration(days: 3650)),
+                    initialDate: selectedDate,
+                  );
+                  if (picked != null) setDialogState(() => selectedDate = picked);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.access_time_rounded),
+                title: const Text('ساعت ارسال'),
+                subtitle: Text(selectedTime.format(dialogContext)),
+                onTap: () async {
+                  final picked = await showTimePicker(context: dialogContext, initialTime: selectedTime);
+                  if (picked != null) setDialogState(() => selectedTime = picked);
+                },
+              ),
+              const SizedBox(height: 4),
+              Text('پیام پس از رسیدن زمان تعیین‌شده، حتی بدون باز بودن برنامه ارسال می‌شود.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+            FilledButton(
+              onPressed: () {
+                final scheduled = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, selectedTime.hour, selectedTime.minute);
+                if (!scheduled.isAfter(DateTime.now().add(const Duration(seconds: 20)))) {
+                  showMsg(dialogContext, 'زمان ارسال باید حداقل کمی بعد از زمان فعلی باشد.');
+                  return;
+                }
+                Navigator.pop(dialogContext, scheduled);
+              },
+              child: const Text('زمان‌بندی'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+    setState(() => sending = true);
+    try {
+      await supabase.from('scheduled_messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': body.trim(),
+        'message_type': 'text',
+        'reply_to': replyTo,
+        'scheduled_for': result.toUtc().toIso8601String(),
+      });
+      if (mounted) {
+        setState(() { text.clear(); replyMessage = null; });
+        showMsg(context, 'پیام برای ${_time(result)} زمان‌بندی شد.');
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'زمان‌بندی پیام ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  void _openScheduledMessages() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => ScheduledMessagesPage(conversationId: widget.id, conversationTitle: widget.title)));
   }
 
   Future<void> _showAttachmentPanel() async {
@@ -4649,6 +4870,7 @@ class _ChatPageState extends State<ChatPage> {
           ]),
         ),
         const SizedBox(height: 6),
+        _actionTile(context, Icons.schedule_send_rounded, 'ارسال زمان‌بندی‌شده', () => _scheduleMessageFromMessage(message)),
         _actionTile(context, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
         _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
         _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری', () => shareMessage(message)),
@@ -4797,8 +5019,7 @@ class _ChatPageState extends State<ChatPage> {
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
                 return Container(
-                  width: 220,
-                  height: 180,
+                  width: 220,                  height: 180,
                   alignment: Alignment.center,
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -5116,12 +5337,15 @@ class _ChatPageState extends State<ChatPage> {
             onSelected: (v) {
               if (v == 'info') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+              } else if (v == 'scheduled') {
+                _openScheduledMessages();
               } else if (v == 'search') {
                 _openMessageSearch();
               }
             },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'info', child: Text('پروفایل و اطلاعات گفتگو')),
+              PopupMenuItem(value: 'scheduled', child: Text('پیام‌های زمان‌بندی‌شده')),
               PopupMenuItem(value: 'search', child: Text('جستجو در پیام‌ها')),
             ],
           ),
@@ -5325,9 +5549,13 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          IconButton.filled(
-                            onPressed: sending ? null : sendText,
-                            icon: const Icon(Icons.send_rounded),
+                          GestureDetector(
+                            onLongPress: sending ? null : _scheduleTextFromComposer,
+                            child: IconButton.filled(
+                              onPressed: sending ? null : sendText,
+                              tooltip: 'ارسال • نگه‌داشتن برای زمان‌بندی',
+                              icon: const Icon(Icons.send_rounded),
+                            ),
                           ),
                         ],
                       ),
