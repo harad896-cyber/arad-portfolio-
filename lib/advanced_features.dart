@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'polish_widgets.dart';
+import 'secret_chat.dart';
 
 class AdvancedFeaturesPage extends StatefulWidget {
   const AdvancedFeaturesPage({super.key});
@@ -49,6 +50,7 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
       _FeatureItem(Icons.backup_outlined, 'پشتیبان‌گیری و بازیابی', 'وضعیت فعلی پشتیبان‌گیری دستگاه', () async { setState(() => autoBackup = !autoBackup); await _save('auto_backup', autoBackup); }),
       _FeatureItem(Icons.check_circle_outline, 'رسید خواندن', 'تنظیم ترجیح محلی برای رسید خواندن', () async { setState(() => readReceipts = !readReceipts); await _save('read_receipts', readReceipts); }),
       _FeatureItem(Icons.folder_copy_outlined, 'پوشه‌های واقعی گفتگو', 'ساخت، ویرایش و دسته‌بندی گفتگوها با همگام‌سازی حساب', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatFolderManagerPage()))),
+      _FeatureItem(Icons.lock_rounded, 'Secret Chat', 'گفتگوی محرمانه با رمزنگاری سرتاسری برای چت‌های دونفره', () => _openSecretChat()),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('قابلیت‌های برنامه')),
@@ -61,6 +63,24 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _openSecretChat() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final members = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid));
+    final directIds = <String>[];
+    for (final row in members) {
+      final id = row['conversation_id'].toString();
+      final cm = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id').eq('conversation_id', id));
+      if (cm.length == 2) directIds.add(id);
+    }
+    if (!mounted) return;
+    if (directIds.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('هنوز گفتگوی دونفره‌ای ندارید.'))); return; }
+    String? selected = directIds.first;
+    final title = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: const Text('انتخاب گفتگوی محرمانه'), content: DropdownButtonFormField<String>(value: selected, items: directIds.map((id) => DropdownMenuItem(value: id, child: Text(id))).toList(), onChanged: (v) => selected = v), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(ctx, selected), child: const Text('باز کردن'))]));
+    if (title == null || !mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => SecretChatPage(conversationId: title, title: 'Secret Chat')));
   }
 
   void _showWallpaper() => showModalBottomSheet(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [for (final w in wallpapers) RadioListTile<String>(value: w, groupValue: wallpaper, title: Text(w), onChanged: (v) async { if (v == null) return; setState(() => wallpaper = v); await _save('chat_wallpaper', v); if (mounted) Navigator.pop(context); })])));
