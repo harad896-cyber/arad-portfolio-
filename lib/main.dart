@@ -1,5 +1,6 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
@@ -3439,6 +3440,8 @@ class _ChatPageState extends State<ChatPage> {
   bool _hasOlderMessages = true;
   List<Map<String, dynamic>> pinnedMessages = [];
   bool _loadingPinned = false;
+  final Map<String, Map<String, dynamic>> polls = {};
+  final Map<String, List<Map<String, dynamic>>> pollVotes = {};
 
   final Map<String, String> _attachmentUrlCache = {};
 
@@ -3631,11 +3634,25 @@ class _ChatPageState extends State<ChatPage> {
           loadedAttachments['${a['message_id']}'] = a;
         }
       }
+      final loadedPolls = <String, Map<String, dynamic>>{};
+      final loadedPollVotes = <String, List<Map<String, dynamic>>>{};
+      if (ids.isNotEmpty) {
+        final pp = await supabase.from('polls').select('message_id,question,options,is_anonymous,allows_multiple').inFilter('message_id', ids);
+        for (final p in List<Map<String, dynamic>>.from(pp)) loadedPolls['${p['message_id']}'] = p;
+        final vv = await supabase.from('poll_votes').select('message_id,user_id,option_index,created_at').inFilter('message_id', ids);
+        for (final v in List<Map<String, dynamic>>.from(vv)) loadedPollVotes.putIfAbsent('${v['message_id']}', () => []).add(v);
+      }
       if (mounted) {
         setState(() {
           messages = [...loaded, ..._pendingMessages];
           reactions = loadedReactions;
           attachments = loadedAttachments;
+          polls
+            ..clear()
+            ..addAll(loadedPolls);
+          pollVotes
+            ..clear()
+            ..addAll(loadedPollVotes);
           loading = false;
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -4073,6 +4090,121 @@ class _ChatPageState extends State<ChatPage> {
     finally { if (mounted) setState(() => sending = false); }
   }
 
+  Future<void> _createPoll() async {
+    if (sending) return;
+    final question = TextEditingController();
+    final optionControllers = <TextEditingController>[TextEditingController(), TextEditingController()];
+    bool anonymous = false;
+    bool multiple = false;
+    try {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('نظرسنجی جدید'),
+            content: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextField(controller: question, maxLength: 500, decoration: const InputDecoration(labelText: 'سؤال')),
+                const SizedBox(height: 8),
+                ...List.generate(optionControllers.length, (i) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextField(controller: optionControllers[i], maxLength: 120, decoration: InputDecoration(labelText: 'گزینه ${i + 1}', suffixIcon: optionControllers.length > 2 ? IconButton(onPressed: () { final c = optionControllers.removeAt(i); c.dispose(); setDialogState(() {}); }, icon: const Icon(Icons.remove_circle_outline)) : null)),
+                )),
+                Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: optionControllers.length >= 10 ? null : () { optionControllers.add(TextEditingController()); setDialogState(() {}); }, icon: const Icon(Icons.add_rounded), label: const Text('افزودن گزینه'))),
+                SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('رأی ناشناس'), value: anonymous, onChanged: (v) => setDialogState(() => anonymous = v)),
+                SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('چند انتخابی'), value: multiple, onChanged: (v) => setDialogState(() => multiple = v)),
+              ]),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('لغو')),
+              FilledButton(onPressed: () {
+                final q = question.text.trim();
+                final options = optionControllers.map((c) => c.text.trim()).where((x) => x.isNotEmpty).toList();
+                if (q.isEmpty || options.length < 2) { showMsg(dialogContext, 'سؤال و حداقل دو گزینه لازم است.'); return; }
+                Navigator.pop(dialogContext, {'question': q, 'options': options, 'anonymous': anonymous, 'multiple': multiple});
+              }, child: const Text('ارسال')),
+            ],
+          ),
+        ),
+      );
+      if (result == null) return;
+      setState(() => sending = true);
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': result['question'],
+        'message_type': 'poll',
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('polls').insert({
+        'message_id': msg['id'],
+        'question': result['question'],
+        'options': result['options'],
+        'is_anonymous': result['anonymous'] == true,
+        'allows_multiple': result['multiple'] == true,
+      });
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+      _scrollToLatest();
+    } catch (e) {
+      if (mounted) showMsg(context, 'ساخت نظرسنجی ناموفق بود: $e');
+    } finally {
+      question.dispose();
+      for (final c in optionControllers) c.dispose();
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> _votePoll(Map<String, dynamic> message, int optionIndex) async {
+    final id = message['id'].toString();
+    final poll = polls[id];
+    if (poll == null) return;
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      if (poll['allows_multiple'] == true) {
+        final existing = pollVotes[id] ?? const <Map<String, dynamic>>[];
+        final mine = existing.where((v) => '${v['user_id']}' == uid).toList();
+        final already = mine.any((v) => (v['option_index'] as num?)?.toInt() == optionIndex);
+        if (already) {
+          await supabase.from('poll_votes').delete().eq('message_id', id).eq('user_id', uid).eq('option_index', optionIndex);
+        } else {
+          await supabase.from('poll_votes').insert({'message_id': id, 'user_id': uid, 'option_index': optionIndex});
+        }
+      } else {
+        await supabase.from('poll_votes').delete().eq('message_id', id).eq('user_id', uid);
+        await supabase.from('poll_votes').insert({'message_id': id, 'user_id': uid, 'option_index': optionIndex});
+      }
+      final rows = await supabase.from('poll_votes').select('message_id,user_id,option_index,created_at').eq('message_id', id);
+      if (mounted) setState(() => pollVotes[id] = List<Map<String, dynamic>>.from(rows));
+    } catch (e) {
+      if (mounted) showMsg(context, 'ثبت رأی ناموفق بود: $e');
+    }
+  }
+
+  Widget _pollContent(Map<String, dynamic> m, Color textColor, Color accent) {
+    final poll = polls['${m['id']}'];
+    if (poll == null) return Text(m['body']?.toString() ?? 'نظرسنجی', style: TextStyle(color: textColor, fontWeight: FontWeight.w700));
+    final rawOptions = poll['options'];
+    final options = rawOptions is List ? rawOptions.map((x) => '$x').toList() : <String>[];
+    final votes = pollVotes['${m['id']}'] ?? const <Map<String, dynamic>>[];
+    final uid = supabase.auth.currentUser?.id;
+    final myVotes = votes.where((v) => '${v['user_id']}' == uid).map((v) => (v['option_index'] as num?)?.toInt()).whereType<int>().toSet();
+    return SizedBox(width: 270, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('${poll['question'] ?? m['body']}', style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 8),
+      ...List.generate(options.length, (i) {
+        final count = votes.where((v) => (v['option_index'] as num?)?.toInt() == i).length;
+        final selected = myVotes.contains(i);
+        final total = votes.length;
+        final ratio = total == 0 ? 0.0 : count / total;
+        return Padding(padding: const EdgeInsets.only(bottom: 7), child: InkWell(borderRadius: BorderRadius.circular(12), onTap: () => _votePoll(m, i), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9), decoration: BoxDecoration(color: selected ? accent.withValues(alpha: .18) : textColor.withValues(alpha: .06), borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? accent.withValues(alpha: .55) : textColor.withValues(alpha: .08))), child: Column(children: [Row(children: [Icon(selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, size: 18, color: selected ? accent : textColor.withValues(alpha: .55)), const SizedBox(width: 7), Expanded(child: Text(options[i], style: TextStyle(color: textColor, fontWeight: FontWeight.w700))), Text('$count', style: TextStyle(color: textColor.withValues(alpha: .75), fontWeight: FontWeight.w800))]), const SizedBox(height: 5), LinearProgressIndicator(value: ratio, minHeight: 3, borderRadius: BorderRadius.circular(3))]))));
+      }),
+      const SizedBox(height: 2),
+      Text('${votes.length} رأی${poll['allows_multiple'] == true ? ' • چند انتخابی' : ''}${poll['is_anonymous'] == true ? ' • ناشناس' : ''}', style: TextStyle(color: textColor.withValues(alpha: .65), fontSize: 11)),
+    ]));
+  }
+
   Future<void> _showAttachmentPanel() async {
     await showModalBottomSheet<void>(
       context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
@@ -4092,6 +4224,7 @@ class _ChatPageState extends State<ChatPage> {
                 _attachmentItem(sheetContext, Icons.camera_alt_rounded, 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
                 _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
                 _attachmentItem(sheetContext, Icons.music_note_rounded, 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.poll_rounded, 'نظرسنجی', () { Navigator.pop(sheetContext); _createPoll(); }),
                 _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
               ]),
             ]),
@@ -4702,7 +4835,9 @@ class _ChatPageState extends State<ChatPage> {
     final isGroup = _chatType != 'direct';
 
     Widget content;
-    if (m['message_type'] == 'image') {
+    if (m['message_type'] == 'poll') {
+      content = _pollContent(m, textColor, mine ? Colors.white : scheme.primary);
+    } else if (m['message_type'] == 'image') {
       content = _imageAttachment(m);
     } else if (m['message_type'] == 'audio') {
       content = _voicePlayButton(m['id'].toString());
@@ -4836,6 +4971,18 @@ class _ChatPageState extends State<ChatPage> {
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'message_user_deletions',
+        callback: (_) => load(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'poll_votes',
+        callback: (_) => load(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete,
+        schema: 'public',
+        table: 'poll_votes',
         callback: (_) => load(),
       )
       .subscribe();  }
