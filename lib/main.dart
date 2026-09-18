@@ -3453,6 +3453,8 @@ class _ChatPageState extends State<ChatPage> {
   static const int _messagePageSize = 50;
   bool _loadingOlder = false;
   bool _hasOlderMessages = true;
+  List<Map<String, dynamic>> pinnedMessages = [];
+  bool _loadingPinned = false;
 
   final Map<String, String> _attachmentUrlCache = {};
 
@@ -3605,6 +3607,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> load() async {
+    await _loadPinnedMessages();
     try {
       final rows = await supabase
           .from('messages')
@@ -3795,6 +3798,92 @@ class _ChatPageState extends State<ChatPage> {
         curve: Curves.easeOut,
       );
     });
+  }
+
+  Future<void> _loadPinnedMessages() async {
+    try {
+      final rows = await supabase.from('group_pinned_messages').select('message_id,pinned_by,pinned_at').eq('conversation_id', widget.id).order('pinned_at', ascending: false).limit(20);
+      final ids = (rows as List).map((r) => r['message_id'].toString()).toList();
+      if (ids.isEmpty) { if (mounted) setState(() => pinnedMessages = []); return; }
+      final found = await supabase.from('messages').select('id,body,message_type,created_at,sender_id,deleted_at,edited_at').inFilter('id', ids);
+      final byId = {for (final m in List<Map<String,dynamic>>.from(found)) m['id'].toString(): m};
+      final merged = <Map<String,dynamic>>[];
+      for (final pin in List<Map<String,dynamic>>.from(rows)) {
+        final m = byId[pin['message_id'].toString()];
+        if (m != null && m['deleted_at'] == null) merged.add({...m, '_pinned_at': pin['pinned_at']});
+      }
+      if (mounted) setState(() => pinnedMessages = merged);
+    } catch (_) { if (mounted) setState(() => pinnedMessages = []); }
+  }
+
+  Future<void> _togglePinMessage(Map<String,dynamic> message) async {
+    if (!await _isGroupAdmin()) { if (mounted) showMsg(context, 'فقط مدیر گروه یا کانال می‌تواند پیام را سنجاق کند.'); return; }
+    final id = message['id'].toString();
+    final already = pinnedMessages.any((m) => m['id'].toString() == id);
+    setState(() => _loadingPinned = true);
+    try {
+      if (already) {
+        await supabase.from('group_pinned_messages').delete().eq('conversation_id', widget.id).eq('message_id', id);
+      } else {
+        await supabase.from('group_pinned_messages').insert({'conversation_id': widget.id, 'message_id': id, 'pinned_by': supabase.auth.currentUser!.id});
+      }
+      await _loadPinnedMessages();
+    } catch (_) { if (mounted) showMsg(context, already ? 'برداشتن سنجاق ناموفق بود.' : 'سنجاق کردن پیام ناموفق بود.'); }
+    finally { if (mounted) setState(() => _loadingPinned = false); }
+  }
+
+  void _jumpToPinned(Map<String,dynamic> message) => _jumpToMessage(message['id'].toString());
+
+  Future<void> _openPinnedMessages() async {
+    if (pinnedMessages.isEmpty) return;
+    final selected = await showModalBottomSheet<Map<String,dynamic>>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(12,8,12,20),
+          itemCount: pinnedMessages.length,
+          separatorBuilder: (_,__) => const Divider(height:1),
+          itemBuilder: (_,i) {
+            final m = pinnedMessages[i];
+            final body = m['body']?.toString().trim() ?? '';
+            final type = m['message_type']?.toString() ?? 'text';
+            final label = body.isNotEmpty ? body : (type == 'image' ? 'تصویر' : type == 'video' ? 'ویدئو' : type == 'audio' ? 'پیام صوتی' : 'فایل');
+            return ListTile(leading: const Icon(Icons.push_pin_rounded), title: Text(label,maxLines:2,overflow:TextOverflow.ellipsis), subtitle: Text(_time(m['created_at'])), onTap: () => Navigator.pop(sheetContext,m));
+          },
+        ),
+      ),
+    );
+    if (selected != null) _jumpToPinned(selected);
+  }
+
+  Widget _pinnedBanner() {
+    if (pinnedMessages.isEmpty) return const SizedBox.shrink();
+    final m = pinnedMessages.first;
+    final body = m['body']?.toString().trim() ?? '';
+    final type = m['message_type']?.toString() ?? 'text';
+    final preview = body.isNotEmpty ? body : (type == 'image' ? 'تصویر' : type == 'video' ? 'ویدئو' : type == 'audio' ? 'پیام صوتی' : 'فایل');
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surface.withValues(alpha:.96),
+      child: InkWell(
+        onTap: _openPinnedMessages,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal:14,vertical:8),
+          decoration: BoxDecoration(border:Border(bottom:BorderSide(color:scheme.onSurface.withValues(alpha:.08)))),
+          child: Row(children:[
+            Icon(Icons.push_pin_rounded,size:19,color:scheme.primary),
+            const SizedBox(width:9),
+            Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text('پیام‌های سنجاق‌شده • '+pinnedMessages.length.toString(),style:const TextStyle(fontSize:12,fontWeight:FontWeight.w900)),
+              Text(preview,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:13,color:scheme.onSurfaceVariant)),
+            ])),
+            const Icon(Icons.chevron_left_rounded,size:20),
+          ]),
+        ),
+      ),
+    );
   }
 
   Future<void> _queuePendingText(String value) async {
@@ -4444,6 +4533,7 @@ class _ChatPageState extends State<ChatPage> {
         if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
           _actionTile(context, Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
         _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره', () => saveMessage(message)),
+        if (_chatType == 'group' || _chatType == 'channel') FutureBuilder<bool>(future: _isGroupAdmin(), builder: (_, snap) => snap.data == true ? _actionTile(context, Icons.push_pin_outlined, pinnedMessages.any((m) => m['id'].toString() == message['id'].toString()) ? 'برداشتن سنجاق' : 'سنجاق پیام', () => _togglePinMessage(message)) : const SizedBox.shrink()),
         _actionTile(context, Icons.delete_outline_rounded, 'حذف برای من', () => deleteForMe(message)),
         if (message['sender_id'] == supabase.auth.currentUser?.id)
           _actionTile(context, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
@@ -4902,7 +4992,10 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ), // GROUP_PROFILE_WIRED
       ),
-      body: Container(
+      body: Column(children: [
+        _pinnedBanner(),
+        Expanded(child: Container(),
+      ]),
         decoration: BoxDecoration(
           color: dark ? const Color(0xFF0F1117) : const Color(0xFFF1EEF5),
           gradient: LinearGradient(
