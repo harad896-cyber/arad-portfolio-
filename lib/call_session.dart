@@ -87,14 +87,14 @@ class _CallSessionPageState extends State<CallSessionPage> {
             right: 18,
             top: 18,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(16),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: scheme.surface.withValues(alpha: .68),
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
                   ),
                   child: Column(
@@ -113,14 +113,14 @@ class _CallSessionPageState extends State<CallSessionPage> {
             right: 16,
             bottom: 24,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(16),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
                     color: scheme.surface.withValues(alpha: .78),
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
                   ),
                   child: Row(
@@ -162,7 +162,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(17),
+          padding: const EdgeInsets.all(16),
           child: Icon(icon, color: active ? scheme.primary : scheme.onSurface, size: 25),
         ),
       ),
