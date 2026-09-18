@@ -72,9 +72,10 @@ class LanguageController extends ChangeNotifier {
 }
 
 class AppThemeController extends ChangeNotifier {
-  bool dark = false;
+  bool dark = true;
   int seed = 0xFF7C5CFF;
-  int backgroundSeed = 0xFFF5F5F7;
+  int backgroundSeed = 0xFF11131A;
+  static const int _themeRevision = 2;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -85,9 +86,21 @@ class AppThemeController extends ChangeNotifier {
   Future<void> loadForUser() async {
     final p = await SharedPreferences.getInstance();
     final key = _scope;
-    dark = p.getBool('dark_mode_$key') ?? false;
-    seed = p.getInt('accent_seed_$key') ?? 0xFF7C5CFF;
-    backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFFF5F5F7;
+    final revision = p.getInt('theme_revision_$key') ?? 0;
+    if (revision < _themeRevision) {
+      // One-time migration to the new high-contrast chat palette.
+      dark = true;
+      seed = 0xFF8B5CF6;
+      backgroundSeed = 0xFF11131A;
+      await p.setBool('dark_mode_$key', dark);
+      await p.setInt('accent_seed_$key', seed);
+      await p.setInt('chat_background_seed_$key', backgroundSeed);
+      await p.setInt('theme_revision_$key', _themeRevision);
+    } else {
+      dark = p.getBool('dark_mode_$key') ?? true;
+      seed = p.getInt('accent_seed_$key') ?? 0xFF8B5CF6;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF11131A;
+    }
     notifyListeners();
   }
   Future<void> setDark(bool value) async {
@@ -2478,8 +2491,11 @@ class _ChatPageState extends State<ChatPage> {
   Widget _voicePlayButton(String messageId) {
     final a = attachments[messageId];
     final initialMs = ((a?['duration_ms'] as num?)?.toInt() ?? 0);
+    final mine = messages.any((m) =>
+        m['id'].toString() == messageId &&
+        m['sender_id'] == supabase.auth.currentUser?.id);
     return VoiceMessagePlayer(
-      mine: true,
+      mine: mine,
       initialDurationMs: initialMs,
       loadAudio: () async {
         final path = attachments[messageId]?['storage_path']?.toString() ?? '';
@@ -3567,8 +3583,8 @@ class _ChatPageState extends State<ChatPage> {
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final myBubble = const Color(0xFFB85A86);
-    final otherBubble = dark ? const Color(0xFF24272C) : const Color(0xFFF0F1F4);
+    final myBubble = const Color(0xFFB84D8A);
+    final otherBubble = dark ? const Color(0xFF20242D) : const Color(0xFFE8E6EE);
     final textColor = mine
         ? (ThemeData.estimateBrightnessForColor(myBubble) == Brightness.dark ? Colors.white : Colors.black)
         : (dark ? Colors.white : const Color(0xFF20242A));
@@ -3826,14 +3842,13 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          color: Color(appTheme.backgroundSeed),
+          color: dark ? const Color(0xFF0F1117) : const Color(0xFFF1EEF5),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(appTheme.backgroundSeed).withValues(alpha: .98),
-              Color(appTheme.backgroundSeed).withValues(alpha: .90),
-            ],
+            colors: dark
+                ? const [Color(0xFF15121D), Color(0xFF0D0F14)]
+                : const [Color(0xFFF5F1F8), Color(0xFFECE8F1)],
           ),
         ),
         child: Column(
