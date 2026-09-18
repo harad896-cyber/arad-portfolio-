@@ -11,6 +11,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Apply final messenger polish
+        run: python3 tools/polish_final.py
       - name: Repair known runtime bugs
         shell: bash
         run: |
