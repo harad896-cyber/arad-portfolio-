@@ -1229,6 +1229,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   String? existingAvatarUrl;
   bool loading = true;
   bool busy = false;
+  String? nameError;
+  String? usernameError;
 
   Future<void> load() async {
     try {
@@ -1274,7 +1276,152 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   Future<void> save() async {
     final displayName = name.text.trim();
     final userName = username.text.trim().replaceFirst('@', '');
-    if (displayName.isEmpty) { showMsg(context, 'نام نمایشی را وارد کنید.'); return; }
+    if (displayName.isEmpty) { setState(() => nameError = 'نام نمایشی را وارد کنید.'); return; }
+    if (userName.isNotEmpty && !RegExp(r'^[A-Za-z0-9_]{3,32}
+    setState(() => busy = true);
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final data = <String, dynamic>{
+        'id': uid,
+        'display_name': displayName,
+        'username': userName,
+        'bio': bio.text.trim(),
+        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
+        'is_online': true,
+        'last_seen': DateTime.now().toIso8601String(),
+      };
+      if (avatarImage != null) {
+        final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
+        final path = '$uid/avatar.jpg';
+        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+        data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
+      }
+      await supabase.from('profiles').upsert(data);
+      if (mounted) { showMsg(context, 'پروفایل با موفقیت ذخیره شد.'); Navigator.pop(context); }
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+  @override
+  void initState() { super.initState(); load(); }
+  @override
+  void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل شما')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(child: GestureDetector(
+            onTap: chooseAvatar,
+            child: Stack(clipBehavior: Clip.none, children: [
+              CircleAvatar(
+                radius: 58,
+                backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
+                child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
+              ),
+              const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
+            ]),
+          )),
+          const SizedBox(height: 22),
+          TextField(controller: name, onChanged: (v) => setState(() => nameError = v.trim().isEmpty ? 'نام نمایشی را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام نمایشی', errorText: nameError, border: const OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: username, onChanged: (v) { final u = v.trim().replaceFirst('@', ''); setState(() => usernameError = u.isEmpty || RegExp(r'^[A-Za-z0-9_]{3,32}
+          const SizedBox(height: 12),
+          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
+        ],
+      ),
+    );
+  }
+}
+
+
+).hasMatch(userName)) { setState(() => usernameError = 'نام کاربری باید ۳ تا ۳۲ کاراکتر و فقط شامل حروف انگلیسی، عدد یا _ باشد.'); return; }
+    setState(() => busy = true);
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final data = <String, dynamic>{
+        'id': uid,
+        'display_name': displayName,
+        'username': userName,
+        'bio': bio.text.trim(),
+        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
+        'is_online': true,
+        'last_seen': DateTime.now().toIso8601String(),
+      };
+      if (avatarImage != null) {
+        final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
+        final path = '$uid/avatar.jpg';
+        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+        data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
+      }
+      await supabase.from('profiles').upsert(data);
+      if (mounted) { showMsg(context, 'پروفایل با موفقیت ذخیره شد.'); Navigator.pop(context); }
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+  @override
+  void initState() { super.initState(); load(); }
+  @override
+  void dispose() { name.dispose(); username.dispose(); bio.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل شما')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(child: GestureDetector(
+            onTap: chooseAvatar,
+            child: Stack(clipBehavior: Clip.none, children: [
+              CircleAvatar(
+                radius: 58,
+                backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
+                child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
+              ),
+              const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
+            ]),
+          )),
+          const SizedBox(height: 22),
+          TextField(controller: name, decoration: const InputDecoration(labelText: 'نام نمایشی', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: username, decoration: const InputDecoration(labelText: 'نام کاربری', prefixText: '@', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
+        ],
+      ),
+    );
+  }
+}
+
+
+).hasMatch(u) ? null : 'نام کاربری نامعتبر است.'); }, decoration: InputDecoration(labelText: 'نام کاربری', errorText: usernameError, prefixText: '@', border: const OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
+        ],
+      ),
+    );
+  }
+}
+
+
+).hasMatch(userName)) { setState(() => usernameError = 'نام کاربری باید ۳ تا ۳۲ کاراکتر و فقط شامل حروف انگلیسی، عدد یا _ باشد.'); return; }
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
@@ -1927,6 +2074,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
   List<Map<String, dynamic>> found = [];
   List<Map<String, dynamic>> selected = [];
   bool busy = false;
+  String? titleError;
 
   Future<void> findUsers(String q) async {
     if (q.trim().isEmpty) {
@@ -1942,10 +2090,8 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
   }
 
   Future<void> createGroup() async {
-    if (title.text.trim().isEmpty || selected.isEmpty) {
-      showMsg(context, 'نام گروه و حداقل یک عضو را وارد کنید.');
-      return;
-    }
+    if (title.text.trim().isEmpty) { setState(() => titleError = 'نام گروه را وارد کنید.'); return; }
+    if (selected.isEmpty) { showMsg(context, 'حداقل یک عضو را انتخاب کنید.'); return; }
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
@@ -1977,7 +2123,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       appBar: AppBar(title: const Text('ساخت گروه')),
       body: Column(
         children: [
-          Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder()))),
+          Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: const OutlineInputBorder()))),
           Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
             SizedBox(
@@ -2059,8 +2205,9 @@ class ChannelCreatePage extends StatefulWidget {
 }
 class _ChannelCreatePageState extends State<ChannelCreatePage> {
   final title = TextEditingController(); final about = TextEditingController(); bool busy = false;
+  String? channelTitleError;
   Future<void> create() async {
-    if (title.text.trim().isEmpty) { showMsg(context, 'نام کانال را وارد کنید.'); return; }
+    if (title.text.trim().isEmpty) { setState(() => channelTitleError = 'نام کانال را وارد کنید.'); return; }
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
@@ -2080,7 +2227,7 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
         decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(28)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.campaign_rounded, size: 58), const SizedBox(height: 12),
-          TextField(controller:title, decoration:const InputDecoration(labelText:'نام کانال',prefixIcon:Icon(Icons.campaign_outlined))),
+          TextField(controller:title, onChanged:(v)=>setState(()=>channelTitleError=v.trim().isEmpty?'نام کانال را وارد کنید.':null), decoration:InputDecoration(labelText:'نام کانال',errorText:channelTitleError,prefixIcon:const Icon(Icons.campaign_outlined))),
           const SizedBox(height:10),
           TextField(controller:about,maxLines:3,decoration:const InputDecoration(labelText:'توضیحات کانال')),
           const SizedBox(height:16),
