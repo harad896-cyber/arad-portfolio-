@@ -37,7 +37,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             child: Center(
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 280),
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary.withValues(alpha: .13),
                   borderRadius: BorderRadius.circular(20),
