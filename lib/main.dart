@@ -1983,7 +1983,7 @@ class _HomePageState extends State<HomePage> {
       final isArchived = archivedChatIds.contains(c['id'].toString());
       return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread) &&
           (q.isEmpty || title.contains(q) || username.contains(q) || last.contains(q));
-    }).toList();
+    }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap ? -1 : 1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
   Future<void> load() async {
@@ -2064,6 +2064,19 @@ class _HomePageState extends State<HomePage> {
       setState(() { if(marked) manuallyUnreadChatIds.remove(id); else manuallyUnreadChatIds.add(id); });
       showMsg(context, marked ? 'گفتگو به‌عنوان خوانده‌شده علامت خورد.' : 'گفتگو به‌عنوان خوانده‌نشده علامت خورد.');
     } catch(e) { if(mounted) showMsg(context, 'تغییر وضعیت ناموفق بود: '+_friendlyError(e.toString())); }
+  }
+
+  Future<void> _togglePin(Map<String,dynamic> chat) async {
+    final uid=supabase.auth.currentUser?.id, id=chat['id']?.toString();
+    if(uid==null||id==null||id.isEmpty)return;
+    final pinned=pinnedChatIds.contains(id);
+    try {
+      if(pinned) await supabase.from('chat_pins').delete().eq('user_id',uid).eq('conversation_id',id);
+      else await supabase.from('chat_pins').insert({'user_id':uid,'conversation_id':id});
+      if(!mounted)return;
+      setState(()=>pinned ? pinnedChatIds.remove(id) : pinnedChatIds.add(id));
+      showMsg(context,pinned?'گفتگو از بالای فهرست برداشته شد.':'گفتگو سنجاق شد و بالای فهرست قرار گرفت.');
+    }catch(e){if(mounted)showMsg(context,'تغییر سنجاق ناموفق بود: '+_friendlyError(e.toString()));}
   }
 
   Future<void> _toggleArchive(Map<String,dynamic> chat) async {
@@ -2385,6 +2398,7 @@ class _HomePageState extends State<HomePage> {
                         final lastAt = last?['created_at'];
                         final unreadCount = int.tryParse('${c['unread_count'] ?? 0}') ?? 0;
                         final unread = unreadCount > 0 || manuallyUnreadChatIds.contains(c['id'].toString());
+                         final isPinned = pinnedChatIds.contains(c['id'].toString());
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(kAppRadius),
                           child: BackdropFilter(
@@ -2407,14 +2421,16 @@ class _HomePageState extends State<HomePage> {
                                 ]),
                                 subtitle: Row(children: [
                                   Expanded(child: Text(bio.isNotEmpty && last==null ? bio : preview,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:unread?theme.colorScheme.onSurface:theme.colorScheme.onSurfaceVariant,fontWeight:unread?FontWeight.w700:FontWeight.w400))),
-                                  if(unread) Container(margin:const EdgeInsets.only(right:5),constraints:const BoxConstraints(minWidth:22),padding:const EdgeInsets.symmetric(horizontal:6,vertical:3),decoration:BoxDecoration(color:theme.colorScheme.primary,shape:BoxShape.circle),child:Text('$unreadCount',textAlign:TextAlign.center,style:TextStyle(color:theme.colorScheme.onPrimary,fontSize:10,fontWeight:FontWeight.w900))),
+                                  if(isPinned) const Padding(padding:EdgeInsets.only(right:5),child:Icon(Icons.push_pin_rounded,size:15)),
+                                   if(unread) Container(margin:const EdgeInsets.only(right:5),constraints:const BoxConstraints(minWidth:22),padding:const EdgeInsets.symmetric(horizontal:6,vertical:3),decoration:BoxDecoration(color:theme.colorScheme.primary,shape:BoxShape.circle),child:Text('$unreadCount',textAlign:TextAlign.center,style:TextStyle(color:theme.colorScheme.onPrimary,fontSize:10,fontWeight:FontWeight.w900))),
                                 ]),
                                 trailing: PopupMenuButton<String>(onSelected:(action){
                                   if(action=='open') Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load()));
                                   if(action=='info') Navigator.push(context,MaterialPageRoute(builder:(_)=>ConversationInfoPage(conversationId:c['id'].toString(),fallbackTitle:title)));
                                   if(action=='archive') _toggleArchive(c);
                                   if(action=='unread') _toggleManualUnread(c);
-                                },itemBuilder:(_)=>const [PopupMenuItem(value:'open',child:Text('باز کردن گفتگو')),PopupMenuItem(value:'info',child:Text('پروفایل و اطلاعات')),PopupMenuItem(value:'unread',child:Text(manuallyUnreadChatIds.contains(c['id'].toString()) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),PopupMenuItem(value:'archive',child:Text(archivedChatIds.contains(c['id'].toString()) ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو'))]),
+                                  if(action=='pin') _togglePin(c);
+                                },itemBuilder:(_)=>const [PopupMenuItem(value:'open',child:Text('باز کردن گفتگو')),PopupMenuItem(value:'info',child:Text('پروفایل و اطلاعات')),PopupMenuItem(value:'pin',child:Text(pinnedChatIds.contains(c['id'].toString()) ? 'برداشتن سنجاق' : 'سنجاق کردن')),PopupMenuItem(value:'unread',child:Text(manuallyUnreadChatIds.contains(c['id'].toString()) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),PopupMenuItem(value:'archive',child:Text(archivedChatIds.contains(c['id'].toString()) ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو'))]),
                                 onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatPage(id:c['id'].toString(),title:title))).then((_)=>(load())),
                               ),
                             ),
