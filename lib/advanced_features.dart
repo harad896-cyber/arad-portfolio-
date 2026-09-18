@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'polish_widgets.dart';
 
 class AdvancedFeaturesPage extends StatefulWidget {
   const AdvancedFeaturesPage({super.key});
@@ -66,7 +67,7 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Messenger Plus', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), SizedBox(height: 6), Text('همه قابلیت‌ها بجز کیف پول در یک بخش قابل دسترس هستند.')])) ,
+          Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(kPolishRadius), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Messenger Plus', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), SizedBox(height: 6), Text('همه قابلیت‌ها بجز کیف پول در یک بخش قابل دسترس هستند.')])) ,
           const SizedBox(height: 14),
           ...items.where((e) => search.isEmpty || e.title.contains(search)).map((e) => Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(leading: Icon(e.icon), title: Text(e.title), subtitle: Text(e.subtitle), trailing: const Icon(Icons.chevron_left), onTap: e.action))),
         ],
