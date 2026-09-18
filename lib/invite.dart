@@ -85,7 +85,7 @@ class InvitePage extends StatelessWidget {
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), color: Theme.of(context).colorScheme.primaryContainer),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Theme.of(context).colorScheme.primaryContainer),
             child: const Column(
               children: [
                 CircleAvatar(radius: 34, child: Icon(Icons.person_add_alt_1, size: 34)),
