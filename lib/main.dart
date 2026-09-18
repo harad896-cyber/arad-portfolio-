@@ -479,6 +479,22 @@ class AradMessenger extends StatelessWidget {
   }
 }
 
+Future<Map<String,dynamic>> loadUserSettings() async {
+  final uid=supabase.auth.currentUser?.id;
+  if(uid==null) return {};
+  final row=await supabase.from('user_settings').select().eq('user_id',uid).maybeSingle();
+  if(row!=null) return Map<String,dynamic>.from(row);
+  final defaults={'user_id':uid};
+  await supabase.from('user_settings').upsert(defaults);
+  final created=await supabase.from('user_settings').select().eq('user_id',uid).single();
+  return Map<String,dynamic>.from(created);
+}
+Future<void> saveUserSettings(Map<String,dynamic> values) async {
+  final uid=supabase.auth.currentUser?.id;
+  if(uid==null) return;
+  await supabase.from('user_settings').upsert({'user_id':uid,...values,'updated_at':DateTime.now().toUtc().toIso8601String()});
+}
+
 void showMsg(BuildContext context, String text) {
   final message = _friendlyError(text);
   ScaffoldMessenger.of(context)
@@ -679,12 +695,12 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   }
   void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
     const Padding(padding:EdgeInsets.all(18),child:Text('ظاهر برنامه',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
-    RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('تاریک')),
-    RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('روشن')),
+    RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);await saveUserSettings({'theme_mode':'dark'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('تاریک')),
+    RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('روشن')),
   ])));
   void _showLanguageSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
     const Padding(padding:EdgeInsets.all(18),child:Text('زبان',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
-    ...AppStrings.supported.map((code)=>RadioListTile<String>(value:code,groupValue:aradLanguageController.locale.languageCode,title:Text(AppStrings.names[code]??code),onChanged:(v)async{if(v==null)return;await aradLanguageController.setLocale(v);if(mounted){setState(()=>language=AppStrings.names[v]??v);Navigator.pop(context);}})),
+    ...AppStrings.supported.map((code)=>RadioListTile<String>(value:code,groupValue:aradLanguageController.locale.languageCode,title:Text(AppStrings.names[code]??code),onChanged:(v)async{if(v==null)return;await aradLanguageController.setLocale(v);await saveUserSettings({'language_code':v});if(mounted){setState(()=>language=AppStrings.names[v]??v);Navigator.pop(context);}})),
   ])));
   Future<void> _signOut()async{
     final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
@@ -700,21 +716,37 @@ class PrivacySettingsPage extends StatefulWidget {
   @override State<PrivacySettingsPage> createState()=>_PrivacySettingsPageState();
 }
 class _PrivacySettingsPageState extends State<PrivacySettingsPage>{
-  late final String keyPrefix;
-  bool online=true,phone=false,profile=true,lastSeen=true;
-  @override void initState(){super.initState();keyPrefix='privacy_${supabase.auth.currentUser?.id??'guest'}';_load();}
-  Future<void> _load()async{final p=await SharedPreferences.getInstance();if(!mounted)return;setState((){
-    online=p.getBool('${keyPrefix}_online')??true;lastSeen=p.getBool('${keyPrefix}_last_seen')??true;phone=p.getBool('${keyPrefix}_phone')??false;profile=p.getBool('${keyPrefix}_profile')??true;
-  });}
-  Future<void> _set(String key,bool value)async{final p=await SharedPreferences.getInstance();await p.setBool('${keyPrefix}_${key}',value);}
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('حریم خصوصی')),body:ListView(padding:const EdgeInsets.all(12),children:[
-    const Padding(padding:EdgeInsets.fromLTRB(4,8,4,6),child:Text('دیده‌شدن اطلاعات',style:TextStyle(fontSize:15,fontWeight:FontWeight.w900))),
-    Card(child:SwitchListTile(title:const Text('نمایش آنلاین بودن'),value:online,onChanged:(v){setState(()=>online=v);_set('online',v);})),
-    Card(child:SwitchListTile(title:const Text('نمایش آخرین بازدید'),value:lastSeen,onChanged:(v){setState(()=>lastSeen=v);_set('last_seen',v);})),
-    Card(child:SwitchListTile(title:const Text('نمایش شماره تلفن'),value:phone,onChanged:(v){setState(()=>phone=v);_set('phone',v);})),
-    Card(child:SwitchListTile(title:const Text('نمایش پروفایل'),value:profile,onChanged:(v){setState(()=>profile=v);_set('profile',v);})),
-    const Card(child:Padding(padding:EdgeInsets.all(16),child:Text('این گزینه‌ها در این نسخه ترجیح خصوصی روی دستگاه هستند؛ اعمال سراسری نیازمند اتصال به تنظیمات حساب در Backend است.'))),
-  ]));
+  bool online=true,phone=false,profile=true,lastSeen=true,loading=true;
+  @override void initState(){super.initState();_load();}
+  Future<void> _load()async{
+    try{
+      final s=await loadUserSettings();
+      if(!mounted)return;
+      setState((){
+        online=s['show_online']??true;
+        lastSeen=s['show_last_seen']??true;
+        phone=s['show_phone']??false;
+        profile=s['show_profile']??true;
+        loading=false;
+      });
+    }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'تنظیمات حریم خصوصی بارگذاری نشد: $e');}}
+  }
+  Future<void> _set(String key,bool value)async{
+    setState(()=>loading=false);
+    try{await saveUserSettings({key:value});}catch(e){if(mounted)showMsg(context,'ذخیره تنظیمات انجام نشد: $e');}
+  }
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('حریم خصوصی')),
+    body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
+      const Padding(padding:EdgeInsets.fromLTRB(4,8,4,6),child:Text('دیده‌شدن اطلاعات',style:TextStyle(fontSize:15,fontWeight:FontWeight.w900))),
+      Card(child:SwitchListTile(title:const Text('نمایش آنلاین بودن'),subtitle:const Text('این ترجیح در حساب شما ذخیره می‌شود.'),value:online,onChanged:(v){setState(()=>online=v);_set('show_online',v);})),
+      Card(child:SwitchListTile(title:const Text('نمایش آخرین بازدید'),value:lastSeen,onChanged:(v){setState(()=>lastSeen=v);_set('show_last_seen',v);})),
+      Card(child:SwitchListTile(title:const Text('نمایش شماره تلفن'),value:phone,onChanged:(v){setState(()=>phone=v);_set('show_phone',v);})),
+      Card(child:SwitchListTile(title:const Text('نمایش پروفایل'),value:profile,onChanged:(v){setState(()=>profile=v);_set('show_profile',v);})),
+      const SizedBox(height:12),
+      const Card(child:Padding(padding:EdgeInsets.all(16),child:Text('این گزینه‌ها اکنون در Backend حساب ذخیره می‌شوند و می‌توانند مبنای اعمال حریم خصوصی در همه دستگاه‌های واردشده باشند.'))),
+    ]),
+  );
 }
 
 class ChatSettingsPage extends StatefulWidget {
@@ -722,20 +754,33 @@ class ChatSettingsPage extends StatefulWidget {
   @override State<ChatSettingsPage> createState()=>_ChatSettingsPageState();
 }
 class _ChatSettingsPageState extends State<ChatSettingsPage>{
-  final uid=supabase.auth.currentUser?.id??'guest';
-  bool receipts=true,preview=true,enterSend=false,autoplay=true,saveGallery=false;
+  bool receipts=true,preview=true,enterSend=false,autoplay=true,saveGallery=false,loading=true;
   @override void initState(){super.initState();_load();}
-  Future<void> _load()async{final p=await SharedPreferences.getInstance();if(!mounted)return;setState((){
-    receipts=p.getBool('chat_receipts_${uid}')??true;preview=p.getBool('chat_preview_${uid}')??true;enterSend=p.getBool('chat_enter_send_${uid}')??false;autoplay=p.getBool('chat_autoplay_${uid}')??true;saveGallery=p.getBool('chat_save_gallery_${uid}')??false;
-  });}
-  Future<void> _set(String key,bool value)async{final p=await SharedPreferences.getInstance();await p.setBool('chat_${key}_${uid}',value);}
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تنظیمات گفتگو')),body:ListView(padding:const EdgeInsets.all(12),children:[
-    Card(child:SwitchListTile(title:const Text('رسید خواندن'),subtitle:const Text('نمایش وضعیت خوانده‌شدن پیام‌ها'),value:receipts,onChanged:(v){setState(()=>receipts=v);_set('receipts',v);})),
-    Card(child:SwitchListTile(title:const Text('پیش‌نمایش لینک'),value:preview,onChanged:(v){setState(()=>preview=v);_set('preview',v);})),
-    Card(child:SwitchListTile(title:const Text('ارسال با Enter'),value:enterSend,onChanged:(v){setState(()=>enterSend=v);_set('enter_send',v);})),
-    Card(child:SwitchListTile(title:const Text('پخش خودکار صدا'),value:autoplay,onChanged:(v){setState(()=>autoplay=v);_set('autoplay',v);})),
-    Card(child:SwitchListTile(title:const Text('ذخیره رسانه در گالری'),value:saveGallery,onChanged:(v){setState(()=>saveGallery=v);_set('save_gallery',v);})),
-  ]));
+  Future<void> _load()async{
+    try{
+      final s=await loadUserSettings();
+      if(!mounted)return;
+      setState((){
+        receipts=s['read_receipts']??true;
+        preview=s['link_previews']??true;
+        enterSend=s['enter_to_send']??false;
+        autoplay=s['autoplay_voice']??true;
+        saveGallery=s['save_media_to_gallery']??false;
+        loading=false;
+      });
+    }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'تنظیمات گفتگو بارگذاری نشد: $e');}}
+  }
+  Future<void> _set(String key,bool value)async{try{await saveUserSettings({key:value});}catch(e){if(mounted)showMsg(context,'ذخیره تنظیمات انجام نشد: $e');}}
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('تنظیمات گفتگو')),
+    body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
+      Card(child:SwitchListTile(title:const Text('رسید خواندن'),subtitle:const Text('وضعیت خوانده‌شدن پیام‌ها'),value:receipts,onChanged:(v){setState(()=>receipts=v);_set('read_receipts',v);})),
+      Card(child:SwitchListTile(title:const Text('پیش‌نمایش لینک'),value:preview,onChanged:(v){setState(()=>preview=v);_set('link_previews',v);})),
+      Card(child:SwitchListTile(title:const Text('ارسال با Enter'),value:enterSend,onChanged:(v){setState(()=>enterSend=v);_set('enter_to_send',v);})),
+      Card(child:SwitchListTile(title:const Text('پخش خودکار صدا'),value:autoplay,onChanged:(v){setState(()=>autoplay=v);_set('autoplay_voice',v);})),
+      Card(child:SwitchListTile(title:const Text('ذخیره رسانه در گالری'),value:saveGallery,onChanged:(v){setState(()=>saveGallery=v);_set('save_media_to_gallery',v);})),
+    ]),
+  );
 }
 
 class _ChoiceSheet extends StatelessWidget{
