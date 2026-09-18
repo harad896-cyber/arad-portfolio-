@@ -26,14 +26,14 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
     player.onPositionChanged.listen((v) { if (mounted) setState(() => position = v); });
     player.onDurationChanged.listen((v) { if (mounted) setState(() => duration = v); });
     player.onPlayerStateChanged.listen((v) { if (mounted) setState(() => playing = v == PlayerState.playing); });
-    player.onPlayerComplete.listen((_) { if (mounted) setState(() => position = duration); });
+    player.onPlayerComplete.listen((_) { if (mounted) setState(() { playing = false; position = Duration.zero; }); });
   }
 
   Future<void> ensureLoaded() async {
     if (loaded) return;
     final bytes = await widget.loadAudio();
     if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
-    await player.setSource(BytesSource(bytes, mimeType: 'audio/mp4'));
+    await player.setSource(BytesSource(bytes));
     loaded = true;
     await player.setPlaybackRate(speed);
   }
