@@ -32,7 +32,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             height: 220,
             decoration: BoxDecoration(
               color: Color(selected),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(kPolishRadius),
               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Center(
