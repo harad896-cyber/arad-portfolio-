@@ -421,7 +421,7 @@ class AradMessenger extends StatelessWidget {
       ),
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       home: const AuthGate(),
-    );
+    ));
   }
 }
 
