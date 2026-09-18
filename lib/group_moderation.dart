@@ -58,7 +58,7 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
   Future<void> banMember(String id) async {
     if (!isAdmin || busy || id == group?['created_by'].toString()) return;
     final reason = TextEditingController();
-    final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(title: Text('محروم‌کردن ${nameOf(id)}'), content: TextField(controller: reason, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل (اختیاری)')), actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('محروم و حذف شود'))])) ?? false;
+    final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(title: Text('محروم‌کردن ${nameOf(id)}'), content: TextField(controller: reason, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل (اختیاری)')), actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')), FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError), onPressed: () => Navigator.pop(d, true), child: const Text('محروم و حذف شود'))])) ?? false;
     final text = reason.text.trim(); reason.dispose();
     if (!ok) return;
     setState(() => busy = true);
