@@ -255,6 +255,11 @@ class AradMessenger extends StatelessWidget {
       locale: aradLanguageController.locale,
       supportedLocales: AppStrings.supported.map((x) => Locale(x)),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      builder: (context, child) {
+        final code = aradLanguageController.locale.languageCode;
+        final direction = (code == 'fa' || code == 'ar') ? TextDirection.rtl : TextDirection.ltr;
+        return Directionality(textDirection: direction, child: child ?? const SizedBox.shrink());
+      },
       debugShowCheckedModeBanner: false,
       title: 'Arad Messenger',
       theme: ThemeData(
