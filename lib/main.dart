@@ -4604,7 +4604,6 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                           onChanged: (v) => setSheetState(() => nextSender = v),
                           );
                         },
-                      ),
                     ),
                     const SizedBox(height: 14),
                     ListTile(
