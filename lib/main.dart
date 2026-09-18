@@ -3759,6 +3759,17 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Future<void> _openMessageSearch() async {
+    final result = await showSearch<Map<String,dynamic>?>(
+      context: context,
+      delegate: MessageSearchDelegate(widget.id),
+    );
+    final messageId = result?['id']?.toString();
+    if (messageId != null && messageId.isNotEmpty) {
+      _jumpToMessage(messageId);
+    }
+  }
+
   void _jumpToMessage(String messageId) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       for (var attempt = 0; attempt < 8; attempt++) {
@@ -4816,7 +4827,7 @@ class _ChatPageState extends State<ChatPage> {
         actions: [
           IconButton(
             tooltip: 'جستجو در گفتگو',
-            onPressed: () => showSearch(context: context, delegate: MessageSearchDelegate(widget.id)),
+            onPressed: _openMessageSearch,
             icon: const Icon(Icons.search_rounded),
           ),
           FutureBuilder<bool>(
@@ -4830,7 +4841,7 @@ class _ChatPageState extends State<ChatPage> {
               if (v == 'info') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
               } else if (v == 'search') {
-                showSearch(context: context, delegate: MessageSearchDelegate(widget.id));
+                _openMessageSearch();
               }
             },
             itemBuilder: (_) => const [
