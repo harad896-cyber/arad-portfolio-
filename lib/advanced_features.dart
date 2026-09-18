@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'polish_widgets.dart';
 import 'secret_chat.dart';
@@ -495,7 +496,7 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
       c.dispose(); if(ok!=true)return;
     }
     final p=await SharedPreferences.getInstance(); await p.setBool('app_lock_enabled',false); await p.setBool('app_lock_biometric',false); await _secure.delete(key:'app_lock_pin');
-    if(mounted)setState(()=>{enabled=false;biometric=false;});
+    if(mounted)setState(() { enabled=false; biometric=false; });
   }
 
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('قفل برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
