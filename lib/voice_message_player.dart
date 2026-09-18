@@ -80,7 +80,18 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
 
   @override
   Widget build(BuildContext context) {
-    final accent = widget.mine ? Colors.white : Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final accent = widget.mine
+        ? Colors.white
+        : (Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFFB99CFF)
+            : const Color(0xFF6D4FD8));
+    final inactive = widget.mine
+        ? Colors.white.withValues(alpha: .34)
+        : scheme.onSurface.withValues(alpha: .22);
+    final controlSurface = widget.mine
+        ? Colors.white.withValues(alpha: .16)
+        : scheme.onSurface.withValues(alpha: .08);
     final progress = duration.inMilliseconds > 0
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
@@ -95,6 +106,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
             IconButton(
               tooltip: playing ? 'مکث' : 'پخش',
               onPressed: toggle,
+              style: IconButton.styleFrom(backgroundColor: controlSurface, foregroundColor: accent),
               icon: loading
                   ? SizedBox(width: 30, height: 30, child: CircularProgressIndicator(strokeWidth: 2.5, color: accent))
                   : Icon(playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, size: 42, color: accent),
@@ -117,7 +129,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
                         width: 3,
                         height: 8 + bars[i] * 27,
                         decoration: BoxDecoration(
-                          color: active ? accent : accent.withValues(alpha: .34),
+                          color: active ? accent : inactive,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -130,12 +142,15 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
           ]),
           Row(children: [
             const SizedBox(width: 50),
-            Text(formatTime(position), style: TextStyle(fontSize: 11, color: accent.withValues(alpha: .9), fontWeight: FontWeight.w700)),
+            Text(formatTime(position), style: TextStyle(fontSize: 11, color: accent, fontWeight: FontWeight.w800)),
             Expanded(
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight: 3,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                  trackHeight: 4,
+                  activeTrackColor: accent,
+                  inactiveTrackColor: inactive,
+                  thumbColor: accent,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
                 ),
                 child: Slider(
@@ -146,7 +161,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
                 ),
               ),
             ),
-            Text(formatTime(duration), style: TextStyle(fontSize: 11, color: accent.withValues(alpha: .9), fontWeight: FontWeight.w700)),
+            Text(formatTime(duration), style: TextStyle(fontSize: 11, color: accent, fontWeight: FontWeight.w800)),
           ]),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             TextButton.icon(
@@ -157,8 +172,8 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
                 setState(() => speed = next);
                 if (loaded) await player.setPlaybackRate(next);
               },
-              icon: const Icon(Icons.speed_rounded, size: 16),
-              label: Text('${speed}x'),
+              icon: Icon(Icons.speed_rounded, size: 16, color: accent),
+              label: Text('${speed}x', style: TextStyle(color: accent, fontWeight: FontWeight.w800)),
             ),
           ]),
         ],
