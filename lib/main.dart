@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1391,7 +1392,7 @@ class ProfileGate extends StatelessWidget {
         if (!snapshot.hasData) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        return snapshot.data! ? const HomePage() : const ProfileSetupPage();
+        return snapshot.data! ? const AppLockGate(child: HomePage()) : const ProfileSetupPage();
       },
     );
   }
@@ -3242,3 +3243,77 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
+
+class AppLockGate extends StatefulWidget {
+  final Widget child;
+  const AppLockGate({super.key, required this.child});
+  @override State<AppLockGate> createState()=>_AppLockGateState();
+}
+class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
+  final _secure=const FlutterSecureStorage();
+  final _auth=LocalAuthentication();
+  bool locked=false, checking=true, authenticating=false;
+  DateTime? _backgroundAt;
+
+  @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);_check();}
+  @override void dispose(){WidgetsBinding.instance.removeObserver(this);super.dispose();}
+
+  Future<void> _check() async {
+    final enabled=(await SharedPreferences.getInstance()).getBool('app_lock_enabled')??false;
+    if(!enabled){if(mounted)setState(()=>checking=false);return;}
+    if(mounted)setState(()=>locked=true);
+    await _unlock();
+  }
+
+  @override void didChangeAppLifecycleState(AppLifecycleState state){
+    if(state==AppLifecycleState.paused||state==AppLifecycleState.inactive) _backgroundAt=DateTime.now();
+    if(state==AppLifecycleState.resumed&&_backgroundAt!=null){
+      final elapsed=DateTime.now().difference(_backgroundAt!);
+      if(elapsed.inSeconds>=5) _check();
+      _backgroundAt=null;
+    }
+  }
+
+  Future<void> _unlock() async {
+    if(authenticating)return;
+    authenticating=true;
+    try {
+      final p=await SharedPreferences.getInstance();
+      final bio=p.getBool('app_lock_biometric')??false;
+      if(bio){
+        try {
+          final ok=await _auth.authenticate(localizedReason:'برای ورود به Arad Messenger احراز هویت کنید',options:const AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
+          if(ok){if(mounted)setState(()=>locked=false);return;}
+        } catch(_){}
+      }
+      final pin=await _secure.read(key:'app_lock_pin');
+      if(pin!=null&&mounted) await _showPin(pin);
+    } finally {authenticating=false;}
+  }
+
+  Future<void> _showPin(String pin) async {
+    final c=TextEditingController();
+    String? error;
+    while(mounted&&locked){
+      final entered=await showDialog<String>(context:context,barrierDismissible:false,builder:(ctx)=>AlertDialog(
+        title:const Text('قفل برنامه'),
+        content:TextField(controller:c,autofocus:true,keyboardType:TextInputType.number,obscureText:true,maxLength:6,decoration:InputDecoration(labelText:'PIN',errorText:error)),
+        actions:[FilledButton(onPressed:()=>Navigator.pop(ctx,c.text),child:const Text('باز کردن'))]));
+      if(entered==null)break;
+      if(entered==pin){if(mounted)setState(()=>locked=false);break;}
+      error='PIN نادرست است.'; c.clear();
+    }
+    c.dispose();
+  }
+
+  @override Widget build(BuildContext context){
+    if(checking)return const Scaffold(body:Center(child:CircularProgressIndicator()));
+    if(!locked)return widget.child;
+    return Scaffold(body:Center(child:Padding(padding:const EdgeInsets.all(28),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+      const Icon(Icons.lock_rounded,size:64),const SizedBox(height:18),
+      const Text('Arad Messenger قفل است',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+      const SizedBox(height:8),const Text('برای ادامه، PIN یا احراز هویت بیومتریک را تأیید کنید.'),
+      const SizedBox(height:20),FilledButton.icon(onPressed:_unlock,icon:const Icon(Icons.lock_open_rounded),label:const Text('باز کردن'))
+    ])));
+  }
+}
