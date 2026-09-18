@@ -405,16 +405,16 @@ class AradMessenger extends StatelessWidget {
           textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
           child: Container(
             decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          gradient: RadialGradient(
-            center: const Alignment(0.85, -0.95),
-            radius: 1.15,
-            colors: [
-              Color(appTheme.backgroundSeed).withValues(alpha: .30),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
-        ),
+              color: Theme.of(context).scaffoldBackgroundColor,
+              gradient: RadialGradient(
+                center: const Alignment(0.85, -0.95),
+                radius: 1.15,
+                colors: [
+                  Color(appTheme.backgroundSeed).withValues(alpha: .30),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+              ),
+            ),
             child: child!,
           ),
         ),
