@@ -4385,21 +4385,43 @@ class _ChatPageState extends State<ChatPage> {
         elevation: 0,
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(height: 1, color: scheme.onSurface.withValues(alpha: .07))),
         actions: [
+          IconButton(
+            tooltip: 'جستجو در گفتگو',
+            onPressed: () => showSearch(context: context, delegate: MessageSearchDelegate(widget.id)),
+            icon: const Icon(Icons.search_rounded),
+          ),
           FutureBuilder<bool>(
             future: _isGroupAdmin(),
             builder: (_,snap) => snap.data==true
                 ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:const Icon(Icons.admin_panel_settings_rounded))
                 : const SizedBox.shrink(),
           ),
+          PopupMenuButton<String>(
+            onSelected: (v) {
+              if (v == 'info') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+              } else if (v == 'search') {
+                showSearch(context: context, delegate: MessageSearchDelegate(widget.id));
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'info', child: Text('پروفایل و اطلاعات گفتگو')),
+              PopupMenuItem(value: 'search', child: Text('جستجو در پیام‌ها')),
+            ],
+          ),
         ],
         title: InkWell(
           borderRadius: BorderRadius.circular(kAppRadius),
           onTap: () {
-            if (_chatType == 'group') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => GroupProfilePage(conversationId: widget.id, title: widget.title)));
-            } else if (_chatType == 'channel') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelManagementPage(conversationId: widget.id, title: widget.title)));
-            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ConversationInfoPage(
+                  conversationId: widget.id,
+                  fallbackTitle: widget.title,
+                ),
+              ),
+            );
           },
           child: Row(
             children: [
@@ -4424,10 +4446,15 @@ class _ChatPageState extends State<ChatPage> {
                         ],
                       ],
                     ),
+                    if (_chatType == 'direct')
+                      Text(
+                        _peerVerified ? 'حساب تأییدشده' : 'پروفایل و بیو',
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500),
+                      ),
                     if (_chatType == 'group')
                       Text('$_groupMemberCount عضو', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
                     if (_chatType == 'channel')
-                      const Text('مدیریت کانال', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
+                      const Text('کانال • اطلاعات و مدیریت', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
