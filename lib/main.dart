@@ -2196,18 +2196,15 @@ class _ConversationToolsPageState extends State<ConversationToolsPage>{
     Card(child:SwitchListTile(value:pinned,onChanged:(v)=>setState(()=>pinned=v),title:const Text('پین کردن گفتگو'),secondary:const Icon(Icons.push_pin_rounded))),
     Card(child:SwitchListTile(value:archived,onChanged:(v)=>setState(()=>archived=v),title:const Text('آرشیو گفتگو'),secondary:const Icon(Icons.archive_rounded))),
     Card(child:SwitchListTile(value:muted,onChanged:(v)=>setState(()=>muted=v),title:const Text('بی‌صدا کردن'),secondary:const Icon(Icons.notifications_off_rounded))),
-    Card(child:ListTile(title:const Text('پوشه گفتگو'),subtitle:const Text('کار / خانواده / ناخوانده‌ها'),leading:const Icon(Icons.folder_rounded),onTap:()=>showMsg(context,'پوشه انتخاب شد'))),
-    Card(child:ListTile(title:const Text('پس‌زمینه گفتگو'),leading:const Icon(Icons.wallpaper_rounded),onTap:()=>showMsg(context,'انتخاب پس‌زمینه'))),
-    Card(child:ListTile(title:const Text('حذف گفتگو'),leading:const Icon(Icons.delete_outline_rounded),onTap:()=>showMsg(context,'حذف گفتگو'))),
+    Card(child:ListTile(title:const Text('پوشه گفتگو'),subtitle:const Text('کار / خانواده / ناخوانده‌ها'),leading:const Icon(Icons.folder_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())))),
+    Card(child:ListTile(title:const Text('پس‌زمینه گفتگو'),leading:const Icon(Icons.wallpaper_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())))),
+    
   ]));
 }
 
 class ContactsToolsPage extends StatelessWidget {
   const ContactsToolsPage({super.key});
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مخاطبین')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:ListTile(leading:const Icon(Icons.qr_code_scanner_rounded),title:const Text('اسکن QR Code'),onTap:()=>showMsg(context,'اسکن QR'))),
-    Card(child:ListTile(leading:const Icon(Icons.qr_code_rounded),title:const Text('QR کد پروفایل من'),onTap:()=>showMsg(context,'QR پروفایل'))),
-    Card(child:ListTile(leading:const Icon(Icons.share_rounded),title:const Text('دعوت دوستان'),subtitle:const Text('لینک اختصاصی دعوت'),onTap:()=>showMsg(context,'لینک دعوت آماده است'))),
   ]));
 }
 
@@ -2216,7 +2213,6 @@ class WalletPage extends StatelessWidget {
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('کیف پول')),body:ListView(padding:const EdgeInsets.all(16),children:[
     const Card(child:ListTile(title:Text('موجودی'),subtitle:Text('۰'),leading:Icon(Icons.account_balance_wallet_rounded))),
     const Card(child:ListTile(title:Text('تاریخچه تراکنش‌ها'),leading:Icon(Icons.receipt_long_rounded))),
-    Card(child:ListTile(title:const Text('انتقال وجه'),subtitle:const Text('انتقال به مخاطبین'),leading:const Icon(Icons.send_to_mobile_rounded),onTap:()=>showMsg(context,'انتقال وجه'))),
   ]));
 }
 
@@ -2274,8 +2270,6 @@ class SharedMediaPage extends StatelessWidget {
 
 
 class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی')),body:ListView(padding:const EdgeInsets.all(16),children:[
-  Card(child:ListTile(leading:const Icon(Icons.emoji_emotions_rounded),title:const Text('مدیریت پک‌های استیکر'),onTap:()=>showMsg(context,'مدیریت پک‌ها آماده است'))),
-  Card(child:ListTile(leading:const Icon(Icons.gif_box_rounded),title:const Text('جستجوی GIF'),onTap:()=>showMsg(context,'جستجوی GIF'))),
 ]));}
 
 class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
@@ -3144,16 +3138,6 @@ class _ChatPageState extends State<ChatPage> {
         title: const Text('ویرایش پیام'),
         content: TextField(controller: controller, autofocus: true, maxLines: 5),
         actions: [
-          IconButton(
-            onPressed: () => _startChatCall(video: false),
-            tooltip: 'تماس صوتی',
-            icon: const Icon(Icons.call_rounded),
-          ),
-          IconButton(
-            onPressed: () => _startChatCall(video: true),
-            tooltip: 'تماس تصویری',
-            icon: const Icon(Icons.videocam_rounded),
-          ),
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('ذخیره')),
         ],
