@@ -149,7 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final s = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
@@ -232,14 +232,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 Positioned(right: -3, bottom: -3, child: CircleAvatar(radius: 19, backgroundColor: s.primary, child: const Icon(Icons.camera_alt_rounded, size: 19))),
               ]),
             ),
-            const SizedBox(height: 13),
+            const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
               if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
             ]),
             if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
             IconButton(tooltip: 'کپی آیدی', icon: const Icon(Icons.copy_rounded, size: 18), onPressed: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); }),
-            const SizedBox(height: 9),
+            const SizedBox(height: 8),
             Text(b.isEmpty ? 'هنوز بیویی ثبت نشده است.' : b, textAlign: TextAlign.center, style: TextStyle(color: s.onSurfaceVariant, height: 1.4)),
             const SizedBox(height: 16),
             Row(children: [
@@ -316,7 +316,7 @@ class _ProfileOptionPageState extends State<ProfileOptionPage> {
         padding: const EdgeInsets.all(16),
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
               child: Container(
