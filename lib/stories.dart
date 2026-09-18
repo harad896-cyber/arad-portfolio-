@@ -29,7 +29,7 @@ class _StoriesTrayState extends State<StoriesTray> {
   Future<void> _load() async {
     try {
       final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).order('created_at', ascending: false).limit(40);
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']).order('created_at', ascending: false).limit(40);
       final list = List<Map<String, dynamic>>.from(rows);
       final ids = list.map((e) => e['user_id'].toString()).toSet().toList();
       final profiles = <String, Map<String, dynamic>>{};
@@ -113,7 +113,7 @@ class _StoriesPageState extends State<StoriesPage> {
   Future<void> _load() async {
     try {
       final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).order('created_at', ascending: true);
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']).order('created_at', ascending: true);
       final stories = List<Map<String, dynamic>>.from(rows);
       final urls = <String, String>{};
       for (final s in stories) {
@@ -124,7 +124,7 @@ class _StoriesPageState extends State<StoriesPage> {
         final found = stories.indexWhere((s) => s['id'].toString() == widget.initialStoryId);
         if (found >= 0) nextIndex = found;
       }
-      if (mounted) { setState(() { _stories = stories; _urls = urls; _index = nextIndex.clamp(0, stories.isEmpty ? 0 : stories.length - 1); _loading = false; }); _startTimer(); }
+      if (mounted) { setState(() { _stories = stories; _urls = urls; _index = nextIndex.clamp(0, stories.isEmpty ? 0 : stories.length - 1).toInt(); _loading = false; }); _startTimer(); }
     } catch (_) { if (mounted) setState(() => _loading = false); }
   }
 
@@ -163,7 +163,7 @@ class _StoriesPageState extends State<StoriesPage> {
       await _storiesSupabase.storage.from('stories').remove([s['media_path'].toString()]);
       if (!mounted) return;
       if (_stories.length == 1) { Navigator.pop(context); return; }
-      setState(() { _stories.removeAt(_index); _index = _index.clamp(0, _stories.length - 1); }); _startTimer();
+      setState(() { _stories.removeAt(_index); _index = _index.clamp(0, _stories.length - 1).toInt(); }); _startTimer();
     } catch (_) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حذف استوری انجام نشد.'))); }
   }
 
