@@ -1,6 +1,8 @@
-import 'dart:ui';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CallSessionPage extends StatefulWidget {
   final String conversationId;
@@ -19,150 +21,398 @@ class CallSessionPage extends StatefulWidget {
 }
 
 class _CallSessionPageState extends State<CallSessionPage> {
-  bool muted = false;
-  bool speaker = true;
-  bool camera = true;
-  bool connected = false;
+  final supabase = Supabase.instance.client;
+
+  RTCPeerConnection? _peer;
+  MediaStream? _localStream;
+  RealtimeChannel? _channel;
+  String? _callId;
+  String? _peerUserId;
+  Timer? _durationTimer;
+  DateTime? _connectedAt;
+  Duration _duration = Duration.zero;
+
+  bool _starting = true;
+  bool _connected = false;
+  bool _muted = false;
+  bool _speaker = true;
+  bool _ending = false;
+  String _status = 'در حال آماده‌سازی تماس...';
+
+  final List<RTCIceCandidate> _pendingRemoteCandidates = [];
+  bool _remoteDescriptionSet = false;
 
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) setState(() => connected = true);
+    _startOutgoingCall();
+  }
+
+  Future<String?> _findPeerUserId() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return null;
+    final rows = List<Map<String, dynamic>>.from(
+      await supabase.from('conversation_members').select('user_id').eq('conversation_id', widget.conversationId),
+    );
+    for (final row in rows) {
+      final id = row['user_id']?.toString();
+      if (id != null && id.isNotEmpty && id != uid) return id;
+    }
+    return null;
+  }
+
+  Future<void> _startOutgoingCall() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) throw Exception('برای تماس باید وارد حساب شوید.');
+      _peerUserId = await _findPeerUserId();
+      if (_peerUserId == null) throw Exception('طرف مقابل این گفت‌وگو پیدا نشد.');
+
+      final row = await supabase.from('call_sessions').insert({
+        'conversation_id': widget.conversationId,
+        'caller_id': uid,
+        'callee_id': _peerUserId,
+        'call_type': 'voice',
+        'status': 'ringing',
+      }).select('id').single();
+      _callId = row['id'].toString();
+
+      await _setupChannel();
+      await _createPeerConnection();
+      await _createAndSendOffer();
+
+      if (mounted) {
+        setState(() {
+          _starting = false;
+          _status = 'در انتظار پاسخ...';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _starting = false;
+          _status = 'تماس برقرار نشد';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+      await _cleanup();
+    }
+  }
+
+  Future<void> _setupChannel() async {
+    final callId = _callId;
+    if (callId == null) throw Exception('شناسه تماس ایجاد نشد.');
+    final channel = supabase.channel('call:$callId');
+    channel.onBroadcast(event: 'signal', callback: (payload) {
+      unawaited(_handleSignal(payload));
     });
+    channel.subscribe();
+    _channel = channel;
+  }
+
+  Future<void> _createPeerConnection() async {
+    final configuration = <String, dynamic>{
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun1.l.google.com:19302'},
+      ],
+      'sdpSemantics': 'unified-plan',
+    };
+
+    final peer = await createPeerConnection(configuration);
+    _peer = peer;
+
+    peer.onIceCandidate = (candidate) {
+      if (candidate.candidate == null || _channel == null) return;
+      unawaited(_sendSignal({
+        'type': 'ice',
+        'candidate': candidate.candidate,
+        'sdpMid': candidate.sdpMid,
+        'sdpMLineIndex': candidate.sdpMLineIndex,
+      }));
+    };
+
+    peer.onConnectionState = (state) {
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        _markConnected();
+      } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+        _failCall('اتصال تماس ناموفق شد.');
+      } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        if (mounted && !_ending) setState(() => _status = 'ارتباط ناپایدار...');
+      }
+    };
+
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': {
+        'echoCancellation': true,
+        'noiseSuppression': true,
+        'autoGainControl': true,
+      },
+      'video': false,
+    });
+
+    for (final track in _localStream!.getAudioTracks()) {
+      await peer.addTrack(track, _localStream!);
+    }
+  }
+
+  Future<void> _createAndSendOffer() async {
+    final peer = _peer;
+    if (peer == null) return;
+    final offer = await peer.createOffer({
+      'offerToReceiveAudio': 1,
+      'offerToReceiveVideo': 0,
+    });
+    await peer.setLocalDescription(offer);
+    await _sendSignal({'type': 'offer', 'sdp': offer.sdp});
+  }
+
+  Future<void> _handleSignal(Map<String, dynamic> payload) async {
+    final type = payload['type']?.toString();
+    final peer = _peer;
+    if (peer == null) return;
+
+    try {
+      if (type == 'answer') {
+        final sdp = payload['sdp']?.toString();
+        if (sdp == null) return;
+        await peer.setRemoteDescription(RTCSessionDescription(sdp, 'answer'));
+        _remoteDescriptionSet = true;
+        await _flushRemoteCandidates();
+      } else if (type == 'ice') {
+        final candidate = payload['candidate']?.toString();
+        if (candidate == null || candidate.isEmpty) return;
+        final ice = RTCIceCandidate(
+          candidate,
+          payload['sdpMid']?.toString(),
+          (payload['sdpMLineIndex'] as num?)?.toInt(),
+        );
+        if (_remoteDescriptionSet) {
+          await peer.addCandidate(ice);
+        } else {
+          _pendingRemoteCandidates.add(ice);
+        }
+      } else if (type == 'reject' || type == 'hangup') {
+        if (mounted && !_ending) setState(() => _status = type == 'reject' ? 'تماس رد شد' : 'تماس پایان یافت');
+        await _finishStatus(type == 'reject' ? 'rejected' : 'ended');
+        await _cleanup();
+        if (mounted) Navigator.of(context).maybePop();
+      }
+    } catch (_) {
+      await _failCall('خطا در برقراری ارتباط صوتی.');
+    }
+  }
+
+  Future<void> _flushRemoteCandidates() async {
+    final peer = _peer;
+    if (peer == null) return;
+    for (final candidate in List<RTCIceCandidate>.from(_pendingRemoteCandidates)) {
+      await peer.addCandidate(candidate);
+    }
+    _pendingRemoteCandidates.clear();
+  }
+
+  Future<void> _sendSignal(Map<String, dynamic> payload) async {
+    final channel = _channel;
+    if (channel == null) return;
+    await channel.sendBroadcastMessage(event: 'signal', payload: payload);
+  }
+
+  Future<void> _markConnected() async {
+    if (_connected) return;
+    _connected = true;
+    _connectedAt = DateTime.now();
+    _durationTimer?.cancel();
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final started = _connectedAt;
+      if (!mounted || started == null) return;
+      setState(() => _duration = DateTime.now().difference(started));
+    });
+
+    if (_callId != null) {
+      await supabase.from('call_sessions').update({
+        'status': 'accepted',
+        'accepted_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', _callId!);
+    }
+    if (mounted) setState(() => _status = 'متصل');
+  }
+
+  Future<void> _toggleMute() async {
+    final stream = _localStream;
+    if (stream == null) return;
+    final next = !_muted;
+    for (final track in stream.getAudioTracks()) {
+      track.enabled = !next;
+    }
+    if (mounted) setState(() => _muted = next);
+  }
+
+  Future<void> _toggleSpeaker() async {
+    try {
+      await Helper.setSpeakerphoneOn(!_speaker);
+    } catch (_) {}
+    if (mounted) setState(() => _speaker = !_speaker);
+  }
+
+  Future<void> _failCall(String message) async {
+    if (_ending) return;
+    if (mounted) setState(() => _status = message);
+    await _finishStatus('failed');
+    await _cleanup();
+  }
+
+  Future<void> _finishStatus(String status) async {
+    final id = _callId;
+    if (id == null) return;
+    try {
+      await supabase.from('call_sessions').update({
+        'status': status,
+        'ended_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', id);
+    } catch (_) {}
+  }
+
+  Future<void> _endCall({bool notifyPeer = true}) async {
+    if (_ending) return;
+    _ending = true;
+    if (notifyPeer) {
+      try {
+        await _sendSignal({'type': 'hangup'});
+      } catch (_) {}
+    }
+    await _finishStatus(_connected ? 'ended' : 'cancelled');
+    await _cleanup();
+    if (mounted) Navigator.of(context).maybePop();
+  }
+
+  Future<void> _cleanup() async {
+    _durationTimer?.cancel();
+    _durationTimer = null;
+    try {
+      for (final track in _localStream?.getTracks() ?? <MediaStreamTrack>[]) {
+        await track.stop();
+      }
+    } catch (_) {}
+    try { await _localStream?.dispose(); } catch (_) {}
+    _localStream = null;
+
+    try {
+      await _peer?.close();
+      await _peer?.dispose();
+    } catch (_) {}
+    _peer = null;
+
+    final channel = _channel;
+    _channel = null;
+    if (channel != null) {
+      try { await supabase.removeChannel(channel); } catch (_) {}
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '${{d.inHours > 0 ? '${{d.inHours.toString().padLeft(2, '0')}:' : ''}${{m}:${{s}';
+  }
+
+  @override
+  void dispose() {
+    unawaited(_cleanup());
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: scheme.brightness == Brightness.dark
-          ? const Color(0xFF090A0D)
-          : const Color(0xFFEFF2F7),
-      appBar: AppBar(
-        title: Text(widget.video ? 'تماس تصویری' : 'تماس صوتی'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (widget.video)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    scheme.primary.withValues(alpha: .35),
-                    scheme.surface,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, __) => _endCall(),
+      child: Scaffold(
+        backgroundColor: scheme.brightness == Brightness.dark ? const Color(0xFF090A0D) : const Color(0xFFEFF2F7),
+        appBar: AppBar(
+          title: Text(widget.video ? 'تماس تصویری' : 'تماس صوتی'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 164,
+                    height: 164,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: scheme.primary.withValues(alpha: .12),
+                      border: Border.all(color: scheme.primary.withValues(alpha: .25)),
+                    ),
+                    child: Icon(Icons.person_rounded, size: 86, color: scheme.primary),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 8),
+                  Text(_connected ? _formatDuration(_duration) : _status, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                  if (widget.video)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: Text('تماس تصویری در این مرحله غیرفعال است.', textAlign: TextAlign.center),
+                    ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 24,
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _control(Icons.mic_off_rounded, _muted, _toggleMute),
+                    _control(_speaker ? Icons.volume_up_rounded : Icons.volume_off_rounded, _speaker, _toggleSpeaker),
+                    Material(
+                      color: scheme.error,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => _endCall(),
+                        child: const Padding(
+                          padding: EdgeInsets.all(19),
+                          child: Icon(Icons.call_end_rounded, color: Colors.white, size: 29),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              child: const Center(
-                child: Icon(Icons.person_rounded, size: 120, color: Colors.white54),
-              ),
-            )
-          else
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(120),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                  child: Container(
-                    width: 190,
-                    height: 190,
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: .14),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: scheme.primary.withValues(alpha: .22)),
-                    ),
-                    child: Icon(Icons.person_rounded, size: 92, color: scheme.primary),
-                  ),
-                ),
-              ),
             ),
-          Positioned(
-            left: 18,
-            right: 18,
-            top: 18,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: scheme.surface.withValues(alpha: .68),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(widget.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 5),
-                      Text(connected ? 'متصل' : 'در حال اتصال...', style: TextStyle(color: scheme.onSurfaceVariant)),
-                    ],
-                  ),
-                ),
+            if (_starting)
+              const Positioned.fill(
+                child: ColoredBox(color: Color(0x66000000), child: Center(child: CircularProgressIndicator())),
               ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: scheme.surface.withValues(alpha: .78),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _button(Icons.mic_off_rounded, muted, () => setState(() => muted = !muted)),
-                      _button(Icons.volume_up_rounded, speaker, () => setState(() => speaker = !speaker)),
-                      if (widget.video)
-                        _button(Icons.videocam_rounded, camera, () => setState(() => camera = !camera)),
-                      Material(
-                        color: scheme.error,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: () => Navigator.pop(context),
-                          child: const Padding(
-                            padding: EdgeInsets.all(18),
-                            child: Icon(Icons.call_end_rounded, color: Colors.white, size: 28),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _button(IconData icon, bool active, VoidCallback onTap) {
+  Widget _control(IconData icon, bool active, VoidCallback onTap) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: active ? scheme.primary.withValues(alpha: .14) : scheme.surfaceContainerHighest.withValues(alpha: .75),
+      color: active ? scheme.primary.withValues(alpha: .14) : scheme.surfaceContainerHighest.withValues(alpha: .78),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(17),
           child: Icon(icon, color: active ? scheme.primary : scheme.onSurface, size: 25),
         ),
       ),
