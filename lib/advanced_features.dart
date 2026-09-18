@@ -115,7 +115,7 @@ class _MessageAutoDeletePageState extends State<MessageAutoDeletePage> {
       final rows=List<Map<String,dynamic>>.from(await supabase.from('message_ttl').select('conversation_id,ttl_seconds').inFilter('conversation_id',ids));
       ttl={for(final r in rows) r['conversation_id'].toString():(r['ttl_seconds'] as num).toInt()};
       selected=chats.first['id'].toString();
-    }catch(e){if(mounted)showMsg(context,'بارگذاری حذف خودکار ناموفق بود: $e');}
+    }catch(e){if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('بارگذاری حذف خودکار ناموفق بود: $e')));}
     if(mounted)setState(()=>loading=false);
   }
   Future<void> _save(int seconds) async {
@@ -123,8 +123,8 @@ class _MessageAutoDeletePageState extends State<MessageAutoDeletePage> {
     setState(()=>saving=true);
     try {
       if(seconds==0){await supabase.from('message_ttl').delete().eq('conversation_id',id);} else {await supabase.from('message_ttl').upsert({'conversation_id':id,'ttl_seconds':seconds,'enabled_by':uid,'updated_at':DateTime.now().toUtc().toIso8601String()});}
-      ttl[id]=seconds; if(mounted){setState((){});showMsg(context,'تنظیم حذف خودکار ذخیره شد.');}
-    }catch(e){if(mounted)showMsg(context,'ذخیره تنظیم ناموفق بود: $e');}finally{if(mounted)setState(()=>saving=false);}
+      ttl[id]=seconds; if(mounted){setState((){}); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تنظیم حذف خودکار ذخیره شد.')));}
+    }catch(e){if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ذخیره تنظیم ناموفق بود: $e')));}finally{if(mounted)setState(()=>saving=false);}
   }
   @override Widget build(BuildContext context){
     final current=ttl[selected]??0;
@@ -134,7 +134,7 @@ class _MessageAutoDeletePageState extends State<MessageAutoDeletePage> {
       DropdownButtonFormField<String>(value:selected,decoration:const InputDecoration(labelText:'گفتگو'),items:chats.map((c)=>DropdownMenuItem(value:c['id'].toString(),child:Text((c['title']??(c['type']=='group'?'گروه':c['type']=='channel'?'کانال':'گفتگو')).toString()))).toList(),onChanged:(v)=>setState(()=>selected=v)),
       const SizedBox(height:18),
       ...options.entries.map((e)=>Card(child:RadioListTile<int>(value:e.key,groupValue:current,title:Text(e.value,style:const TextStyle(fontWeight:FontWeight.w700)),subtitle:e.key==0?const Text('پیام‌ها حذف خودکار نمی‌شوند.'):const Text('برای پیام‌های جدید'),onChanged:saving?null:(v){if(v!=null)_save(v);}))),
-    ]);
+    ]));
   }
 }
 
