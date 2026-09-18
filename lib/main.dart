@@ -3273,10 +3273,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
-
-                              value: p['id'].toString(),
-                              child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
-                            ))).toList(),
+                            )).toList(),
                             onChanged: (v) => setSheetState(() => nextSender = v),
                           );
                         },
