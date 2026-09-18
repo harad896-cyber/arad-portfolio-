@@ -64,7 +64,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
       if (uid == null) throw Exception('برای تماس باید وارد حساب شوید.');
       _callId = widget.existingCallId;
       if (_callId == null) throw Exception('شناسه تماس نامعتبر است.');
-      final row = await supabase.from('call_sessions').select('caller_id,status').eq('id', _callId!).single();
+      final row = await supabase.from('call_sessions').select('caller_id,status,offer_sdp').eq('id', _callId!).single();
+      _pendingOfferSdp = row['offer_sdp']?.toString();
       _peerUserId = row['caller_id']?.toString();
       if (_peerUserId == null || _peerUserId == uid) throw Exception('تماس‌کننده نامعتبر است.');
       await _setupChannel();
@@ -236,6 +237,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       'offerToReceiveVideo': 0,
     });
     await peer.setLocalDescription(offer);
+    await supabase.from('call_sessions').update({'offer_sdp': offer.sdp}).eq('id', _callId!);
     await _sendSignal({'type': 'offer', 'sdp': offer.sdp});
   }
 
