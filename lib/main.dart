@@ -572,7 +572,7 @@ class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
   const PremiumEmptyState({super.key,required this.icon,required this.title,required this.subtitle});
   @override Widget build(BuildContext context)=>Center(child:Padding(padding:const EdgeInsets.all(32),child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Container(width:86,height:86,decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(28)),child:Icon(icon,size:40)),
+    Container(width:86,height:86,decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(kAppRadius)),child:Icon(icon,size:40)),
     const SizedBox(height:20),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
     const SizedBox(height:8),Text(subtitle,textAlign:TextAlign.center)
   ])));
@@ -969,7 +969,7 @@ class _LoginPageState extends State<LoginPage>{
   }
   Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
   @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-    Container(height:82,decoration:BoxDecoration(gradient:LinearGradient(colors:[t.colorScheme.primary,t.colorScheme.secondary]),borderRadius:BorderRadius.circular(24)),child:const Icon(Icons.forum_rounded,size:46,color:Colors.white)),
+    Container(height:82,decoration:BoxDecoration(gradient:LinearGradient(colors:[t.colorScheme.primary,t.colorScheme.secondary]),borderRadius:BorderRadius.circular(kAppRadius)),child:const Icon(Icons.forum_rounded,size:46,color:Colors.white)),
     const SizedBox(height:18),const Text('Arad Messenger',textAlign:TextAlign.center,style:TextStyle(fontSize:29,fontWeight:FontWeight.w800)),const SizedBox(height:20),
     Card(child:Padding(padding:const EdgeInsets.all(18),child:Column(children:[
       if(signup)...[TextField(controller:first,decoration:const InputDecoration(labelText:'نام',prefixIcon:Icon(Icons.person_outline))),const SizedBox(height:12),TextField(controller:last,decoration:const InputDecoration(labelText:'نام خانوادگی',prefixIcon:Icon(Icons.badge_outlined))),const SizedBox(height:12)],
@@ -1612,7 +1612,7 @@ class _HomePageState extends State<HomePage> {
                         final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
                         final unread = unreadCount > 0 || c['unread'] == true;
                         return ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(kAppRadius),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                             child: Card(
@@ -1726,10 +1726,10 @@ class _HomePageState extends State<HomePage> {
 
   Widget _glassAction(IconData icon, String label, VoidCallback onTap) {
     final s = Theme.of(context).colorScheme;
-    return ClipRRect(borderRadius: BorderRadius.circular(20), child: BackdropFilter(
+    return ClipRRect(borderRadius: BorderRadius.circular(kAppRadius), child: BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
       child: Material(color: s.surface.withValues(alpha: .70), child: InkWell(
-        onTap: onTap, borderRadius: BorderRadius.circular(20),
+        onTap: onTap, borderRadius: BorderRadius.circular(kAppRadius),
         child: Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(icon, color: s.primary), const SizedBox(width: 7),
@@ -1925,7 +1925,7 @@ class _StoryComposerPageState extends State<StoryComposerPage> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           height: 290,
-          decoration: BoxDecoration(color: Color(background), borderRadius: BorderRadius.circular(28)),
+          decoration: BoxDecoration(color: Color(background), borderRadius: BorderRadius.circular(kAppRadius)),
           alignment: Alignment.center,
           padding: const EdgeInsets.all(28),
           child: Text(text.text.isEmpty ? 'جمله استوری شما' : text.text, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, height: 1.3)),
@@ -2166,10 +2166,10 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
   @override Widget build(BuildContext context) => Scaffold(
     extendBodyBehindAppBar: true, appBar: AppBar(title: const Text('ایجاد کانال'), backgroundColor: Colors.transparent),
     body: Center(child: Padding(padding: const EdgeInsets.all(18), child: ClipRRect(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(kAppRadius),
       child: BackdropFilter(filter: ImageFilter.blur(sigmaX:20,sigmaY:20), child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(28)),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(kAppRadius)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.campaign_rounded, size: 58), const SizedBox(height: 12),
           TextField(controller:title, onChanged:(v)=>setState(()=>channelTitleError=v.trim().isEmpty?'نام کانال را وارد کنید.':null), decoration:InputDecoration(labelText:'نام کانال',errorText:channelTitleError,prefixIcon:const Icon(Icons.campaign_outlined))),
@@ -2310,11 +2310,11 @@ class _CallsPageState extends State<CallsPage> {
           ),
         )),
         Center(child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(kAppRadius),
           child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
               margin: const EdgeInsets.all(20), padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(color:c.surface.withValues(alpha:.60),borderRadius:BorderRadius.circular(32),border:Border.all(color:c.onSurface.withValues(alpha:.08))),
+              decoration: BoxDecoration(color:c.surface.withValues(alpha:.60),borderRadius:BorderRadius.circular(kAppRadius),border:Border.all(color:c.onSurface.withValues(alpha:.08))),
               child: Column(mainAxisSize:MainAxisSize.min,children:[
                 const CircleAvatar(radius:54,child:Icon(Icons.person_rounded,size:48)),
                 const SizedBox(height:16),
@@ -3388,7 +3388,7 @@ class _ChatPageState extends State<ChatPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF20384A),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(kAppRadius),
                 ),
                 child: _messageActionsContent(context, message),
               ),
@@ -3428,10 +3428,10 @@ class _ChatPageState extends State<ChatPage> {
         ]),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha:.14), borderRadius: BorderRadius.circular(28)),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha:.14), borderRadius: BorderRadius.circular(kAppRadius)),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             ...emojis.map((e) => InkWell(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(kAppRadius),
               onTap: () { Navigator.pop(context); reactTo(message, e); },
               child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 26))),
             )),
@@ -3527,7 +3527,7 @@ class _ChatPageState extends State<ChatPage> {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(kAppRadius)),
       child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
     );
   }
@@ -3964,14 +3964,14 @@ class _ChatPageState extends State<ChatPage> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(kAppRadius),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: dark ? const Color(0xFF20242A) : Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(kAppRadius),
                         border: Border.all(color: scheme.onSurface.withValues(alpha: .10)),
                         boxShadow: [
                           BoxShadow(
