@@ -2352,11 +2352,20 @@ class _ChatPageState extends State<ChatPage> {
   double voiceAmplitude = 0;
   List<double> voiceWaveform = [];
   StreamSubscription<Amplitude>? _voiceAmplitudeSub;
+  static const int _messagePageSize = 50;
+  bool _loadingOlder = false;
+  bool _hasOlderMessages = true;
+
+  final Map<String, String> _attachmentUrlCache = {};
 
   Future<String?> _attachmentUrl(String path) async {
     if (path.isEmpty) return null;
+    final cached = _attachmentUrlCache[path];
+    if (cached != null && cached.isNotEmpty) return cached;
     try {
-      return await supabase.storage.from('chat-media').createSignedUrl(path, 3600);
+      final url = await supabase.storage.from('chat-media').createSignedUrl(path, 3600);
+      if (url.isNotEmpty) _attachmentUrlCache[path] = url;
+      return url;
     } catch (_) {
       return null;
     }
@@ -2458,66 +2467,92 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
-  Future<void> load() async {
-    try {
-      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: true);
-      final loaded = List<Map<String, dynamic>>.from(rows);
-      loaded.sort((a, b) {
-        final ad = DateTime.tryParse('${a['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bd = DateTime.tryParse('${b['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+  Future<void> _hydrateMessages(List<Map<String, dynamic>> loaded, {bool merge = false}) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid != null && loaded.isNotEmpty) {
+      final ids = loaded.map((m) => m['id'].toString()).toList();
+      final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid).inFilter('message_id', ids);
+      final hidden = {for (final r in List<Map<String, dynamic>>.from(deletedRows)) r['message_id'].toString()};
+      loaded.removeWhere((m) => hidden.contains(m['id'].toString()) || m['deleted_at'] != null);
+    }
+    final senderIds = loaded.map((m) => m['sender_id'].toString()).toSet().toList();
+    if (senderIds.isNotEmpty) {
+      final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', senderIds);
+      profiles.addAll({for (final p in List<Map<String, dynamic>>.from(people)) p['id'].toString(): p});
+    }
+    final ids = loaded.map((m) => m['id'].toString()).toList();
+    final loadedReactions = <String, List<Map<String, dynamic>>>{};
+    final loadedAttachments = <String, Map<String, dynamic>>{};
+    if (ids.isNotEmpty) {
+      final rr = await supabase.from('message_reactions').select('message_id,user_id,reaction,created_at').inFilter('message_id', ids);
+      for (final r in List<Map<String, dynamic>>.from(rr)) loadedReactions.putIfAbsent(r['message_id'].toString(), () => []).add(r);
+      final aa = await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids);
+      for (final a in List<Map<String, dynamic>>.from(aa)) loadedAttachments[a['message_id'].toString()]=a;
+    }
+    if (merge) {
+      final existing=messages.map((m)=>m['id'].toString()).toSet();
+      loaded=loaded.where((m)=>!existing.contains(m['id'].toString())).toList();
+      messages=[...loaded,...messages]..sort((a,b){
+        final ad=DateTime.tryParse(a['created_at'].toString())??DateTime.fromMillisecondsSinceEpoch(0);
+        final bd=DateTime.tryParse(b['created_at'].toString())??DateTime.fromMillisecondsSinceEpoch(0);
         return ad.compareTo(bd);
       });
-      final uid = supabase.auth.currentUser?.id;
-      if (uid != null && loaded.isNotEmpty) {
-        final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
-        final hidden = {for (final r in List<Map<String, dynamic>>.from(deletedRows)) '${r['message_id']}'};
-        loaded.removeWhere((m) => hidden.contains('${m['id']}') || m['deleted_at'] != null);
-      }
-      final senderIds = loaded.map((m) => '${m['sender_id']}').toSet().toList();
-      if (senderIds.isNotEmpty) {
-        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', senderIds);
-        profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
-      }
-      final ids = loaded.map((m) => '${m['id']}').toList();
-      final loadedReactions = <String, List<Map<String, dynamic>>>{};
-      final loadedAttachments = <String, Map<String, dynamic>>{};
-      if (ids.isNotEmpty) {
-        final rr = await supabase.from('message_reactions').select('message_id,user_id,reaction,created_at').inFilter('message_id', ids);
-        for (final r in List<Map<String, dynamic>>.from(rr)) {
-          loadedReactions.putIfAbsent('${r['message_id']}', () => []).add(r);
-        }
-        final aa = await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids);
-        for (final a in List<Map<String, dynamic>>.from(aa)) {
-          loadedAttachments['${a['message_id']}'] = a;
-        }
-      }
-      if (mounted) {
-        setState(() {
-          messages = loaded;
-          reactions = loadedReactions;
-          attachments = loadedAttachments;
-          loading = false;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_messagesScroll.hasClients) return;
+      reactions.addAll(loadedReactions); attachments.addAll(loadedAttachments);
+    } else {
+      messages=loaded; reactions=loadedReactions; attachments=loadedAttachments;
+    }
+  }
+
+  Future<void> load() async {
+    try {
+      final rows=await supabase.from('messages').select().eq('conversation_id',widget.id).order('created_at',ascending:false).range(0,_messagePageSize-1);
+      final loaded=List<Map<String,dynamic>>.from(rows).reversed.toList();
+      _hasOlderMessages=loaded.length==_messagePageSize;
+      await _hydrateMessages(loaded);
+      if(mounted){
+        setState(()=>loading=false);
+        WidgetsBinding.instance.addPostFrameCallback((_){
+          if(!mounted||!_messagesScroll.hasClients)return;
           _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
         });
       }
-      await markRead();
-      _scrollToLatest();
-    } catch (e) {
-      if (mounted) {
-        setState(() => loading = false);
-        showMsg(context, 'خطا در پیام‌ها: $e');
-      }
+      await markRead(); _scrollToLatest();
+    } catch(e) {
+      if(mounted){setState(()=>loading=false);showMsg(context,'خطا در پیام‌ها: $e');}
     }
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if(_loadingOlder||!_hasOlderMessages||messages.isEmpty)return;
+    final oldest=messages.first['created_at']?.toString();
+    if(oldest==null||oldest.isEmpty)return;
+    setState(()=>_loadingOlder=true);
+    try {
+      final rows=await supabase.from('messages').select().eq('conversation_id',widget.id).lt('created_at',oldest).order('created_at',ascending:false).range(0,_messagePageSize-1);
+      final older=List<Map<String,dynamic>>.from(rows).reversed.toList();
+      _hasOlderMessages=older.length==_messagePageSize;
+      final oldExtent=_messagesScroll.hasClients?_messagesScroll.position.maxScrollExtent:0.0;
+      final oldPixels=_messagesScroll.hasClients?_messagesScroll.position.pixels:0.0;
+      await _hydrateMessages(older,merge:true);
+      if(mounted){
+        setState((){});
+        WidgetsBinding.instance.addPostFrameCallback((_){
+          if(!_messagesScroll.hasClients)return;
+          final delta=_messagesScroll.position.maxScrollExtent-oldExtent;
+          _messagesScroll.jumpTo(oldPixels+delta);
+        });
+      }
+    } catch(_){if(mounted)showMsg(context,'بارگذاری تاریخچه ناموفق بود.');}
+    finally{if(mounted)setState(()=>_loadingOlder=false);}
   }
 
   Future<void> markRead() async {
     try {
-      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id);
-      for (final row in rows) {
-        await supabase.rpc('mark_message_read', params: {'p_message_id': row['id']});
+      final uid=supabase.auth.currentUser?.id;
+      if(uid==null||messages.isEmpty)return;
+      for(final row in messages){
+        if(row['sender_id'].toString()==uid||row['read_at']!=null)continue;
+        await supabase.rpc('mark_message_read',params:{'p_message_id':row['id']});
       }
     } catch (_) {}
   }
@@ -3478,6 +3513,7 @@ class _ChatPageState extends State<ChatPage> {
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
     _messagesScroll.dispose();
+    _attachmentUrlCache.clear();
     text.dispose();
     super.dispose();
   }
@@ -3593,7 +3629,12 @@ class _ChatPageState extends State<ChatPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : messages.isEmpty
                       ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
-                      : ListView.builder(
+                      : NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification.metrics.pixels <= 120 && notification is ScrollUpdateNotification) _loadOlderMessages();
+                            return false;
+                          },
+                          child: ListView.builder(
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -3601,6 +3642,7 @@ class _ChatPageState extends State<ChatPage> {
                           reverse: false,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
+                          ),
                         ),
             ),
             if (replyMessage != null)
