@@ -3203,7 +3203,7 @@ class _ChatPageState extends State<ChatPage> {
     }
     return VoiceMessagePlayer(
       initialDurationMs: durationMs,
-      mine: '${m['sender_id'] ?? ''}' == '${supabase.auth.currentUser?.id ?? ''}',
+      mine: false,
       mimeType: (a?['mime_type'] ?? 'audio/mp4').toString(),
       loadAudio: () async {
         final bytes = await supabase.storage.from('chat-media').download(path);
