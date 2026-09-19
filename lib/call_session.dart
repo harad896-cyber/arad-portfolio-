@@ -26,6 +26,9 @@ class CallSessionPage extends StatefulWidget {
 
 class _CallSessionPageState extends State<CallSessionPage> {
   final supabase = Supabase.instance.client;
+  static const _turnUrl = String.fromEnvironment('TURN_URL', defaultValue: '');
+  static const _turnUser = String.fromEnvironment('TURN_USERNAME', defaultValue: '');
+  static const _turnCredential = String.fromEnvironment('TURN_CREDENTIAL', defaultValue: '');
 
   RTCPeerConnection? _peer;
   MediaStream? _localStream;
@@ -202,9 +205,11 @@ class _CallSessionPageState extends State<CallSessionPage> {
       'iceServers': [
         {'urls': 'stun:stun.l.google.com:19302'},
         {'urls': 'stun:stun1.l.google.com:19302'},
-        {'urls': 'stun:stun2.l.google.com:19302'},
-        {'urls': 'stun:stun3.l.google.com:19302'},
+        if (_turnUrl.isNotEmpty && _turnUser.isNotEmpty && _turnCredential.isNotEmpty)
+          {'urls': _turnUrl, 'username': _turnUser, 'credential': _turnCredential},
       ],
+      'iceCandidatePoolSize': 10,
+      'iceTransportPolicy': 'all',
       'sdpSemantics': 'unified-plan',
       'bundlePolicy': 'max-bundle',
       'rtcpMuxPolicy': 'require',
@@ -240,9 +245,9 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'autoGainControl': true,
       },
       'video': widget.video ? {
-        'width': {'ideal': 640, 'max': 1280},
-        'height': {'ideal': 360, 'max': 720},
-        'frameRate': {'ideal': 24, 'max': 30},
+        'width': {'ideal': 480, 'max': 854},
+        'height': {'ideal': 270, 'max': 480},
+        'frameRate': {'ideal': 20, 'max': 24},
         'facingMode': 'user',
       } : false,
     });
