@@ -206,6 +206,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
         {'urls': 'stun:stun3.l.google.com:19302'},
       ],
       'sdpSemantics': 'unified-plan',
+      'bundlePolicy': 'max-bundle',
+      'rtcpMuxPolicy': 'require',
     };
 
     final peer = await createPeerConnection(configuration);
@@ -237,7 +239,12 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'noiseSuppression': true,
         'autoGainControl': true,
       },
-      'video': widget.video,
+      'video': widget.video ? {
+        'width': {'ideal': 640, 'max': 1280},
+        'height': {'ideal': 360, 'max': 720},
+        'frameRate': {'ideal': 24, 'max': 30},
+        'facingMode': 'user',
+      } : false,
     });
 
     if (widget.video && _localRenderer != null) {
@@ -260,6 +267,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       'offerToReceiveAudio': 1,
       'offerToReceiveVideo': widget.video ? 1 : 0,
       'voiceActivityDetection': true,
+      'iceRestart': true,
     });
     await peer.setLocalDescription(offer);
     await supabase.from('call_sessions').update({'offer_sdp': offer.sdp}).eq('id', _callId!);
