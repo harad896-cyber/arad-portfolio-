@@ -1767,7 +1767,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   bool busy = false;
 
   Future<void> load() async {
-    final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     try {
       final user = supabase.auth.currentUser!;
       final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
@@ -3240,6 +3239,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> load() async {
+    final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     try {
       final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120);
       final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
