@@ -78,7 +78,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       if (uid == null) throw Exception('برای تماس باید وارد حساب شوید.');
       _callId = widget.existingCallId;
       if (_callId == null) throw Exception('شناسه تماس نامعتبر است.');
-      final row = await supabase.from('call_sessions').select('caller_id,status,offer_sdp').eq('id', _callId!).single();
+      final row = await supabase.from('call_sessions').select('caller_id,callee_id,status,call_type,offer_sdp').eq('id', _callId!).single();
       _pendingOfferSdp = row['offer_sdp']?.toString();
       _peerUserId = row['caller_id']?.toString();
       if (_peerUserId == null || _peerUserId == uid) throw Exception('تماس‌کننده نامعتبر است.');
@@ -111,7 +111,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
       _remoteDescriptionSet = true;
       await _flushRemoteCandidates();
-      final answer = await peer.createAnswer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': widget.video ? 1 : 0});
+      final answer = await peer.createAnswer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': widget.video ? 1 : 0, 'voiceActivityDetection': true});
       await peer.setLocalDescription(answer);
       await _sendSignal({'type': 'answer', 'sdp': answer.sdp});
       if (_callId != null) {
@@ -157,7 +157,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'conversation_id': widget.conversationId,
         'caller_id': uid,
         'callee_id': _peerUserId,
-        'call_type': 'voice',
+        'call_type': widget.video ? 'video' : 'voice',
         'status': 'ringing',
       }).select('id').single();
       _callId = row['id'].toString();
@@ -202,6 +202,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
       'iceServers': [
         {'urls': 'stun:stun.l.google.com:19302'},
         {'urls': 'stun:stun1.l.google.com:19302'},
+        {'urls': 'stun:stun2.l.google.com:19302'},
+        {'urls': 'stun:stun3.l.google.com:19302'},
       ],
       'sdpSemantics': 'unified-plan',
     };
@@ -256,7 +258,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
     if (peer == null) return;
     final offer = await peer.createOffer({
       'offerToReceiveAudio': 1,
-      'offerToReceiveVideo': 0,
+      'offerToReceiveVideo': widget.video ? 1 : 0,
+      'voiceActivityDetection': true,
     });
     await peer.setLocalDescription(offer);
     await supabase.from('call_sessions').update({'offer_sdp': offer.sdp}).eq('id', _callId!);
@@ -472,6 +475,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
                     child: Icon(Icons.person_rounded, size: 86, color: scheme.primary),
                   ),
                   if (!widget.video) const SizedBox(height: 22),
+                  if (widget.video && !_connected && _status.contains('در انتظار')) const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('در حال برقراری تماس تصویری…')),
                   Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 8),
                   Text(_connected ? _formatDuration(_duration) : _status, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
