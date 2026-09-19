@@ -12,6 +12,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
@@ -3272,7 +3273,10 @@ class _ChatPageState extends State<ChatPage> {
           attachments = loadedAttachments;
           loading = false;
         });
-        // Keep chat ordered from top to bottom; do not force the list back to the bottom.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_messagesScroll.hasClients) return;
+          _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+        });
       }
       await markRead();
     } catch (e) {
@@ -3285,10 +3289,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> markRead() async {
     try {
-      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id).order('created_at', ascending: false).limit(120);
-      for (final row in rows) {
-        await supabase.rpc('mark_message_read', params: {'p_message_id': row['id']});
-      }
+      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
     } catch (_) {}
   }
 
@@ -3417,7 +3418,8 @@ class _ChatPageState extends State<ChatPage> {
     if (sending || recordingVoice) return;
     try {
       if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
-      final path = '${Directory.systemTemp.path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final tempDir = await getTemporaryDirectory();
+      final path = '${tempDir.path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _voiceRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
       _voiceStartedAt = DateTime.now();
       _voiceTimer?.cancel();
@@ -4305,7 +4307,7 @@ class _ChatPageState extends State<ChatPage> {
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.fromLTRB(12, 96, 12, 12),
-                          reverse: true,
+                          reverse: false,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
                         ),
