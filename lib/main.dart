@@ -3167,7 +3167,8 @@ class _ChatPageState extends State<ChatPage> {
       final bytes = await supabase.storage.from('chat-media').download(path);
       if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
       await _voicePlayer.stop();
-      await _voicePlayer.play(BytesSource(bytes, mimeType: 'audio/mp4'));
+      final mime = (a?['mime_type'] ?? 'audio/mp4').toString();
+      await _voicePlayer.play(BytesSource(bytes, mimeType: mime));
     } catch (e) {
       if (mounted) showMsg(context, 'پخش فایل صوتی ناموفق بود: $e');
     }
@@ -3202,7 +3203,8 @@ class _ChatPageState extends State<ChatPage> {
     }
     return VoiceMessagePlayer(
       initialDurationMs: durationMs,
-      mine: true,
+      mine: '${m['sender_id'] ?? ''}' == '${supabase.auth.currentUser?.id ?? ''}',
+      mimeType: (a?['mime_type'] ?? 'audio/mp4').toString(),
       loadAudio: () async {
         final bytes = await supabase.storage.from('chat-media').download(path);
         if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
