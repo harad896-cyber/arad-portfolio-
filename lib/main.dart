@@ -3417,7 +3417,7 @@ class _ChatPageState extends State<ChatPage> {
     if (sending || recordingVoice) return;
     try {
       if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
-      final path = '\${Directory.systemTemp.path}/arad_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = '${Directory.systemTemp.path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _voiceRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
       _voiceStartedAt = DateTime.now();
       _voiceTimer?.cancel();
@@ -4304,7 +4304,7 @@ class _ChatPageState extends State<ChatPage> {
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.fromLTRB(12, 92, 12, 12),
+                          padding: const EdgeInsets.fromLTRB(12, 96, 12, 12),
                           reverse: true,
                           itemCount: messages.length,
                           itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
