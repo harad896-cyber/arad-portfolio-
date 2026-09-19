@@ -4259,6 +4259,11 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'اطلاعات گفتگو',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title))),
+            icon: const Icon(Icons.info_outline_rounded),
+          ),
           FutureBuilder<bool>(
             future: _isGroupAdmin(),
             builder: (_,snap) => snap.data==true
