@@ -230,8 +230,26 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       );
       if (added == null || added.isEmpty) return;
       setState(() => busy = true);
-      final count = await db.rpc('add_group_members', params: {'p_conversation_id': widget.conversationId, 'p_user_ids': added});
-      toast('${count ?? added.length} عضو به گروه اضافه شد.');
+      int count = 0;
+      try {
+        final result = await db.rpc('add_group_members', params: {'p_conversation_id': widget.conversationId, 'p_user_ids': added});
+        count = (result as num?)?.toInt() ?? 0;
+      } catch (rpcError) {
+        // Fallback to the RLS-protected insert path for older/temporarily stale RPC deployments.
+        final existingIds = members.map((m) => m['user_id'].toString()).toSet();
+        final rows = added.where((id) => !existingIds.contains(id)).map((id) => {
+          'conversation_id': widget.conversationId,
+          'user_id': id,
+          'role': 'member',
+          'joined_at': DateTime.now().toUtc().toIso8601String(),
+        }).toList();
+        if (rows.isEmpty) {
+          throw Exception('این کاربران قبلاً عضو گروه هستند.');
+        }
+        await db.from('conversation_members').insert(rows);
+        count = rows.length;
+      }
+      toast('$count عضو به گروه اضافه شد.');
       await load();
     } catch (e) { toast('افزودن عضو ناموفق بود: $e'); }
     finally { search.dispose(); if (mounted) setState(() => busy = false); }
