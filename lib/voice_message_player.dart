@@ -6,7 +6,8 @@ class VoiceMessagePlayer extends StatefulWidget {
   final Future<Uint8List> Function() loadAudio;
   final int initialDurationMs;
   final bool mine;
-  const VoiceMessagePlayer({super.key, required this.loadAudio, this.initialDurationMs = 0, this.mine = false});
+  final String? mimeType;
+  const VoiceMessagePlayer({super.key, required this.loadAudio, this.initialDurationMs = 0, this.mine = false, this.mimeType});
   @override State<VoiceMessagePlayer> createState() => _VoiceMessagePlayerState();
 }
 
@@ -33,7 +34,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
     if (loaded) return;
     final bytes = await widget.loadAudio();
     if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
-    await player.setSource(BytesSource(bytes));
+    await player.setSource(BytesSource(bytes, mimeType: widget.mimeType));
     loaded = true;
     await player.setPlaybackRate(speed);
   }
