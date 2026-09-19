@@ -196,7 +196,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
     channel.onBroadcast(event: 'signal', callback: (payload) {
       unawaited(_handleSignal(payload));
     });
-    channel.subscribe();
+    await channel.subscribe();
     _channel = channel;
   }
 
@@ -245,9 +245,9 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'autoGainControl': true,
       },
       'video': widget.video ? {
-        'width': {'ideal': 480, 'max': 854},
-        'height': {'ideal': 270, 'max': 480},
-        'frameRate': {'ideal': 20, 'max': 24},
+        'width': {'ideal': 1280, 'max': 1280},
+        'height': {'ideal': 720, 'max': 720},
+        'frameRate': {'ideal': 30, 'max': 30},
         'facingMode': 'user',
       } : false,
     });
