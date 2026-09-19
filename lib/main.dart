@@ -1767,6 +1767,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   bool busy = false;
 
   Future<void> load() async {
+    final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     try {
       final user = supabase.auth.currentUser!;
       final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
@@ -3273,10 +3274,12 @@ class _ChatPageState extends State<ChatPage> {
           attachments = loadedAttachments;
           loading = false;
         });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_messagesScroll.hasClients) return;
-          _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
-        });
+        if (stickToBottom) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_messagesScroll.hasClients) return;
+            _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+          });
+        }
       }
       await markRead();
     } catch (e) {
