@@ -1990,33 +1990,26 @@ class _HomePageState extends State<HomePage> {
   Future<void> load() async {
     try {
       final uid = supabase.auth.currentUser!.id;
-      final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
-      final ids = (members as List).map((e) => e['conversation_id']).toList();
-      if (ids.isEmpty) {
-        if (mounted) setState(() { chats = []; loading = false; });
-        return;
-      }
-      final rows = List<Map<String,dynamic>>.from(await supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids));
-      final enriched = <Map<String,dynamic>>[];
-      for (final c in rows) {
-        final type = '${c['type'] ?? 'direct'}';
-        final lastRows = await supabase.from('messages').select('id,sender_id,body,message_type,created_at,read_at').eq('conversation_id', c['id']).order('created_at', ascending: false).limit(1);
-        final last = (lastRows as List).isEmpty ? null : Map<String,dynamic>.from((lastRows as List).first);
-        Map<String,dynamic>? peer;
-        if (type == 'direct') {
-          final cm = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']);
-          final peerId = (cm as List).map((x) => x['user_id'].toString()).firstWhere((x) => x != uid, orElse: () => '');
-          if (peerId.isNotEmpty) peer = await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,last_seen,is_verified').eq('id', peerId).maybeSingle();
-        }
-        final unreadRows = await supabase.from('messages').select('id').eq('conversation_id', c['id']).neq('sender_id', uid).isFilter('read_at', null).limit(50);
-        final preview = last == null ? 'هنوز پیامی ارسال نشده' : ((last['body'] ?? '').toString().trim().isNotEmpty ? '${last['body']}' : last['message_type'] == 'image' ? '📷 تصویر' : last['message_type'] == 'video' ? '🎬 ویدیو' : last['message_type'] == 'audio' ? '🎙️ پیام صوتی' : last['message_type'] == 'file' ? '📎 فایل' : 'پیام');
-        enriched.add({...c, '_peer': peer, '_last': last, '_preview': preview, 'unread_count': (unreadRows as List).length, 'is_online': peer?['is_online'] == true});
-      }
-      enriched.sort((a,b) {
-        final ad = DateTime.tryParse('${a['_last']?['created_at'] ?? a['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bd = DateTime.tryParse('${b['_last']?['created_at'] ?? b['created_at']}') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bd.compareTo(ad);
-      });
+      final rpcRows = List<Map<String,dynamic>>.from(await supabase.rpc('get_home_conversations'));
+      final enriched = rpcRows.map((r) {
+        final last = r['last_message'] is Map ? Map<String,dynamic>.from(r['last_message']) : null;
+        final peer = r['peer'] is Map ? Map<String,dynamic>.from(r['peer']) : null;
+        return {
+          'id': r['conversation_id'],
+          'type': r['type'],
+          'title': r['title'],
+          'avatar_url': r['avatar_url'],
+          'description': r['description'],
+          'username': r['username'],
+          'is_public': r['is_public'],
+          'created_at': r['created_at'],
+          '_peer': peer,
+          '_last': last,
+          '_preview': r['preview'] ?? 'هنوز پیامی ارسال نشده',
+          'unread_count': int.tryParse('0') ?? 0,
+          'is_online': peer?['is_online'] == true,
+        };
+      }).toList();
 
       final unreadRows = await supabase.from('chat_unread_marks').select('conversation_id').eq('user_id', uid);
       final manualUnread = (unreadRows as List).map((r) => r['conversation_id'].toString()).toSet();
