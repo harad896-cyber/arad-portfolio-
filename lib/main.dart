@@ -3246,8 +3246,8 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> load() async {
     try {
-      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at');
-      final loaded = List<Map<String, dynamic>>.from(rows);
+      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120);
+      final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
       final uid = supabase.auth.currentUser?.id;
       if (uid != null && loaded.isNotEmpty) {
         final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
@@ -3292,7 +3292,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> markRead() async {
     try {
-      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id);
+      final rows = await supabase.from('messages').select('id').eq('conversation_id', widget.id).neq('sender_id', supabase.auth.currentUser!.id).order('created_at', ascending: false).limit(120);
       for (final row in rows) {
         await supabase.rpc('mark_message_read', params: {'p_message_id': row['id']});
       }
@@ -4181,6 +4181,13 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Timer? _chatReloadDebounce;
+
+  void _scheduleChatReload() {
+    _chatReloadDebounce?.cancel();
+    _chatReloadDebounce = Timer(const Duration(milliseconds: 350), () { if (mounted) unawaited(load()); });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -4192,7 +4199,7 @@ class _ChatPageState extends State<ChatPage> {
         schema: 'public',
         table: 'messages',
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
-        callback: (_) => load(),
+        callback: (_) => _scheduleChatReload(),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.update,
@@ -4211,6 +4218,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _chatReloadDebounce?.cancel();
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
