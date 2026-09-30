@@ -2350,7 +2350,7 @@ class _HomePageState extends State<HomePage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-            child: Row(children: List.generate(5, (i) {
+            child: Row(children: List.generate(6, (i) {
               const labels = ['تمامی گفتگوها', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده', 'آرشیو'];
               const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded, Icons.archive_rounded];
               return Padding(
@@ -3463,6 +3463,43 @@ class _ChatPageState extends State<ChatPage> {
   }
 
 
+  Future<void> sendVideo() async {
+    if (sending) return;
+    try {
+      final video = await ImagePicker().pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
+      if (video == null) return;
+      final bytes = await video.readAsBytes();
+      if (bytes.isEmpty) throw Exception('ویدئو خالی است');
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_video_${video.name}';
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'video/mp4', upsert: false),
+      );
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': video.name,
+        'message_type': 'video',
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': path,
+        'file_name': video.name,
+        'mime_type': 'video/mp4',
+        'file_size': bytes.length,
+      });
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'ویدئو ارسال نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
   Future<void> sendCameraImage() async {
     if (sending) return;
     try {
@@ -3499,6 +3536,7 @@ class _ChatPageState extends State<ChatPage> {
                 _attachmentItem(sheetContext, Icons.photo_library_rounded, 'گالری', () { Navigator.pop(sheetContext); sendImage(); }),
                 _attachmentItem(sheetContext, Icons.camera_alt_rounded, 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
                 _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.videocam_rounded, 'ویدئو', () { Navigator.pop(sheetContext); sendVideo(); }),
                 _attachmentItem(sheetContext, Icons.music_note_rounded, 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
                 _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
               ]),
@@ -4054,11 +4092,32 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Widget _videoAttachment(Map<String, dynamic> m) {
+    final a = attachments['${m['id']}'];
+    final path = a?['storage_path']?.toString();
+    if (path == null || path.isEmpty) return const Icon(Icons.video_file_rounded, size: 42);
+    return _ChatVideoAttachment(storagePath: path);
+  }
+
   Widget _fileAttachment(Map<String, dynamic> m) {
     final a = attachments['${m['id']}'];
     final name = (a?['file_name'] ?? m['body'] ?? 'فایل').toString();
     final mime = (a?['mime_type'] ?? '').toString();
-    final icon = mime.startsWith('audio/') ? Icons.music_note_rounded : mime == 'application/pdf' ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded;
+    final path = a?['storage_path']?.toString();
+    if (mime.startsWith('audio/') && path != null && path.isNotEmpty) {
+      return VoiceMessagePlayer(
+        storagePath: path,
+        initialDurationMs: int.tryParse('${a?['duration_ms'] ?? 0}') ?? 0,
+        mine: m['sender_id'] == supabase.auth.currentUser?.id,
+        mimeType: mime,
+        loadAudio: () async {
+          final bytes = await supabase.storage.from('chat-media').download(path);
+          if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
+          return bytes;
+        },
+      );
+    }
+    final icon = mime == 'application/pdf' ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded;
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 32),
       const SizedBox(width: 8),
@@ -4084,6 +4143,8 @@ class _ChatPageState extends State<ChatPage> {
     Widget content;
     if (m['message_type'] == 'image') {
       content = _imageAttachment(m);
+    } else if (m['message_type'] == 'video') {
+      content = _videoAttachment(m);
     } else if (m['message_type'] == 'audio') {
       content = _voicePlayButton(m['id'].toString());
     } else if (m['message_type'] == 'file') {
@@ -4433,6 +4494,68 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }}
+class _ChatVideoAttachment extends StatefulWidget {
+  final String storagePath;
+  const _ChatVideoAttachment({required this.storagePath});
+  @override State<_ChatVideoAttachment> createState() => _ChatVideoAttachmentState();
+}
+
+class _ChatVideoAttachmentState extends State<_ChatVideoAttachment> {
+  VideoPlayerController? _controller;
+  String? _error;
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final bytes = await supabase.storage.from('chat-media').download(widget.storagePath);
+      if (bytes.isEmpty) throw Exception('ویدئو خالی است');
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/arad_${widget.storagePath.hashCode}.mp4');
+      await file.writeAsBytes(bytes, flush: true);
+      final c = VideoPlayerController.file(file);
+      await c.initialize();
+      await c.setLooping(false);
+      if (mounted) setState(() => _controller = c);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'پخش ویدئو ناموفق بود');
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    final c = _controller;
+    if (_error != null) return Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.video_file_rounded), const SizedBox(width: 8), Text(_error!)]);
+    if (c == null || !c.value.isInitialized) return const SizedBox(width: 250, height: 150, child: Center(child: CircularProgressIndicator()));
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: 270,
+        child: AspectRatio(
+          aspectRatio: c.value.aspectRatio,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              VideoPlayer(c),
+              IconButton.filledTonal(
+                onPressed: () async {
+                  if (c.value.isPlaying) { await c.pause(); } else { await c.play(); }
+                  if (mounted) setState(() {});
+                },
+                icon: Icon(c.value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+              ),
+              Positioned(
+                left: 8, right: 8, bottom: 4,
+                child: VideoProgressIndicator(c, allowScrubbing: true, padding: const EdgeInsets.symmetric(vertical: 5)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override void dispose() { _controller?.dispose(); super.dispose(); }
+}
+
 class _SearchSectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
