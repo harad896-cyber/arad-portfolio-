@@ -232,22 +232,29 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       setState(() => busy = true);
       int count = 0;
       try {
-        final result = await db.rpc('add_group_members', params: {'p_conversation_id': widget.conversationId, 'p_user_ids': added});
-        count = (result as num?)?.toInt() ?? 0;
-      } catch (rpcError) {
-        // Fallback to the RLS-protected insert path for older/temporarily stale RPC deployments.
-        final existingIds = members.map((m) => m['user_id'].toString()).toSet();
-        final rows = added.where((id) => !existingIds.contains(id)).map((id) => {
-          'conversation_id': widget.conversationId,
-          'user_id': id,
-          'role': 'member',
-          'joined_at': DateTime.now().toUtc().toIso8601String(),
-        }).toList();
-        if (rows.isEmpty) {
-          throw Exception('این کاربران قبلاً عضو گروه هستند.');
+        final result = await db.rpc('add_group_members', params: {
+          'p_conversation_id': widget.conversationId,
+          'p_user_ids': added,
+        });
+        count = result is num ? result.toInt() : int.tryParse(result.toString()) ?? 0;
+        if (count <= 0) {
+          await load();
+          toast('عضو جدیدی اضافه نشد؛ ممکن است کاربران انتخاب‌شده از قبل عضو گروه باشند.');
+          return;
         }
-        await db.from('conversation_members').insert(rows);
-        count = rows.length;
+      } on PostgrestException catch (e) {
+        final code = e.code ?? '';
+        final message = e.message.toString();
+        if (message.contains('not_group_admin') || code == '42501') {
+          throw Exception('دسترسی مدیر برای افزودن عضو تأیید نشد.');
+        }
+        if (message.contains('not_group')) {
+          throw Exception('این گفتگو گروه نیست.');
+        }
+        if (message.contains('not_authenticated')) {
+          throw Exception('نشست حساب کاربری منقضی شده است؛ دوباره وارد شوید.');
+        }
+        throw Exception('سرور افزودن عضو را رد کرد: ${e.message}');
       }
       toast('$count عضو به گروه اضافه شد.');
       await load();
