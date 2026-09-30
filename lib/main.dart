@@ -2193,7 +2193,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('تماس صوتی ورودی'),
+        title: Text(row['call_type']?.toString() == 'video' ? 'تماس تصویری ورودی' : 'تماس صوتی ورودی'),
         content: Text('$title با شما تماس می‌گیرد.'),
         actions: [
           TextButton(
@@ -2217,7 +2217,7 @@ class _HomePageState extends State<HomePage> {
                   builder: (_) => CallSessionPage(
                     conversationId: row['conversation_id'].toString(),
                     title: title,
-                    video: false,
+                    video: row['call_type']?.toString() == 'video',
                     existingCallId: callId,
                     incoming: true,
                   ),
@@ -3471,11 +3471,12 @@ class _ChatPageState extends State<ChatPage> {
       final bytes = await video.readAsBytes();
       if (bytes.isEmpty) throw Exception('ویدئو خالی است');
       final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_video_${video.name}';
+      final videoMime = _mimeType(video.name);
       setState(() => sending = true);
       await supabase.storage.from('chat-media').uploadBinary(
         path,
         bytes,
-        fileOptions: const FileOptions(contentType: 'video/mp4', upsert: false),
+        fileOptions: FileOptions(contentType: videoMime.startsWith('video/') ? videoMime : 'video/mp4', upsert: false),
       );
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
@@ -3488,7 +3489,7 @@ class _ChatPageState extends State<ChatPage> {
         'message_id': msg['id'],
         'storage_path': path,
         'file_name': video.name,
-        'mime_type': 'video/mp4',
+        'mime_type': videoMime.startsWith('video/') ? videoMime : 'video/mp4',
         'file_size': bytes.length,
       });
       if (mounted) setState(() => replyMessage = null);
@@ -3950,6 +3951,7 @@ class _ChatPageState extends State<ChatPage> {
         _actionTile(context, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
         _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
         _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری', () => shareMessage(message)),
+        _actionTile(context, Icons.link_rounded, 'کپی لینک پیام', () => copyMessageLink(message)),
         if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
           _actionTile(context, Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
         _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره', () => saveMessage(message)),
