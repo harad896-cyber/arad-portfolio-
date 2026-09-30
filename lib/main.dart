@@ -15,6 +15,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
@@ -4108,7 +4109,6 @@ class _ChatPageState extends State<ChatPage> {
     final path = a?['storage_path']?.toString();
     if (mime.startsWith('audio/') && path != null && path.isNotEmpty) {
       return VoiceMessagePlayer(
-        storagePath: path,
         initialDurationMs: int.tryParse('${a?['duration_ms'] ?? 0}') ?? 0,
         mine: m['sender_id'] == supabase.auth.currentUser?.id,
         mimeType: mime,
