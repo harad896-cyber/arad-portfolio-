@@ -77,10 +77,10 @@ class LanguageController extends ChangeNotifier {
 }
 
 class AppThemeController extends ChangeNotifier {
-  bool dark = true;
+  bool dark = false;
   int seed = 0xFF7C5CFF;
   int backgroundSeed = 0xFF11131A;
-  static const int _themeRevision = 2;
+  static const int _themeRevision = 3;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -94,17 +94,17 @@ class AppThemeController extends ChangeNotifier {
     final revision = p.getInt('theme_revision_$key') ?? 0;
     if (revision < _themeRevision) {
       // One-time migration to the new high-contrast chat palette.
-      dark = true;
+      dark = false;
       seed = 0xFF8B5CF6;
-      backgroundSeed = 0xFF11131A;
+      backgroundSeed = 0xFFF3F1F6;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
       await p.setInt('theme_revision_$key', _themeRevision);
     } else {
-      dark = p.getBool('dark_mode_$key') ?? true;
+      dark = p.getBool('dark_mode_$key') ?? false;
       seed = p.getInt('accent_seed_$key') ?? 0xFF8B5CF6;
-      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF11131A;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFFF3F1F6;
     }
     notifyListeners();
   }
