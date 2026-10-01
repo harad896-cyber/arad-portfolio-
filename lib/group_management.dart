@@ -26,7 +26,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
 
   Future<void> load() async {
     try {
-      final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public').eq('id', widget.conversationId).single());
+      final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id', widget.conversationId).single());
       final ms = List<Map<String, dynamic>>.from(await db.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId).order('joined_at'));
       final ids = ms.map((m) => m['user_id'].toString()).toList();
       final ps = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', ids));
@@ -265,7 +265,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Future<void> removeMember(String id) async {
     if (!admin || busy || id == group?['created_by']?.toString()) return;
     setState(() => busy = true);
-    try { await db.rpc('remove_group_member', params: {'p_conversationId': widget.conversationId, 'p_user_id': id}); toast('عضو از گروه حذف شد.'); await load(); }
+    try { await db.rpc('remove_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id}); toast('عضو از گروه حذف شد.'); await load(); }
     catch (e) { toast('حذف عضو ناموفق بود: $e'); }
     finally { if (mounted) setState(() => busy = false); }
   }
