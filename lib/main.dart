@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
@@ -3424,6 +3425,9 @@ class _ChatPageState extends State<ChatPage> {
     if (sending || recordingVoice) return;
     try {
       if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
+      final voicePath = kIsWeb
+          ? 'arad_voice_\${DateTime.now().millisecondsSinceEpoch}.webm'
+          : '\${(await getTemporaryDirectory()).path}/arad_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _voiceRecorder.start(
         const RecordConfig(
           encoder: AudioEncoder.aacLc,
@@ -3431,6 +3435,7 @@ class _ChatPageState extends State<ChatPage> {
           sampleRate: 44100,
           numChannels: 1,
         ),
+        path: voicePath,
       );
       _voiceStartedAt = DateTime.now();
       _voiceTimer?.cancel();
