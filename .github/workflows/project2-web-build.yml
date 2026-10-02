@@ -1,0 +1,29 @@
+name: Project 2 Web Build
+
+concurrency:
+  group: project2-web-build
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Flutter Web
+        run: bash scripts/build_web.sh
+      - name: Verify web output
+        run: |
+          test -s build/web/index.html
+          test -s build/web/flutter_bootstrap.js
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arad-messenger-web
+          path: build/web
+          if-no-files-found: error
+          retention-days: 14
