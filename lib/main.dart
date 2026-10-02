@@ -1,8 +1,8 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
+import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -3383,12 +3382,14 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendFile() async {
     if (sending) return;
     try {
-      final result = await FilePicker.platform.pickFiles(withData: false);
+      final result = await FilePicker.platform.pickFiles(withData: true);
       if (result == null) return;
       final f = result.files.single;
       final localPath = f.path;
-      if (localPath == null || localPath.isEmpty) throw Exception('مسیر فایل از Android دریافت نشد');
-      final bytes = await File(localPath).readAsBytes();
+      final bytes = f.bytes ?? (localPath == null || localPath.isEmpty
+          ? null
+          : await XFile(localPath).readAsBytes());
+      if (bytes == null || bytes.isEmpty) throw Exception('خواندن فایل ناموفق بود');
       if (bytes.isEmpty) throw Exception('فایل خالی است');
       final mime = _mimeType(f.name);
       final isAudio = mime.startsWith('audio/');
@@ -3423,9 +3424,14 @@ class _ChatPageState extends State<ChatPage> {
     if (sending || recordingVoice) return;
     try {
       if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
-      final tempDir = await getTemporaryDirectory();
-      final path = '${tempDir.path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await _voiceRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
+      await _voiceRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 64000,
+          sampleRate: 44100,
+          numChannels: 1,
+        ),
+      );
       _voiceStartedAt = DateTime.now();
       _voiceTimer?.cancel();
       _voiceTimer = Timer.periodic(const Duration(seconds: 1), (_) { if (mounted && recordingVoice) setState(() => voiceSeconds = DateTime.now().difference(_voiceStartedAt!).inSeconds); });
@@ -3446,14 +3452,14 @@ class _ChatPageState extends State<ChatPage> {
     if (mounted) setState(() { recordingVoice=false; voiceLocked=false; voiceCancelArmed=false; });
     if (cancel || path==null || path.isEmpty) return;
     try {
-      final file=File(path); final bytes=await file.readAsBytes();
+      final bytes = await XFile(path).readAsBytes();
       if(bytes.isEmpty) throw Exception('فایل ویس خالی است');
       setState(()=>sending=true);
       final storagePath='\${widget.id}/voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
       await supabase.storage.from('chat-media').uploadBinary(storagePath,bytes,fileOptions:const FileOptions(contentType:'audio/mp4',upsert:false));
       final msg=await supabase.from('messages').insert({'conversation_id':widget.id,'sender_id':supabase.auth.currentUser!.id,'body':'پیام صوتی','message_type':'audio','reply_to':replyMessage?['id']}).select().single();
       await supabase.from('message_attachments').insert({'message_id':msg['id'],'storage_path':storagePath,'file_name':storagePath.split('/').last,'mime_type':'audio/mp4','file_size':bytes.length,'duration_ms':voiceSeconds*1000});
-      if(mounted)setState(()=>replyMessage=null); try{await file.delete();}catch(_){}
+      if(mounted)setState(()=>replyMessage=null);
       await load();
     }catch(e){if(mounted)showMsg(context,'ارسال ویس ناموفق بود: $e');}
     finally{if(mounted)setState(()=>sending=false);}
@@ -4509,12 +4515,8 @@ class _ChatVideoAttachmentState extends State<_ChatVideoAttachment> {
 
   Future<void> _load() async {
     try {
-      final bytes = await supabase.storage.from('chat-media').download(widget.storagePath);
-      if (bytes.isEmpty) throw Exception('ویدئو خالی است');
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/arad_${widget.storagePath.hashCode}.mp4');
-      await file.writeAsBytes(bytes, flush: true);
-      final c = VideoPlayerController.file(file);
+      final url = await supabase.storage.from('chat-media').createSignedUrl(widget.storagePath, 3600);
+      final c = VideoPlayerController.networkUrl(Uri.parse(url));
       await c.initialize();
       await c.setLooping(false);
       if (mounted) setState(() => _controller = c);
