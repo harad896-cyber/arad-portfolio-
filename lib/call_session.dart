@@ -205,6 +205,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
       'iceServers': [
         {'urls': 'stun:stun.l.google.com:19302'},
         {'urls': 'stun:stun1.l.google.com:19302'},
+        {'urls': 'stun:stun.cloudflare.com:3478'},
+        // Fallback TURN; deployments can override with TURN_* environment variables.
+        {'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject'},
+        {'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject'},
         if (_turnUrl.isNotEmpty && _turnUser.isNotEmpty && _turnCredential.isNotEmpty)
           {'urls': _turnUrl, 'username': _turnUser, 'credential': _turnCredential},
       ],
@@ -245,9 +249,9 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'autoGainControl': true,
       },
       'video': widget.video ? {
-        'width': {'ideal': 1280, 'max': 1280},
-        'height': {'ideal': 720, 'max': 720},
-        'frameRate': {'ideal': 30, 'max': 30},
+        'width': {'ideal': 960, 'max': 960},
+        'height': {'ideal': 540, 'max': 540},
+        'frameRate': {'ideal': 24, 'max': 24},
         'facingMode': 'user',
       } : false,
     });
