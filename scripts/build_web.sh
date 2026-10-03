@@ -14,6 +14,9 @@ if [ ! -x "${FLUTTER_DIR}/bin/flutter" ]; then
   mv /tmp/flutter "${FLUTTER_DIR}"
 fi
 
+# Vercel may run the build as root; Flutter uses Git internally and requires the SDK repo to be trusted.
+git config --global --add safe.directory "/vercel/path0/${FLUTTER_DIR}" 2>/dev/null || true
+
 "${FLUTTER_DIR}/bin/flutter" config --enable-web
 "${FLUTTER_DIR}/bin/flutter" pub get
 "${FLUTTER_DIR}/bin/flutter" build web --release
