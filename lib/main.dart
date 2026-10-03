@@ -3130,6 +3130,7 @@ class _ChatPageState extends State<ChatPage> {
   Map<String, Map<String, dynamic>> attachments = {};
   RealtimeChannel? channel;
   final ScrollController _messagesScroll = ScrollController();
+  final FocusNode _composerFocus = FocusNode();
   bool loading = true;
   bool sending = false;
   Map<String, dynamic>? replyMessage;
@@ -3145,6 +3146,17 @@ class _ChatPageState extends State<ChatPage> {
   double voiceAmplitude = 0;
   List<double> voiceWaveform = [];
   StreamSubscription<Amplitude>? _voiceAmplitudeSub;
+
+  void _onComposerFocus() {
+    if (!_composerFocus.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToLatestForKeyboard());
+  }
+
+  void _scrollToLatestForKeyboard() {
+    if (!mounted || !_messagesScroll.hasClients) return;
+    final target = _messagesScroll.position.maxScrollExtent;
+    _messagesScroll.animateTo(target, duration: const Duration(milliseconds: 180), curve: Curves.easeOutCubic);
+  }
 
   Future<String?> _attachmentUrl(String path) async {
     if (path.isEmpty) return null;
@@ -4264,6 +4276,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    _composerFocus.addListener(_onComposerFocus);
     load();
     _loadChatType();
     channel = supabase.channel('chat-${widget.id}')
@@ -4317,6 +4330,7 @@ class _ChatPageState extends State<ChatPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: scheme.surface.withValues(alpha: .62),
@@ -4474,6 +4488,7 @@ class _ChatPageState extends State<ChatPage> {
                           Expanded(
                             child: TextField(
                               controller: text,
+                              focusNode: _composerFocus,
                               minLines: 1,
                               maxLines: 5,
                               textInputAction: TextInputAction.newline,
