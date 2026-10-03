@@ -150,7 +150,58 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> switchAccount() async {
     if (!mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSwitcherPage()));
+    final emails = await rememberedAccountEmails();
+    if (!mounted) return;
+    if (emails.length <= 1) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSwitcherPage()));
+      if (mounted) await loadProfile();
+      return;
+    }
+    final active = supabase.auth.currentUser?.email?.trim().toLowerCase();
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('تغییر حساب', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+            ),
+            ...emails.map((mail) {
+              final isActive = mail.toLowerCase() == active;
+              return Card(
+                child: ListTile(
+                  leading: CircleAvatar(child: Text(mail.isEmpty ? '?' : mail[0].toUpperCase())),
+                  title: Text(mail, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(isActive ? 'حساب فعال' : 'برای ورود به این حساب بزنید'),
+                  trailing: Icon(isActive ? Icons.check_circle_rounded : Icons.touch_app_rounded),
+                  onTap: isActive ? () => Navigator.pop(sheet) : () async {
+                    final token = await _profileSecureAccounts.read(key: 'account_refresh_\${mail.toLowerCase()}');
+                    if (token == null || token.isEmpty) {
+                      if (sheet.mounted) showMsg(sheet, 'نشست ذخیره‌شده این حساب پیدا نشد.');
+                      return;
+                    }
+                    try {
+                      final res = await supabase.auth.setSession(token);
+                      if (res.session == null) throw const AuthException('نشست حساب منقضی شده است.');
+                      await rememberCurrentSession();
+                      await appTheme.loadForUser();
+                      if (sheet.mounted) Navigator.pop(sheet);
+                    } catch (e) {
+                      if (sheet.mounted) showMsg(sheet, 'تغییر حساب ناموفق بود: $e');
+                    }
+                  },
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
     if (mounted) await loadProfile();
   }
 
