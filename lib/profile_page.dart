@@ -180,7 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   subtitle: Text(isActive ? 'حساب فعال' : 'برای ورود به این حساب بزنید'),
                   trailing: Icon(isActive ? Icons.check_circle_rounded : Icons.touch_app_rounded),
                   onTap: isActive ? () => Navigator.pop(sheet) : () async {
-                    final token = await _profileSecureAccounts.read(key: 'account_refresh_\${mail.toLowerCase()}');
+                    final token = await _profileSecureAccounts.read(key: 'account_refresh_${mail.toLowerCase()}');
                     if (token == null || token.isEmpty) {
                       if (sheet.mounted) showMsg(sheet, 'نشست ذخیره‌شده این حساب پیدا نشد.');
                       return;
