@@ -3438,8 +3438,8 @@ class _ChatPageState extends State<ChatPage> {
     try {
       if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
       final voicePath = kIsWeb
-          ? 'arad_voice_\${DateTime.now().millisecondsSinceEpoch}.webm'
-          : '\${(await getTemporaryDirectory()).path}/arad_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+          ? 'arad_voice_${DateTime.now().millisecondsSinceEpoch}.webm'
+          : '${(await getTemporaryDirectory()).path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _voiceRecorder.start(
         const RecordConfig(
           encoder: AudioEncoder.aacLc,
@@ -3472,7 +3472,7 @@ class _ChatPageState extends State<ChatPage> {
       final bytes = await XFile(path).readAsBytes();
       if(bytes.isEmpty) throw Exception('فایل ویس خالی است');
       setState(()=>sending=true);
-      final storagePath='\${widget.id}/voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final storagePath='${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await supabase.storage.from('chat-media').uploadBinary(storagePath,bytes,fileOptions:const FileOptions(contentType:'audio/mp4',upsert:false));
       final msg=await supabase.from('messages').insert({'conversation_id':widget.id,'sender_id':supabase.auth.currentUser!.id,'body':'پیام صوتی','message_type':'audio','reply_to':replyMessage?['id']}).select().single();
       await supabase.from('message_attachments').insert({'message_id':msg['id'],'storage_path':storagePath,'file_name':storagePath.split('/').last,'mime_type':'audio/mp4','file_size':bytes.length,'duration_ms':voiceSeconds*1000});
@@ -4309,6 +4309,7 @@ class _ChatPageState extends State<ChatPage> {
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
     _messagesScroll.dispose();
+    _composerFocus.dispose();
     text.dispose();
     super.dispose();
   }
