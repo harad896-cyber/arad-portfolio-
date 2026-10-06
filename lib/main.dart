@@ -273,11 +273,11 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B5CF6),
+          seedColor: const Color(0xFF7C5CFF),
           brightness: Brightness.light,
-          surface: const Color(0xFFF5F5F7),
+          surface: const Color(0xFFF9F7FE),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF3F1F6),
+        scaffoldBackgroundColor: const Color(0xFFF1EEF8),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -302,8 +302,8 @@ class AradMessenger extends StatelessWidget {
         cardTheme: CardThemeData(
           elevation: 2,
           shadowColor: Color(0x18000000),
-          color: Color(0xB8FFFFFF),
-          surfaceTintColor: Colors.transparent,
+          color: Color(0xC9F8F5FF),
+          surfaceTintColor: Color(0x147C5CFF),
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
@@ -313,7 +313,7 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
-          tileColor: const Color(0xFFFFFFFF),
+          tileColor: const Color(0xEFFFFFFF),
           selectedTileColor: const Color(0x1A8B5CF6),
           iconColor: const Color(0xFF707078),
           minVerticalPadding: 9,
@@ -377,9 +377,9 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B5CF6),
+          seedColor: const Color(0xFF9B7BFF),
           brightness: Brightness.dark,
-          surface: const Color(0xFF111114),
+          surface: const Color(0xFF15131C),
         ),
         scaffoldBackgroundColor: const Color(0xFF09090B),
         appBarTheme: const AppBarTheme(
@@ -392,8 +392,8 @@ class AradMessenger extends StatelessWidget {
         cardTheme: CardThemeData(
           elevation: 2,
           shadowColor: Color(0x70000000),
-          color: Color(0xFF171922),
-          surfaceTintColor: Colors.transparent,
+          color: Color(0xD91A1722),
+          surfaceTintColor: Color(0x229B7BFF),
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
