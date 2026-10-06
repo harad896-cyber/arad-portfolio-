@@ -2245,60 +2245,123 @@ class _HomePageState extends State<HomePage> {
   Widget chatsView() {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final glass = scheme.surface.withValues(alpha: theme.brightness == Brightness.dark ? .58 : .68);
+    Widget glassPill({required Widget child, VoidCallback? onTap, EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 13, vertical: 9)}) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Material(
+            color: glass,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(18),
+              child: Padding(padding: padding, child: child),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Column(children: [
-      const StoriesTray(),
+      SizedBox(height: 76, child: StoriesTray()),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 14, 8),
+        padding: const EdgeInsets.fromLTRB(16, 2, 14, 7),
         child: Row(children: [
-          const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
-          IconButton(tooltip: 'جستجو', onPressed: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate()), icon: const Icon(Icons.search_rounded)),
-          IconButton.filledTonal(tooltip: 'گفتگوی جدید', onPressed: createDirect, icon: const Icon(Icons.edit_rounded)),
+          const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+          glassPill(
+            padding: const EdgeInsets.all(9),
+            onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate()),
+            child: const Icon(Icons.search_rounded, size: 21),
+          ),
+          const SizedBox(width: 8),
+          glassPill(
+            padding: const EdgeInsets.all(9),
+            onTap: createDirect,
+            child: Icon(Icons.edit_rounded, size: 20, color: scheme.primary),
+          ),
         ]),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        child: TextField(
-          controller: chatSearch,
-          onChanged: (v) => setState(() => chatQuery = v),
-          textDirection: TextDirection.rtl,
-          decoration: InputDecoration(
-            hintText: 'جستجوی گفتگو',
-            prefixIcon: const Icon(Icons.search_rounded),
-            isDense: true, filled: true,
-            fillColor: scheme.surfaceContainerHighest.withValues(alpha: .55),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 7),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(17),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: TextField(
+              controller: chatSearch,
+              onChanged: (v) => setState(() => chatQuery = v),
+              textDirection: TextDirection.rtl,
+              decoration: InputDecoration(
+                hintText: 'جستجوی گفتگو',
+                prefixIcon: const Icon(Icons.search_rounded, size: 21),
+                isDense: true,
+                filled: true,
+                fillColor: glass,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(17), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(17), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(17), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45))),
+              ),
+            ),
           ),
         ),
       ),
-      if (chatFolders.isNotEmpty) SizedBox(
-        height: 42,
-        child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
-          ChoiceChip(selected: selectedFolderId == null && selectedFilter == 0, label: const Text('همه'), onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = 0; })),
-          ...chatFolders.map((folder) {
-            final id = folder['id'].toString();
-            return Padding(padding: const EdgeInsets.only(left: 8), child: ChoiceChip(selected: selectedFolderId == id, label: Text(folder['name'].toString()), avatar: const Icon(Icons.folder_rounded, size: 16), onSelected: (_) => setState(() { selectedFolderId = id; selectedFilter = 0; })));
-          }),
-        ],),
-      ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-        child: Material(color: scheme.primaryContainer.withValues(alpha: .45), borderRadius: BorderRadius.circular(16),
-          child: InkWell(borderRadius: BorderRadius.circular(16), onTap: () => setState(() { selectedFolderId = null; selectedFilter = 5; }),
-            child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11), child: Row(children: [
-              Container(width: 38, height: 38, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), shape: BoxShape.circle), child: Icon(Icons.archive_rounded, color: scheme.primary, size: 20)),
-              const SizedBox(width: 11),
-              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('آرشیو گفتگوها', style: TextStyle(fontWeight: FontWeight.w800)), SizedBox(height: 2), Text('گفتگوهای کنارگذاشته‌شده اینجا قرار می‌گیرند', maxLines: 1, overflow: TextOverflow.ellipsis)])),
-              if (archivedChatIds.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(12)), child: Text(archivedChatIds.length.toString(), style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w800, fontSize: 12))),
-              const SizedBox(width: 4), Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
-            ])),
-          ),
+      SizedBox(
+        height: 43,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(12, 1, 12, 5),
+          children: [
+            glassPill(
+              onTap: () => setState(() { selectedFolderId = null; selectedFilter = 5; }),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.archive_rounded, size: 17, color: scheme.primary),
+                const SizedBox(width: 6),
+                const Text('آرشیو', style: TextStyle(fontWeight: FontWeight.w800)),
+                if (archivedChatIds.isNotEmpty) ...[
+                  const SizedBox(width: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(10)),
+                    child: Text(archivedChatIds.length.toString(), style: TextStyle(color: scheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900)),
+                  ),
+                ],
+              ]),
+            ),
+            if (chatFolders.isNotEmpty) ...chatFolders.map((folder) {
+              final id = folder['id'].toString();
+              return Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: glassPill(
+                  onTap: () => setState(() { selectedFolderId = id; selectedFilter = 0; }),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.folder_rounded, size: 16, color: scheme.primary),
+                    const SizedBox(width: 5),
+                    Text(folder['name'].toString()),
+                  ]),
+                ),
+              );
+            }),
+            ...List.generate(5, (i) {
+              const labels = ['همه', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
+              const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
+              return Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: glassPill(
+                  onTap: () => setState(() { selectedFolderId = null; selectedFilter = i; }),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(icons[i], size: 16, color: selectedFilter == i && selectedFolderId == null ? scheme.primary : scheme.onSurfaceVariant),
+                    const SizedBox(width: 5),
+                    Text(labels[i], style: TextStyle(fontWeight: selectedFilter == i && selectedFolderId == null ? FontWeight.w800 : FontWeight.w500)),
+                  ]),
+                ),
+              );
+            }),
+          ],
         ),
       ),
-      SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 2, 12, 4), children: List.generate(5, (i) {
-        const labels = ['همه', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
-        const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
-        return Padding(padding: const EdgeInsets.only(left: 7), child: ChoiceChip(selected: selectedFilter == i && selectedFolderId == null, avatar: Icon(icons[i], size: 16), label: Text(labels[i]), onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = i; })));
-      }))),      Expanded(
+      const SizedBox(height: 3),
+      Expanded(
         child: loading
           ? ListView.builder(padding: const EdgeInsets.fromLTRB(10, 4, 10, 90), itemCount: 7, itemBuilder: (_, __) => const _ChatSkeleton())
           : visibleChats.isEmpty
@@ -2324,7 +2387,7 @@ class _HomePageState extends State<HomePage> {
                   final last = c['_last'] as Map<String,dynamic>?;
                   final preview = (c['_preview'] ?? 'شروع گفتگو').toString();
                   final lastAt = last?['created_at'];
-                  final unreadCount = int.tryParse('${c['unread_count'] ?? 0}') ?? 0;
+                  final unreadCount = int.tryParse(c['unread_count']?.toString() ?? '0') ?? 0;
                   final unread = unreadCount > 0 || manuallyUnreadChatIds.contains(c['id'].toString());
                   final isPinned = pinnedChatIds.contains(c['id'].toString());
                   return Card(
@@ -2373,7 +2436,6 @@ class _HomePageState extends State<HomePage> {
       ),
     ]);
   }
-
 
   Widget contactsView() {
     final scheme = Theme.of(context).colorScheme;
