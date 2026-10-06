@@ -2272,39 +2272,33 @@ class _HomePageState extends State<HomePage> {
       ),
       if (chatFolders.isNotEmpty) SizedBox(
         height: 42,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          children: [
-            ChoiceChip(selected: selectedFolderId == null, label: const Text('همه'), onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = 0; })),
-            ...chatFolders.map((folder) {
-              final id = folder['id'].toString();
-              return Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: ChoiceChip(selected: selectedFolderId == id, label: Text(folder['name'].toString()), avatar: const Icon(Icons.folder_rounded, size: 16),
-                  onSelected: (_) => setState(() { selectedFolderId = id; selectedFilter = 0; })),
-              );
-            }),
-          ],
-        ),
-      ),
-      SizedBox(
-        height: 44,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
-          children: List.generate(6, (i) {
-            const labels = ['همه', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده', 'آرشیو'];
-            const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded, Icons.archive_rounded];
-            return Padding(
-              padding: const EdgeInsets.only(left: 7),
-              child: ChoiceChip(selected: selectedFilter == i && selectedFolderId == null, avatar: Icon(icons[i], size: 16), label: Text(labels[i]),
-                onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = i; })),
-            );
+        child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+          ChoiceChip(selected: selectedFolderId == null && selectedFilter == 0, label: const Text('همه'), onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = 0; })),
+          ...chatFolders.map((folder) {
+            final id = folder['id'].toString();
+            return Padding(padding: const EdgeInsets.only(left: 8), child: ChoiceChip(selected: selectedFolderId == id, label: Text(folder['name'].toString()), avatar: const Icon(Icons.folder_rounded, size: 16), onSelected: (_) => setState(() { selectedFolderId = id; selectedFilter = 0; })));
           }),
+        ],),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+        child: Material(color: scheme.primaryContainer.withValues(alpha: .45), borderRadius: BorderRadius.circular(16),
+          child: InkWell(borderRadius: BorderRadius.circular(16), onTap: () => setState(() { selectedFolderId = null; selectedFilter = 5; }),
+            child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11), child: Row(children: [
+              Container(width: 38, height: 38, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), shape: BoxShape.circle), child: Icon(Icons.archive_rounded, color: scheme.primary, size: 20)),
+              const SizedBox(width: 11),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('آرشیو گفتگوها', style: TextStyle(fontWeight: FontWeight.w800)), SizedBox(height: 2), Text('گفتگوهای کنارگذاشته‌شده اینجا قرار می‌گیرند', maxLines: 1, overflow: TextOverflow.ellipsis)])),
+              if (archivedChatIds.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(12)), child: Text(archivedChatIds.length.toString(), style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w800, fontSize: 12))),
+              const SizedBox(width: 4), Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
+            ])),
+          ),
         ),
       ),
-      Expanded(
+      SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 2, 12, 4), children: List.generate(5, (i) {
+        const labels = ['همه', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
+        const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
+        return Padding(padding: const EdgeInsets.only(left: 7), child: ChoiceChip(selected: selectedFilter == i && selectedFolderId == null, avatar: Icon(icons[i], size: 16), label: Text(labels[i]), onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = i; })));
+      })),      Expanded(
         child: loading
           ? ListView.builder(padding: const EdgeInsets.fromLTRB(10, 4, 10, 90), itemCount: 7, itemBuilder: (_, __) => const _ChatSkeleton())
           : visibleChats.isEmpty
