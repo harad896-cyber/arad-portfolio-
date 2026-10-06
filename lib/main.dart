@@ -2298,7 +2298,7 @@ class _HomePageState extends State<HomePage> {
         const labels = ['همه', 'مخاطبین', 'گروه‌ها', 'کانال‌ها', 'خوانده‌نشده'];
         const icons = [Icons.forum_rounded, Icons.person_rounded, Icons.groups_rounded, Icons.campaign_rounded, Icons.mark_email_unread_rounded];
         return Padding(padding: const EdgeInsets.only(left: 7), child: ChoiceChip(selected: selectedFilter == i && selectedFolderId == null, avatar: Icon(icons[i], size: 16), label: Text(labels[i]), onSelected: (_) => setState(() { selectedFolderId = null; selectedFilter = i; })));
-      })),      Expanded(
+      }))),      Expanded(
         child: loading
           ? ListView.builder(padding: const EdgeInsets.fromLTRB(10, 4, 10, 90), itemCount: 7, itemBuilder: (_, __) => const _ChatSkeleton())
           : visibleChats.isEmpty
