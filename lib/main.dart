@@ -2660,7 +2660,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                 ),
                 child: Column(
                   children: [
-                    avatar(profile, radius: 62),
+                    avatar(profile, size: 124),
                     const SizedBox(height: 14),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
