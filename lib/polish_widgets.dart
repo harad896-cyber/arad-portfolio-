@@ -98,3 +98,32 @@ class AppEmptyState extends StatelessWidget {
     );
   }
 }
+
+
+class AnimatedVerifiedBadge extends StatefulWidget {
+  final double size;
+  const AnimatedVerifiedBadge({super.key, this.size = 17});
+  @override State<AnimatedVerifiedBadge> createState() => _AnimatedVerifiedBadgeState();
+}
+
+class _AnimatedVerifiedBadgeState extends State<AnimatedVerifiedBadge> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat();
+  @override void dispose() { _controller.dispose(); super.dispose(); }
+  @override Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) => Transform.scale(
+        scale: 1 + ((_controller.value < .5 ? _controller.value : 1 - _controller.value) * .10),
+        child: Container(
+          width: widget.size, height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF239BFF),
+            boxShadow: [BoxShadow(color: const Color(0xFF239BFF).withValues(alpha: .18 + ((_controller.value < .5 ? _controller.value : 1 - _controller.value) * .34)), blurRadius: 7, spreadRadius: 1)],
+          ),
+          child: Icon(Icons.check_rounded, size: widget.size * .66, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
