@@ -1447,7 +1447,15 @@ class _LoginPageState extends State<LoginPage>{
   }
   Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
   @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-    Container(height:82,decoration:BoxDecoration(gradient:LinearGradient(colors:[t.colorScheme.primary,t.colorScheme.secondary]),borderRadius:BorderRadius.circular(kAppRadius)),child:const Icon(Icons.forum_rounded,size:46,color:Colors.white)),
+    Container(
+      height: 120,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [t.colorScheme.primary, t.colorScheme.secondary]),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Image.asset('assets/app_icon.jpg', fit: BoxFit.contain),
+    ),
     const SizedBox(height:18),const Text('Arad Messenger',textAlign:TextAlign.center,style:TextStyle(fontSize:29,fontWeight:FontWeight.w800)),const SizedBox(height:20),
     Card(child:Padding(padding:const EdgeInsets.all(18),child:Column(children:[
       if(signup)...[TextField(controller:first,decoration:const InputDecoration(labelText:'نام',prefixIcon:Icon(Icons.person_outline))),const SizedBox(height:12),TextField(controller:last,decoration:const InputDecoration(labelText:'نام خانوادگی',prefixIcon:Icon(Icons.badge_outlined))),const SizedBox(height:12)],
@@ -2476,12 +2484,19 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (_,i) {
               final p = rows[i];
               final title = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
-              return Card(child: ListTile(
-                leading: avatar(p),
-                title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: Text((p['username'] == null || p['username'].toString().isEmpty) ? '' : '@' + p['username'].toString()),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: p['_conversation_id'].toString(), title: title))),
-              ));
+              return Card(
+                child: ListTile(
+                  leading: avatar(p),
+                  title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: Text((p['username'] == null || p['username'].toString().isEmpty) ? '' : '@' + p['username'].toString()),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: p))),
+                  trailing: IconButton.filledTonal(
+                    tooltip: 'پیام',
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: p['_conversation_id'].toString(), title: title))),
+                    icon: const Icon(Icons.chat_bubble_rounded),
+                  ),
+                ),
+              );
             },
           );
         },
@@ -2557,6 +2572,148 @@ class _HomePageState extends State<HomePage> {
 }
 
 
+
+Future<String?> _ensureDirectConversationForUser(Map<String, dynamic> profile) async {
+  final uid = supabase.auth.currentUser?.id;
+  final targetId = profile['id']?.toString();
+  if (uid == null || targetId == null || targetId.isEmpty || targetId == uid) return null;
+  final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+  for (final row in (existing as List)) {
+    final conversationId = row['conversation_id']?.toString();
+    if (conversationId == null) continue;
+    final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', conversationId);
+    if ((members as List).length == 2 && members.any((m) => m['user_id']?.toString() == targetId)) return conversationId;
+  }
+  final created = await supabase.from('conversations').insert({'type': 'direct', 'created_by': uid}).select().single();
+  await supabase.from('conversation_members').insert([
+    {'conversation_id': created['id'], 'user_id': uid},
+    {'conversation_id': created['id'], 'user_id': targetId},
+  ]);
+  return created['id']?.toString();
+}
+
+class PublicUserProfilePage extends StatefulWidget {
+  final Map<String, dynamic> profile;
+  const PublicUserProfilePage({super.key, required this.profile});
+  @override State<PublicUserProfilePage> createState() => _PublicUserProfilePageState();
+}
+
+class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
+  bool busy = false;
+  Map<String, dynamic> get profile => widget.profile;
+  String get displayName => '${profile['display_name'] ?? profile['username'] ?? 'کاربر'}'.trim();
+  String get username => '${profile['username'] ?? ''}'.trim();
+
+  Future<void> _openChat() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final conversationId = await _ensureDirectConversationForUser(profile);
+      if (conversationId == null) throw Exception('گفتگوی شخصی ایجاد نشد.');
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: displayName)));
+    } catch (e) {
+      if (mounted) showMsg(context, 'باز کردن گفتگو ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _startCall({required bool video}) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final conversationId = await _ensureDirectConversationForUser(profile);
+      if (conversationId == null) throw Exception('گفتگوی شخصی برای تماس پیدا نشد.');
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+        conversationId: conversationId, title: displayName, video: video,
+      )));
+    } catch (e) {
+      if (mounted) showMsg(context, 'شروع تماس ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    final verified = profile['is_verified'] == true;
+    final bio = '${profile['bio'] ?? ''}'.trim();
+    return Scaffold(
+      appBar: AppBar(title: const Text('حساب کاربری')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 22),
+                decoration: BoxDecoration(
+                  color: s.surface.withValues(alpha: .72),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: s.onSurface.withValues(alpha: .08)),
+                  boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .10), blurRadius: 28, spreadRadius: 1)],
+                ),
+                child: Column(
+                  children: [
+                    avatar(profile, radius: 62),
+                    const SizedBox(height: 14),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+                      if (verified) ...[const SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
+                    ]),
+                    if (username.isNotEmpty) Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text('@$username', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
+                    ),
+                    if (bio.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(bio, textAlign: TextAlign.center, style: TextStyle(color: s.onSurfaceVariant, height: 1.45)),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(children: [
+                      Expanded(child: FilledButton.icon(onPressed: busy ? null : _openChat, icon: const Icon(Icons.chat_bubble_rounded), label: const Text('پیام'))),
+                      const SizedBox(width: 8),
+                      Expanded(child: OutlinedButton.icon(onPressed: busy ? null : () => _startCall(video: false), icon: const Icon(Icons.call_rounded), label: const Text('تماس'))),
+                    ]),
+                    const SizedBox(height: 9),
+                    SizedBox(width: double.infinity, child: OutlinedButton.icon(
+                      onPressed: busy ? null : () => _startCall(video: true),
+                      icon: const Icon(Icons.videocam_rounded), label: const Text('تماس تصویری'),
+                    )),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(child: Column(children: [
+            ListTile(
+              leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.call_rounded, color: s.primary)),
+              title: const Text('تماس صوتی', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: const Text('شروع تماس صوتی با همین کاربر'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: busy ? null : () => _startCall(video: false),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.videocam_rounded, color: s.primary)),
+              title: const Text('تماس تصویری', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: const Text('شروع تماس تصویری با همین کاربر'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: busy ? null : () => _startCall(video: true),
+            ),
+          ])),
+        ],
+      ),
+    );
+  }
+}
+
 class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
   @override
   List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear))];
@@ -2586,7 +2743,7 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
               leading: avatar(p),
               title: Text('${p['display_name'] ?? ''}'),
               subtitle: Text('@${p['username'] ?? ''}'),
-              onTap: () => close(context, p),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: p))),
             );
           }).toList(),
         );
@@ -4394,6 +4551,22 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         actions: [
+          if (_chatType == 'direct')
+            IconButton(
+              tooltip: 'تماس صوتی',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                conversationId: widget.id, title: widget.title, video: false,
+              ))),
+              icon: const Icon(Icons.call_rounded),
+            ),
+          if (_chatType == 'direct')
+            IconButton(
+              tooltip: 'تماس تصویری',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                conversationId: widget.id, title: widget.title, video: true,
+              ))),
+              icon: const Icon(Icons.videocam_rounded),
+            ),
           IconButton(
             tooltip: 'اطلاعات گفتگو',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title))),
