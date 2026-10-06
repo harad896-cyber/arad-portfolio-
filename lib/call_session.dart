@@ -47,6 +47,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
   RTCVideoRenderer? _localRenderer;
   RTCVideoRenderer? _remoteRenderer;
   bool _acceptedIncoming = false;
+  bool _cameraEnabled = true;
+  bool _frontCamera = true;
   String? _pendingOfferSdp;
   String _status = 'در حال آماده‌سازی تماس...';
 
@@ -374,6 +376,34 @@ class _CallSessionPageState extends State<CallSessionPage> {
     if (mounted) setState(() => _speaker = !_speaker);
   }
 
+  Future<void> _toggleCamera() async {
+    if (!widget.video) return;
+    final stream = _localStream;
+    if (stream == null) return;
+    final next = !_cameraEnabled;
+    for (final track in stream.getVideoTracks()) {
+      track.enabled = next;
+    }
+    if (mounted) setState(() => _cameraEnabled = next);
+  }
+
+  Future<void> _switchCamera() async {
+    if (!widget.video) return;
+    final stream = _localStream;
+    final track = stream?.getVideoTracks().isNotEmpty == true ? stream!.getVideoTracks().first : null;
+    if (track == null) return;
+    try {
+      await Helper.switchCamera(track);
+      if (mounted) setState(() => _frontCamera = !_frontCamera);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تغییر دوربین ناموفق بود.')),
+        );
+      }
+    }
+  }
+
   Future<void> _failCall(String message) async {
     if (_ending) return;
     if (mounted) setState(() => _status = message);
@@ -513,8 +543,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
                       FilledButton.icon(onPressed: _rejectIncoming, icon: const Icon(Icons.call_end_rounded), label: const Text('رد تماس')),
                       FilledButton.icon(onPressed: _acceptIncoming, icon: const Icon(Icons.call_rounded), label: const Text('پاسخ')),
                     ] else ...[
-                    _control(Icons.mic_off_rounded, _muted, _toggleMute),
+                    _control(_muted ? Icons.mic_off_rounded : Icons.mic_rounded, _muted, _toggleMute),
                     _control(_speaker ? Icons.volume_up_rounded : Icons.volume_off_rounded, _speaker, _toggleSpeaker),
+                    if (widget.video) _control(_cameraEnabled ? Icons.videocam_rounded : Icons.videocam_off_rounded, _cameraEnabled, _toggleCamera),
+                    if (widget.video) _control(Icons.cameraswitch_rounded, true, _switchCamera),
                     Material(
                       color: scheme.error,
                       shape: const CircleBorder(),
