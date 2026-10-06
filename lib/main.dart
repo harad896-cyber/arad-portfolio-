@@ -3037,6 +3037,43 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
             if(type=='direct'&&'${peer['username'] ?? ''}'.isNotEmpty) Text('@'+'${peer['username']}',style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w700)),
             if(type=='direct') Text(peer['is_online']==true?'آنلاین':'آخرین بازدید: '+_homeTime(peer['last_seen']),style:TextStyle(color:scheme.onSurfaceVariant)),
             if(bio.trim().isNotEmpty) Padding(padding:const EdgeInsets.only(top:10),child:Text(bio,textAlign:TextAlign.center,style:TextStyle(height:1.45,color:scheme.onSurfaceVariant))),
+            if(type=='direct') ...[
+              const SizedBox(height:18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CallSessionPage(
+                          conversationId: widget.conversationId,
+                          title: title,
+                          video: false,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.call_rounded),
+                    label: const Text('تماس صوتی'),
+                  ),
+                  const SizedBox(width:10),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CallSessionPage(
+                          conversationId: widget.conversationId,
+                          title: title,
+                          video: true,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.videocam_rounded),
+                    label: const Text('تماس تصویری'),
+                  ),
+                ],
+              ),
+            ],
           ])),
           const SizedBox(height:22),
           if(type=='group'||type=='channel') Card(child:ListTile(leading:Icon(type=='group'?Icons.groups_rounded:Icons.campaign_rounded),title:Text(type=='group'?'اعضای گروه':'اعضای کانال'),subtitle:Text(members.length.toString()+' نفر'),trailing:const Icon(Icons.chevron_left_rounded),onTap:type=='group'?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupProfilePage(conversationId:widget.conversationId,title:title))):null)),
