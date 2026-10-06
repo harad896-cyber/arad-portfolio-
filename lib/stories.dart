@@ -64,7 +64,7 @@ class _StoryAddTile extends StatelessWidget {
   const _StoryAddTile({required this.onTap});
   @override
   Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
-    Container(width: 62, height: 62, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2)), child: const Icon(Icons.add_rounded, size: 30)),
+    Container(width: 62, height: 62, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary.withValues(alpha:.18), Theme.of(context).colorScheme.secondary.withValues(alpha:.10)]), border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha:.75), width: 2), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.16), blurRadius: 12)]), child: const Icon(Icons.add_rounded, size: 30)),
     const SizedBox(height: 5), const Text('استوری من', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
   ])));
 }
@@ -79,7 +79,7 @@ class _StoryTile extends StatelessWidget {
     final name = (p['full_name'] ?? p['username'] ?? 'کاربر').toString();
     final avatar = p['avatar_url']?.toString();
     return GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
-      Container(width: 62, height: 62, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2.5)),
+      Container(width: 62, height: 62, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
       child: CircleAvatar(backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null)),
       const SizedBox(height: 5), Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
     ])));
