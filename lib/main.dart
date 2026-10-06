@@ -2404,7 +2404,7 @@ class _HomePageState extends State<HomePage> {
                       title: Row(children: [
                         Expanded(child: Row(children: [
                           Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
-                          if (type == 'direct' && peer?['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2F9BFF))),
+                          if (type == 'direct' && peer?['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: AnimatedVerifiedBadge(size: 17)),
                         ])),
                         if (lastAt != null) Text(_homeTime(lastAt), style: TextStyle(fontSize: 10.5, color: scheme.onSurfaceVariant)),
                       ]),
@@ -2921,7 +2921,21 @@ class _CallsPageState extends State<CallsPage> {
   }
   Widget _glassCallButton(IconData icon,bool active,VoidCallback tap) {
     final c=Theme.of(context).colorScheme;
-    return Material(color:c.surface.withValues(alpha:.72),shape:const CircleBorder(),child:InkWell(onTap:tap,customBorder:const CircleBorder(),child:Padding(padding:const EdgeInsets.all(18),child:Icon(icon,color:active?c.primary:c.onSurface))));
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: c.primary.withValues(alpha: active ? .24 : .10), blurRadius: 18, spreadRadius: 1)],
+      ),
+      child: Material(
+        color: c.surface.withValues(alpha:.70),
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: tap,
+          customBorder: const CircleBorder(),
+          child: Padding(padding: const EdgeInsets.all(18), child: Icon(icon, color: active ? c.primary : c.onSurface)),
+        ),
+      ),
+    );
   }
 }
 
