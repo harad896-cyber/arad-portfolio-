@@ -2248,11 +2248,33 @@ class _HomePageState extends State<HomePage> {
       children: [
         const StoriesTray(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 14, 6),
-          child: Row(children: [
-            const Expanded(child: Text('گفتگوها', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
-            IconButton.filledTonal(
-              tooltip: 'جستجوی سراسری',
+          padding: const EdgeInsets.fromLTRB(16, 8, 14, 8),
+          child: Row(
+            children: [
+              Container(
+                width: 42, height: 42,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .18), blurRadius: 14, offset: const Offset(0, 5))],
+                ),
+                child: const Icon(Icons.forum_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 11),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('گفتگوها', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                    SizedBox(height: 2),
+                    Text('پیام‌های شما', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+              IconButton.filledTonal(
               onPressed: () async {
                 final result = await showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate());
                 if (!mounted || result == null) return;
@@ -4377,20 +4399,15 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
+          color: Color(appTheme.backgroundSeed),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: dark
-                ? [
-                    scheme.surface,
-                    Color.alphaBlend(scheme.primary.withValues(alpha: .07), scheme.surface),
-                    scheme.surface,
-                  ]
-                : [
-                    scheme.surface,
-                    Color.alphaBlend(scheme.primary.withValues(alpha: .045), scheme.surface),
-                    scheme.surface,
-                  ],
+            colors: [
+              Color(appTheme.backgroundSeed),
+              Color.alphaBlend(scheme.primary.withValues(alpha: dark ? .055 : .035), Color(appTheme.backgroundSeed)),
+              Color(appTheme.backgroundSeed),
+            ],
           ),
         ),
         child: Column(
