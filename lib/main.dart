@@ -2457,7 +2457,11 @@ class _HomePageState extends State<HomePage> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChannelCreatePage())).then((_) => load())),
+        child: Row(children: [
+          Expanded(child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChannelCreatePage())).then((_) => load()))),
+          const SizedBox(width: 8),
+          Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage())))),
+        ]),
       ),
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
         future: _loadContacts(),
@@ -2543,7 +2547,7 @@ class _HomePageState extends State<HomePage> {
           NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
           NavigationDestination(icon: Icon(Icons.people_outline_rounded), selectedIcon: Icon(Icons.people_rounded), label: 'مخاطبین'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'تنظیمات'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'پروفایل'),
+          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'حساب'),
             ],
           ),
         ),
