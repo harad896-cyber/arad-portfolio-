@@ -48,12 +48,9 @@ class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
   Widget build(BuildContext context) {
     final items = <_FeatureItem>[
       _FeatureItem(Icons.lock_outline_rounded, 'قفل برنامه', 'قفل با PIN و احراز هویت بیومتریک', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppLockSettingsPage()))),
-      _FeatureItem(Icons.notifications_none, 'اعلان‌ها', 'تنظیم اعلان‌های محلی برنامه', () async { setState(() => notifications = !notifications); await _save('notifications', notifications); }),
       _FeatureItem(Icons.wallpaper_outlined, 'والپیپر گفتگو', 'تنظیم ظاهر گفتگو روی دستگاه', () => _showWallpaper()),
-      _FeatureItem(Icons.backup_outlined, 'پشتیبان‌گیری و بازیابی', 'وضعیت فعلی پشتیبان‌گیری دستگاه', () async { setState(() => autoBackup = !autoBackup); await _save('auto_backup', autoBackup); }),
-      _FeatureItem(Icons.check_circle_outline, 'رسید خواندن', 'تنظیم ترجیح محلی برای رسید خواندن', () async { setState(() => readReceipts = !readReceipts); await _save('read_receipts', readReceipts); }),
       _FeatureItem(Icons.folder_copy_outlined, 'پوشه‌های واقعی گفتگو', 'ساخت، ویرایش و دسته‌بندی گفتگوها با همگام‌سازی حساب', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatFolderManagerPage()))),
-      _FeatureItem(Icons.lock_rounded, 'Secret Chat', 'گفتگوی محرمانه با رمزنگاری سرتاسری برای چت‌های دونفره', () => _openSecretChat()),
+      _FeatureItem(Icons.lock_rounded, 'Secret Chat', 'گفتگوی محرمانه برای چت‌های دونفره', () => _openSecretChat()),
       _FeatureItem(Icons.timer_outlined, 'حذف خودکار پیام‌ها', 'تعیین زمان حذف واقعی پیام‌های جدید در هر گفتگو', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageAutoDeletePage()))),
     ];
     return Scaffold(
