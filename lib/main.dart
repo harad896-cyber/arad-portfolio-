@@ -3544,12 +3544,23 @@ class _ChatPageState extends State<ChatPage> {
 
   void _scheduleKeyboardScroll() {
     _keyboardScrollTimer?.cancel();
+    // Android/iOS can resize the Scaffold in more than one frame while the
+    // IME animates. Re-scroll after the final inset is applied so the newest
+    // message never remains underneath the keyboard.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _scrollToLatestForKeyboard();
-      _keyboardScrollTimer = Timer(const Duration(milliseconds: 90), () {
+      _keyboardScrollTimer = Timer(const Duration(milliseconds: 120), () {
         if (!mounted || !_composerFocus.hasFocus) return;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToLatestForKeyboard());
+        _scrollToLatestForKeyboard();
+        _keyboardScrollTimer = Timer(const Duration(milliseconds: 220), () {
+          if (!mounted || !_composerFocus.hasFocus) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _composerFocus.hasFocus) {
+              _scrollToLatestForKeyboard();
+            }
+          });
+        });
       });
     });
   }
