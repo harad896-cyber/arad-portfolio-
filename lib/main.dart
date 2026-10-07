@@ -3519,6 +3519,7 @@ class _ChatPageState extends State<ChatPage> {
   RealtimeChannel? channel;
   final ScrollController _messagesScroll = ScrollController();
   final FocusNode _composerFocus = FocusNode();
+  final GlobalKey _latestMessageKey = GlobalKey();
   bool loading = true;
   bool sending = false;
   Map<String, dynamic>? replyMessage;
@@ -3569,11 +3570,24 @@ class _ChatPageState extends State<ChatPage> {
     if (!mounted || !_messagesScroll.hasClients) return;
     final position = _messagesScroll.position;
     if (!position.hasContentDimensions) return;
+
+    // First make the actual last bubble visible. This is more reliable than
+    // relying only on maxScrollExtent while Android is animating the IME.
+    final latestContext = _latestMessageKey.currentContext;
+    if (_lastKeyboardInset > 0 && latestContext != null) {
+      Scrollable.ensureVisible(
+        latestContext,
+        alignment: 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    }
+
     final target = position.maxScrollExtent;
     if ((position.pixels - target).abs() < 2) return;
-    // Keep the newest bubble clear of the IME/composer while the keyboard
-    // is animating. A jump after layout is more reliable than a single
-    // animateTo call during Android IME resize.
+    // After the keyboard resize settles, force the list to its real bottom.
+    // The extra bottom padding keeps the final bubble above the composer/IME.
     if (_lastKeyboardInset > 0) {
       position.jumpTo(target);
     } else {
@@ -4962,12 +4976,24 @@ class _ChatPageState extends State<ChatPage> {
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: EdgeInsets.fromLTRB(12, 96, 12, keyboardInset > 0 ? 180 : 12),
+                          // Keep a real breathing zone below the last bubble.
+                          // It scales with the IME instead of using a fixed value,
+                          // so tall keyboards cannot cover the final message.
+                          padding: EdgeInsets.fromLTRB(
+                            12,
+                            96,
+                            12,
+                            keyboardInset > 0 ? (keyboardInset + 96) : 12,
+                          ),
                           reverse: false,
                           itemCount: timelineItems.length,
                           itemBuilder: (context, i) {
                             final item = timelineItems[i];
-                            return item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                            final child = item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                            return KeyedSubtree(
+                              key: i == timelineItems.length - 1 ? _latestMessageKey : null,
+                              child: child,
+                            );
                           },
                         ),
             ),
