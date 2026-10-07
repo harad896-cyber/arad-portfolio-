@@ -3101,7 +3101,7 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
     }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'رسانه‌ها بارگذاری نشد: '+_friendlyError(e.toString()));}}
   }
   bool _matches(Map<String,dynamic> m){ final type='${m['message_type']??'text'}'; if(tab==0)return type=='image'||type=='video'; if(tab==1)return type=='file'; return type=='audio'||type=='voice'; }
-  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from('attachments').createSignedUrl(path,3600);}catch(_){return null;} }
+  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from('chat-media').createSignedUrl(path,3600);}catch(_){return null;} }
   @override Widget build(BuildContext context){
     final filtered=rows.where(_matches).toList();
     return Scaffold(
