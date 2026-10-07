@@ -3571,11 +3571,18 @@ class _ChatPageState extends State<ChatPage> {
     if (!position.hasContentDimensions) return;
     final target = position.maxScrollExtent;
     if ((position.pixels - target).abs() < 2) return;
-    position.animateTo(
-      target,
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOutCubic,
-    );
+    // Keep the newest bubble clear of the IME/composer while the keyboard
+    // is animating. A jump after layout is more reliable than a single
+    // animateTo call during Android IME resize.
+    if (_lastKeyboardInset > 0) {
+      position.jumpTo(target);
+    } else {
+      position.animateTo(
+        target,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   Future<String?> _attachmentUrl(String path) async {
@@ -4955,7 +4962,7 @@ class _ChatPageState extends State<ChatPage> {
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.fromLTRB(12, 96, 12, 12),
+                          padding: EdgeInsets.fromLTRB(12, 96, 12, keyboardInset > 0 ? 96 : 12),
                           reverse: false,
                           itemCount: timelineItems.length,
                           itemBuilder: (context, i) {
