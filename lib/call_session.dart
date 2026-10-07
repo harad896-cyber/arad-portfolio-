@@ -138,7 +138,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
     try { await _sendSignal({'type': 'reject'}); } catch (_) {}
     await _finishStatus('rejected');
     await _cleanup();
-    if (mounted) Navigator.of(context).maybePop();
+    if (mounted) Navigator.of(context).pop();
   }
 
   Future<String?> _findPeerUserId() async {
@@ -213,7 +213,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
         if (_ending) return;
         _ending = true;
         await _cleanup();
-        if (mounted) Navigator.of(context).maybePop();
+        if (mounted) Navigator.of(context).pop();
       }
     } catch (_) {}
   }
@@ -344,7 +344,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
         if (mounted && !_ending) setState(() => _status = type == 'reject' ? 'تماس رد شد' : 'تماس پایان یافت');
         await _finishStatus(type == 'reject' ? 'rejected' : 'ended');
         await _cleanup();
-        if (mounted) Navigator.of(context).maybePop();
+        if (mounted) Navigator.of(context).pop();
       }
     } catch (_) {
       await _failCall('خطا در برقراری ارتباط صوتی.');
@@ -415,17 +415,60 @@ class _CallSessionPageState extends State<CallSessionPage> {
   }
 
   Future<void> _switchCamera() async {
-    if (!widget.video) return;
+    if (!widget.video || _ending || _cleanedUp) return;
     final stream = _localStream;
-    final track = stream?.getVideoTracks().isNotEmpty == true ? stream!.getVideoTracks().first : null;
-    if (track == null) return;
+    final currentTrack = stream?.getVideoTracks().isNotEmpty == true
+        ? stream!.getVideoTracks().first
+        : null;
+    final peer = _peer;
+    if (currentTrack == null || peer == null) return;
+
     try {
-      await Helper.switchCamera(track);
+      // First use the native WebRTC camera switch. This keeps the existing
+      // sender/connection alive and is the fastest path on Android/iOS.
+      try {
+        await Helper.switchCamera(currentTrack);
+      } catch (_) {
+        // Fallback for platforms where Helper.switchCamera is unreliable:
+        // reacquire the camera with the opposite facing mode and replace the
+        // video sender's track without rebuilding the call.
+        final nextFront = !_frontCamera;
+        final replacement = await navigator.mediaDevices.getUserMedia({
+          'audio': false,
+          'video': {
+            'width': {'ideal': 960, 'max': 960},
+            'height': {'ideal': 540, 'max': 540},
+            'frameRate': {'ideal': 24, 'max': 24},
+            'facingMode': nextFront ? 'user' : 'environment',
+          },
+        });
+        final nextTrack = replacement.getVideoTracks().isNotEmpty
+            ? replacement.getVideoTracks().first
+            : null;
+        if (nextTrack == null) throw Exception('دوربین جدید در دسترس نیست.');
+
+        final senders = await peer.getSenders();
+        RTCRtpSender? videoSender;
+        for (final sender in senders) {
+          if (sender.track?.kind == 'video') {
+            videoSender = sender;
+            break;
+          }
+        }
+        if (videoSender == null) throw Exception('مسیر ویدئو پیدا نشد.');
+
+        await videoSender.replaceTrack(nextTrack);
+        await currentTrack.stop();
+        try { await stream?.removeTrack(currentTrack); } catch (_) {}
+        _localStream?.addTrack(nextTrack);
+        if (_localRenderer != null) _localRenderer!.srcObject = _localStream;
+      }
+
       if (mounted) setState(() => _frontCamera = !_frontCamera);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تغییر دوربین ناموفق بود.')),
+          const SnackBar(content: Text('تغییر دوربین ناموفق بود. دسترسی دوربین را بررسی کنید.')),
         );
       }
     }
@@ -437,7 +480,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
     if (mounted) setState(() => _status = message);
     await _finishStatus('failed');
     await _cleanup();
-    if (mounted) Navigator.of(context).maybePop();
+    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _finishStatus(String status) async {
@@ -464,7 +507,11 @@ class _CallSessionPageState extends State<CallSessionPage> {
     }
     await _finishStatus(status);
     await _cleanup();
-    if (mounted) Navigator.of(context).maybePop();
+    if (mounted) {
+      // PopScope intentionally blocks the system back gesture while a call is
+      // active, but it must not block an explicit hang-up navigation.
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _cleanup() async {
