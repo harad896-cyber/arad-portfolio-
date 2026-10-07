@@ -9,21 +9,38 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build-web:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Build Flutter Web
+        env:
+          BASE_HREF: /arad-portfolio-/
         run: bash scripts/build_web.sh
+
       - name: Verify web output
         run: |
           test -s build/web/index.html
           test -s build/web/flutter_bootstrap.js
-      - name: Upload web artifact
-        uses: actions/upload-artifact@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: arad-messenger-web
           path: build/web
-          if-no-files-found: error
-          retention-days: 14
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
