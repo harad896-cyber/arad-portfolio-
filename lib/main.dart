@@ -269,15 +269,16 @@ class AradMessenger extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       title: 'Arad Messenger',
+      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7C5CFF),
+          seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: const Color(0xFFF9F7FE),
+          surface: Color(0xFFF9F7FE),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF1EEF8),
+        scaffoldBackgroundColor: Color(appTheme.backgroundSeed),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
