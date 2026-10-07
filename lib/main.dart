@@ -612,16 +612,12 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     {'cat':'حساب کاربری','title':'حساب کاربری','desc':'نام، نام کاربری، ایمیل، بیو و عکس پروفایل'},
     {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل'},
     {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی'},
-    {'cat':'اعلان‌ها','title':'اعلان‌ها','desc':'اعلان پیام‌ها، گروه‌ها و گفتگوهای بی‌صدا'},
     {'cat':'تماس‌ها','title':'تماس‌ها','desc':'تماس صوتی و تصویری و سابقه تماس'},
     {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم روشن/تاریک و رنگ رابط برنامه'},
     {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری'},
     {'cat':'گفتگو و پیام‌ها','title':'تنظیمات گفتگو','desc':'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا'},
     {'cat':'گفتگو و پیام‌ها','title':'پوشه‌های گفتگو','desc':'ساخت و مدیریت پوشه‌های گفتگو'},
     {'cat':'گفتگو و پیام‌ها','title':'پیام‌های ذخیره‌شده','desc':'پیام‌هایی که برای خودتان ذخیره کرده‌اید'},
-    {'cat':'داده و ذخیره‌سازی','title':'داده و ذخیره‌سازی','desc':'دانلود خودکار، مصرف داده و دسترسی‌پذیری'},
-    {'cat':'داده و ذخیره‌سازی','title':'پشتیبان‌گیری','desc':'وضعیت پشتیبان‌گیری و تنظیم محلی آن'},
-    {'cat':'محتوا','title':'استیکر و ایموجی','desc':'استیکرها، GIF و ایموجی'},
     {'cat':'محتوا','title':'پیام‌رسانی پیشرفته','desc':'ابزارهای پیشرفته متصل به Backend'},
     {'cat':'درباره','title':'درباره برنامه','desc':'نسخه، معماری و اطلاعات برنامه'},
   ];
@@ -668,16 +664,12 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'حساب کاربری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ProfilePage())); break;
       case 'حریم خصوصی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const PrivacySettingsPage())); break;
       case 'امنیت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage())); break;
-      case 'اعلان‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsPage())); break;
       case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage())); break;
       case 'ظاهر': _showThemeSheet(); break;
       case 'زبان': _showLanguageSheet(); break;
       case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatSettingsPage())); break;
       case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())); break;
       case 'پیام‌های ذخیره‌شده': Navigator.push(context,MaterialPageRoute(builder:(_)=>SavedMessagesPage())); break;
-      case 'داده و ذخیره‌سازی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const DataAndPermissionsPage())); break;
-      case 'پشتیبان‌گیری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const BackupPage())); break;
-      case 'استیکر و ایموجی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const StickersGifsPage())); break;
       case 'پیام‌رسانی پیشرفته': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedFeaturesPage())); break;
       case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutAppPage())); break;
     }
@@ -1086,17 +1078,25 @@ class _ChoiceSheet extends StatelessWidget{
   const _ChoiceSheet({required this.title,required this.options,required this.value,required this.onChanged});
   @override Widget build(BuildContext context)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[Padding(padding:const EdgeInsets.all(18),child:Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w800))),...options.map((o)=>RadioListTile(value:o,groupValue:value,onChanged:(v)=>onChanged(v!),title:Text(o)))]));
 }
-class AppAppearancePage extends StatefulWidget {
+class AppAppearancePage extends StatelessWidget {
   const AppAppearancePage({super.key});
-  @override State<AppAppearancePage> createState()=>_AppAppearancePageState();
-}
-class _AppAppearancePageState extends State<AppAppearancePage>{
-  String mode='خودکار';
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ظاهر برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:RadioListTile(value:'روشن',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('روشن'))),
-    Card(child:RadioListTile(value:'تاریک',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('تاریک'))),
-    Card(child:RadioListTile(value:'خودکار',groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:const Text('خودکار'))),
-  ]));
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('ظاهر برنامه')),
+    body:ListView(padding:const EdgeInsets.all(16),children:[
+      Card(child:RadioListTile<bool>(
+        value:false,
+        groupValue:appTheme.dark,
+        onChanged:(v) async { if(v==null)return; await appTheme.setDark(v); if(context.mounted)Navigator.pop(context); },
+        title:const Text('روشن'),
+      )),
+      Card(child:RadioListTile<bool>(
+        value:true,
+        groupValue:appTheme.dark,
+        onChanged:(v) async { if(v==null)return; await appTheme.setDark(v); if(context.mounted)Navigator.pop(context); },
+        title:const Text('تاریک'),
+      )),
+    ]),
+  );
 }
 class CallHistoryPage extends StatelessWidget {
   const CallHistoryPage({super.key});
@@ -1129,9 +1129,18 @@ class GlobalSearchPage extends StatefulWidget {
   @override State<GlobalSearchPage> createState()=>_GlobalSearchPageState();
 }
 class _GlobalSearchPageState extends State<GlobalSearchPage>{
-  final c=TextEditingController();
-  @override void dispose(){c.dispose();super.dispose();}
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:TextField(controller:c,autofocus:true,decoration:const InputDecoration(hintText:'جستجو در همه گفتگوها و مخاطبین',border:InputBorder.none),onChanged:(_)=>setState((){}))),body:c.text.trim().isEmpty?const Center(child:Text('نام مخاطب، گفتگو یا پیام را جستجو کنید')):ListView(children:const[ _SearchSection(title:'مخاطبین'),_SearchSection(title:'گفتگوها'),_SearchSection(title:'پیام‌ها')]));
+  @override void initState(){
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      if(!mounted)return;
+      showSearch<Map<String,dynamic>?>(context:context,delegate:GlobalSearchDelegate()).then((_){
+        if(mounted)Navigator.maybePop(context);
+      });
+    });
+  }
+  @override Widget build(BuildContext context)=>const Scaffold(
+    body:Center(child:CircularProgressIndicator()),
+  );
 }
 class _SearchSection extends StatelessWidget {
   final String title; const _SearchSection({required this.title});
@@ -2933,19 +2942,85 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
 
 class ConversationToolsPage extends StatefulWidget {
   final String conversationId;
-  const ConversationToolsPage({super.key,required this.conversationId});
+  const ConversationToolsPage({super.key, required this.conversationId});
   @override State<ConversationToolsPage> createState()=>_ConversationToolsPageState();
 }
+
 class _ConversationToolsPageState extends State<ConversationToolsPage>{
-  bool pinned=false,archived=false,muted=false;
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مدیریت گفتگو')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:SwitchListTile(value:pinned,onChanged:(v)=>setState(()=>pinned=v),title:const Text('پین کردن گفتگو'),secondary:const Icon(Icons.push_pin_rounded))),
-    Card(child:SwitchListTile(value:archived,onChanged:(v)=>setState(()=>archived=v),title:const Text('آرشیو گفتگو'),secondary:const Icon(Icons.archive_rounded))),
-    Card(child:SwitchListTile(value:muted,onChanged:(v)=>setState(()=>muted=v),title:const Text('بی‌صدا کردن'),secondary:const Icon(Icons.notifications_off_rounded))),
-    Card(child:ListTile(title:const Text('پوشه گفتگو'),subtitle:const Text('کار / خانواده / ناخوانده‌ها'),leading:const Icon(Icons.folder_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())))),
-    Card(child:ListTile(title:const Text('پس‌زمینه گفتگو'),leading:const Icon(Icons.wallpaper_rounded),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())))),
-    
-  ]));
+  bool loading=true, archived=false;
+
+  @override void initState(){super.initState();_load();}
+
+  Future<void> _load() async {
+    final uid=supabase.auth.currentUser?.id;
+    if(uid==null){if(mounted)setState(()=>loading=false);return;}
+    try{
+      final row=await supabase.from('chat_archives')
+        .select('id')
+        .eq('user_id',uid)
+        .eq('conversation_id',widget.conversationId)
+        .maybeSingle();
+      if(mounted)setState((){archived=row!=null;loading=false;});
+    }catch(e){
+      if(mounted){setState(()=>loading=false);showMsg(context,'وضعیت گفتگو بارگذاری نشد: '+_friendlyError(e.toString()));}
+    }
+  }
+
+  Future<void> _toggleArchive() async {
+    final uid=supabase.auth.currentUser?.id;
+    if(uid==null)return;
+    setState(()=>loading=true);
+    try{
+      if(archived){
+        await supabase.from('chat_archives').delete()
+          .eq('user_id',uid).eq('conversation_id',widget.conversationId);
+      }else{
+        await supabase.from('chat_archives').insert({
+          'user_id':uid,
+          'conversation_id':widget.conversationId,
+        });
+      }
+      if(mounted){
+        setState((){archived=!archived;loading=false;});
+        showMsg(context,archived?'گفتگو به آرشیو منتقل شد.':'گفتگو از آرشیو خارج شد.');
+      }
+    }catch(e){
+      if(mounted){setState(()=>loading=false);showMsg(context,'تغییر آرشیو ناموفق بود: '+_friendlyError(e.toString()));}
+    }
+  }
+
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('مدیریت گفتگو')),
+    body:loading
+      ? const Center(child:CircularProgressIndicator())
+      : ListView(padding:const EdgeInsets.all(16),children:[
+        Card(child:SwitchListTile(
+          value:archived,
+          onChanged:(_)=>_toggleArchive(),
+          title:const Text('آرشیو گفتگو'),
+          subtitle:Text(archived?'این گفتگو در آرشیو است':'این گفتگو در فهرست اصلی است'),
+          secondary:const Icon(Icons.archive_rounded),
+        )),
+        Card(child:ListTile(
+          title:const Text('پوشه گفتگو'),
+          subtitle:const Text('ساخت و مدیریت پوشه‌های واقعی گفتگو'),
+          leading:const Icon(Icons.folder_rounded),
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())),
+        )),
+        Card(child:ListTile(
+          title:const Text('پس‌زمینه گفتگو'),
+          subtitle:const Text('تغییر پس‌زمینه همین گفتگو'),
+          leading:const Icon(Icons.wallpaper_rounded),
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())),
+        )),
+        const SizedBox(height:8),
+        const AppEmptyState(
+          icon:Icons.tune_rounded,
+          title:'گزینه‌های پین و بی‌صدا فعلاً نمایش داده نمی‌شوند',
+          subtitle:'تا زمانی که ذخیره‌سازی واقعی این وضعیت‌ها به حساب کاربر متصل نشود، گزینه نمایشی در برنامه وجود ندارد.',
+        ),
+      ]),
+  );
 }
 
 class ContactsToolsPage extends StatelessWidget {
