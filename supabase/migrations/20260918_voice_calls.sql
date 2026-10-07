@@ -3,7 +3,7 @@ create table if not exists public.call_sessions (
   conversation_id uuid not null references public.conversations(id) on delete cascade,
   caller_id uuid not null references auth.users(id) on delete cascade,
   callee_id uuid not null references auth.users(id) on delete cascade,
-  call_type text not null default 'voice' check (call_type = 'voice'),
+  call_type text not null default 'voice' check (call_type in ('voice','video')),
   status text not null default 'ringing' check (status in ('ringing','accepted','rejected','ended','missed','cancelled','failed')),
   started_at timestamptz not null default now(),
   accepted_at timestamptz,
@@ -79,3 +79,27 @@ with check (
       and (cs.caller_id = (select auth.uid()) or cs.callee_id = (select auth.uid()))
   )
 );
+
+
+-- Keep the call log useful: when an unanswered incoming call is cancelled by
+-- the caller, store it as a missed call instead of a generic cancellation.
+create or replace function public.mark_cancelled_call_as_missed()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if old.status = 'ringing' and new.status = 'cancelled' then
+    new.status := 'missed';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists call_sessions_mark_missed on public.call_sessions;
+create trigger call_sessions_mark_missed
+before update of status on public.call_sessions
+for each row execute function public.mark_cancelled_call_as_missed();
+
+grant execute on function public.mark_cancelled_call_as_missed() to authenticated;
