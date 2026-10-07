@@ -1167,7 +1167,7 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
                       child: Icon(missed ? Icons.phone_missed_rounded : (video ? Icons.videocam_rounded : (incoming ? Icons.call_received_rounded : Icons.call_made_rounded)), color: color),
                     ),
                     title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-                    subtitle: Text([${_time(c['created_at'] ?? c['started_at'])}, if (duration.isNotEmpty) duration].join(' • ')),
+                    subtitle: Text([_time(c['created_at'] ?? c['started_at']), if (duration.isNotEmpty) duration].join(' • ')),
                   ));
                 },
               ),
