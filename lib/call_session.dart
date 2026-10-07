@@ -406,9 +406,13 @@ class _CallSessionPageState extends State<CallSessionPage> {
 
   Future<void> _failCall(String message) async {
     if (_ending) return;
-    if (mounted) setState(() => _status = message);
-    await _finishStatus('failed');
-    await _cleanup();
+    _ending = true;
+    if (mounted) {
+      setState(() => _status = message);
+      Navigator.of(context).maybePop();
+    }
+    unawaited(_finishStatus('failed').catchError((_) {}));
+    unawaited(_cleanup());
   }
 
   Future<void> _finishStatus(String status) async {
@@ -425,14 +429,18 @@ class _CallSessionPageState extends State<CallSessionPage> {
   Future<void> _endCall({bool notifyPeer = true}) async {
     if (_ending) return;
     _ending = true;
+    final status = _connected ? 'ended' : 'cancelled';
+
+    // Never block the red hang-up button on Supabase or WebRTC teardown.
     if (notifyPeer) {
-      try {
-        await _sendSignal({'type': 'hangup'});
-      } catch (_) {}
+      unawaited(_sendSignal({'type': 'hangup'}).catchError((_) {}));
     }
-    await _finishStatus(_connected ? 'ended' : 'cancelled');
-    await _cleanup();
-    if (mounted) Navigator.of(context).maybePop();
+    unawaited(_finishStatus(status).catchError((_) {}));
+
+    if (mounted) {
+      Navigator.of(context).maybePop();
+    }
+    unawaited(_cleanup());
   }
 
   Future<void> _cleanup() async {
@@ -565,8 +573,36 @@ class _CallSessionPageState extends State<CallSessionPage> {
               ),
             ),
             if (_starting)
-              const Positioned.fill(
-                child: ColoredBox(color: Color(0x66000000), child: Center(child: CircularProgressIndicator())),
+              Positioned(
+                top: 14,
+                left: 14,
+                right: 14,
+                child: SafeArea(
+                  bottom: false,
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Color(0xCC17131F),
+                          borderRadius: BorderRadius.all(Radius.circular(18)),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                              SizedBox(width: 9),
+                              Text('در حال اتصال...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
