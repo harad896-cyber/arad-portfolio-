@@ -3631,8 +3631,33 @@ class _ChatPageState extends State<ChatPage> {
           IconButton(onPressed:(){Navigator.pop(ctx);_showReactionPeople(id);},icon:const Icon(Icons.add_circle_outline_rounded))]))); });
   }
   Future<void> _showReactionPeople(String messageId) async {
-    final rows=await supabase.from('message_reactions').select('user_id,reaction').eq('message_id',messageId); if(!mounted)return;
-    await showModalBottomSheet<void>(context:context,showDragHandle:true,builder:(ctx)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('واکنش‌ها',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),const SizedBox(height:10),...List<Map<String,dynamic>>.from(rows).map((r)=>ListTile(leading:Text(r['reaction'].toString(),style:const TextStyle(fontSize:25)),title:Text(r['user_id'].toString()))) ]));
+    try {
+      final rows=List<Map<String,dynamic>>.from(await supabase.from('message_reactions').select('user_id,reaction').eq('message_id',messageId));
+      final ids=rows.map((r)=>r['user_id'].toString()).toSet().toList();
+      final people=<String,Map<String,dynamic>>{};
+      if(ids.isNotEmpty){
+        final profilesRows=await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id',ids);
+        for(final p in List<Map<String,dynamic>>.from(profilesRows)) people['${p['id']}']=p;
+      }
+      if(!mounted)return;
+      await showModalBottomSheet<void>(
+        context:context,showDragHandle:true,
+        builder:(ctx)=>ListView(
+          padding:const EdgeInsets.all(16),
+          children:[
+            const Text('واکنش‌ها',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+            const SizedBox(height:10),
+            ...rows.map((r){
+              final p=people[r['user_id'].toString()];
+              final name=(p?['display_name']??p?['username']??'کاربر').toString();
+              return ListTile(leading:Text(r['reaction'].toString(),style:const TextStyle(fontSize:25)),title:Text(name));
+            }),
+          ],
+        ),
+      );
+    } catch(e) {
+      if(mounted)showMsg(context,'واکنش‌ها بارگذاری نشد: '+_friendlyError(e.toString()));
+    }
   }
   Widget _reactionBar(String messageId) {
     final rs = reactions[messageId] ?? [];
