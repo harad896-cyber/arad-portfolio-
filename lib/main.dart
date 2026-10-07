@@ -3082,14 +3082,41 @@ class _NotificationsPageState extends State<NotificationsPage> {
       onTap:()=>setState(()=>read[i]=true)))));
 }
 
-class SharedMediaPage extends StatelessWidget {
-  const SharedMediaPage({super.key});
-  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(
-    appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),
-    body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
+class SharedMediaPage extends StatefulWidget {
+  final String conversationId;
+  const SharedMediaPage({super.key, this.conversationId=''});
+  @override State<SharedMediaPage> createState()=>_SharedMediaPageState();
 }
-
-
+class _SharedMediaPageState extends State<SharedMediaPage>{
+  bool loading=true; List<Map<String,dynamic>> rows=[]; Map<String,Map<String,dynamic>> attachments={}; int tab=0;
+  @override void initState(){super.initState();_load();}
+  Future<void> _load() async {
+    final id=widget.conversationId; if(id.isEmpty){if(mounted)setState(()=>loading=false);return;}
+    try{
+      final ms=List<Map<String,dynamic>>.from(await supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id',id).order('created_at',ascending:false).limit(200));
+      final ids=ms.map((m)=>'${m['id']}').toList();
+      final aa=<String,Map<String,dynamic>>{};
+      if(ids.isNotEmpty){ final ar=await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id',ids); for(final a in List<Map<String,dynamic>>.from(ar)) aa['${a['message_id']}']=a; }
+      if(mounted)setState((){rows=ms;attachments=aa;loading=false;});
+    }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'رسانه‌ها بارگذاری نشد: '+_friendlyError(e.toString()));}}
+  }
+  bool _matches(Map<String,dynamic> m){ final type='${m['message_type']??'text'}'; if(tab==0)return type=='image'||type=='video'; if(tab==1)return type=='file'; return type=='audio'||type=='voice'; }
+  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from('attachments').createSignedUrl(path,3600);}catch(_){return null;} }
+  @override Widget build(BuildContext context){
+    final filtered=rows.where(_matches).toList();
+    return Scaffold(
+      appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:const [ButtonSegment(value:0,label:Text('عکس و ویدیو')),ButtonSegment(value:1,label:Text('فایل')),ButtonSegment(value:2,label:Text('صدا'))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
+      body:loading?const Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
+        final m=filtered[i]; final a=attachments['${m['id']}']; final name=(a?['file_name']??m['body']??'رسانه').toString(); final type='${m['message_type']??''}';
+        final icon=type=='image'?Icons.image_rounded:type=='video'?Icons.video_file_rounded:type=='file'?Icons.insert_drive_file_rounded:Icons.audiotrack_rounded;
+        return Card(child:ListTile(leading:CircleAvatar(child:Icon(icon)),title:Text(name,maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text('${m['created_at']??''}'),trailing:const Icon(Icons.chevron_left_rounded),onTap:() async {
+          final url=await _url(m); if(url==null){if(mounted)showMsg(context,'لینک این فایل در دسترس نیست.');return;} if(!mounted)return;
+          await showDialog<void>(context:context,builder:(_)=>AlertDialog(title:Text(name),content:SelectableText(url),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('بستن'))]));
+        }));
+      })),
+    );
+  }
+}
 class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی')),body:ListView(padding:const EdgeInsets.all(16),children:[
 ]));}
 
@@ -3311,8 +3338,8 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
           if(type=='group'||type=='channel') Card(child:ListTile(leading:Icon(type=='group'?Icons.groups_rounded:Icons.campaign_rounded),title:Text(type=='group'?'اعضای گروه':'اعضای کانال'),subtitle:Text(members.length.toString()+' نفر'),trailing:const Icon(Icons.chevron_left_rounded),onTap:type=='group'?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupProfilePage(conversationId:widget.conversationId,title:title))):null)),
           Card(child:Column(children:[
             ListTile(leading:const Icon(Icons.search_rounded),title:const Text('جستجوی داخل گفتگو'),onTap:()=>showSearch(context:context,delegate:MessageSearchDelegate(widget.conversationId))),
-            ListTile(leading:const Icon(Icons.photo_library_outlined),title:const Text('رسانه‌ها و فایل‌های مشترک'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SharedMediaPage()))),
-            ListTile(leading:const Icon(Icons.notifications_off_outlined),title:const Text('اعلان‌ها و بی‌صدا کردن'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>NotificationsPage(id:widget.conversationId,title:title)))),
+            ListTile(leading:const Icon(Icons.photo_library_outlined),title:const Text('رسانه‌ها و فایل‌های مشترک'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>SharedMediaPage(conversationId:widget.conversationId)))),
+            
           ])),
           if(type=='group') Card(child:ExpansionTile(leading:const Icon(Icons.people_alt_outlined),title:const Text('اعضای گروه'),children:members.take(50).map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text('${m['role']??'member'}'));}).toList())),
         ],
