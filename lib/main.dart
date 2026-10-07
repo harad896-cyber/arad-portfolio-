@@ -520,43 +520,49 @@ class ChatFoldersPage extends StatefulWidget {
   @override State<ChatFoldersPage> createState()=>_ChatFoldersPageState();
 }
 class _ChatFoldersPageState extends State<ChatFoldersPage> {
-  final folders=<String>['همه گفتگوها','کار','خانواده','ناخوانده‌ها'];
-  @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('پوشه‌های گفتگو')),
-    body: ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: folders.length,
-      itemBuilder: (_, i) => Card(
-        child: ListTile(
-          leading: Icon(i == 0 ? Icons.chat_bubble_outline_rounded : Icons.folder_rounded),
-          title: Text(folders[i]),
-        ),
-      ),
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () => showDialog(
-        context: context,
-        builder: (_) {
-          final c = TextEditingController();
-          return AlertDialog(
-            title: const Text('پوشه جدید'),
-            content: TextField(controller: c, decoration: const InputDecoration(labelText: 'نام پوشه')),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('لغو')),
-              FilledButton(
-                onPressed: () {
-                  if (c.text.trim().isNotEmpty) setState(() => folders.add(c.text.trim()));
-                  Navigator.pop(context);
-                },
-                child: const Text('افزودن'),
-              ),
-            ],
-          );
-        },
-      ),
-      child: const Icon(Icons.add_rounded),
-    ),
-  );
+  bool loading=true;
+  List<Map<String,dynamic>> folders=[];
+  List<Map<String,dynamic>> conversations=[];
+  final Map<String,Set<String>> membersByFolder={};
+  @override void initState(){super.initState();_load();}
+  Future<void> _load() async {
+    final uid=supabase.auth.currentUser?.id;
+    if(uid==null){if(mounted)setState(()=>loading=false);return;}
+    try{
+      final f=await supabase.from('chat_folders').select('id,name,icon_name,sort_order').eq('user_id',uid).order('sort_order');
+      final m=await supabase.from('chat_folder_items').select('folder_id,conversation_id');
+      final cm=await supabase.from('conversation_members').select('conversation_id').eq('user_id',uid);
+      final ids=(cm as List).map((x)=>x['conversation_id'].toString()).toList();
+      List<Map<String,dynamic>> cs=[];
+      if(ids.isNotEmpty){final c=await supabase.from('conversations').select('id,type,title,username,avatar_url').inFilter('id',ids);cs=List<Map<String,dynamic>>.from(c);}
+      final map=<String,Set<String>>{};
+      for(final row in (m as List)){final fid=row['folder_id']?.toString(),cid=row['conversation_id']?.toString();if(fid!=null&&cid!=null)(map[fid]??=<String>{}).add(cid);}
+      if(!mounted)return;
+      setState((){folders=List<Map<String,dynamic>>.from(f);conversations=cs;membersByFolder..clear()..addAll(map);loading=false;});
+    }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'پوشه‌ها بارگذاری نشد: '+_friendlyError(e.toString()));}}
+  }
+  Future<void> _createFolder() async {
+    final c=TextEditingController();
+    final name=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(title:const Text('پوشه جدید'),content:TextField(controller:c,autofocus:true,decoration:const InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text.trim().isEmpty?null:c.text.trim()),child:const Text('افزودن'))]));
+    c.dispose(); final uid=supabase.auth.currentUser?.id; if(uid==null||name==null||name.isEmpty)return;
+    try{await supabase.from('chat_folders').insert({'user_id':uid,'name':name,'icon_name':'folder','sort_order':folders.length});await _load();}catch(e){if(mounted)showMsg(context,'ساخت پوشه ناموفق بود: '+_friendlyError(e.toString()));}
+  }
+  Future<void> _deleteFolder(Map<String,dynamic> folder) async {final id=folder['id']?.toString();if(id==null)return;try{await supabase.from('chat_folder_items').delete().eq('folder_id',id);await supabase.from('chat_folders').delete().eq('id',id);await _load();}catch(e){if(mounted)showMsg(context,'حذف پوشه ناموفق بود: '+_friendlyError(e.toString()));}}
+  Future<void> _editFolder(Map<String,dynamic> folder) async {
+    final c=TextEditingController(text:folder['name']?.toString()??'');
+    final name=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(title:const Text('ویرایش پوشه'),content:TextField(controller:c,autofocus:true,decoration:const InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text.trim().isEmpty?null:c.text.trim()),child:const Text('ذخیره'))]));
+    c.dispose(); final id=folder['id']?.toString(); if(id==null||name==null||name.isEmpty)return;
+    try{await supabase.from('chat_folders').update({'name':name}).eq('id',id);await _load();}catch(e){if(mounted)showMsg(context,'ویرایش پوشه ناموفق بود: '+_friendlyError(e.toString()));}
+  }
+  Future<void> _manageChats(Map<String,dynamic> folder) async {
+    final fid=folder['id']?.toString();if(fid==null)return; final selected=Set<String>.from(membersByFolder[fid]??const <String>{});
+    await showModalBottomSheet(context:context,isScrollControlled:true,showDragHandle:true,builder:(sheet)=>StatefulBuilder(builder:(sheet,setSheet)=>SafeArea(child:SizedBox(height:MediaQuery.of(sheet).size.height*.82,child:Column(children:[
+      Padding(padding:const EdgeInsets.fromLTRB(20,8,20,12),child:Row(children:[const Expanded(child:Text('انتخاب گفتگوها',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),Text(selected.length.toString(),style:TextStyle(color:Theme.of(sheet).colorScheme.primary,fontWeight:FontWeight.w800))])),
+      Expanded(child:conversations.isEmpty?const Center(child:Text('گفتگویی برای افزودن وجود ندارد.')):ListView.builder(itemCount:conversations.length,itemBuilder:(_,i){final c=conversations[i],id=c['id'].toString();final rawTitle=c['title']?.toString().trim()??'';final rawUsername=c['username']?.toString()??'';final title=rawTitle.isNotEmpty?rawTitle:(rawUsername.isNotEmpty?'@'+rawUsername:'گفتگو');final checked=selected.contains(id);return CheckboxListTile(value:checked,title:Text(title),subtitle:Text(c['type']?.toString()??'direct'),secondary:const CircleAvatar(child:Icon(Icons.chat_bubble_outline_rounded,size:19)),onChanged:(v)=>setSheet((){if(v==true)selected.add(id);else selected.remove(id);}));})),
+      Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:()async{try{await supabase.from('chat_folder_items').delete().eq('folder_id',fid);if(selected.isNotEmpty){await supabase.from('chat_folder_items').insert(selected.map((id)=>{'folder_id':fid,'conversation_id':id}).toList());}if(sheet.mounted)Navigator.pop(sheet);await _load();}catch(e){if(mounted)showMsg(context,'ذخیره گفتگوهای پوشه ناموفق بود: '+_friendlyError(e.toString()));}},child:const Text('ذخیره تغییرات'))),
+    ])))));
+  }
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text('ویرایش')),PopupMenuItem(value:'delete',child:Text('حذف'))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:const Text('پوشه جدید')));
 }
 class DataAndPermissionsPage extends StatefulWidget {
   const DataAndPermissionsPage({super.key});
