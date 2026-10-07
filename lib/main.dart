@@ -3534,16 +3534,37 @@ class _ChatPageState extends State<ChatPage> {
   double voiceAmplitude = 0;
   List<double> voiceWaveform = [];
   StreamSubscription<Amplitude>? _voiceAmplitudeSub;
+  Timer? _keyboardScrollTimer;
+  double _lastKeyboardInset = 0;
 
   void _onComposerFocus() {
     if (!_composerFocus.hasFocus) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToLatestForKeyboard());
+    _scheduleKeyboardScroll();
+  }
+
+  void _scheduleKeyboardScroll() {
+    _keyboardScrollTimer?.cancel();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scrollToLatestForKeyboard();
+      _keyboardScrollTimer = Timer(const Duration(milliseconds: 90), () {
+        if (!mounted || !_composerFocus.hasFocus) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToLatestForKeyboard());
+      });
+    });
   }
 
   void _scrollToLatestForKeyboard() {
     if (!mounted || !_messagesScroll.hasClients) return;
-    final target = _messagesScroll.position.maxScrollExtent;
-    _messagesScroll.animateTo(target, duration: const Duration(milliseconds: 180), curve: Curves.easeOutCubic);
+    final position = _messagesScroll.position;
+    if (!position.hasContentDimensions) return;
+    final target = position.maxScrollExtent;
+    if ((position.pixels - target).abs() < 2) return;
+    position.animateTo(
+      target,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   Future<String?> _attachmentUrl(String path) async {
@@ -4805,6 +4826,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _chatReloadDebounce?.cancel();
+    _keyboardScrollTimer?.cancel();
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
@@ -4830,6 +4852,13 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    if (keyboardInset > 0 && (keyboardInset - _lastKeyboardInset).abs() > 1) {
+      _lastKeyboardInset = keyboardInset;
+      _scheduleKeyboardScroll();
+    } else if (keyboardInset == 0 && _lastKeyboardInset != 0) {
+      _lastKeyboardInset = 0;
+    }
     return Scaffold(
       resizeToAvoidBottomInset: true,
       extendBodyBehindAppBar: true,
