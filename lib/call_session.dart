@@ -36,6 +36,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
   String? _callId;
   String? _peerUserId;
   Timer? _durationTimer;
+  Timer? _statusPollTimer;
+  bool _cleanedUp = false;
   DateTime? _connectedAt;
   Duration _duration = Duration.zero;
 
@@ -89,6 +91,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       if (_peerUserId == null || _peerUserId == uid) throw Exception('تماس‌کننده نامعتبر است.');
       await _setupChannel();
       await _createPeerConnection();
+      _startCallStatusMonitor();
       if (mounted) {
         setState(() {
           _starting = false;
@@ -169,6 +172,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
 
       await _setupChannel();
       await _createPeerConnection();
+      _startCallStatusMonitor();
       await _createAndSendOffer();
 
       if (mounted) {
@@ -189,6 +193,29 @@ class _CallSessionPageState extends State<CallSessionPage> {
       }
       await _cleanup();
     }
+  }
+
+  void _startCallStatusMonitor() {
+    _statusPollTimer?.cancel();
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      unawaited(_pollCallStatus());
+    });
+  }
+
+  Future<void> _pollCallStatus() async {
+    final id = _callId;
+    if (id == null || _ending) return;
+    try {
+      final row = await supabase.from('call_sessions').select('status').eq('id', id).maybeSingle();
+      final status = row?['status']?.toString();
+      if (status == null) return;
+      if (status == 'ended' || status == 'cancelled' || status == 'rejected' || status == 'failed') {
+        if (_ending) return;
+        _ending = true;
+        await _cleanup();
+        if (mounted) Navigator.of(context).maybePop();
+      }
+    } catch (_) {}
   }
 
   Future<void> _setupChannel() async {
@@ -407,12 +434,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
   Future<void> _failCall(String message) async {
     if (_ending) return;
     _ending = true;
-    if (mounted) {
-      setState(() => _status = message);
-      Navigator.of(context).maybePop();
-    }
-    unawaited(_finishStatus('failed').catchError((_) {}));
-    unawaited(_cleanup());
+    if (mounted) setState(() => _status = message);
+    await _finishStatus('failed');
+    await _cleanup();
+    if (mounted) Navigator.of(context).maybePop();
   }
 
   Future<void> _finishStatus(String status) async {
@@ -431,19 +456,22 @@ class _CallSessionPageState extends State<CallSessionPage> {
     _ending = true;
     final status = _connected ? 'ended' : 'cancelled';
 
-    // Never block the red hang-up button on Supabase or WebRTC teardown.
+    // Send the hangup first, then immediately stop all media/WebRTC resources.
+    // The database status is also monitored by the other device, so hangup does
+    // not depend on a single Realtime broadcast arriving successfully.
     if (notifyPeer) {
-      unawaited(_sendSignal({'type': 'hangup'}).catchError((_) {}));
+      try { await _sendSignal({'type': 'hangup'}); } catch (_) {}
     }
-    unawaited(_finishStatus(status).catchError((_) {}));
-
-    if (mounted) {
-      Navigator.of(context).maybePop();
-    }
-    unawaited(_cleanup());
+    await _finishStatus(status);
+    await _cleanup();
+    if (mounted) Navigator.of(context).maybePop();
   }
 
   Future<void> _cleanup() async {
+    if (_cleanedUp) return;
+    _cleanedUp = true;
+    _statusPollTimer?.cancel();
+    _statusPollTimer = null;
     _durationTimer?.cancel();
     _durationTimer = null;
     try {
@@ -479,6 +507,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
 
   @override
   void dispose() {
+    _statusPollTimer?.cancel();
     unawaited(_cleanup());
     super.dispose();
   }
