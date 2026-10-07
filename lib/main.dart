@@ -4962,7 +4962,7 @@ class _ChatPageState extends State<ChatPage> {
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: EdgeInsets.fromLTRB(12, 96, 12, keyboardInset > 0 ? 96 : 12),
+                          padding: EdgeInsets.fromLTRB(12, 96, 12, keyboardInset > 0 ? 180 : 12),
                           reverse: false,
                           itemCount: timelineItems.length,
                           itemBuilder: (context, i) {
