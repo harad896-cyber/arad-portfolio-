@@ -34,8 +34,8 @@ import 'advanced_features.dart';
 import 'stories.dart';
 
 
-const double kAppRadius = 16.0;
-const Duration kFastMotion = Duration(milliseconds: 180);
+const double kAppRadius = 18.0;
+const Duration kFastMotion = Duration(milliseconds: 200);
 
 bool _isNetworkFailure(Object error) {
   final value = error.toString().toLowerCase();
@@ -98,7 +98,7 @@ class AppThemeController extends ChangeNotifier {
       // One-time migration to the new high-contrast chat palette.
       dark = false;
       seed = 0xFF8B5CF6;
-      backgroundSeed = 0xFFF3F1F6;
+      backgroundSeed = 0xFFF6F4FA;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
@@ -279,6 +279,7 @@ class AradMessenger extends StatelessWidget {
           surface: Color(0xFFF9F7FE),
         ),
         scaffoldBackgroundColor: Color(appTheme.backgroundSeed),
+        pageTransitionsTheme: const PageTransitionsTheme(),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -290,7 +291,7 @@ class AradMessenger extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xE6F3F1F6),
+          backgroundColor: Color(0xDDF6F4FA),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(
@@ -301,9 +302,9 @@ class AradMessenger extends StatelessWidget {
           iconTheme: IconThemeData(color: Color(0xFF707078)),
         ),
         cardTheme: CardThemeData(
-          elevation: 2,
-          shadowColor: Color(0x18000000),
-          color: Color(0xC9F8F5FF),
+          elevation: 0,
+          shadowColor: Color(0x10000000),
+          color: Color(0xE8FFFFFF),
           surfaceTintColor: Color(0x147C5CFF),
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -312,9 +313,9 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
         listTileTheme: ListTileThemeData(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
-          tileColor: const Color(0xEFFFFFFF),
+          tileColor: const Color(0xF2FFFFFF),
           selectedTileColor: const Color(0x1A8B5CF6),
           iconColor: const Color(0xFF707078),
           minVerticalPadding: 9,
@@ -322,7 +323,7 @@ class AradMessenger extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xFFFFFFFF),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
             borderSide: BorderSide(color: Color(0x19000000)),
@@ -386,14 +387,14 @@ class AradMessenger extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xC209090B),
+          backgroundColor: Color(0xCC09090B),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         cardTheme: CardThemeData(
-          elevation: 2,
-          shadowColor: Color(0x70000000),
-          color: Color(0xD91A1722),
+          elevation: 0,
+          shadowColor: Color(0x50000000),
+          color: Color(0xE016141C),
           surfaceTintColor: Color(0x229B7BFF),
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -402,9 +403,9 @@ class AradMessenger extends StatelessWidget {
           ),
         ),
         listTileTheme: ListTileThemeData(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
-          tileColor: const Color(0xFF171922),
+          tileColor: const Color(0xE61A1820),
           selectedTileColor: const Color(0x248B5CF6),
           iconColor: const Color(0xFFC5BFCE),
           minVerticalPadding: 8,
