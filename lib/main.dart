@@ -1098,17 +1098,84 @@ class AppAppearancePage extends StatelessWidget {
     ]),
   );
 }
-class CallHistoryPage extends StatelessWidget {
+class CallHistoryPage extends StatefulWidget {
   const CallHistoryPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('تاریخچه تماس‌ها')),
-    body:const AppEmptyState(
-      icon:Icons.phone_in_talk_rounded,
-      title:'هنوز تاریخچه تماس ثبت نشده است',
-      subtitle:'وقتی تماس‌های واقعی ثبت شوند، سابقه آن‌ها در اینجا نمایش داده می‌شود.',
-    ),
-  );
+  @override State<CallHistoryPage> createState() => _CallHistoryPageState();
 }
+
+class _CallHistoryPageState extends State<CallHistoryPage> {
+  bool loading = true;
+  List<Map<String, dynamic>> calls = [];
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final rows = await supabase.from('call_sessions')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,started_at,accepted_at,ended_at,created_at')
+          .or('caller_id.eq.$uid,callee_id.eq.$uid')
+          .order('created_at', ascending: false).limit(100);
+      if (!mounted) return;
+      setState(() { calls = List<Map<String, dynamic>>.from(rows); loading = false; });
+    } catch (_) { if (mounted) setState(() => loading = false); }
+  }
+
+  String _duration(Map<String, dynamic> c) {
+    final a = DateTime.tryParse('${c['accepted_at'] ?? ''}');
+    final e = DateTime.tryParse('${c['ended_at'] ?? ''}');
+    if (a == null || e == null || e.isBefore(a)) return '';
+    final d = e.difference(a);
+    if (d.inHours > 0) return '${d.inHours}س ${d.inMinutes.remainder(60)}د';
+    if (d.inMinutes > 0) return '${d.inMinutes}د ${d.inSeconds.remainder(60)}ث';
+    return '${d.inSeconds}ث';
+  }
+
+  String _time(dynamic value) {
+    final dt = DateTime.tryParse('$value')?.toLocal();
+    if (dt == null) return '';
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = supabase.auth.currentUser?.id;
+    return Scaffold(
+      appBar: AppBar(title: const Text('تاریخچه تماس‌ها')),
+      body: loading ? const Center(child: CircularProgressIndicator()) : calls.isEmpty
+          ? const AppEmptyState(icon: Icons.phone_in_talk_rounded, title: 'هنوز تاریخچه تماس ثبت نشده است', subtitle: 'تماس‌های واقعی بعد از برقراری یا پایان تماس اینجا ثبت می‌شوند.')
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                itemCount: calls.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 7),
+                itemBuilder: (_, i) {
+                  final c = calls[i];
+                  final incoming = c['callee_id']?.toString() == uid;
+                  final video = c['call_type']?.toString() == 'video';
+                  final status = c['status']?.toString() ?? '';
+                  final missed = status == 'missed';
+                  final color = missed ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary;
+                  final label = missed ? 'تماس ${video ? 'تصویری' : 'صوتی'} بی‌پاسخ' : status == 'failed' ? 'تماس ناموفق' : status == 'rejected' ? 'تماس رد شد' : incoming ? 'تماس دریافتی' : 'تماس خروجی';
+                  final duration = _duration(c);
+                  return Card(child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: color.withValues(alpha: .12),
+                      child: Icon(missed ? Icons.phone_missed_rounded : (video ? Icons.videocam_rounded : (incoming ? Icons.call_received_rounded : Icons.call_made_rounded)), color: color),
+                    ),
+                    title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text([${_time(c['created_at'] ?? c['started_at'])}, if (duration.isNotEmpty) duration].join(' • ')),
+                  ));
+                },
+              ),
+            ),
+    );
+  }
+}
+
 class NotificationsCenterPage extends StatelessWidget {
   const NotificationsCenterPage({super.key});
   @override Widget build(BuildContext context)=>Scaffold(
@@ -3429,6 +3496,8 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final text = TextEditingController();
   List<Map<String, dynamic>> messages = [];
+  List<Map<String, dynamic>> callSessions = [];
+  List<Map<String, dynamic>> timelineItems = [];
   Map<String, Map<String, dynamic>> profiles = {};
   Map<String, List<Map<String, dynamic>>> reactions = {};
   Map<String, Map<String, dynamic>> attachments = {};
@@ -3585,9 +3654,25 @@ class _ChatPageState extends State<ChatPage> {
           loadedAttachments['${a['message_id']}'] = a;
         }
       }
+      List<Map<String, dynamic>> calls = [];
+      try {
+        final callRows = await supabase.from('call_sessions').select('id,conversation_id,caller_id,callee_id,call_type,status,started_at,accepted_at,ended_at,created_at').eq('conversation_id', widget.id).order('created_at', ascending: true).limit(80);
+        calls = List<Map<String, dynamic>>.from(callRows);
+      } catch (_) {}
+      final merged = <Map<String, dynamic>>[
+        ...loaded.map((m) => <String, dynamic>{...m, '__kind': 'message'}),
+        ...calls.map((c) => <String, dynamic>{...c, '__kind': 'call', 'created_at': c['created_at'] ?? c['started_at']}),
+      ];
+      merged.sort((a, b) {
+        final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return ad.compareTo(bd);
+      });
       if (mounted) {
         setState(() {
           messages = loaded;
+          callSessions = calls;
+          timelineItems = merged;
           reactions = loadedReactions;
           attachments = loadedAttachments;
           loading = false;
@@ -4479,6 +4564,63 @@ class _ChatPageState extends State<ChatPage> {
     ]);
   }
 
+  String _callDuration(Map<String, dynamic> c) {
+    final a = DateTime.tryParse('${c['accepted_at'] ?? ''}');
+    final e = DateTime.tryParse('${c['ended_at'] ?? ''}');
+    if (a == null || e == null || e.isBefore(a)) return '';
+    final d = e.difference(a);
+    if (d.inHours > 0) return '${d.inHours}س ${d.inMinutes.remainder(60)}د';
+    if (d.inMinutes > 0) return '${d.inMinutes}د ${d.inSeconds.remainder(60)}ث';
+    return '${d.inSeconds}ث';
+  }
+
+  Widget _callHistoryTile(Map<String, dynamic> c) {
+    final uid = supabase.auth.currentUser?.id;
+    final incoming = c['callee_id']?.toString() == uid;
+    final video = c['call_type']?.toString() == 'video';
+    final status = c['status']?.toString() ?? '';
+    final missed = status == 'missed';
+    final color = missed ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary;
+    final title = missed
+        ? 'تماس ${video ? 'تصویری' : 'صوتی'} بی‌پاسخ'
+        : status == 'failed'
+            ? 'تماس ناموفق'
+            : status == 'rejected'
+                ? 'تماس رد شد'
+                : incoming
+                    ? 'تماس ${video ? 'تصویری' : 'صوتی'} دریافتی'
+                    : 'تماس ${video ? 'تصویری' : 'صوتی'} خروجی';
+    final duration = _callDuration(c);
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.only(top: 5, bottom: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .10),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: .18)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(missed ? Icons.phone_missed_rounded : (incoming ? Icons.call_received_rounded : Icons.call_made_rounded), size: 19, color: color),
+            const SizedBox(width: 7),
+            Icon(video ? Icons.videocam_rounded : Icons.call_rounded, size: 18, color: color),
+            const SizedBox(width: 7),
+            Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+            if (duration.isNotEmpty) ...[
+              const SizedBox(width: 7),
+              Text('• $duration', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+            const SizedBox(width: 7),
+            Text(_time(c['created_at'] ?? c['started_at']), style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _glassMessageBubble(Map<String, dynamic> m) {
     final mine = m['sender_id'] == supabase.auth.currentUser!.id;
     final sender = _senderName(m);
@@ -4626,6 +4768,20 @@ class _ChatPageState extends State<ChatPage> {
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
+        table: 'call_sessions',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => load(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'call_sessions',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => load(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
         table: 'message_user_deletions',
         callback: (_) => load(),
       )
@@ -4739,15 +4895,18 @@ class _ChatPageState extends State<ChatPage> {
               child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : messages.isEmpty
-                      ? const Center(child: Text('هنوز پیامی وجود ندارد.'))
+                      ? const Center(child: Text('هنوز پیامی یا سابقه تماسی وجود ندارد.'))
                       : ListView.builder(
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.fromLTRB(12, 96, 12, 12),
                           reverse: false,
-                          itemCount: messages.length,
-                          itemBuilder: (context, i) => _glassMessageBubble(messages[i]),
+                          itemCount: timelineItems.length,
+                          itemBuilder: (context, i) {
+                            final item = timelineItems[i];
+                            return item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                          },
                         ),
             ),
             if (replyMessage != null)
