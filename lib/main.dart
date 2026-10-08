@@ -3935,22 +3935,62 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _finishVoiceRecording({bool cancel=false}) async {
     if (!recordingVoice) return;
-    _voiceTimer?.cancel(); await _voiceAmplitudeSub?.cancel();
-    final path = await _voiceRecorder.stop();
-    if (mounted) setState(() { recordingVoice=false; voiceLocked=false; voiceCancelArmed=false; });
-    if (cancel || path==null || path.isEmpty) return;
+    _voiceTimer?.cancel();
+    _voiceTimer = null;
+    await _voiceAmplitudeSub?.cancel();
+    _voiceAmplitudeSub = null;
+
+    String? path;
+    try {
+      path = await _voiceRecorder.stop();
+    } catch (_) {
+      path = null;
+      if (mounted) showMsg(context, 'ضبط ویس متوقف نشد؛ دوباره تلاش کنید.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          recordingVoice = false;
+          voiceLocked = false;
+          voiceCancelArmed = false;
+          voiceAmplitude = .08;
+        });
+      }
+    }
+
+    if (cancel || path == null || path.isEmpty) return;
+
     try {
       final bytes = await XFile(path).readAsBytes();
-      if(bytes.isEmpty) throw Exception('فایل ویس خالی است');
-      setState(()=>sending=true);
-      final storagePath='${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await supabase.storage.from('chat-media').uploadBinary(storagePath,bytes,fileOptions:const FileOptions(contentType:'audio/mp4',upsert:false));
-      final msg=await supabase.from('messages').insert({'conversation_id':widget.id,'sender_id':supabase.auth.currentUser!.id,'body':'پیام صوتی','message_type':'audio','reply_to':replyMessage?['id']}).select().single();
-      await supabase.from('message_attachments').insert({'message_id':msg['id'],'storage_path':storagePath,'file_name':storagePath.split('/').last,'mime_type':'audio/mp4','file_size':bytes.length,'duration_ms':voiceSeconds*1000});
-      if(mounted)setState(()=>replyMessage=null);
+      if (bytes.isEmpty) throw Exception('فایل ویس خالی است');
+      if (mounted) setState(() => sending = true);
+      final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await supabase.storage.from('chat-media').uploadBinary(
+        storagePath,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'audio/mp4', upsert: false),
+      );
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': 'پیام صوتی',
+        'message_type': 'audio',
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': storagePath,
+        'file_name': storagePath.split('/').last,
+        'mime_type': 'audio/mp4',
+        'file_size': bytes.length,
+        'duration_ms': voiceSeconds * 1000,
+      });
+      if (mounted) setState(() => replyMessage = null);
       await load();
-    }catch(e){if(mounted)showMsg(context,'ارسال ویس ناموفق بود: $e');}
-    finally{if(mounted)setState(()=>sending=false);}
+    } catch (e) {
+      if (mounted) showMsg(context, 'ارسال ویس ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
   }
 
   Future<void> toggleVoiceRecording() async {
