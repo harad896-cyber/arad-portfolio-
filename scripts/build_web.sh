@@ -21,7 +21,7 @@ git config --global --add safe.directory "$(pwd)/${FLUTTER_DIR}" 2>/dev/null || 
 "${FLUTTER_DIR}/bin/flutter" pub get
 
 if [ -n "${BASE_HREF:-}" ]; then
-  "${FLUTTER_DIR}/bin/flutter" build web --release --base-href "${BASE_HREF}"
+  "${FLUTTER_DIR}/bin/flutter" build web --release --no-wasm-dry-run --base-href "${BASE_HREF}"
 else
-  "${FLUTTER_DIR}/bin/flutter" build web --release
+  "${FLUTTER_DIR}/bin/flutter" build web --release --no-wasm-dry-run
 fi
