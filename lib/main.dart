@@ -4986,7 +4986,7 @@ class _ChatPageState extends State<ChatPage> {
                             12,
                             96,
                             12,
-                            keyboardInset > 0 ? (keyboardInset + 148) : 16,
+                            keyboardInset > 0 ? 240 : 24,
                           ),
                           reverse: false,
                           itemCount: timelineItems.length,
