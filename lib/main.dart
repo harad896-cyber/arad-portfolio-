@@ -279,7 +279,6 @@ class AradMessenger extends StatelessWidget {
           surface: Color(0xFFF9F7FE),
         ),
         scaffoldBackgroundColor: Color(appTheme.backgroundSeed),
-        pageTransitionsTheme: const PageTransitionsTheme(),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
