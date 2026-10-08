@@ -63,20 +63,31 @@ class _CallSessionPageState extends State<CallSessionPage> {
     if (widget.video) {
       _localRenderer = RTCVideoRenderer();
       _remoteRenderer = RTCVideoRenderer();
-      _initRenderers();
-    }
-    if (widget.incoming && widget.existingCallId != null) {
-      _startIncomingCall();
+      unawaited(_prepareAndStart());
     } else {
-      _startOutgoingCall();
+      unawaited(_startCallFlow());
+    }
+  }
+
+  Future<void> _prepareAndStart() async {
+    try {
+      await _initRenderers();
+    } catch (_) {}
+    if (_cleanedUp) return;
+    await _startCallFlow();
+  }
+
+  Future<void> _startCallFlow() async {
+    if (widget.incoming && widget.existingCallId != null) {
+      await _startIncomingCall();
+    } else {
+      await _startOutgoingCall();
     }
   }
 
   Future<void> _initRenderers() async {
-    try {
-      await _localRenderer?.initialize();
-      await _remoteRenderer?.initialize();
-    } catch (_) {}
+    await _localRenderer?.initialize();
+    await _remoteRenderer?.initialize();
   }
 
   Future<void> _startIncomingCall() async {
@@ -490,7 +501,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       await supabase.from('call_sessions').update({
         'status': status,
         'ended_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', id);
+      }).eq('id', id).timeout(const Duration(seconds: 3));
     } catch (_) {}
   }
 
@@ -502,14 +513,14 @@ class _CallSessionPageState extends State<CallSessionPage> {
     // Send the hangup first, then immediately stop all media/WebRTC resources.
     // The database status is also monitored by the other device, so hangup does
     // not depend on a single Realtime broadcast arriving successfully.
+    // Never make leaving the call screen depend on a network round-trip.
+    // Signal/status updates are best-effort; local media must stop immediately.
     if (notifyPeer) {
-      try { await _sendSignal({'type': 'hangup'}); } catch (_) {}
+      try { await _sendSignal({'type': 'hangup'}).timeout(const Duration(seconds: 1)); } catch (_) {}
     }
-    await _finishStatus(status);
+    unawaited(_finishStatus(status));
     await _cleanup();
     if (mounted) {
-      // PopScope intentionally blocks the system back gesture while a call is
-      // active, but it must not block an explicit hang-up navigation.
       Navigator.of(context).pop();
     }
   }
@@ -542,7 +553,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
     final channel = _channel;
     _channel = null;
     if (channel != null) {
-      try { await supabase.removeChannel(channel); } catch (_) {}
+      try { await supabase.removeChannel(channel).timeout(const Duration(seconds: 2)); } catch (_) {}
     }
   }
 
