@@ -274,12 +274,12 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(appTheme.seed),
+          seedColor: const Color(0xFF5B5CE2),
           brightness: Brightness.light,
-          surface: Color(0xFFF9F7FE),
+          surface: Color(0xFFF8F9FD),
         ),
-        scaffoldBackgroundColor: Color(appTheme.backgroundSeed),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        scaffoldBackgroundColor: const Color(0xFFF5F6FA),
+        visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
@@ -290,7 +290,7 @@ class AradMessenger extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xDDF6F4FA),
+          backgroundColor: Color(0xEEF8F9FD),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(
@@ -307,14 +307,14 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Color(0x147C5CFF),
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
-            side: BorderSide(color: Color(0x1A4F46E5)),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(0x14000000)),
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kAppRadius)),
-          tileColor: const Color(0xF2FFFFFF),
+          tileColor: const Color(0xCCFFFFFF),
           selectedTileColor: const Color(0x1A8B5CF6),
           iconColor: const Color(0xFF707078),
           minVerticalPadding: 9,
@@ -378,15 +378,15 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF9B7BFF),
+          seedColor: const Color(0xFF8B8CF6),
           brightness: Brightness.dark,
           surface: const Color(0xFF15131C),
         ),
-        scaffoldBackgroundColor: const Color(0xFF09090B),
+        scaffoldBackgroundColor: const Color(0xFF080A10),
         appBarTheme: const AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xCC09090B),
+          backgroundColor: Color(0xDD080A10),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
@@ -397,8 +397,8 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Color(0x229B7BFF),
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(kAppRadius)),
-            side: BorderSide(color: Color(0x1FFFFFFF)),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(0x14FFFFFF)),
           ),
         ),
         listTileTheme: ListTileThemeData(
