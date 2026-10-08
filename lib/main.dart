@@ -3559,6 +3559,9 @@ class _ChatPageState extends State<ChatPage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && _composerFocus.hasFocus) {
               _scrollToLatestForKeyboard();
+              _keyboardScrollTimer = Timer(const Duration(milliseconds: 280), () {
+                if (mounted && _composerFocus.hasFocus) _scrollToLatestForKeyboard();
+              });
             }
           });
         });
@@ -4983,7 +4986,7 @@ class _ChatPageState extends State<ChatPage> {
                             12,
                             96,
                             12,
-                            keyboardInset > 0 ? (keyboardInset + 96) : 12,
+                            keyboardInset > 0 ? (keyboardInset + 148) : 16,
                           ),
                           reverse: false,
                           itemCount: timelineItems.length,
