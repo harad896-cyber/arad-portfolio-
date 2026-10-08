@@ -4888,14 +4888,15 @@ class _ChatPageState extends State<ChatPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    if (keyboardInset > 0 && (keyboardInset - _lastKeyboardInset).abs() > 1) {
+    if ((keyboardInset - _lastKeyboardInset).abs() > 1) {
       _lastKeyboardInset = keyboardInset;
-      _scheduleKeyboardScroll();
-    } else if (keyboardInset == 0 && _lastKeyboardInset != 0) {
-      _lastKeyboardInset = 0;
+      if (keyboardInset > 0) _scheduleKeyboardScroll();
     }
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      // The chat body manages IME space explicitly below. This prevents
+      // Flutter's Scaffold resize and our keyboard animation from fighting
+      // each other, which was causing the last bubble to sit under the IME.
+      resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: scheme.surface.withValues(alpha: .62),
@@ -4955,7 +4956,11 @@ class _ChatPageState extends State<ChatPage> {
           ],
         ),
       ),
-      body: Container(
+      body: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: Container(
         decoration: BoxDecoration(
           color: Color(appTheme.backgroundSeed),
           gradient: LinearGradient(
@@ -4982,12 +4987,10 @@ class _ChatPageState extends State<ChatPage> {
                           // Keep a real breathing zone below the last bubble.
                           // It scales with the IME instead of using a fixed value,
                           // so tall keyboards cannot cover the final message.
-                          padding: EdgeInsets.fromLTRB(
-                            12,
-                            96,
-                            12,
-                            keyboardInset > 0 ? 240 : 24,
-                          ),
+                          // The body itself is lifted by the IME inset.
+                          // Keep only enough content space for the composer so
+                          // the final bubble can always scroll above it.
+                          padding: const EdgeInsets.fromLTRB(12, 96, 12, 112),
                           reverse: false,
                           itemCount: timelineItems.length,
                           itemBuilder: (context, i) {
@@ -5109,6 +5112,7 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
