@@ -4941,15 +4941,45 @@ class _ChatPageState extends State<ChatPage> {
                 : const SizedBox.shrink(),
           ),
         ],
+        titleSpacing: 4,
         title: Row(
           children: [
-            const CircleAvatar(radius: 17, child: Icon(Icons.person, size: 18)),
-            const SizedBox(width: 9),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: scheme.primaryContainer,
+                  child: Icon(Icons.person_rounded, size: 20, color: scheme.primary),
+                ),
+                if (_chatType == 'direct')
+                  Positioned(
+                    right: -1,
+                    bottom: -1,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF35C759),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: scheme.surface, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                widget.title,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w850)),
+                  Text(
+                    _chatType == 'direct' ? 'گفتگوی خصوصی' : (_chatType == 'group' ? 'گروه' : 'کانال'),
+                    style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
             ),
           ],
@@ -5038,9 +5068,9 @@ class _ChatPageState extends State<ChatPage> {
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 5, 8, 8),
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 9),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(22),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
@@ -5086,7 +5116,7 @@ class _ChatPageState extends State<ChatPage> {
                               maxLines: 5,
                               textInputAction: TextInputAction.newline,
                               decoration: InputDecoration(
-                                hintText: 'پیام...',
+                                hintText: 'پیام خود را بنویسید…',
                                 filled: true,
                                 fillColor: scheme.surface.withValues(alpha: .48),
                                 border: OutlineInputBorder(
@@ -5100,8 +5130,15 @@ class _ChatPageState extends State<ChatPage> {
                           ),
                           const SizedBox(width: 3),
                           IconButton.filled(
+                            tooltip: 'ارسال پیام',
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(44, 44),
+                              shape: const CircleBorder(),
+                            ),
                             onPressed: sending ? null : sendText,
-                            icon: const Icon(Icons.send_rounded),
+                            icon: sending
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.arrow_upward_rounded),
                           ),
                         ],
                       ),
