@@ -1481,6 +1481,29 @@ Future<void> rememberCurrentSession() async {
 }
 Future<List<String>> rememberedAccountEmails()=>_savedAccountEmails();
 
+class _LoginFeaturePill extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _LoginFeaturePill({required this.icon, required this.text});
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: s.surface.withValues(alpha: .82),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: s.primary.withValues(alpha: .10)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 15, color: s.primary),
+        const SizedBox(width: 5),
+        Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+      ]),
+    );
+  }
+}
+
 class LoginPage extends StatefulWidget {
   final bool addAccount;
   const LoginPage({super.key,this.addAccount=false});
@@ -1515,26 +1538,212 @@ class _LoginPageState extends State<LoginPage>{
     }
   }
   Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
-  @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-    Container(
-      height: 120,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [t.colorScheme.primary, t.colorScheme.secondary]),
-        borderRadius: BorderRadius.circular(24),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final purple = const Color(0xFF30358F);
+    final cyan = const Color(0xFF25C8D9);
+    final lime = const Color(0xFF8BD42A);
+    final pink = const Color(0xFFC83DFF);
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(12, 18, 12, 28),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
+                children: [
+                  // Brand card — inspired by the colorful reference, but original to Arad Messenger.
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: cyan.withValues(alpha: .30), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(color: purple.withValues(alpha: .14), blurRadius: 28, offset: const Offset(0, 12)),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 190,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [const Color(0xFFEFFFFF), const Color(0xFFF3F0FF), const Color(0xFFFFFFFF)],
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset('assets/app_icon.jpg', fit: BoxFit.contain),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('ARAD', style: TextStyle(fontSize: 30, height: .95, fontWeight: FontWeight.w900, letterSpacing: 2.5, color: Color(0xFF30358F))),
+                        const SizedBox(height: 2),
+                        Text('MESSENGER', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 5.2, color: cyan)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Colorful identity strip.
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF30358F), Color(0xFF5A45C7), Color(0xFF1FC6D8)],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(color: cyan.withValues(alpha: .18), blurRadius: 24, offset: const Offset(0, 10)),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52, height: 52,
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), shape: BoxShape.circle),
+                          child: const Icon(Icons.send_rounded, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('پیام‌رسانی سریع و واقعی', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                              SizedBox(height: 4),
+                              Text('گفتگو، گروه، کانال و تماس در یک فضای مدرن.', style: TextStyle(color: Colors.white70, height: 1.35)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Card(
+                    elevation: 0,
+                    color: Colors.white.withValues(alpha: .96),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8, height: 38,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  gradient: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFC83DFF), Color(0xFF25C8D9)]),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(signup ? 'ساخت حساب جدید' : 'ورود به Arad Messenger', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: purple)),
+                                    const SizedBox(height: 3),
+                                    Text(signup ? 'حساب خودت را بساز و شروع کن.' : 'برای ادامه وارد حساب خود شو.', style: TextStyle(color: scheme.onSurfaceVariant)),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                decoration: BoxDecoration(color: pink.withValues(alpha: .12), borderRadius: BorderRadius.circular(14)),
+                                child: Text(signup ? 'NEW' : 'LOGIN', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF9B22C7))),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          if (signup) ...[
+                            TextField(controller: first, decoration: const InputDecoration(labelText: 'نام', prefixIcon: Icon(Icons.person_outline_rounded))),
+                            const SizedBox(height: 12),
+                            TextField(controller: last, decoration: const InputDecoration(labelText: 'نام خانوادگی', prefixIcon: Icon(Icons.badge_outlined))),
+                            const SizedBox(height: 12),
+                          ],
+                          TextField(
+                            controller: email,
+                            keyboardType: TextInputType.emailAddress,
+                            onChanged: (v) => setState(() => emailError = validEmail(v) ? null : 'ایمیل معتبر نیست'),
+                            decoration: InputDecoration(labelText: 'ایمیل', errorText: emailError, prefixIcon: const Icon(Icons.email_outlined)),
+                          ),
+                          if (!signup) ...[
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: password,
+                              obscureText: obscure,
+                              onChanged: (v) => setState(() => passwordError = passwordMessage(v)),
+                              decoration: InputDecoration(
+                                labelText: 'رمز عبور',
+                                errorText: passwordError,
+                                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                                suffixIcon: IconButton(onPressed: () => setState(() => obscure = !obscure), icon: Icon(obscure ? Icons.visibility : Icons.visibility_off)),
+                              ),
+                            ),
+                            Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(onPressed: busy ? null : forgotPassword, child: const Text('رمز را فراموش کرده‌ام'))),
+                          ],
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: signup ? [lime, cyan] : [purple, const Color(0xFF6353D6)]),
+                                borderRadius: BorderRadius.circular(19),
+                                boxShadow: [BoxShadow(color: (signup ? cyan : purple).withValues(alpha: .22), blurRadius: 16, offset: const Offset(0, 7))],
+                              ),
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent),
+                                onPressed: busy ? null : submit,
+                                child: busy
+                                    ? const SizedBox(width: 23, height: 23, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                                    : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                        Icon(signup ? Icons.rocket_launch_rounded : Icons.login_rounded),
+                                        const SizedBox(width: 9),
+                                        Text(signup ? 'ثبت‌نام و دریافت کد' : 'ورود', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                                      ]),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          TextButton.icon(
+                            onPressed: busy ? null : () => setState(() => signup = !signup),
+                            icon: Icon(signup ? Icons.login_rounded : Icons.person_add_alt_1_rounded, size: 19, color: purple),
+                            label: Text(signup ? 'حساب دارم؛ ورود' : 'حساب ندارم؛ ثبت‌نام', style: TextStyle(fontWeight: FontWeight.w800, color: purple)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _LoginFeaturePill(icon: Icons.lock_rounded, text: 'امن'),
+                      const SizedBox(width: 8),
+                      _LoginFeaturePill(icon: Icons.bolt_rounded, text: 'سریع'),
+                      const SizedBox(width: 8),
+                      _LoginFeaturePill(icon: Icons.public_rounded, text: 'جهانی'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
-      child: Image.asset('assets/app_icon.jpg', fit: BoxFit.contain),
-    ),
-    const SizedBox(height:18),const Text('Arad Messenger',textAlign:TextAlign.center,style:TextStyle(fontSize:29,fontWeight:FontWeight.w800)),const SizedBox(height:20),
-    Card(child:Padding(padding:const EdgeInsets.all(18),child:Column(children:[
-      if(signup)...[TextField(controller:first,decoration:const InputDecoration(labelText:'نام',prefixIcon:Icon(Icons.person_outline))),const SizedBox(height:12),TextField(controller:last,decoration:const InputDecoration(labelText:'نام خانوادگی',prefixIcon:Icon(Icons.badge_outlined))),const SizedBox(height:12)],
-      TextField(controller:email,keyboardType:TextInputType.emailAddress,onChanged:(v)=>setState(()=>emailError=validEmail(v)?null:'ایمیل معتبر نیست'),decoration:InputDecoration(labelText:'ایمیل',errorText:emailError,prefixIcon:const Icon(Icons.email_outlined))),
-      if(!signup)...[TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:const Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),],
-      if(!signup)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:busy?null:forgotPassword,child:const Text('رمز را فراموش کرده‌ام'))),
-      const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود'))),
-      const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
-    ])))
-  ]))))));}
+    );
+  }
   @override void dispose(){email.dispose();password.dispose();first.dispose();last.dispose();super.dispose();}
 }
 
