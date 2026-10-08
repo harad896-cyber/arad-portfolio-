@@ -261,12 +261,49 @@ class AradMessenger extends StatelessWidget {
       locale: aradLanguageController.locale,
       supportedLocales: AppStrings.supported.map((x) => Locale(x)),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) => _NetworkStatusBanner(
-        child: Directionality(
-          textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
-          child: child ?? const SizedBox.shrink(),
-        ),
-      ),
+      builder: (context, child) {
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        final base = dark ? const Color(0xFF07060D) : const Color(0xFFF1EEFA);
+        final glowA = dark ? const Color(0xFF17102F) : const Color(0xFFE5DEFF);
+        final glowB = dark ? const Color(0xFF0B2030) : const Color(0xFFE0F4FF);
+        return _NetworkStatusBanner(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: base,
+              gradient: RadialGradient(
+                center: const Alignment(-0.8, -0.9),
+                radius: 1.45,
+                colors: [glowA, base],
+              ),
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                opacity: dark ? .18 : .10,
+                image: const NetworkImage('https://www.transparenttextures.com/patterns/stardust.png'),
+              ),
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                        colors: [glowB.withValues(alpha: .22), Colors.transparent, glowA.withValues(alpha: .12)],
+                      ),
+                    ),
+                  ),
+                ),
+                Directionality(
+                  textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
       debugShowCheckedModeBanner: false,
       title: 'Arad Messenger',
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
@@ -278,7 +315,7 @@ class AradMessenger extends StatelessWidget {
           brightness: Brightness.light,
           surface: const Color(0xFFF5F2FF),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF1EEFA),
+        scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -356,7 +393,7 @@ class AradMessenger extends StatelessWidget {
           brightness: Brightness.dark,
           surface: const Color(0xFF0C0A14),
         ),
-        scaffoldBackgroundColor: const Color(0xFF07060D),
+        scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
