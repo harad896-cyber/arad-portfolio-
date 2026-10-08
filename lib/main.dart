@@ -275,11 +275,6 @@ class AradMessenger extends StatelessWidget {
                 radius: 1.45,
                 colors: [glowA, base],
               ),
-              image: DecorationImage(
-                fit: BoxFit.cover,
-                opacity: dark ? .18 : .10,
-                image: const NetworkImage('https://www.transparenttextures.com/patterns/stardust.png'),
-              ),
             ),
             child: Stack(
               fit: StackFit.expand,
