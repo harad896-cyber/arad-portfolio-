@@ -2471,8 +2471,17 @@ class _HomePageState extends State<HomePage> {
                       final archived = archivedChatIds.contains(id);
 
                       return Material(
-                        color: scheme.surfaceContainerHighest.withValues(alpha: dark ? .42 : .62),
-                        borderRadius: BorderRadius.circular(19),
+                        color: scheme.surfaceContainerHighest.withValues(alpha: dark ? .58 : .76),
+                        elevation: isPinned || unread ? 8 : 5,
+                        shadowColor: scheme.primary.withValues(alpha: dark ? .28 : .14),
+                        surfaceTintColor: scheme.primary.withValues(alpha: dark ? .10 : .055),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(21),
+                          side: BorderSide(
+                            color: scheme.primary.withValues(alpha: dark ? .16 : .075),
+                            width: 1,
+                          ),
+                        ),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load()),
@@ -2480,7 +2489,18 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
                             child: Row(children: [
                               Stack(clipBehavior: Clip.none, children: [
-                                CircleAvatar(radius: 27, backgroundColor: scheme.primaryContainer, backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon, color: scheme.primary, size: 24) : null),
+                                Material(
+                                  elevation: 7,
+                                  shadowColor: scheme.primary.withValues(alpha: dark ? .30 : .16),
+                                  shape: const CircleBorder(),
+                                  color: scheme.primaryContainer,
+                                  child: CircleAvatar(
+                                    radius: 27,
+                                    backgroundColor: scheme.primaryContainer,
+                                    backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                                    child: avatarUrl.isEmpty ? Icon(icon, color: scheme.primary, size: 24) : null,
+                                  ),
+                                ),
                                 if (c['is_online'] == true)
                                   Positioned(right: -1, bottom: -1, child: Container(width: 13, height: 13, decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 2.3)))),
                               ]),
@@ -4799,15 +4819,43 @@ class _ChatPageState extends State<ChatPage> {
                 margin: const EdgeInsets.only(bottom: 7),
                 padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
                 decoration: BoxDecoration(
-                  color: mine ? myBubble : otherBubble,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: mine
+                        ? [
+                            myBubble,
+                            Color.lerp(myBubble, Colors.white, dark ? .08 : .14)!,
+                          ]
+                        : [
+                            otherBubble,
+                            Color.lerp(otherBubble, scheme.primary, dark ? .06 : .035)!,
+                          ],
+                  ),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(mine ? 20 : 5),
-                    bottomRight: Radius.circular(mine ? 5 : 20),
+                    topLeft: const Radius.circular(22),
+                    topRight: const Radius.circular(22),
+                    bottomLeft: Radius.circular(mine ? 22 : 6),
+                    bottomRight: Radius.circular(mine ? 6 : 22),
+                  ),
+                  border: Border.all(
+                    color: mine
+                        ? Colors.white.withValues(alpha: dark ? .13 : .26)
+                        : scheme.primary.withValues(alpha: dark ? .18 : .10),
+                    width: 1,
                   ),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: (mine ? myBubble : Colors.black).withValues(alpha: dark ? .34 : .13),
+                      blurRadius: 18,
+                      spreadRadius: -2,
+                      offset: const Offset(0, 7),
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: dark ? .025 : .70),
+                      blurRadius: 2,
+                      offset: const Offset(0, -1),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -5111,14 +5159,31 @@ class _ChatPageState extends State<ChatPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
                       decoration: BoxDecoration(
-                        color: scheme.surface.withValues(alpha: dark ? .72 : .78),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: scheme.onSurface.withValues(alpha: .08)),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            scheme.surface.withValues(alpha: dark ? .88 : .94),
+                            scheme.primary.withValues(alpha: dark ? .10 : .055),
+                            scheme.surface.withValues(alpha: dark ? .76 : .86),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: scheme.primary.withValues(alpha: dark ? .28 : .16),
+                          width: 1.1,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: .10),
-                            blurRadius: 18,
-                            offset: const Offset(0, -3),
+                            color: scheme.primary.withValues(alpha: dark ? .22 : .10),
+                            blurRadius: 24,
+                            spreadRadius: -4,
+                            offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: dark ? .035 : .62),
+                            blurRadius: 2,
+                            offset: const Offset(0, -1),
                           ),
                         ],
                       ),
