@@ -286,9 +286,11 @@ class _ProfilePageState extends State<ProfilePage> {
     final verified = profile['is_verified'] == true;
     final owner = profile['is_owner'] == true || supabase.auth.currentUser?.email?.toLowerCase() == 'harad896@gmail.com';
 
+    final email = supabase.auth.currentUser?.email?.trim() ?? '';
+    final phone = supabase.auth.currentUser?.phone?.trim() ?? '';
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 14, 110),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 110),
       children: [
         glass(Padding(
           padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
@@ -321,10 +323,32 @@ class _ProfilePageState extends State<ProfilePage> {
         )),
         const SizedBox(height: 12),
         glass(Column(children: [
+          if (email.isNotEmpty || phone.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('اطلاعات حساب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: s.onSurface)),
+                const SizedBox(height: 10),
+                if (email.isNotEmpty) Row(children: [
+                  Icon(Icons.email_outlined, size: 19, color: s.primary),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(email, overflow: TextOverflow.ellipsis, textDirection: TextDirection.ltr)),
+                ]),
+                if (phone.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Icon(Icons.phone_outlined, size: 19, color: s.primary),
+                    const SizedBox(width: 10),
+                    Text(phone, textDirection: TextDirection.ltr),
+                  ]),
+                ],
+              ]),
+            ),
+          if (email.isNotEmpty || phone.isNotEmpty) const Divider(height: 1),
           ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.person_add_alt_1_rounded, color: s.primary)),
-            title: const Text('افزودن حساب', style: TextStyle(fontWeight: FontWeight.w800)),
-            subtitle: const Text('تا ۳ حساب روی دستگاه'),
+            title: const Text('حساب‌ها', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('مدیریت و افزودن حساب‌های دیگر'),
             onTap: switchAccount,
           ),
           const Divider(height: 1),
@@ -345,14 +369,15 @@ class _ProfilePageState extends State<ProfilePage> {
           const Divider(height: 1),
           ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.palette_rounded, color: s.primary)),
-            title: const Text('پس‌زمینه چت', style: TextStyle(fontWeight: FontWeight.w800)),
-            subtitle: const Text('رنگ پس‌زمینه برای همین حساب روی این دستگاه'),
+            title: const Text('شخصی‌سازی چت', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('پس‌زمینه و ظاهر گفتگوها'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatBackgroundPage())),
           ),
           const Divider(height: 1),
           ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.bookmark_rounded, color: s.primary)),
             title: const Text('پیام‌های ذخیره‌شده', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('دسترسی سریع به پیام‌های مهم'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage())),
           ),
           const Divider(height: 1),
