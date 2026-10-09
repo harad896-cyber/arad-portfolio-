@@ -3523,6 +3523,38 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  List<Map<String, dynamic>> get _displayTimelineItems {
+    final output = <Map<String, dynamic>>[];
+    DateTime? previousDay;
+    for (final item in timelineItems) {
+      final parsed = DateTime.tryParse('${item['created_at'] ?? ''}')?.toLocal();
+      if (parsed != null) {
+        final day = DateTime(parsed.year, parsed.month, parsed.day);
+        if (previousDay == null || day != previousDay) {
+          output.add({'__kind': 'date_separator', 'created_at': item['created_at'], 'label': _dateLabel(item['created_at'])});
+          previousDay = day;
+        }
+      }
+      output.add(item);
+    }
+    return output;
+  }
+
+  Widget _dateSeparator(String label) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: scheme.surface.withValues(alpha: .88),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: scheme.outline.withValues(alpha: .14)),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+      ),
+    );
+  }
   final text = TextEditingController();
   List<Map<String, dynamic>> messages = [];
   List<Map<String, dynamic>> callSessions = [];
@@ -5104,12 +5136,14 @@ class _ChatPageState extends State<ChatPage> {
                           // the final bubble can always scroll above it.
                           padding: const EdgeInsets.fromLTRB(12, 96, 12, 112),
                           reverse: false,
-                          itemCount: timelineItems.length,
+                          itemCount: _displayTimelineItems.length,
                           itemBuilder: (context, i) {
-                            final item = timelineItems[i];
-                            final child = item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                            final item = _displayTimelineItems[i];
+                            final child = item['__kind'] == 'date_separator'
+                                ? _dateSeparator((item['label'] ?? '').toString())
+                                : item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
                             return KeyedSubtree(
-                              key: i == timelineItems.length - 1 ? _latestMessageKey : null,
+                              key: i == _displayTimelineItems.length - 1 ? _latestMessageKey : null,
                               child: child,
                             );
                           },
