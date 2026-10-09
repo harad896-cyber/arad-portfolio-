@@ -3570,6 +3570,28 @@ class _ChatPageState extends State<ChatPage> {
     return output;
   }
 
+  Widget _systemTimelineTile(Map<String, dynamic> item) {
+    final scheme = Theme.of(context).colorScheme;
+    final actorId = item['actor_id']?.toString() ?? '';
+    final actor = profiles[actorId];
+    final name = (actor?['display_name'] ?? actor?['username'] ?? 'کاربر').toString();
+    final label = item['system_action'] == 'group_created'
+        ? '$name این گروه را ایجاد کرد'
+        : 'رویداد گروه';
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: scheme.secondaryContainer.withValues(alpha: .68),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(label, textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: scheme.onSecondaryContainer)),
+      ),
+    );
+  }
+
   Widget _dateSeparator(String label) {
     final scheme = Theme.of(context).colorScheme;
     return Center(
@@ -3775,6 +3797,9 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> load() async {
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     try {
+      final conversation = Map<String, dynamic>.from(await supabase
+          .from('conversations').select('id,type,title,created_by,created_at')
+          .eq('id', widget.id).single());
       final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120);
       final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
       final uid = supabase.auth.currentUser?.id;
@@ -3783,9 +3808,13 @@ class _ChatPageState extends State<ChatPage> {
         final hidden = {for (final r in List<Map<String, dynamic>>.from(deletedRows)) '${r['message_id']}'};
         loaded.removeWhere((m) => hidden.contains('${m['id']}'));
       }
-      final senderIds = loaded.map((m) => '${m['sender_id']}').toSet().toList();
-      if (senderIds.isNotEmpty) {
-        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', senderIds);
+      final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
+      if (conversation['type'] == 'group' && conversation['created_by'] != null) {
+        senderIds.add(conversation['created_by'].toString());
+      }
+      final senderIdList = senderIds.toList();
+      if (senderIdList.isNotEmpty) {
+        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', senderIdList);
         profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
       }
       final ids = loaded.map((m) => '${m['id']}').toList();
@@ -3809,6 +3838,13 @@ class _ChatPageState extends State<ChatPage> {
       final merged = <Map<String, dynamic>>[
         ...loaded.map((m) => <String, dynamic>{...m, '__kind': 'message'}),
         ...calls.map((c) => <String, dynamic>{...c, '__kind': 'call', 'created_at': c['created_at'] ?? c['started_at']}),
+        if (conversation['type'] == 'group' && conversation['created_at'] != null)
+          <String, dynamic>{
+            '__kind': 'system',
+            'system_action': 'group_created',
+            'actor_id': conversation['created_by'],
+            'created_at': conversation['created_at'],
+          },
       ];
       merged.sort((a, b) {
         final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -5171,7 +5207,9 @@ class _ChatPageState extends State<ChatPage> {
                             final item = _displayTimelineItems[i];
                             final child = item['__kind'] == 'date_separator'
                                 ? _dateSeparator((item['label'] ?? '').toString())
-                                : item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                                : item['__kind'] == 'system'
+                                    ? _systemTimelineTile(item)
+                                    : item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
                             return KeyedSubtree(
                               key: i == _displayTimelineItems.length - 1 ? _latestMessageKey : null,
                               child: child,
