@@ -188,68 +188,100 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     final search = TextEditingController();
     final selected = <String>{};
     try {
+      // Group invites must come from the user's saved contacts, not an unrestricted
+      // directory of every profile in the database.
+      final uid = db.auth.currentUser?.id;
+      if (uid == null) throw Exception('برای افزودن مخاطب ابتدا وارد حساب شوید.');
+      final contactRows = await db.from('contacts').select('contact_id').eq('user_id', uid);
+      final contactIds = (contactRows as List)
+          .map((row) => row['contact_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty && id != uid)
+          .toSet()
+          .toList();
+      final existing = members.map((m) => m['user_id'].toString()).toSet();
+      final eligibleIds = contactIds.where((id) => !existing.contains(id)).toList();
+      final contactProfiles = eligibleIds.isEmpty
+          ? <Map<String, dynamic>>[]
+          : List<Map<String, dynamic>>.from(await db
+              .from('profiles')
+              .select('id,display_name,username,avatar_url,is_verified')
+              .inFilter('id', eligibleIds));
+      contactProfiles.sort((a, b) =>
+          (a['display_name'] ?? a['username'] ?? '').toString().toLowerCase()
+              .compareTo((b['display_name'] ?? b['username'] ?? '').toString().toLowerCase()));
+
       final added = await showModalBottomSheet<List<String>>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
         builder: (sheet) {
-          List<Map<String, dynamic>> results = [];
-          bool loadingUsers = false;
-          int searchGeneration = 0;
-          String searchError = '';
+          List<Map<String, dynamic>> results = List<Map<String, dynamic>>.from(contactProfiles);
           return StatefulBuilder(builder: (sheet, setSheet) {
-            Future<void> findUsers(String q) async {
-              final term = q.trim();
-              final generation = ++searchGeneration;
-              if (term.length < 2) {
-                setSheet(() { results = []; searchError = ''; loadingUsers = false; });
-                return;
-              }
-              setSheet(() { loadingUsers = true; searchError = ''; });
-              try {
-                // Query each searchable field separately: raw PostgREST .or() filters
-                // break on punctuation in names/usernames and can silently return no users.
-                final rows = await Future.wait([
-                  db.from('profiles').select('id,display_name,username,avatar_url,is_verified').ilike('display_name', '%$term%').limit(20),
-                  db.from('profiles').select('id,display_name,username,avatar_url,is_verified').ilike('username', '%$term%').limit(20),
-                ]);
-                if (!sheet.mounted || generation != searchGeneration) return;
-                final existing = members.map((m) => m['user_id'].toString()).toSet();
-                final uid = db.auth.currentUser?.id;
-                final merged = <String, Map<String, dynamic>>{};
-                for (final batch in rows) {
-                  for (final raw in batch) {
-                    final user = Map<String, dynamic>.from(raw);
-                    final id = user['id']?.toString() ?? '';
-                    if (id.isNotEmpty && id != uid && !existing.contains(id)) merged[id] = user;
-                  }
-                }
-                setSheet(() { results = merged.values.toList(); searchError = ''; });
-              } catch (e) {
-                if (!sheet.mounted || generation != searchGeneration) return;
-                setSheet(() { results = []; searchError = 'جستجوی کاربران ناموفق بود: $e'; });
-              } finally {
-                if (sheet.mounted && generation == searchGeneration) setSheet(() => loadingUsers = false);
-              }
+            void filterContacts(String q) {
+              final term = q.trim().toLowerCase();
+              setSheet(() {
+                results = contactProfiles.where((user) {
+                  if (term.isEmpty) return true;
+                  final name = (user['display_name'] ?? '').toString().toLowerCase();
+                  final username = (user['username'] ?? '').toString().toLowerCase();
+                  return name.contains(term) || username.contains(term);
+                }).toList();
+              });
             }
+
             return SafeArea(child: Padding(
               padding: EdgeInsets.only(left: 16, right: 16, bottom: MediaQuery.viewInsetsOf(sheet).bottom + 16),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('افزودن اعضا', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+                const Text('افزودن از مخاطبین', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                Text('فقط مخاطب‌هایی نمایش داده می‌شوند که قبلاً ذخیره کرده‌اید و هنوز عضو این گروه نیستند.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Theme.of(sheet).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 12),
-                TextField(controller: search, autofocus: true, onChanged: findUsers, decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), hintText: 'نام یا آیدی کاربر')),
+                TextField(
+                  controller: search,
+                  autofocus: true,
+                  onChanged: filterContacts,
+                  decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), hintText: 'جستجو در مخاطبین'),
+                ),
                 const SizedBox(height: 8),
-                if (loadingUsers) const LinearProgressIndicator(minHeight: 2),
-                if (searchError.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text(searchError, style: TextStyle(color: Theme.of(sheet).colorScheme.error))),
-                if (!loadingUsers && searchError.isEmpty && search.text.trim().length >= 2 && results.isEmpty) const Padding(padding: EdgeInsets.all(18), child: Text('کاربری پیدا نشد. نام یا آیدی را دقیق‌تر وارد کنید.', textAlign: TextAlign.center)),
-                ConstrainedBox(constraints: const BoxConstraints(maxHeight: 360), child: ListView(shrinkWrap: true, children: results.map((u) {
-                  final id = u['id'].toString(); final checked = selected.contains(id); final avatar = (u['avatar_url'] ?? '').toString();
-                  return CheckboxListTile(value: checked, onChanged: (_) => setSheet(() => checked ? selected.remove(id) : selected.add(id)),
-                    secondary: CircleAvatar(backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar.isEmpty ? const Icon(Icons.person) : null),
-                    title: Text((u['display_name'] ?? u['username'] ?? 'کاربر').toString()), subtitle: Text((u['username'] ?? '').toString().isEmpty ? '' : '@${u['username']}'));
-                }).toList())),
+                if (contactProfiles.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text('مخاطبِ واجد شرایطی ندارید. ابتدا کاربر را از بخش «مخاطبین» اضافه کنید.',
+                        textAlign: TextAlign.center),
+                  )
+                else if (results.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Text('در مخاطبین شما نتیجه‌ای پیدا نشد.', textAlign: TextAlign.center),
+                  ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  child: ListView(shrinkWrap: true, children: results.map((user) {
+                    final id = user['id'].toString();
+                    final checked = selected.contains(id);
+                    final avatar = (user['avatar_url'] ?? '').toString();
+                    return CheckboxListTile(
+                      value: checked,
+                      onChanged: (_) => setSheet(() => checked ? selected.remove(id) : selected.add(id)),
+                      secondary: CircleAvatar(
+                        backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                        child: avatar.isEmpty ? const Icon(Icons.person) : null,
+                      ),
+                      title: Text((user['display_name'] ?? user['username'] ?? 'کاربر').toString()),
+                      subtitle: (user['username'] ?? '').toString().isEmpty
+                          ? null
+                          : Text('@${user['username']}'),
+                    );
+                  }).toList()),
+                ),
                 const SizedBox(height: 10),
-                FilledButton.icon(onPressed: selected.isEmpty ? null : () => Navigator.pop(sheet, selected.toList()), icon: const Icon(Icons.person_add_alt_1_rounded), label: Text(selected.isEmpty ? 'انتخاب اعضا' : 'افزودن ${selected.length} نفر')),
+                FilledButton.icon(
+                  onPressed: selected.isEmpty ? null : () => Navigator.pop(sheet, selected.toList()),
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: Text(selected.isEmpty ? 'انتخاب مخاطب' : 'افزودن ${selected.length} نفر'),
+                ),
               ]),
             ));
           });
@@ -263,17 +295,14 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           'p_conversation_id': widget.conversationId,
           'p_user_ids': added,
         });
-        // RPCs may return void/null even when successful. Verify the database state
-        // instead of treating a null return value as a failed add.
         await load();
         final after = members.map((m) => m['user_id'].toString()).toSet();
         final count = after.difference(before).length;
         if (count <= 0) {
-          toast('عضوی اضافه نشد. بررسی کنید کاربران انتخاب‌شده در دسترس باشند و شما اجازه افزودن عضو داشته باشید.');
+          toast('عضوی اضافه نشد. دسترسی مدیر و تنظیمات سرور را بررسی کنید.');
           return;
         }
         toast('$count عضو به گروه اضافه شد.');
-        return;
       } on PostgrestException catch (e) {
         final code = e.code ?? '';
         final message = e.message.toString();
@@ -288,8 +317,12 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         }
         throw Exception('سرور افزودن عضو را رد کرد: ${e.message}');
       }
-    } catch (e) { toast('افزودن عضو ناموفق بود: $e'); }
-    finally { search.dispose(); if (mounted) setState(() => busy = false); }
+    } catch (e) {
+      toast('افزودن عضو ناموفق بود: $e');
+    } finally {
+      search.dispose();
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   Future<void> removeMember(String id) async {
