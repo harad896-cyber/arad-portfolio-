@@ -2869,25 +2869,47 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
   final search = TextEditingController();
   List<Map<String, dynamic>> found = [];
   List<Map<String, dynamic>> selected = [];
+  List<Map<String, dynamic>> availableContacts = [];
+  bool loadingContacts = true;
   bool busy = false;
   String? titleError;
 
-  Future<void> findUsers(String q) async {
-    if (q.trim().isEmpty) {
-      setState(() => found = []);
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
+    loadContacts();
+  }
+
+  Future<void> loadContacts() async {
     try {
-      final rows = await supabase.rpc('search_profiles', params: {'search_text': q.trim()});
-      if (mounted) setState(() => found = List<Map<String, dynamic>>.from(rows));
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) throw Exception('ابتدا وارد حساب شوید.');
+      final rows = await supabase.from('contacts').select('contact_id').eq('user_id', uid);
+      final ids = (rows as List).map((r) => r['contact_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty && id != uid).toSet().toList();
+      final profiles = ids.isEmpty ? <Map<String,dynamic>>[] :
+        List<Map<String,dynamic>>.from(await supabase.from('profiles')
+          .select('id,display_name,username,avatar_url').inFilter('id', ids));
+      profiles.sort((a,b) => (a['display_name'] ?? a['username'] ?? '').toString().toLowerCase()
+          .compareTo((b['display_name'] ?? b['username'] ?? '').toString().toLowerCase()));
+      if (mounted) setState(() { availableContacts = profiles; found = profiles; loadingContacts = false; });
     } catch (e) {
-      if (mounted) showMsg(context, 'جستجو ناموفق بود: $e');
+      if (mounted) { setState(() => loadingContacts = false); showMsg(context, 'مخاطبین بارگذاری نشدند: $e'); }
     }
+  }
+
+  void findUsers(String q) {
+    final term = q.trim().toLowerCase();
+    setState(() {
+      found = availableContacts.where((p) =>
+        (p['display_name'] ?? '').toString().toLowerCase().contains(term) ||
+        (p['username'] ?? '').toString().toLowerCase().contains(term)).toList();
+    });
   }
 
   Future<void> createGroup() async {
     if (title.text.trim().isEmpty) { setState(() => titleError = 'نام گروه را وارد کنید.'); return; }
-    if (selected.isEmpty) { showMsg(context, 'حداقل یک عضو را انتخاب کنید.'); return; }
+    if (selected.isEmpty) { showMsg(context, 'حداقل یک مخاطب را انتخاب کنید.'); return; }
     setState(() => busy = true);
     try {
       final uid = supabase.auth.currentUser!.id;
@@ -2920,7 +2942,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       body: Column(
         children: [
           Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: const OutlineInputBorder()))),
-          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'افزودن اعضا...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
+          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'جستجو و انتخاب از مخاطبین...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
             SizedBox(
               height: 60,
@@ -2939,7 +2961,15 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
               ),
             ),
           Expanded(
-            child: ListView(
+            child: loadingContacts
+                ? const Center(child: CircularProgressIndicator())
+                : found.isEmpty
+                  ? Center(child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(availableContacts.isEmpty
+                        ? 'مخاطبی ندارید. ابتدا از بخش «مخاطبین» افراد را اضافه کنید.'
+                        : 'مخاطبی با این نام پیدا نشد.', textAlign: TextAlign.center)))
+                  : ListView(
               children: found.map((p) {
                 final isSelected = selected.any((x) => x['id'] == p['id']);
                 return ListTile(
