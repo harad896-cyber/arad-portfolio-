@@ -195,9 +195,9 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         builder: (sheet) {
           List<Map<String, dynamic>> results = [];
           bool loadingUsers = false;
+          int searchGeneration = 0;
+          String searchError = '';
           return StatefulBuilder(builder: (sheet, setSheet) {
-            int searchGeneration = 0;
-            String searchError = '';
             Future<void> findUsers(String q) async {
               final term = q.trim();
               final generation = ++searchGeneration;
