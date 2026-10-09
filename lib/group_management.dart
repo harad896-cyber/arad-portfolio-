@@ -196,16 +196,41 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           List<Map<String, dynamic>> results = [];
           bool loadingUsers = false;
           return StatefulBuilder(builder: (sheet, setSheet) {
+            int searchGeneration = 0;
+            String searchError = '';
             Future<void> findUsers(String q) async {
               final term = q.trim();
-              if (term.length < 2) { setSheet(() => results = []); return; }
-              setSheet(() => loadingUsers = true);
+              final generation = ++searchGeneration;
+              if (term.length < 2) {
+                setSheet(() { results = []; searchError = ''; loadingUsers = false; });
+                return;
+              }
+              setSheet(() { loadingUsers = true; searchError = ''; });
               try {
-                final rows = await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').or('display_name.ilike.%$term%,username.ilike.%$term%').limit(30);
+                // Query each searchable field separately: raw PostgREST .or() filters
+                // break on punctuation in names/usernames and can silently return no users.
+                final rows = await Future.wait([
+                  db.from('profiles').select('id,display_name,username,avatar_url,is_verified').ilike('display_name', '%$term%').limit(20),
+                  db.from('profiles').select('id,display_name,username,avatar_url,is_verified').ilike('username', '%$term%').limit(20),
+                ]);
+                if (!sheet.mounted || generation != searchGeneration) return;
                 final existing = members.map((m) => m['user_id'].toString()).toSet();
-                setSheet(() => results = List<Map<String, dynamic>>.from(rows).where((r) => !existing.contains(r['id'].toString())).toList());
-              } catch (_) { setSheet(() => results = []); }
-              finally { if (sheet.mounted) setSheet(() => loadingUsers = false); }
+                final uid = db.auth.currentUser?.id;
+                final merged = <String, Map<String, dynamic>>{};
+                for (final batch in rows) {
+                  for (final raw in batch) {
+                    final user = Map<String, dynamic>.from(raw);
+                    final id = user['id']?.toString() ?? '';
+                    if (id.isNotEmpty && id != uid && !existing.contains(id)) merged[id] = user;
+                  }
+                }
+                setSheet(() { results = merged.values.toList(); searchError = ''; });
+              } catch (e) {
+                if (!sheet.mounted || generation != searchGeneration) return;
+                setSheet(() { results = []; searchError = 'جستجوی کاربران ناموفق بود: $e'; });
+              } finally {
+                if (sheet.mounted && generation == searchGeneration) setSheet(() => loadingUsers = false);
+              }
             }
             return SafeArea(child: Padding(
               padding: EdgeInsets.only(left: 16, right: 16, bottom: MediaQuery.viewInsetsOf(sheet).bottom + 16),
@@ -215,6 +240,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                 TextField(controller: search, autofocus: true, onChanged: findUsers, decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), hintText: 'نام یا آیدی کاربر')),
                 const SizedBox(height: 8),
                 if (loadingUsers) const LinearProgressIndicator(minHeight: 2),
+                if (searchError.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text(searchError, style: TextStyle(color: Theme.of(sheet).colorScheme.error))),
+                if (!loadingUsers && searchError.isEmpty && search.text.trim().length >= 2 && results.isEmpty) const Padding(padding: EdgeInsets.all(18), child: Text('کاربری پیدا نشد. نام یا آیدی را دقیق‌تر وارد کنید.', textAlign: TextAlign.center)),
                 ConstrainedBox(constraints: const BoxConstraints(maxHeight: 360), child: ListView(shrinkWrap: true, children: results.map((u) {
                   final id = u['id'].toString(); final checked = selected.contains(id); final avatar = (u['avatar_url'] ?? '').toString();
                   return CheckboxListTile(value: checked, onChanged: (_) => setSheet(() => checked ? selected.remove(id) : selected.add(id)),
@@ -230,18 +257,23 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       );
       if (added == null || added.isEmpty) return;
       setState(() => busy = true);
-      int count = 0;
+      final before = members.map((m) => m['user_id'].toString()).toSet();
       try {
-        final result = await db.rpc('add_group_members', params: {
+        await db.rpc('add_group_members', params: {
           'p_conversation_id': widget.conversationId,
           'p_user_ids': added,
         });
-        count = result is num ? result.toInt() : int.tryParse(result.toString()) ?? 0;
+        // RPCs may return void/null even when successful. Verify the database state
+        // instead of treating a null return value as a failed add.
+        await load();
+        final after = members.map((m) => m['user_id'].toString()).toSet();
+        final count = after.difference(before).length;
         if (count <= 0) {
-          await load();
-          toast('عضو جدیدی اضافه نشد؛ ممکن است کاربران انتخاب‌شده از قبل عضو گروه باشند.');
+          toast('عضوی اضافه نشد. بررسی کنید کاربران انتخاب‌شده در دسترس باشند و شما اجازه افزودن عضو داشته باشید.');
           return;
         }
+        toast('$count عضو به گروه اضافه شد.');
+        return;
       } on PostgrestException catch (e) {
         final code = e.code ?? '';
         final message = e.message.toString();
@@ -256,8 +288,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         }
         throw Exception('سرور افزودن عضو را رد کرد: ${e.message}');
       }
-      toast('$count عضو به گروه اضافه شد.');
-      await load();
     } catch (e) { toast('افزودن عضو ناموفق بود: $e'); }
     finally { search.dispose(); if (mounted) setState(() => busy = false); }
   }
