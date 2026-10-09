@@ -105,6 +105,83 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     finally { if (mounted) setState(() => busy = false); }
   }
 
+  Future<void> addMembersFromContacts() async {
+    if (!admin || busy) return;
+    final uid = db.auth.currentUser?.id;
+    if (uid == null) { toast('ابتدا وارد حساب شوید.'); return; }
+    setState(() => busy = true);
+    final search = TextEditingController();
+    final selected = <String>{};
+    try {
+      final contactRows = await db.from('contacts').select('contact_id').eq('user_id', uid);
+      final contactIds = (contactRows as List)
+          .map((row) => row['contact_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty && id != uid)
+          .toSet().toList();
+      final currentIds = members.map((m) => m['user_id'].toString()).toSet();
+      final eligibleIds = contactIds.where((id) => !currentIds.contains(id)).toList();
+      final contacts = eligibleIds.isEmpty ? <Map<String, dynamic>>[] :
+        List<Map<String, dynamic>>.from(await db.from('profiles')
+          .select('id,display_name,username,avatar_url')
+          .inFilter('id', eligibleIds));
+      contacts.sort((a,b) => (a['display_name'] ?? a['username'] ?? '').toString().toLowerCase()
+        .compareTo((b['display_name'] ?? b['username'] ?? '').toString().toLowerCase()));
+      final picked = await showModalBottomSheet<List<String>>(
+        context: context, isScrollControlled: true, showDragHandle: true,
+        builder: (sheet) {
+          var visible = List<Map<String,dynamic>>.from(contacts);
+          return StatefulBuilder(builder: (sheet, setSheet) => SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.viewInsetsOf(sheet).bottom + 16),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('افزودن از مخاطبین', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                const Text('فقط مخاطبین ذخیره‌شده نمایش داده می‌شوند.', textAlign: TextAlign.center),
+                const SizedBox(height: 10),
+                TextField(controller: search, autofocus: true, onChanged: (q) {
+                  final term = q.trim().toLowerCase();
+                  setSheet(() => visible = contacts.where((p) =>
+                    (p['display_name'] ?? '').toString().toLowerCase().contains(term) ||
+                    (p['username'] ?? '').toString().toLowerCase().contains(term)).toList());
+                }, decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'جستجوی مخاطبین')),
+                if (contacts.isEmpty) const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('مخاطب جدیدی برای افزودن نیست. ابتدا از بخش مخاطبین، کاربر را اضافه کنید.', textAlign: TextAlign.center)),
+                if (contacts.isNotEmpty && visible.isEmpty) const Padding(
+                  padding: EdgeInsets.all(16), child: Text('مخاطبی پیدا نشد.')),
+                ConstrainedBox(constraints: const BoxConstraints(maxHeight: 340),
+                  child: ListView(shrinkWrap: true, children: visible.map((p) {
+                    final id = p['id'].toString(); final checked = selected.contains(id);
+                    final url = (p['avatar_url'] ?? '').toString();
+                    return CheckboxListTile(value: checked,
+                      onChanged: (_) => setSheet(() => checked ? selected.remove(id) : selected.add(id)),
+                      secondary: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
+                        child: url.isEmpty ? const Icon(Icons.person) : null),
+                      title: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString()),
+                      subtitle: (p['username'] ?? '').toString().isEmpty ? null : Text('@${p['username']}'));
+                  }).toList())),
+                const SizedBox(height: 8),
+                SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: selected.isEmpty ? null : () => Navigator.pop(sheet, selected.toList()),
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: Text(selected.isEmpty ? 'انتخاب مخاطب' : 'افزودن ${selected.length} نفر'))),
+              ]),
+            )));
+        });
+      if (picked == null || picked.isEmpty) return;
+      await db.rpc('add_group_members', params: {'p_conversation_id': widget.conversationId, 'p_user_ids': picked});
+      await load();
+      final now = members.map((m) => m['user_id'].toString()).toSet();
+      final count = picked.where(now.contains).length;
+      toast(count > 0 ? '$count عضو به گروه اضافه شد.' : 'افزودن عضو از سرور تأیید نشد؛ مجوزها را بررسی کنید.');
+    } catch (e) {
+      toast('افزودن عضو ناموفق بود: $e');
+    } finally {
+      search.dispose();
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> openManagement() async {
     final changed = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => GroupManagementPage(conversationId: widget.conversationId, title: widget.title)));
     if (changed == true) await load();
@@ -126,7 +203,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       const SizedBox(height: 12),
       Card(child: Column(children: [
         ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو'), trailing: const Icon(Icons.chevron_left), onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: [const Text('اعضای گروه', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), const SizedBox(height: 8), ...members.map((m) { final id = m['user_id'].toString(); final a = avatarOf(id); final o = g['created_by']?.toString() == id; return ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(o ? '👑 مالک' : (m['role'] ?? 'عضو').toString())); })]))),
-        if (admin) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا'), subtitle: const Text('جستجو و افزودن چند کاربر به‌صورت هم‌زمان'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),
+        if (admin) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا از مخاطبین'), subtitle: const Text('انتخاب مخاطب و افزودن مستقیم به گروه'), trailing: const Icon(Icons.chevron_left), onTap: addMembersFromContacts),
         if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
         if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),
