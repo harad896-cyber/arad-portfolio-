@@ -2237,6 +2237,18 @@ class _HomePageState extends State<HomePage> {
     await _joinGroupByCode(code);
   }
 
+  String _extractInviteCode(String raw) {
+    final input = raw.trim();
+    if (input.isEmpty) return '';
+    try {
+      final uri = Uri.parse(input);
+      final fromQuery = (uri.queryParameters['code'] ?? '').trim();
+      if (fromQuery.isNotEmpty) return fromQuery;
+    } catch (_) {}
+    final match = RegExp(r'ARAD-[A-Za-z0-9]+', caseSensitive: false).firstMatch(input);
+    return match?.group(0) ?? input;
+  }
+
   Future<void> _joinGroupByInviteCode() async {
     final controller = TextEditingController();
     final code = await showDialog<String>(
@@ -2248,8 +2260,8 @@ class _HomePageState extends State<HomePage> {
           autofocus: true,
           textCapitalization: TextCapitalization.characters,
           decoration: const InputDecoration(
-            labelText: 'کد دعوت گروه',
-            hintText: 'مثلاً ARAD-…',
+            labelText: 'لینک کامل یا کد دعوت',
+            hintText: 'لینک دعوت را بچسبانید یا ARAD-…',
             prefixIcon: Icon(Icons.link_rounded),
           ),
         ),
@@ -2261,11 +2273,11 @@ class _HomePageState extends State<HomePage> {
     );
     controller.dispose();
     if (code == null || code.trim().isEmpty || !mounted) return;
-    await _joinGroupByCode(code.trim());
+    await _joinGroupByCode(_extractInviteCode(code));
   }
 
   Future<void> _joinGroupByCode(String rawCode) async {
-    final code = rawCode.trim();
+    final code = _extractInviteCode(rawCode);
     if (code.isEmpty || !mounted) return;
     try {
       final result = await supabase.rpc('join_conversation_by_invite', params: {'p_code': code});
