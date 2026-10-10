@@ -1,5 +1,6 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
@@ -83,6 +84,7 @@ class AppThemeController extends ChangeNotifier {
   bool dark = false;
   int seed = 0xFF7C5CFF;
   int backgroundSeed = 0xFF11131A;
+  String? backgroundImageBase64;
   static const int _themeRevision = 3;
 
   String get _scope {
@@ -109,12 +111,24 @@ class AppThemeController extends ChangeNotifier {
       seed = p.getInt('accent_seed_$key') ?? 0xFF8B5CF6;
       backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFFF3F1F6;
     }
+    backgroundImageBase64 = p.getString('chat_background_image_$key');
     notifyListeners();
   }
   Future<void> setDark(bool value) async {
     dark = value;
     final p = await SharedPreferences.getInstance();
     await p.setBool('dark_mode_$_scope', value);
+    notifyListeners();
+  }
+  Future<void> setBackgroundImage(String? encoded) async {
+    backgroundImageBase64 = encoded;
+    final p = await SharedPreferences.getInstance();
+    if (encoded == null || encoded.isEmpty) {
+      await p.remove('chat_background_image_$_scope');
+      backgroundImageBase64 = null;
+    } else {
+      await p.setString('chat_background_image_$_scope', encoded);
+    }
     notifyListeners();
   }
   Future<void> setBackgroundSeed(int value) async {
@@ -5939,6 +5953,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Container(
         decoration: BoxDecoration(
           color: dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
+          image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .12), BlendMode.darken)),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
