@@ -3729,7 +3729,9 @@ class _ChatPageState extends State<ChatPage> {
                         ? '$targetName از طریق نام کاربری عمومی پیوست'
                         : action == 'join_requested_by_public_username'
                             ? '$targetName از نام کاربری عمومی درخواست عضویت فرستاد'
-                            : 'رویداد گروه';
+                            : action == 'joined_after_approval'
+                                ? '$targetName پس از تأیید مدیر به گروه پیوست'
+                                : 'رویداد گروه';
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
