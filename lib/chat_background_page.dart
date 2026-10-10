@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'polish_widgets.dart';
 import 'main.dart';
 
@@ -9,6 +11,32 @@ class ChatBackgroundPage extends StatefulWidget {
 }
 
 class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
+  bool _choosingImage = false;
+
+  Future<void> _chooseGalleryImage() async {
+    if (_choosingImage) return;
+    setState(() => _choosingImage = true);
+    try {
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 68, maxWidth: 1280, maxHeight: 1280);
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (bytes.length > 1200 * 1024) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تصویر خیلی بزرگ است؛ عکس کوچک‌تری انتخاب کن.')));
+        return;
+      }
+      await appTheme.setBackgroundImage(base64Encode(bytes));
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('انتخاب تصویر انجام نشد.')));
+    } finally {
+      if (mounted) setState(() => _choosingImage = false);
+    }
+  }
+
+  Future<void> _removeGalleryImage() async {
+    await appTheme.setBackgroundImage(null);
+    if (mounted) setState(() {});
+  }
   static const colors = <int>[
     0xFFF5F5F7,
     0xFFEAF4FF,
