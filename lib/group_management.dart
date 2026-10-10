@@ -40,7 +40,8 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       if (!mounted) return;
       setState(() {
         group = g; members = ms; auditEvents = events;
-        onlineCount = ps.where((p) => ids.contains(p['id'].toString()) && p['is_online'] == true).length;
+        final memberIds = ms.map((m) => m['user_id'].toString()).toSet();
+        onlineCount = ps.where((p) => memberIds.contains(p['id'].toString()) && p['is_online'] == true).length;
         profiles = {for (final p in ps) p['id'].toString(): p};
         owner = uid != null && g['created_by']?.toString() == uid;
         admin = owner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
@@ -231,10 +232,10 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو • ${onlineCount} فعال'), trailing: const Icon(Icons.chevron_left), onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: [Text('اعضای گروه • ${members.length} نفر • ${onlineCount} فعال', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), const SizedBox(height: 8), ...members.map((m) { final id = m['user_id'].toString(); final a = avatarOf(id); final o = g['created_by']?.toString() == id; return ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(() {
             final joined = DateTime.tryParse('${m['joined_at'] ?? ''}')?.toLocal();
             final date = joined == null ? '' : '${joined.year}/${joined.month.toString().padLeft(2, '0')}/${joined.day.toString().padLeft(2, '0')} ${joined.hour.toString().padLeft(2, '0')}:${joined.minute.toString().padLeft(2, '0')}';
-            final history = auditEvents.where((e) => e['target_user_id']?.toString() == id && ['member_added','joined_by_link','join_requested_by_link'].contains(e['action'])).toList();
+            final history = auditEvents.where((e) => e['target_user_id']?.toString() == id && ['member_added','joined_by_link','join_requested_by_link','joined_by_public_username','join_requested_by_public_username'].contains(e['action'])).toList();
             history.sort((a,b) => (DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime(1970)).compareTo(DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime(1970)));
             final event = history.isEmpty ? null : history.first;
-            final source = event == null ? '' : event['action'] == 'joined_by_link' ? ' • از طریق لینک' : event['action'] == 'join_requested_by_link' ? ' • درخواست از طریق لینک' : ' • افزوده‌شده توسط ${nameOf((event['actor_id'] ?? '').toString())}';
+            final source = event == null ? '' : event['action'] == 'joined_by_link' ? ' • از طریق لینک دعوت' : event['action'] == 'join_requested_by_link' ? ' • درخواست از طریق لینک' : event['action'] == 'joined_by_public_username' ? ' • از طریق نام کاربری عمومی' : event['action'] == 'join_requested_by_public_username' ? ' • درخواست از نام کاربری عمومی' : ' • افزوده‌شده توسط ${nameOf((event['actor_id'] ?? '').toString())}';
             return '${o ? '👑 مالک' : (m['role'] ?? 'عضو').toString()}${date.isEmpty ? '' : ' • عضویت: $date'}$source';
           }())); })]))),
         if (admin) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا از مخاطبین'), subtitle: const Text('انتخاب مخاطب و افزودن مستقیم به گروه'), trailing: const Icon(Icons.chevron_left), onTap: addMembersFromContacts),
