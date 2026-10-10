@@ -12,7 +12,7 @@ class ConversationInvitePage extends StatefulWidget {
 class _ConversationInvitePageState extends State<ConversationInvitePage>{
   final db=Supabase.instance.client; String? code; bool loading=true,busy=false,requiresApproval=false,groupRequiresApproval=false; int maxUses=0,expirationDays=0;
   bool get channel=>widget.type=='channel';
-  String get link=>code==null?'':'https://bkbdcqequyvubjmrbpqo.supabase.co/functions/v1/conversation-invite?code=${Uri.encodeComponent(code!)}';
+  String get link=>code==null?'':'https://bkbdcqequyvubjmrbpqo.supabase.co/functions/v1/invite-redirect?code=${Uri.encodeComponent(code!)}';
   void toast(String s){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));}
   Future<void> load()async{try{final r=await db.from('conversations').select('invite_code,join_approval').eq('id',widget.conversationId).maybeSingle();if(mounted)setState((){code=(r?['invite_code']??'').toString().trim().isEmpty?null:r!['invite_code'].toString();groupRequiresApproval=r?['join_approval']==true;requiresApproval=groupRequiresApproval;loading=false;});}catch(_){if(mounted)setState(()=>loading=false);}}
   Future<void> make()async{if(busy)return;setState(()=>busy=true);try{final r=await db.rpc('create_conversation_invite',params:{'p_conversation_id':widget.conversationId,'p_max_uses':maxUses,'p_expires_at':expirationDays==0?null:DateTime.now().toUtc().add(Duration(days:expirationDays)).toIso8601String(),'p_requires_approval':(requiresApproval || groupRequiresApproval)});if(mounted)setState(()=>code=r.toString());toast('لینک ${channel?'کانال':'گروه'} ساخته شد.');}catch(e){toast('ساخت لینک ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
