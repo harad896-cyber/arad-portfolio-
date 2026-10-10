@@ -2463,6 +2463,12 @@ class _HomePageState extends State<HomePage> {
       .subscribe();
     _callChannel = supabase.channel('incoming-calls-' + (supabase.auth.currentUser?.id ?? 'guest'))
       .onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'profiles',
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'call_sessions',
@@ -4151,6 +4157,7 @@ class _ChatPageState extends State<ChatPage> {
   List<Map<String, dynamic>> timelineItems = [];
   Map<String, Map<String, dynamic>> profiles = {};
   Map<String, List<Map<String, dynamic>>> reactions = {};
+  Map<String, List<Map<String, dynamic>>> readReceipts = {};
   Map<String, Map<String, dynamic>> attachments = {};
   RealtimeChannel? channel;
   final ScrollController _messagesScroll = ScrollController();
@@ -4505,8 +4512,15 @@ class _ChatPageState extends State<ChatPage> {
       }
       final ids = loaded.map((m) => '${m['id']}').toList();
       final loadedReactions = <String, List<Map<String, dynamic>>>{};
+      final loadedReadReceipts = <String, List<Map<String, dynamic>>>{};
       final loadedAttachments = <String, Map<String, dynamic>>{};
       if (ids.isNotEmpty) {
+        try {
+          final receipts = await supabase.from('message_read_receipts').select('message_id,reader_id,read_at').inFilter('message_id', ids);
+          for (final receipt in List<Map<String, dynamic>>.from(receipts)) {
+            loadedReadReceipts.putIfAbsent('${receipt['message_id']}', () => []).add(receipt);
+          }
+        } catch (_) {}
         final rr = await supabase.from('message_reactions').select('message_id,user_id,reaction,created_at').inFilter('message_id', ids);
         for (final r in List<Map<String, dynamic>>.from(rr)) {
           loadedReactions.putIfAbsent('${r['message_id']}', () => []).add(r);
@@ -4555,6 +4569,7 @@ class _ChatPageState extends State<ChatPage> {
           _groupOnlineCount = groupMembers.where((member) =>
             profiles[member['user_id']?.toString()]?['is_online'] == true).length;
           reactions = loadedReactions;
+          readReceipts = loadedReadReceipts;
           attachments = loadedAttachments;
           loading = false;
         });
@@ -4592,6 +4607,7 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final settings = await loadUserSettings();
       if (settings['read_receipts'] == false) return;
+      await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
       await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
     } catch (_) {}
   }
@@ -5464,7 +5480,11 @@ class _ChatPageState extends State<ChatPage> {
     final readAt = DateTime.tryParse('${message['read_at'] ?? ''}')?.toLocal();
     String stamp(DateTime? value) => value == null ? 'نامشخص' : '${value.year}/${value.month.toString().padLeft(2, '0')}/${value.day.toString().padLeft(2, '0')} - ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}:${value.second.toString().padLeft(2, '0')}';
     final pending = message['__pending'] == true;
-    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? 'در حال ارسال' : message['read_at'] != null ? 'خوانده شده' : (message['sender_id'] == supabase.auth.currentUser?.id ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
+    final receipts = readReceipts['${message['id']}'] ?? <Map<String, dynamic>>[];
+    final readerIds = receipts.map((r) => r['reader_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
+    final readerNames = readerIds.map((id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر')).join('، ');
+    final isMine = message['sender_id'] == supabase.auth.currentUser?.id;
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? 'در حال ارسال' : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), const Text('خوانده‌شده توسط:'), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
   }
   Widget _actionTile(
     BuildContext sheetContext,
@@ -5823,11 +5843,11 @@ class _ChatPageState extends State<ChatPage> {
                         ],
                         if (mine) ...[
                           const SizedBox(width: 4),
-                          Icon(m['__pending'] == true ? Icons.schedule_rounded : m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
+                          Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
                           const SizedBox(width: 2),
                           Text(
-                            m['__pending'] == true ? 'در حال ارسال' : m['read_at'] != null ? 'خوانده شد' : 'ارسال شد',
-                            style: TextStyle(fontSize: 9.5, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
+                            m['__pending'] == true ? 'در حال ارسال' : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? 'دیده‌شده ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
+                            style: TextStyle(fontSize: 9.5, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
                       ],
@@ -6035,14 +6055,23 @@ class _ChatPageState extends State<ChatPage> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: scheme.primaryContainer,
-                  backgroundImage: _chatType == 'direct'
-                      ? ('${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim().isNotEmpty ? NetworkImage('${profiles[_directPeerId]?['avatar_url']}') : null)
-                      : (_chatType == 'group' && _groupAvatarUrl.trim().isNotEmpty ? NetworkImage(_groupAvatarUrl) : null),
-                  child: (_chatType == 'direct'
-                      ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim().isEmpty
-                      : _chatType == 'group' ? _groupAvatarUrl.trim().isEmpty : true)
-                      ? Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 20, color: scheme.primary)
-                      : null,
+                  child: ClipOval(
+                    child: (() {
+                      final avatar = _chatType == 'direct'
+                          ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim()
+                          : (_chatType == 'group' ? _groupAvatarUrl.trim() : '');
+                      if (avatar.isEmpty) {
+                        return Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 20, color: scheme.primary);
+                      }
+                      return Image.network(
+                        avatar,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(_chatType == 'group' ? Icons.groups_rounded : Icons.person_rounded, size: 20, color: scheme.primary),
+                      );
+                    })(),
+                  ),
                 ),
                 if (_chatType == 'direct')
                   Positioned(
