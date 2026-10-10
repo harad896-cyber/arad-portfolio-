@@ -185,7 +185,7 @@ class _StoriesPageState extends State<StoriesPage> {
     if (uid == null) return;
     final wasLiked = _likedIds.contains(id);
     setState(() {
-      if (wasLiked) { _likedIds.remove(id); _likeCounts[id] = ((_likeCounts[id] ?? 1) - 1).clamp(0, 1 << 30); }
+      if (wasLiked) { _likedIds.remove(id); _likeCounts[id] = ((_likeCounts[id] ?? 1) - 1).clamp(0, 1 << 30).toInt(); }
       else { _likedIds.add(id); _likeCounts[id] = (_likeCounts[id] ?? 0) + 1; }
     });
     try {
