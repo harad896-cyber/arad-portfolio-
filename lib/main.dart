@@ -2082,6 +2082,15 @@ Future<void> openAradLink(BuildContext context, Uri uri) async {
       ));
       return;
     }
+    if (host == 'story') {
+      if (uri.pathSegments.isEmpty) return;
+      final storyId = Uri.decodeComponent(uri.pathSegments.first).trim();
+      if (storyId.isEmpty || !context.mounted) return;
+      await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => StoriesPage(initialStoryId: storyId),
+      ));
+      return;
+    }
     if (host == 'group') {
       if (uri.pathSegments.isEmpty) return;
       final key = Uri.decodeComponent(uri.pathSegments.first).trim();
