@@ -288,7 +288,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Map<String, dynamic>? group;
   List<Map<String, dynamic>> members = [];
   Map<String, Map<String, dynamic>> profiles = {};
-  bool loading = true, busy = false, admin = false, owner = false, canEditGroup = false, canRemoveMembers = false, canAddMembers = false;
+  bool loading = true, busy = false, admin = false, owner = false, canEditGroup = false, canRemoveMembers = false, canAddMembers = false, canDeleteMessages = false;
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
@@ -306,7 +306,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       Map<String,dynamic> permissions = {};
       if (isAdmin && !isOwner && uid != null) {
         try {
-          final row = await db.from('group_admin_permissions').select('can_add_members,can_remove_members,can_edit_group').eq('conversation_id', widget.conversationId).eq('user_id', uid).maybeSingle();
+          final row = await db.from('group_admin_permissions').select('can_add_members,can_remove_members,can_edit_group,can_delete_messages').eq('conversation_id', widget.conversationId).eq('user_id', uid).maybeSingle();
           if (row != null) permissions = Map<String,dynamic>.from(row);
         } catch (_) {}
       }
@@ -316,6 +316,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         owner = isOwner; admin = isAdmin;
         canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false);
         canRemoveMembers = isOwner || permissions['can_remove_members'] == true;
+        canDeleteMessages = isOwner || permissions['can_delete_messages'] == true;
         canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
@@ -575,7 +576,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         SwitchListTile(title: const Text('فقط مدیران عضو اضافه کنند'), value: group!['only_admins_can_add'] == true, onChanged: canEditGroup ? (v) => updateSettings(adminsAdd: v) : null),
         SwitchListTile(title: const Text('واکنش به پیام‌ها'), value: group!['allow_reactions'] != false, onChanged: canEditGroup ? (v) => updateSettings(reactions: v) : null),
       ])),
-      if (canRemoveMembers || owner) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
+      if (canRemoveMembers || canDeleteMessages || owner) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست‌های عضویت، محروم‌ها، محدودیت‌ها، سنجاق پیام و اختیارات مدیران'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.delete_forever_rounded), title: const Text('حذف کامل گروه', style: TextStyle(fontWeight: FontWeight.w900)), subtitle: const Text('این گزینه هیچ ارتباطی با حذف/محروم کردن اعضا ندارد.'), onTap: deleteGroup)),
       if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
