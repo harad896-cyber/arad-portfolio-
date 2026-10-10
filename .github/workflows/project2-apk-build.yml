@@ -45,6 +45,7 @@ jobs:
                       <data android:scheme="arad" android:host="invite" />
                       <data android:scheme="arad" android:host="group" />
                       <data android:scheme="arad" android:host="chat" />
+                      <data android:scheme="arad" android:host="story" />
                   </intent-filter>
               '''
               if '</activity>' in s:
@@ -53,7 +54,7 @@ jobs:
               # Existing builds already register invite links; extend the same
               # activity filter so public group and message deep links launch the app.
               invite_data = '<data android:scheme="arad" android:host="invite" />'
-              extra_data = '\n                      <data android:scheme="arad" android:host="group" />\n                      <data android:scheme="arad" android:host="chat" />'
+              extra_data = '\n                      <data android:scheme="arad" android:host="group" />\n                      <data android:scheme="arad" android:host="chat" />\n                      <data android:scheme="arad" android:host="story" />'
               if invite_data in s and 'android:host="group"' not in s:
                   s = s.replace(invite_data, invite_data + extra_data, 1)
           p.write_text(s)
