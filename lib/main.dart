@@ -4169,6 +4169,7 @@ class _ChatPageState extends State<ChatPage> {
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
   String? _localChatTitle;
+  String _groupAvatarUrl = '';
   String _directPeerId = '';
   List<Map<String, dynamic>> _mentionSuggestions = [];
   int _mentionStart = -1;
@@ -4441,7 +4442,7 @@ class _ChatPageState extends State<ChatPage> {
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     try {
       final conversation = Map<String, dynamic>.from(await supabase
-          .from('conversations').select('id,type,title,created_by,created_at')
+          .from('conversations').select('id,type,title,avatar_url,created_by,created_at')
           .eq('id', widget.id).single());
       final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120);
       final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
@@ -4549,6 +4550,7 @@ class _ChatPageState extends State<ChatPage> {
           callSessions = calls;
           timelineItems = merged;
           _directPeerId = directPeerId;
+          _groupAvatarUrl = '${conversation['avatar_url'] ?? ''}';
           _groupMemberCount = groupMembers.length;
           _groupOnlineCount = groupMembers.where((member) =>
             profiles[member['user_id']?.toString()]?['is_online'] == true).length;
@@ -5737,6 +5739,7 @@ class _ChatPageState extends State<ChatPage> {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
+        onTap: () => showMessageActions(m),
         onLongPress: () => showMessageActions(m),
         onDoubleTap: () => reactTo(m, '❤️'),
         onHorizontalDragEnd: (details) {
@@ -6032,11 +6035,13 @@ class _ChatPageState extends State<ChatPage> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: scheme.primaryContainer,
-                  backgroundImage: (_chatType == 'direct' && '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim().isNotEmpty)
-                      ? NetworkImage('${profiles[_directPeerId]?['avatar_url']}')
-                      : null,
-                  child: (_chatType == 'direct' ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}' : '').trim().isEmpty
-                      ? Icon(Icons.person_rounded, size: 20, color: scheme.primary)
+                  backgroundImage: _chatType == 'direct'
+                      ? ('${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim().isNotEmpty ? NetworkImage('${profiles[_directPeerId]?['avatar_url']}') : null)
+                      : (_chatType == 'group' && _groupAvatarUrl.trim().isNotEmpty ? NetworkImage(_groupAvatarUrl) : null),
+                  child: (_chatType == 'direct'
+                      ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim().isEmpty
+                      : _chatType == 'group' ? _groupAvatarUrl.trim().isEmpty : true)
+                      ? Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 20, color: scheme.primary)
                       : null,
                 ),
                 if (_chatType == 'direct')
