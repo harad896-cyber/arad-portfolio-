@@ -3586,20 +3586,55 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 
   Future<Map<String,dynamic>> _search(String value) async {
     final q = value.trim();
-    if (q.isEmpty) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[]};
+    if (q.isEmpty) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
     final uid = supabase.auth.currentUser?.id;
-    if (uid == null) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[]};
+    if (uid == null) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
     final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid).limit(150);
-    final ids = (memberRows as List).map((e) => e['conversation_id']).where((e) => e != null).toList();
+    final ids = (memberRows as List).map((e) => e['conversation_id'].toString()).where((e) => e.isNotEmpty).toSet();
     final usersFuture = supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,is_verified').or('display_name.ilike.%$q%,username.ilike.%$q%').limit(30);
+    final publicFuture = supabase.rpc('search_public_conversations', params: {'p_query': q});
     if (ids.isEmpty) {
-      final users = List<Map<String,dynamic>>.from(await usersFuture);
-      return {'messages': <Map<String,dynamic>>[], 'users': users, 'chats': <Map<String,dynamic>>[]};
+      final results = await Future.wait([usersFuture, publicFuture]);
+      return {
+        'messages': <Map<String,dynamic>>[],
+        'users': List<Map<String,dynamic>>.from(results[0] as List),
+        'chats': <Map<String,dynamic>>[],
+        'public_chats': List<Map<String,dynamic>>.from(results[1] as List),
+      };
     }
-    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids).or('title.ilike.%$q%,username.ilike.%$q%').limit(30);
-    final messagesFuture = supabase.from('messages').select('id,conversation_id,body,message_type,created_at,sender_id').inFilter('conversation_id', ids).ilike('body', '%$q%').order('created_at', ascending: false).limit(50);
-    final results = await Future.wait([usersFuture, chatsFuture, messagesFuture]);
-    return {'users': List<Map<String,dynamic>>.from(results[0] as List), 'chats': List<Map<String,dynamic>>.from(results[1] as List), 'messages': List<Map<String,dynamic>>.from(results[2] as List)};
+    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30);
+    final messagesFuture = supabase.from('messages').select('id,conversation_id,body,message_type,created_at,sender_id').inFilter('conversation_id', ids.toList()).ilike('body', '%$q%').order('created_at', ascending: false).limit(50);
+    final results = await Future.wait([usersFuture, chatsFuture, messagesFuture, publicFuture]);
+    final publicChats = List<Map<String,dynamic>>.from(results[3] as List)
+        .where((c) => !ids.contains(c['id'].toString())).toList();
+    return {
+      'users': List<Map<String,dynamic>>.from(results[0] as List),
+      'chats': List<Map<String,dynamic>>.from(results[1] as List),
+      'messages': List<Map<String,dynamic>>.from(results[2] as List),
+      'public_chats': publicChats,
+    };
+  }
+
+  Future<void> _openPublicConversation(BuildContext context, Map<String,dynamic> row) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final rawId = await supabase.rpc('join_public_conversation', params: {'p_username': row['username']});
+      final id = rawId.toString();
+      final uid = supabase.auth.currentUser?.id;
+      final membership = uid == null ? null : await supabase.from('conversation_members')
+          .select('user_id').eq('conversation_id', id).eq('user_id', uid).maybeSingle();
+      if (membership == null) {
+        close(context, null);
+        messenger.showSnackBar(const SnackBar(content: Text('درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.')));
+        return;
+      }
+      final title = (row['title'] ?? row['username'] ?? 'گروه عمومی').toString();
+      close(context, null);
+      await navigator.push(MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title)));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('باز کردن گروه عمومی ناموفق بود: ${_friendlyError(e.toString())}')));
+    }
   }
 
   Widget _avatar(Map<String,dynamic> row) {
@@ -3618,8 +3653,9 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
         final data = snap.data ?? {};
         final users = List<Map<String,dynamic>>.from(data['users'] ?? const []);
         final chats = List<Map<String,dynamic>>.from(data['chats'] ?? const []);
+        final publicChats = List<Map<String,dynamic>>.from(data['public_chats'] ?? const []);
         final messages = List<Map<String,dynamic>>.from(data['messages'] ?? const []);
-        if (users.isEmpty && chats.isEmpty && messages.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
+        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
         return ListView(padding: const EdgeInsets.fromLTRB(8, 8, 8, 24), children: [
           if (users.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'کاربران', icon: Icons.people_alt_rounded),
@@ -3628,6 +3664,10 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           if (chats.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'گفتگوها', icon: Icons.forum_rounded),
             ...chats.map((c) { final type = (c['type'] ?? 'direct').toString(); final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded; final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(icon) : null), title: Text((c['title'] ?? c['username'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString(), style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(type == 'channel' ? 'کانال' : type == 'group' ? 'گروه' : 'گفتگوی خصوصی'), onTap: () => close(context, {...c, '_kind': 'chat'})); }),
+          ],
+          if (publicChats.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'گروه‌ها و کانال‌های عمومی', icon: Icons.public_rounded),
+            ...publicChats.map((c) { final type = (c['type'] ?? 'group').toString(); final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(type == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded) : null), title: Text((c['title'] ?? c['username'] ?? 'گروه عمومی').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${c['username'] ?? ''} • ${type == 'channel' ? 'کانال عمومی' : 'گروه عمومی'}'), trailing: const Icon(Icons.arrow_forward_rounded), onTap: () => _openPublicConversation(context, c)); }),
           ],
           if (messages.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'پیام‌ها', icon: Icons.chat_bubble_outline_rounded),
