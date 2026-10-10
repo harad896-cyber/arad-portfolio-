@@ -4909,7 +4909,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _showMessageInfo(Map<String, dynamic> message) async {
     final created = message['created_at']?.toString() ?? 'نامشخص';
     final edited = message['edited_at'] != null;
-    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('اطلاعات پیام'), content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + created), if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')]]), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('اطلاعات پیام'), content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + created), const SizedBox(height: 8), Text('وضعیت: ' + (message['read_at'] != null ? 'خوانده شده' : (message['sender_id'] == supabase.auth.currentUser?.id ? 'ارسال شده' : 'دریافت شده'))), if (message['read_at'] != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + message['read_at'].toString())], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')]]), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
   }
   Widget _actionTile(
     BuildContext sheetContext,
@@ -5235,6 +5235,11 @@ class _ChatPageState extends State<ChatPage> {
                         if (mine) ...[
                           const SizedBox(width: 4),
                           Icon(m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
+                          const SizedBox(width: 2),
+                          Text(
+                            m['read_at'] != null ? 'خوانده شد' : 'ارسال شد',
+                            style: TextStyle(fontSize: 9.5, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
+                          ),
                         ],
                       ],
                     ),
@@ -5275,7 +5280,7 @@ class _ChatPageState extends State<ChatPage> {
         schema: 'public',
         table: 'messages',
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
-        callback: (_) => load(),
+        callback: (_) => _scheduleChatReload(),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
