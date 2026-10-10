@@ -2466,7 +2466,7 @@ class _HomePageState extends State<HomePage> {
         event: PostgresChangeEvent.update,
         schema: 'public',
         table: 'profiles',
-        callback: (_) => _scheduleChatReload(),
+        callback: (_) => _scheduleHomeRefresh(),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
