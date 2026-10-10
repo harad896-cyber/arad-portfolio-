@@ -5266,7 +5266,7 @@ class _ChatPageState extends State<ChatPage> {
         ? (ThemeData.estimateBrightnessForColor(myBubble) == Brightness.dark ? Colors.white : Colors.black)
         : (dark ? Colors.white : const Color(0xFF20242A));
     final body = (m['body'] ?? '').toString();
-    final internalLinkMatch = RegExp(r'arad://(?:invite\\?code=[^\\s]+|group/[^\\s]+|chat/[^\\s]+)').firstMatch(body);
+    final internalLinkMatch = RegExp(r'arad://(?:invite\?code=[^\s]+|group/[^\s]+|chat/[^\s]+)').firstMatch(body);
     final urlMatch = RegExp(r'https?://\S+').firstMatch(body);
     final isGroup = _chatType != 'direct';
 
@@ -5301,21 +5301,33 @@ class _ChatPageState extends State<ChatPage> {
       );
     } else if (urlMatch != null && urlMatch.start == 0) {
       final url = urlMatch.group(0)!;
-      content = Container(
-        width: 235,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: (mine ? Colors.white : scheme.primary).withValues(alpha: .10),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.link_rounded, size: 28),
-            const SizedBox(height: 4),
-            Text(url, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
-            Text(Uri.tryParse(url)?.host ?? 'لینک', style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
-          ],
+      final parsedUrl = Uri.tryParse(url);
+      final inviteCode = parsedUrl?.queryParameters['code'];
+      final isConversationInvite = parsedUrl != null &&
+          (parsedUrl.path.contains('conversation-invite') || parsedUrl.path.contains('invite-redirect')) &&
+          inviteCode != null && inviteCode.trim().isNotEmpty;
+      content = InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: isConversationInvite
+            ? () => openAradLink(context, Uri(scheme: 'arad', host: 'invite', queryParameters: {'code': inviteCode}))
+            : null,
+        child: Container(
+          width: 235,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (mine ? Colors.white : scheme.primary).withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.link_rounded, size: 28),
+              const SizedBox(height: 4),
+              Text(url, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
+              Text(isConversationInvite ? 'باز کردن دعوت و پیوستن به گروه' : (parsedUrl?.host ?? 'لینک'),
+                  style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
+            ],
+          ),
         ),
       );
     } else {
