@@ -3591,10 +3591,10 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
     if (uid == null) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
     final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid).limit(150);
     final ids = (memberRows as List).map((e) => e['conversation_id'].toString()).where((e) => e.isNotEmpty).toSet();
-    final usersFuture = supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,is_verified').or('display_name.ilike.%$q%,username.ilike.%$q%').limit(30);
-    final publicFuture = supabase.rpc('search_public_conversations', params: {'p_query': q});
+    final usersFuture = supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,is_verified').or('display_name.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
+    final publicFuture = supabase.rpc('search_public_conversations', params: {'p_query': q}).then((value) => value);
     if (ids.isEmpty) {
-      final results = await Future.wait([usersFuture, publicFuture]);
+      final results = await Future.wait<dynamic>([usersFuture, publicFuture]);
       return {
         'messages': <Map<String,dynamic>>[],
         'users': List<Map<String,dynamic>>.from(results[0] as List),
@@ -3602,9 +3602,9 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
         'public_chats': List<Map<String,dynamic>>.from(results[1] as List),
       };
     }
-    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30);
-    final messagesFuture = supabase.from('messages').select('id,conversation_id,body,message_type,created_at,sender_id').inFilter('conversation_id', ids.toList()).ilike('body', '%$q%').order('created_at', ascending: false).limit(50);
-    final results = await Future.wait([usersFuture, chatsFuture, messagesFuture, publicFuture]);
+    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
+    final messagesFuture = supabase.from('messages').select('id,conversation_id,body,message_type,created_at,sender_id').inFilter('conversation_id', ids.toList()).ilike('body', '%$q%').order('created_at', ascending: false).limit(50).then((value) => value);
+    final results = await Future.wait<dynamic>([usersFuture, chatsFuture, messagesFuture, publicFuture]);
     final publicChats = List<Map<String,dynamic>>.from(results[3] as List)
         .where((c) => !ids.contains(c['id'].toString())).toList();
     return {
