@@ -5418,6 +5418,7 @@ class _ChatPageState extends State<ChatPage> {
         _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
         _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری', () => shareMessage(message)),
         _actionTile(context, Icons.link_rounded, 'کپی لینک پیام', () => copyMessageLink(message)),
+        _actionTile(context, Icons.info_outline_rounded, 'جزئیات پیام و زمان خواندن', () => _showMessageInfo(message)),
         if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
           _actionTile(context, Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
         _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره', () => saveMessage(message)),
