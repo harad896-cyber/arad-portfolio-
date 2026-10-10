@@ -17,7 +17,9 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   final db = Supabase.instance.client;
   Map<String, dynamic>? group;
   List<Map<String, dynamic>> members = [];
+  List<Map<String, dynamic>> auditEvents = [];
   Map<String, Map<String, dynamic>> profiles = {};
+  int onlineCount = 0;
   bool loading = true, admin = false, owner = false, busy = false;
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
@@ -28,12 +30,18 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     try {
       final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id', widget.conversationId).single());
       final ms = List<Map<String, dynamic>>.from(await db.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId).order('joined_at'));
-      final ids = ms.map((m) => m['user_id'].toString()).toList();
-      final ps = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', ids));
+      List<Map<String, dynamic>> events = [];
+      try { events = List<Map<String, dynamic>>.from(await db.from('group_audit_logs').select('id,actor_id,action,target_user_id,details,created_at').eq('conversation_id', widget.conversationId).order('created_at', ascending: false).limit(100)); } catch (_) {}
+      final ids = ms.map((m) => m['user_id'].toString()).toSet();
+      for (final event in events) { if (event['actor_id'] != null) ids.add(event['actor_id'].toString()); if (event['target_user_id'] != null) ids.add(event['target_user_id'].toString()); }
+      final idList = ids.toList();
+      final ps = idList.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified,is_online,last_seen').inFilter('id', idList));
       final uid = db.auth.currentUser?.id;
       if (!mounted) return;
       setState(() {
-        group = g; members = ms; profiles = {for (final p in ps) p['id'].toString(): p};
+        group = g; members = ms; auditEvents = events;
+        onlineCount = ps.where((p) => ids.contains(p['id'].toString()) && p['is_online'] == true).length;
+        profiles = {for (final p in ps) p['id'].toString(): p};
         owner = uid != null && g['created_by']?.toString() == uid;
         admin = owner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
         loading = false;
@@ -215,11 +223,20 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         const SizedBox(height: 12), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
         if ((g['username'] ?? '').toString().trim().isNotEmpty) Text('@${g['username']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8), Text(desc.isEmpty ? 'بدون توضیحات' : desc, textAlign: TextAlign.center),
-        const SizedBox(height: 10), Text('${members.length} عضو', style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 10), Text('${members.length} عضو • ${onlineCount} فعال', style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4), Text('فعال یعنی وضعیت آنلاین ثبت‌شده در حساب کاربر.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ]))),
       const SizedBox(height: 12),
       Card(child: Column(children: [
-        ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو'), trailing: const Icon(Icons.chevron_left), onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: [const Text('اعضای گروه', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), const SizedBox(height: 8), ...members.map((m) { final id = m['user_id'].toString(); final a = avatarOf(id); final o = g['created_by']?.toString() == id; return ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(o ? '👑 مالک' : (m['role'] ?? 'عضو').toString())); })]))),
+        ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو • ${onlineCount} فعال'), trailing: const Icon(Icons.chevron_left), onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: [Text('اعضای گروه • ${members.length} نفر • ${onlineCount} فعال', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), const SizedBox(height: 8), ...members.map((m) { final id = m['user_id'].toString(); final a = avatarOf(id); final o = g['created_by']?.toString() == id; return ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(() {
+            final joined = DateTime.tryParse('${m['joined_at'] ?? ''}')?.toLocal();
+            final date = joined == null ? '' : '${joined.year}/${joined.month.toString().padLeft(2, '0')}/${joined.day.toString().padLeft(2, '0')} ${joined.hour.toString().padLeft(2, '0')}:${joined.minute.toString().padLeft(2, '0')}';
+            final history = auditEvents.where((e) => e['target_user_id']?.toString() == id && ['member_added','joined_by_link','join_requested_by_link'].contains(e['action'])).toList();
+            history.sort((a,b) => (DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime(1970)).compareTo(DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime(1970)));
+            final event = history.isEmpty ? null : history.first;
+            final source = event == null ? '' : event['action'] == 'joined_by_link' ? ' • از طریق لینک' : event['action'] == 'join_requested_by_link' ? ' • درخواست از طریق لینک' : ' • افزوده‌شده توسط ${nameOf((event['actor_id'] ?? '').toString())}';
+            return '${o ? '👑 مالک' : (m['role'] ?? 'عضو').toString()}${date.isEmpty ? '' : ' • عضویت: $date'}$source';
+          }())); })]))),
         if (admin) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا از مخاطبین'), subtitle: const Text('انتخاب مخاطب و افزودن مستقیم به گروه'), trailing: const Icon(Icons.chevron_left), onTap: addMembersFromContacts),
         if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
