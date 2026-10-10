@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:app_links/app_links.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -2050,6 +2051,9 @@ class _HomePageState extends State<HomePage> {
   Timer? _homeRefreshTimer;
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _inviteLinkSubscription;
+  final Set<String> _handledInviteCodes = <String>{};
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -2209,6 +2213,24 @@ class _HomePageState extends State<HomePage> {
     } catch (e) { if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: ' + e.toString()); }
   }
 
+  Future<void> _initInviteLinks() async {
+    try {
+      final initial = await _appLinks.getInitialLink();
+      if (initial != null) await _handleInviteUri(initial);
+    } catch (_) {}
+    _inviteLinkSubscription = _appLinks.uriLinkStream.listen(
+      (uri) => _handleInviteUri(uri),
+      onError: (_) {},
+    );
+  }
+
+  Future<void> _handleInviteUri(Uri uri) async {
+    if (uri.scheme.toLowerCase() != 'arad' || uri.host.toLowerCase() != 'invite') return;
+    final code = (uri.queryParameters['code'] ?? '').trim();
+    if (code.isEmpty || !mounted || !_handledInviteCodes.add(code.toLowerCase())) return;
+    await _joinGroupByCode(code);
+  }
+
   Future<void> _joinGroupByInviteCode() async {
     final controller = TextEditingController();
     final code = await showDialog<String>(
@@ -2233,8 +2255,14 @@ class _HomePageState extends State<HomePage> {
     );
     controller.dispose();
     if (code == null || code.trim().isEmpty || !mounted) return;
+    await _joinGroupByCode(code.trim());
+  }
+
+  Future<void> _joinGroupByCode(String rawCode) async {
+    final code = rawCode.trim();
+    if (code.isEmpty || !mounted) return;
     try {
-      final result = await supabase.rpc('join_conversation_by_invite', params: {'p_code': code.trim()});
+      final result = await supabase.rpc('join_conversation_by_invite', params: {'p_code': code});
       final conversationId = result.toString();
       final conversation = Map<String, dynamic>.from(await supabase
           .from('conversations').select('id,type,title').eq('id', conversationId).single());
@@ -2253,6 +2281,7 @@ class _HomePageState extends State<HomePage> {
         title: (conversation['title'] ?? (conversation['type'] == 'channel' ? 'کانال' : 'گروه')).toString(),
       )));
     } catch (e) {
+      _handledInviteCodes.remove(code.toLowerCase());
       if (mounted) showMsg(context, 'پیوستن به گروه ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
@@ -2283,6 +2312,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     load();
+    unawaited(_initInviteLinks());
     _homeChannel = supabase.channel('home-' + (supabase.auth.currentUser?.id ?? 'guest'))
       .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
       .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
@@ -2369,6 +2399,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _homeRefreshTimer?.cancel();
+    _inviteLinkSubscription?.cancel();
     if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
     if (_callChannel != null) supabase.removeChannel(_callChannel!);
     chatSearch.dispose();
