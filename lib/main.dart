@@ -630,6 +630,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی'},
     {'cat':'تماس‌ها','title':'تماس‌ها','desc':'تماس صوتی و تصویری و سابقه تماس'},
     {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم روشن/تاریک و رنگ رابط برنامه'},
+    {'cat':'ظاهر و شخصی‌سازی','title':'پس‌زمینه چت','desc':'انتخاب عکس از گالری و رنگ پس‌زمینه گفتگو'},
     {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری'},
     {'cat':'گفتگو و پیام‌ها','title':'تنظیمات گفتگو','desc':'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا'},
     {'cat':'گفتگو و پیام‌ها','title':'پوشه‌های گفتگو','desc':'ساخت و مدیریت پوشه‌های گفتگو'},
@@ -671,7 +672,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   }
   IconData _iconForSetting(String s)=>switch(s){
     'حساب کاربری'=>Icons.manage_accounts_rounded,'حریم خصوصی'=>Icons.lock_outline_rounded,'امنیت'=>Icons.security_rounded,
-    'اعلان‌ها'=>Icons.notifications_none_rounded,'تماس‌ها'=>Icons.call_rounded,'ظاهر'=>Icons.palette_outlined,'زبان'=>Icons.language_rounded,
+    'اعلان‌ها'=>Icons.notifications_none_rounded,'تماس‌ها'=>Icons.call_rounded,'ظاهر'=>Icons.palette_outlined,'پس‌زمینه چت'=>Icons.wallpaper_rounded,'زبان'=>Icons.language_rounded,
     'تنظیمات گفتگو'=>Icons.chat_bubble_outline_rounded,'پوشه‌های گفتگو'=>Icons.folder_copy_outlined,'پیام‌های ذخیره‌شده'=>Icons.bookmark_outline_rounded,
     'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.backup_outlined,'استیکر و ایموجی'=>Icons.emoji_emotions_outlined,
     'پیام‌رسانی پیشرفته'=>Icons.auto_awesome_rounded,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
@@ -682,6 +683,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'امنیت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage())); break;
       case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage())); break;
       case 'ظاهر': _showThemeSheet(); break;
+      case 'پس‌زمینه چت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())); break;
       case 'زبان': _showLanguageSheet(); break;
       case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatSettingsPage())); break;
       case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())); break;
@@ -4586,6 +4588,8 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> markRead() async {
     try {
+      final settings = await loadUserSettings();
+      if (settings['read_receipts'] == false) return;
       await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
     } catch (_) {}
   }
@@ -5453,7 +5457,11 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _showMessageInfo(Map<String, dynamic> message) async {
     final created = message['created_at']?.toString() ?? 'نامشخص';
     final edited = message['edited_at'] != null;
-    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('اطلاعات پیام'), content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + created), const SizedBox(height: 8), Text('وضعیت: ' + (message['read_at'] != null ? 'خوانده شده' : (message['sender_id'] == supabase.auth.currentUser?.id ? 'ارسال شده' : 'دریافت شده'))), if (message['read_at'] != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + message['read_at'].toString())], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')]]), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
+    final sentAt = DateTime.tryParse(created)?.toLocal();
+    final readAt = DateTime.tryParse('${message['read_at'] ?? ''}')?.toLocal();
+    String stamp(DateTime? value) => value == null ? 'نامشخص' : '${value.year}/${value.month.toString().padLeft(2, '0')}/${value.day.toString().padLeft(2, '0')} - ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}:${value.second.toString().padLeft(2, '0')}';
+    final pending = message['__pending'] == true;
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? 'در حال ارسال' : message['read_at'] != null ? 'خوانده شده' : (message['sender_id'] == supabase.auth.currentUser?.id ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
   }
   Widget _actionTile(
     BuildContext sheetContext,
@@ -5796,7 +5804,7 @@ class _ChatPageState extends State<ChatPage> {
                     if (!mine && isGroup)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 3),
-                        child: Text(sender, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.primary)),
+                        child: Text(sender, style: TextStyle(fontWeight: FontWeight.w900, color: dark ? const Color(0xFFD9C9FF) : const Color(0xFF5940B5))),
                       ),
                     _replyPreview(m),
                     content,
@@ -5811,10 +5819,10 @@ class _ChatPageState extends State<ChatPage> {
                         ],
                         if (mine) ...[
                           const SizedBox(width: 4),
-                          Icon(m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
+                          Icon(m['__pending'] == true ? Icons.schedule_rounded : m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
                           const SizedBox(width: 2),
                           Text(
-                            m['read_at'] != null ? 'خوانده شد' : 'ارسال شد',
+                            m['__pending'] == true ? 'در حال ارسال' : m['read_at'] != null ? 'خوانده شد' : 'ارسال شد',
                             style: TextStyle(fontSize: 9.5, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -6052,7 +6060,7 @@ class _ChatPageState extends State<ChatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: dark ? const Color(0xFFF8F5FF) : const Color(0xFF211B2B))),
                   Text(
                     _chatType == 'direct'
                         ? 'گفتگوی خصوصی'
