@@ -4337,7 +4337,7 @@ class _ChatPageState extends State<ChatPage> {
       if (_mentionSuggestions.isNotEmpty) setState(() => _mentionSuggestions = []);
       return;
     }
-    final cursor = text.selection.baseOffset.clamp(0, value.length);
+    final cursor = text.selection.baseOffset.clamp(0, value.length).toInt();
     final before = value.substring(0, cursor);
     final at = before.lastIndexOf('@');
     if (at < 0 || (before.substring(at).contains(' ') || before.substring(at).contains('\n'))) {
@@ -4358,7 +4358,7 @@ class _ChatPageState extends State<ChatPage> {
   void _insertMention(Map<String, dynamic> profile) {
     final username = '${profile['username'] ?? ''}'.trim();
     if (username.isEmpty) return;
-    final cursor = text.selection.baseOffset.clamp(0, text.text.length);
+    final cursor = text.selection.baseOffset.clamp(0, text.text.length).toInt();
     final start = _mentionStart >= 0 ? _mentionStart : text.text.lastIndexOf('@', cursor - 1);
     if (start < 0) return;
     final next = '${text.text.substring(0, start)}@$username ${text.text.substring(cursor)}';
