@@ -2872,6 +2872,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
   List<Map<String, dynamic>> availableContacts = [];
   bool loadingContacts = true;
   bool busy = false;
+  int _searchRevision = 0;
   String? titleError;
 
   @override
@@ -2898,13 +2899,27 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
     }
   }
 
-  void findUsers(String q) {
-    final term = q.trim().toLowerCase();
-    setState(() {
-      found = availableContacts.where((p) =>
-        (p['display_name'] ?? '').toString().toLowerCase().contains(term) ||
-        (p['username'] ?? '').toString().toLowerCase().contains(term)).toList();
-    });
+  Future<void> findUsers(String q) async {
+    final term = q.trim();
+    final revision = ++_searchRevision;
+    if (term.isEmpty) {
+      if (mounted) setState(() => found = List<Map<String, dynamic>>.from(availableContacts));
+      return;
+    }
+    try {
+      final raw = await supabase.rpc('search_profiles', params: {'search_text': term});
+      final uid = supabase.auth.currentUser?.id;
+      final matches = List<Map<String, dynamic>>.from(raw as List)
+          .where((p) => p['id'] != null && p['id'].toString() != uid)
+          .toList();
+      if (mounted && revision == _searchRevision) setState(() => found = matches);
+    } catch (_) {
+      final lower = term.toLowerCase();
+      final matches = availableContacts.where((p) =>
+        (p['display_name'] ?? '').toString().toLowerCase().contains(lower) ||
+        (p['username'] ?? '').toString().toLowerCase().contains(lower)).toList();
+      if (mounted && revision == _searchRevision) setState(() => found = matches);
+    }
   }
 
   Future<void> createGroup() async {
@@ -2966,9 +2981,11 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
                 : found.isEmpty
                   ? Center(child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(availableContacts.isEmpty
-                        ? 'مخاطبی ندارید. ابتدا از بخش «مخاطبین» افراد را اضافه کنید.'
-                        : 'مخاطبی با این نام پیدا نشد.', textAlign: TextAlign.center)))
+                      child: Text(search.text.trim().isNotEmpty
+                        ? 'کاربری با این نام یا شناسه پیدا نشد.'
+                        : (availableContacts.isEmpty
+                          ? 'هنوز مخاطبی ندارید. نام کاربری فرد را جستجو کنید یا از بخش «مخاطبین» او را اضافه کنید.'
+                          : 'مخاطبی ندارید؛ برای افزودن افراد از جستجو استفاده کنید.'), textAlign: TextAlign.center)))
                   : ListView(
               children: found.map((p) {
                 final isSelected = selected.any((x) => x['id'] == p['id']);
