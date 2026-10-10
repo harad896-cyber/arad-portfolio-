@@ -46,7 +46,7 @@ jobs:
                   </intent-filter>
               '''
               if '</activity>' in s:
-                  s = s.replace('</activity>', intent_filter + '\\n        </activity>', 1)
+                  s = s.replace('</activity>', intent_filter + '\n        </activity>', 1)
           p.write_text(s)
           PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
