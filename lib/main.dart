@@ -2790,7 +2790,9 @@ class _HomePageState extends State<HomePage> {
             separatorBuilder: (_,__) => const SizedBox(height: 6),
             itemBuilder: (_,i) {
               final p = rows[i];
-              final title = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
+              final title = ((p['_local_name']?.toString().trim().isNotEmpty ?? false)
+                  ? p['_local_name']
+                  : (p['display_name'] ?? p['username'] ?? 'کاربر')).toString();
               return Card(
                 child: ListTile(
                   leading: avatar(p),
@@ -2817,6 +2819,10 @@ class _HomePageState extends State<HomePage> {
     final ids = (rows as List).map((x) => x['contact_id']).toList();
     if (ids.isEmpty) return [];
     final profiles = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
+    final prefs = await SharedPreferences.getInstance();
+    for (final p in profiles) {
+      p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
+    }
     final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
     for (final p in profiles) {
       for (final m in (members as List)) {
@@ -5052,11 +5058,19 @@ class _ChatPageState extends State<ChatPage> {
       if (c['type'] == 'direct') return;
       final username = (c['username'] ?? '').toString().trim();
       if (c['is_public'] == true && username.isNotEmpty) {
-        await Clipboard.setData(ClipboardData(text: 'arad://group/$username'));
-        if (mounted) showMsg(context, 'لینک عمومی گروه کپی شد؛ با باز کردن آن می‌توان وارد گروه شد.');
-      } else {
-        if (mounted) showMsg(context, 'این گروه خصوصی است. از «مدیریت گروه ← لینک گروه» لینک دعوت بسازید؛ لینک دعوت با کد، درخواست عضویت را ثبت می‌کند.');
+        final link = 'arad://group/${Uri.encodeComponent(username)}';
+        await Clipboard.setData(ClipboardData(text: link));
+        if (mounted) showMsg(context, 'لینک عمومی گروه کپی شد. با زدن روی آن در آراد، صفحه گروه باز می‌شود.');
+        return;
       }
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ConversationInvitePage(
+          conversationId: widget.id,
+          title: widget.title,
+          type: c['type']?.toString() ?? 'group',
+        ),
+      ));
     } catch (e) {
       if (mounted) showMsg(context, 'ساخت لینک گروه ناموفق بود: ${_friendlyError(e.toString())}');
     }
