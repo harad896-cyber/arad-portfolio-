@@ -5260,11 +5260,11 @@ class _ChatPageState extends State<ChatPage> {
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final myBubble = scheme.primary;
-    final otherBubble = dark ? const Color(0xFF30343B) : const Color(0xFFF4F5F7);
+    final myBubble = dark ? const Color(0xFF5B46B4) : scheme.primary;
+    final otherBubble = dark ? const Color(0xFF20242E) : const Color(0xFFF4F5F7);
     final textColor = mine
-        ? (ThemeData.estimateBrightnessForColor(myBubble) == Brightness.dark ? Colors.white : Colors.black)
-        : (dark ? Colors.white : const Color(0xFF20242A));
+        ? Colors.white
+        : (dark ? const Color(0xFFF4F5FA) : const Color(0xFF20242A));
     final body = (m['body'] ?? '').toString();
     final internalLinkMatch = RegExp(r'arad://(?:invite\?code=[^\s]+|group/[^\s]+|chat/[^\s]+)').firstMatch(body);
     final urlMatch = RegExp(r'https?://\S+').firstMatch(body);
@@ -5510,6 +5510,34 @@ class _ChatPageState extends State<ChatPage> {
       return r!=null;
     } catch (_) { return false; }
   }
+  Future<void> _openChatProfile() async {
+    if (_chatType != 'direct') {
+      if (mounted) await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title),
+      ));
+      return;
+    }
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final members = await supabase.from('conversation_members')
+          .select('user_id').eq('conversation_id', widget.id);
+      final peerId = (members as List)
+          .map((m) => m['user_id']?.toString() ?? '')
+          .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
+      if (peerId.isEmpty) throw Exception('پروفایل مخاطب پیدا نشد.');
+      final row = await supabase.from('profiles').select()
+          .eq('id', peerId).maybeSingle();
+      if (row == null) throw Exception('پروفایل مخاطب در دسترس نیست.');
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
+      ));
+    } catch (e) {
+      if (mounted) showMsg(context, 'باز کردن پروفایل ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
   Future<void> _openGroupManagement() async {
     if (!await _isGroupAdmin()) { if(mounted) showMsg(context,'فقط مدیر گروه یا کانال می‌تواند مدیریت کند.'); return; }
     if (mounted) await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.id,title:widget.title)));
@@ -5581,7 +5609,10 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
         titleSpacing: 4,
-        title: Row(
+        title: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openChatProfile,
+          child: Row(
           children: [
             Stack(
               clipBehavior: Clip.none,
@@ -5627,6 +5658,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ],
         ),
+        ),
       ),
       body: AnimatedPadding(
         duration: const Duration(milliseconds: 180),
@@ -5634,14 +5666,14 @@ class _ChatPageState extends State<ChatPage> {
         padding: EdgeInsets.only(bottom: keyboardInset),
         child: Container(
         decoration: BoxDecoration(
-          color: Color(appTheme.backgroundSeed),
+          color: dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(appTheme.backgroundSeed),
-              Color.alphaBlend(scheme.primary.withValues(alpha: dark ? .055 : .035), Color(appTheme.backgroundSeed)),
-              Color(appTheme.backgroundSeed),
+              dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
+              Color.alphaBlend(scheme.primary.withValues(alpha: dark ? .035 : .035), dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed)),
+              dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
             ],
           ),
         ),
