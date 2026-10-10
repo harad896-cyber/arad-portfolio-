@@ -6042,7 +6042,7 @@ class _ChatPageState extends State<ChatPage> {
             onSelected: (value) {
               switch (value) {
                 case 'search':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => MessageSearchPage(conversationId: widget.id)));
+                  showSearch(context: context, delegate: MessageSearchDelegate(widget.id));
                   break;
                 case 'media':
                   Navigator.push(context, MaterialPageRoute(builder: (_) => SharedMediaPage(conversationId: widget.id)));
