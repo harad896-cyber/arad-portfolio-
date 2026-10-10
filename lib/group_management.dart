@@ -20,7 +20,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   List<Map<String, dynamic>> auditEvents = [];
   Map<String, Map<String, dynamic>> profiles = {};
   int onlineCount = 0;
-  bool loading = true, admin = false, owner = false, busy = false;
+  bool loading = true, admin = false, owner = false, busy = false, canAddMembers = false, canEditGroup = false;
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
@@ -37,14 +37,25 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       final idList = ids.toList();
       final ps = idList.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified,is_online,last_seen').inFilter('id', idList));
       final uid = db.auth.currentUser?.id;
+      final isOwner = uid != null && g['created_by']?.toString() == uid;
+      final isAdmin = isOwner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
+      Map<String,dynamic> permissions = {};
+      if (isAdmin && !isOwner && uid != null) {
+        try {
+          final row = await db.from('group_admin_permissions').select('can_add_members,can_edit_group').eq('conversation_id', widget.conversationId).eq('user_id', uid).maybeSingle();
+          if (row != null) permissions = Map<String,dynamic>.from(row);
+        } catch (_) {}
+      }
       if (!mounted) return;
       setState(() {
         group = g; members = ms; auditEvents = events;
         final memberIds = ms.map((m) => m['user_id'].toString()).toSet();
         onlineCount = ps.where((p) => memberIds.contains(p['id'].toString()) && p['is_online'] == true).length;
         profiles = {for (final p in ps) p['id'].toString(): p};
-        owner = uid != null && g['created_by']?.toString() == uid;
-        admin = owner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
+        owner = isOwner;
+        admin = isAdmin;
+        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false);
+        canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
     } catch (_) {
@@ -82,7 +93,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   }
 
   Future<void> changeGroupAvatar() async {
-    if (!admin || busy) return;
+    if (!canEditGroup || busy) return;
     final source = await showModalBottomSheet<ImageSource>(context: context, builder: (s) => SafeArea(child: Wrap(children: [
       ListTile(leading: const Icon(Icons.photo_library_rounded), title: const Text('انتخاب از گالری'), onTap: () => Navigator.pop(s, ImageSource.gallery)),
       ListTile(leading: const Icon(Icons.camera_alt_rounded), title: const Text('دوربین'), onTap: () => Navigator.pop(s, ImageSource.camera)),
@@ -220,7 +231,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final g = group!; final title = (g['title'] ?? widget.title).toString(); final desc = (g['description'] ?? '').toString().trim(); final image = (g['avatar_url'] ?? '').toString();
     return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: ListView(padding: const EdgeInsets.all(16), children: [
       Card(child: Padding(padding: const EdgeInsets.all(22), child: Column(children: [
-        GestureDetector(onTap: admin ? changeGroupAvatar : null, child: Stack(alignment: Alignment.bottomRight, children: [CircleAvatar(radius: 54, backgroundImage: image.isNotEmpty ? NetworkImage(image) : null, child: image.isEmpty ? const Icon(Icons.groups_rounded, size: 50) : null), if (admin) Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18))])),
+        GestureDetector(onTap: canEditGroup ? changeGroupAvatar : null, child: Stack(alignment: Alignment.bottomRight, children: [CircleAvatar(radius: 54, backgroundImage: image.isNotEmpty ? NetworkImage(image) : null, child: image.isEmpty ? const Icon(Icons.groups_rounded, size: 50) : null), if (canEditGroup) Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18))])),
         const SizedBox(height: 12), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
         if ((g['username'] ?? '').toString().trim().isNotEmpty) Text('@${g['username']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8), Text(desc.isEmpty ? 'بدون توضیحات' : desc, textAlign: TextAlign.center),
@@ -238,7 +249,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
             final source = event == null ? '' : event['action'] == 'joined_by_link' ? ' • از طریق لینک دعوت' : event['action'] == 'join_requested_by_link' ? ' • درخواست از طریق لینک' : event['action'] == 'joined_by_public_username' ? ' • از طریق نام کاربری عمومی' : event['action'] == 'join_requested_by_public_username' ? ' • درخواست از نام کاربری عمومی' : ' • افزوده‌شده توسط ${nameOf((event['actor_id'] ?? '').toString())}';
             return '${o ? '👑 مالک' : (m['role'] ?? 'عضو').toString()}${date.isEmpty ? '' : ' • عضویت: $date'}$source';
           }())); })]))),
-        if (admin) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا از مخاطبین'), subtitle: const Text('انتخاب مخاطب و افزودن مستقیم به گروه'), trailing: const Icon(Icons.chevron_left), onTap: addMembersFromContacts),
+        if (canAddMembers) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا از مخاطبین'), subtitle: const Text('انتخاب مخاطب و افزودن مستقیم به گروه'), trailing: const Icon(Icons.chevron_left), onTap: addMembersFromContacts),
         if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
         if (admin) ListTile(leading: const Icon(Icons.admin_panel_settings_rounded), title: const Text('مدیریت گروه'), subtitle: const Text('حذف عضو، محرومیت، نقش‌ها و تنظیمات'), trailing: const Icon(Icons.chevron_left), onTap: openManagement),
