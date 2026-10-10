@@ -4304,6 +4304,16 @@ class _ChatPageState extends State<ChatPage> {
     return '${p['display_name'] ?? p['username'] ?? 'کاربر'}';
   }
 
+  void _restoreComposerFocus() {
+    if (!mounted) return;
+    _composerFocus.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _composerFocus.requestFocus();
+      _scrollToLatestForKeyboard();
+    });
+  }
+
   Future<void> _loadChatType() async {
     try {
       final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();
@@ -4659,6 +4669,7 @@ class _ChatPageState extends State<ChatPage> {
       });
       if (mounted) setState(() => replyMessage = null);
       await load();
+      _restoreComposerFocus();
     } catch (e) {
       if (mounted) showMsg(context, 'فایل ارسال نشد: $e');
     } finally {
@@ -4748,6 +4759,7 @@ class _ChatPageState extends State<ChatPage> {
       });
       if (mounted) setState(() => replyMessage = null);
       await load();
+      _restoreComposerFocus();
     } catch (e) {
       if (mounted) showMsg(context, 'ارسال ویس ناموفق بود: ${_friendlyError(e.toString())}');
     } finally {
@@ -4791,6 +4803,7 @@ class _ChatPageState extends State<ChatPage> {
       });
       if (mounted) setState(() => replyMessage = null);
       await load();
+      _restoreComposerFocus();
     } catch (e) {
       if (mounted) showMsg(context, 'ویدئو ارسال نشد: ${_friendlyError(e.toString())}');
     } finally {
@@ -4812,6 +4825,7 @@ class _ChatPageState extends State<ChatPage> {
       await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
       if (mounted) setState(() => replyMessage = null);
       await load();
+      _restoreComposerFocus();
     } catch (e) { if (mounted) showMsg(context, 'ارسال عکس دوربین ناموفق بود: $e'); }
     finally { if (mounted) setState(() => sending = false); }
   }
@@ -4878,6 +4892,7 @@ class _ChatPageState extends State<ChatPage> {
       });
       if (mounted) setState(() => replyMessage = null);
       await load();
+      _restoreComposerFocus();
     } catch (e) {
       if (mounted) showMsg(context, 'تصویر ارسال نشد: $e');
     } finally {
