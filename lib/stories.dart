@@ -169,9 +169,10 @@ class _StoriesPageState extends State<StoriesPage> {
 
   Future<void> _markViewed() async {
     if (_stories.isEmpty) return;
+    final story = _stories[_index];
     final uid = _storiesSupabase.auth.currentUser?.id;
-    if (uid == null) return;
-    try { await _storiesSupabase.from('story_views').upsert({'story_id': _stories[_index]['id'], 'viewer_id': uid, 'viewed_at': DateTime.now().toUtc().toIso8601String()}); } catch (_) {}
+    if (uid == null || story['user_id']?.toString() == uid) return;
+    try { await _storiesSupabase.from('story_views').upsert({'story_id': story['id'], 'viewer_id': uid, 'viewed_at': DateTime.now().toUtc().toIso8601String()}); } catch (_) {}
   }
 
   void _next() {
