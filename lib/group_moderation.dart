@@ -58,7 +58,7 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
   }
 
   Future<void> deleteMessage(String id) async {
-    if (!isAdmin || busy) return;
+    if (!canDeleteMessages || busy) return;
     setState(() => busy = true);
     try { await db.rpc('delete_group_message_for_everyone', params: {'p_conversation_id': widget.conversationId, 'p_message_id': id}); toast('پیام برای همه حذف شد.'); await load(); }
     catch (e) { toast('حذف پیام ناموفق بود: $e'); }
@@ -66,7 +66,7 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
   }
 
   Future<void> banMember(String id) async {
-    if (!isAdmin || busy || id == group?['created_by'].toString()) return;
+    if (!canRemoveMembers || busy || id == group?['created_by'].toString()) return;
     final reason = TextEditingController();
     final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(title: Text('محروم‌کردن ${nameOf(id)}'), content: TextField(controller: reason, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل (اختیاری)')), actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')), FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError), onPressed: () => Navigator.pop(d, true), child: const Text('محروم و حذف شود'))])) ?? false;
     final text = reason.text.trim(); reason.dispose();
@@ -78,7 +78,7 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
   }
 
   Future<void> unbanMember(String id) async {
-    if (!isAdmin || busy) return;
+    if (!canRemoveMembers || busy) return;
     setState(() => busy = true);
     try { await db.rpc('unban_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id}); toast('محرومیت برداشته شد.'); await load(); }
     catch (e) { toast('رفع محرومیت ناموفق بود: $e'); }
