@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
+import 'package:share_plus/share_plus.dart';
 
 final _storiesSupabase = Supabase.instance.client;
 
@@ -28,7 +29,7 @@ class _StoriesTrayState extends State<StoriesTray> {
 
   Future<void> _load() async {
     try {
-      final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
+      final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,audience,created_at,expires_at')
         .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']).order('created_at', ascending: false).limit(40);
       final list = List<Map<String, dynamic>>.from(rows);
       final ids = list.map((e) => e['user_id'].toString()).toSet().toList();
@@ -98,6 +99,9 @@ class _StoriesPageState extends State<StoriesPage> {
   Map<String, String> _urls = {};
   int _index = 0;
   bool _loading = true;
+  final Set<String> _likedIds = <String>{};
+  final Map<String, int> _likeCounts = <String, int>{};
+  final Map<String, int> _commentCounts = <String, int>{};
   Timer? _timer;
   RealtimeChannel? _channel;
 
@@ -116,6 +120,26 @@ class _StoriesPageState extends State<StoriesPage> {
         .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']).order('created_at', ascending: true);
       final stories = List<Map<String, dynamic>>.from(rows);
       final urls = <String, String>{};
+      final ids = stories.map((s) => s['id'].toString()).toList();
+      final uid = _storiesSupabase.auth.currentUser?.id;
+      _likedIds.clear(); _likeCounts.clear(); _commentCounts.clear();
+      if (ids.isNotEmpty) {
+        try {
+          final likes = await _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids);
+          for (final row in List<Map<String,dynamic>>.from(likes)) {
+            final id = row['story_id'].toString();
+            _likeCounts[id] = (_likeCounts[id] ?? 0) + 1;
+            if (row['user_id']?.toString() == uid) _likedIds.add(id);
+          }
+        } catch (_) {}
+        try {
+          final comments = await _storiesSupabase.from('story_comments').select('story_id').inFilter('story_id', ids);
+          for (final row in List<Map<String,dynamic>>.from(comments)) {
+            final id = row['story_id'].toString();
+            _commentCounts[id] = (_commentCounts[id] ?? 0) + 1;
+          }
+        } catch (_) {}
+      }
       for (final s in stories) {
         try { urls[s['id'].toString()] = await _storiesSupabase.storage.from('stories').createSignedUrl(s['media_path'].toString(), 3600); } catch (_) {}
       }
@@ -151,6 +175,93 @@ class _StoriesPageState extends State<StoriesPage> {
   void _previous() {
     if (_stories.isEmpty || _index == 0) return;
     setState(() => _index--); _startTimer();
+  }
+
+  Future<void> _toggleCurrentLike() async {
+    if (_stories.isEmpty) return;
+    final story = _stories[_index];
+    final id = story['id'].toString();
+    final uid = _storiesSupabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final wasLiked = _likedIds.contains(id);
+    setState(() {
+      if (wasLiked) { _likedIds.remove(id); _likeCounts[id] = ((_likeCounts[id] ?? 1) - 1).clamp(0, 1 << 30); }
+      else { _likedIds.add(id); _likeCounts[id] = (_likeCounts[id] ?? 0) + 1; }
+    });
+    try {
+      if (wasLiked) {
+        await _storiesSupabase.from('story_likes').delete().eq('story_id', story['id']).eq('user_id', uid);
+      } else {
+        await _storiesSupabase.from('story_likes').insert({'story_id': story['id'], 'user_id': uid});
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          if (wasLiked) { _likedIds.add(id); _likeCounts[id] = (_likeCounts[id] ?? 0) + 1; }
+          else { _likedIds.remove(id); _likeCounts[id] = ((_likeCounts[id] ?? 1) - 1).clamp(0, 1 << 30); }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ثبت پسندیدن انجام نشد.')));
+      }
+    }
+  }
+
+  Future<void> _openComments() async {
+    if (_stories.isEmpty) return;
+    final story = _stories[_index];
+    final id = story['id'].toString();
+    final uid = _storiesSupabase.auth.currentUser?.id;
+    final controller = TextEditingController();
+    List<Map<String,dynamic>> comments = [];
+    try {
+      final rows = await _storiesSupabase.from('story_comments').select('id,user_id,body,created_at').eq('story_id', story['id']).order('created_at');
+      comments = List<Map<String,dynamic>>.from(rows);
+    } catch (_) {}
+    if (!mounted) { controller.dispose(); return; }
+    await showModalBottomSheet<void>(
+      context: context, isScrollControlled: true, showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(builder: (sheetContext, setSheetState) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(sheetContext).viewInsets.bottom + 16),
+          child: SizedBox(height: MediaQuery.of(sheetContext).size.height * .55, child: Column(children: [
+            const Align(alignment: Alignment.centerRight, child: Text('نظرهای استوری', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
+            const SizedBox(height: 8),
+            Expanded(child: comments.isEmpty
+              ? const Center(child: Text('هنوز نظری ثبت نشده است.'))
+              : ListView.builder(itemCount: comments.length, itemBuilder: (_, i) => ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                  title: Text(comments[i]['body']?.toString() ?? ''),
+                  subtitle: Text(comments[i]['user_id']?.toString() == uid ? 'شما' : 'مخاطب'),
+                  dense: true,
+                ))),
+            Row(children: [
+              Expanded(child: TextField(controller: controller, maxLength: 500, decoration: const InputDecoration(hintText: 'نظر بنویس...', counterText: ''))),
+              IconButton(icon: const Icon(Icons.send_rounded), onPressed: () async {
+                final body = controller.text.trim();
+                if (body.isEmpty || uid == null) return;
+                try {
+                  final row = await _storiesSupabase.from('story_comments').insert({'story_id': story['id'], 'user_id': uid, 'body': body}).select('id,user_id,body,created_at').single();
+                  controller.clear();
+                  setSheetState(() => comments.add(Map<String,dynamic>.from(row)));
+                  if (mounted) setState(() => _commentCounts[id] = (_commentCounts[id] ?? 0) + 1);
+                } catch (_) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ثبت نظر انجام نشد؛ ممکن است این استوری برای مخاطبین مجاز باشد.')));
+                }
+              }),
+            ]),
+          ])),
+        ),
+      )),
+    );
+    controller.dispose();
+  }
+
+  Future<void> _shareCurrent() async {
+    if (_stories.isEmpty) return;
+    final story = _stories[_index];
+    final caption = (story['caption'] ?? '').toString().trim();
+    final id = story['id'].toString();
+    final audience = (story['audience'] ?? 'contacts').toString();
+    await Share.share('استوری در پیام‌رسان آراد${caption.isEmpty ? '' : '\n$caption'}\nشناسه استوری: $id\nمحدوده نمایش: ${audience == 'everyone' ? 'همه' : audience == 'private' ? 'خصوصی' : 'مخاطبین'}');
   }
 
   Future<void> _deleteCurrent() async {
@@ -204,6 +315,20 @@ class _StoriesPageState extends State<StoriesPage> {
               ),
             ),
           ),
+          Positioned(
+            top: 24, left: 16, right: 16,
+            child: Row(children: [
+              Expanded(child: Text(
+                (s['audience'] ?? 'contacts') == 'everyone' ? 'عمومی' : (s['audience'] ?? 'contacts') == 'private' ? 'خصوصی' : 'مخاطبین',
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              )),
+              IconButton(tooltip: 'پسندیدن', onPressed: _toggleCurrentLike, icon: Icon(_likedIds.contains(s['id'].toString()) ? Icons.favorite : Icons.favorite_border, color: _likedIds.contains(s['id'].toString()) ? Colors.pinkAccent : Colors.white)),
+              Text('${_likeCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+              IconButton(tooltip: 'نظرها', onPressed: _openComments, icon: const Icon(Icons.mode_comment_outlined, color: Colors.white)),
+              Text('${_commentCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+              IconButton(tooltip: 'اشتراک‌گذاری', onPressed: _shareCurrent, icon: const Icon(Icons.share_outlined, color: Colors.white)),
+            ]),
+          ),
           if ((s['caption'] ?? '').toString().trim().isNotEmpty)
             Positioned(
               bottom: 30, left: 18, right: 18,
@@ -233,6 +358,16 @@ class _StoriesPageState extends State<StoriesPage> {
     if (choice == null) return;
     final file = choice == 'image' ? await picker.pickImage(source: ImageSource.gallery, imageQuality: 90) : await picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 1));
     if (file == null) return;
+    final audience = await showModalBottomSheet<String>(
+      context: context,
+      builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const ListTile(title: Text('چه کسانی استوری را ببینند؟')),
+        ListTile(leading: const Icon(Icons.people_alt_outlined), title: const Text('مخاطبین'), subtitle: const Text('افراد داخل مخاطبین یا گفتگوی مشترک'), onTap: () => Navigator.pop(c, 'contacts')),
+        ListTile(leading: const Icon(Icons.public_rounded), title: const Text('همه'), subtitle: const Text('استوری عمومی برای کاربران واردشده'), onTap: () => Navigator.pop(c, 'everyone')),
+        ListTile(leading: const Icon(Icons.lock_outline_rounded), title: const Text('فقط خودم'), onTap: () => Navigator.pop(c, 'private')),
+      ])),
+    );
+    if (audience == null) return;
     final uid = _storiesSupabase.auth.currentUser?.id;
     if (uid == null) return;
     final bytes = await file.readAsBytes();
@@ -249,7 +384,7 @@ class _StoriesPageState extends State<StoriesPage> {
         ]));
         controller.dispose();
       }
-      await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_path': path, 'media_type': choice, 'caption': caption, 'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String()});
+      await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_path': path, 'media_type': choice, 'caption': caption, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String()});
       if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.'))); await _load(); }
     } catch (_) {
       try { await _storiesSupabase.storage.from('stories').remove([path]); } catch (_) {}
