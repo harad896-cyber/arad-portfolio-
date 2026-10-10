@@ -2028,6 +2028,103 @@ String _homeTime(dynamic value) {
   if (dt.year == now.year && dt.month == now.month && dt.day == now.day) return dt.hour.toString().padLeft(2, '0') + ':' + dt.minute.toString().padLeft(2, '0');
   return dt.day.toString().padLeft(2, '0') + '/' + dt.month.toString().padLeft(2, '0');
 }
+Future<void> openAradLink(BuildContext context, Uri uri) async {
+  if (uri.scheme.toLowerCase() != 'arad') return;
+  final host = uri.host.toLowerCase();
+  final uid = supabase.auth.currentUser?.id;
+  if (uid == null) {
+    showMsg(context, 'برای باز کردن لینک ابتدا وارد آراد شوید.');
+    return;
+  }
+  Future<void> openChat(String conversationId, String title, {String? messageId}) async {
+    final membership = await supabase.from('conversation_members').select('user_id')
+        .eq('conversation_id', conversationId).eq('user_id', uid).maybeSingle();
+    if (membership == null) {
+      showMsg(context, 'به این گفتگوی خصوصی دسترسی ندارید؛ لینک دعوت معتبر لازم است.');
+      return;
+    }
+    if (!context.mounted) return;
+    await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (_) => ChatPage(id: conversationId, title: title, targetMessageId: messageId),
+    ));
+  }
+  try {
+    if (host == 'invite') {
+      final code = (uri.queryParameters['code'] ?? '').trim();
+      if (code.isEmpty) return;
+      final result = await supabase.rpc('join_conversation_by_invite', params: {'p_code': code});
+      final id = result.toString();
+      final c = Map<String, dynamic>.from(await supabase.from('conversations')
+          .select('id,type,title').eq('id', id).single());
+      final member = await supabase.from('conversation_members').select('user_id')
+          .eq('conversation_id', id).eq('user_id', uid).maybeSingle();
+      if (member == null) {
+        showMsg(context, 'درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.');
+        return;
+      }
+      if (!context.mounted) return;
+      await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => ChatPage(id: id, title: (c['title'] ?? (c['type'] == 'channel' ? 'کانال' : 'گروه')).toString()),
+      ));
+      return;
+    }
+    if (host == 'group') {
+      if (uri.pathSegments.isEmpty) return;
+      final key = Uri.decodeComponent(uri.pathSegments.first).trim();
+      Map<String, dynamic>? c = await supabase.from('conversations')
+          .select('id,type,title,username,is_public').eq('username', key).maybeSingle();
+      c ??= await supabase.from('conversations').select('id,type,title,username,is_public')
+          .eq('id', key).maybeSingle();
+      if (c == null || c['type'] == 'direct') {
+        showMsg(context, 'لینک گروه معتبر نیست یا گروه در دسترس نیست.');
+        return;
+      }
+      final id = c['id'].toString();
+      var member = await supabase.from('conversation_members').select('user_id')
+          .eq('conversation_id', id).eq('user_id', uid).maybeSingle();
+      if (member == null && c['is_public'] == true && (c['username'] ?? '').toString().isNotEmpty) {
+        await supabase.rpc('join_public_conversation', params: {'p_username': c['username']});
+        member = await supabase.from('conversation_members').select('user_id')
+            .eq('conversation_id', id).eq('user_id', uid).maybeSingle();
+      }
+      if (member == null) {
+        showMsg(context, c['is_public'] == true
+            ? 'درخواست عضویت ثبت شد؛ اگر تأیید مدیر لازم باشد باید منتظر بمانید.'
+            : 'این گروه خصوصی است؛ از مدیر گروه لینک دعوت خصوصی بگیرید.');
+        return;
+      }
+      await openChat(id, (c['title'] ?? c['username'] ?? 'گروه').toString());
+      return;
+    }
+    if (host == 'chat' && uri.pathSegments.length >= 3 && uri.pathSegments[1] == 'message') {
+      final conversationId = uri.pathSegments[0];
+      final messageId = uri.pathSegments[2];
+      final c = await supabase.from('conversations').select('id,type,title,username,is_public')
+          .eq('id', conversationId).maybeSingle();
+      if (c == null) {
+        showMsg(context, 'این گفتگو پیدا نشد یا لینک آن دیگر معتبر نیست.');
+        return;
+      }
+      var member = await supabase.from('conversation_members').select('user_id')
+          .eq('conversation_id', conversationId).eq('user_id', uid).maybeSingle();
+      if (member == null && c['is_public'] == true && (c['username'] ?? '').toString().isNotEmpty) {
+        await supabase.rpc('join_public_conversation', params: {'p_username': c['username']});
+        member = await supabase.from('conversation_members').select('user_id')
+            .eq('conversation_id', conversationId).eq('user_id', uid).maybeSingle();
+      }
+      if (member == null) {
+        showMsg(context, 'برای دیدن این پیام ابتدا باید عضو گفتگو شوید؛ عضویت خصوصی است یا در انتظار تأیید است.');
+        return;
+      }
+      final title = (c['title'] ?? c['username'] ?? (c['type'] == 'direct' ? 'گفتگو' : 'گروه')).toString();
+      await openChat(conversationId, title, messageId: messageId);
+      return;
+    }
+  } catch (e) {
+    if (context.mounted) showMsg(context, 'باز کردن لینک ناموفق بود: ${_friendlyError(e.toString())}');
+  }
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   @override
@@ -2225,16 +2322,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _handleInviteUri(Uri uri) async {
-    if (uri.scheme.toLowerCase() != 'arad' || uri.host.toLowerCase() != 'invite') return;
-    final code = (uri.queryParameters['code'] ?? '').trim();
-    if (code.isEmpty || !mounted) return;
-    final key = code.toLowerCase();
-    final now = DateTime.now();
-    _recentInviteCodes.removeWhere((_, seenAt) => now.difference(seenAt) > const Duration(minutes: 2));
-    final previous = _recentInviteCodes[key];
-    if (previous != null && now.difference(previous) < const Duration(seconds: 3)) return;
-    _recentInviteCodes[key] = now;
-    await _joinGroupByCode(code);
+    if (uri.scheme.toLowerCase() != 'arad' || !mounted) return;
+    if (uri.host.toLowerCase() == 'invite') {
+      final code = (uri.queryParameters['code'] ?? '').trim();
+      if (code.isEmpty) return;
+      final key = code.toLowerCase();
+      final now = DateTime.now();
+      _recentInviteCodes.removeWhere((_, seenAt) => now.difference(seenAt) > const Duration(minutes: 2));
+      final previous = _recentInviteCodes[key];
+      if (previous != null && now.difference(previous) < const Duration(seconds: 3)) return;
+      _recentInviteCodes[key] = now;
+    }
+    await openAradLink(context, uri);
   }
 
   String _extractInviteCode(String raw) {
@@ -3789,6 +3888,8 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _messagesScroll = ScrollController();
   final FocusNode _composerFocus = FocusNode();
   final GlobalKey _latestMessageKey = GlobalKey();
+  final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
+  bool _didJumpToTargetMessage = false;
   bool loading = true;
   bool sending = false;
   Map<String, dynamic>? replyMessage;
@@ -3975,6 +4076,18 @@ class _ChatPageState extends State<ChatPage> {
           .eq('id', widget.id).single());
       final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120);
       final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
+      if (widget.targetMessageId != null && !loaded.any((m) => '${m['id']}' == widget.targetMessageId)) {
+        try {
+          final target = await supabase.from('messages').select()
+              .eq('id', widget.targetMessageId!).eq('conversation_id', widget.id).maybeSingle();
+          if (target != null) loaded.add(Map<String, dynamic>.from(target));
+          loaded.sort((a, b) {
+            final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return ad.compareTo(bd);
+          });
+        } catch (_) {}
+      }
       final uid = supabase.auth.currentUser?.id;
       if (uid != null && loaded.isNotEmpty) {
         final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
@@ -4063,7 +4176,10 @@ class _ChatPageState extends State<ChatPage> {
           attachments = loadedAttachments;
           loading = false;
         });
-        if (stickToBottom) {
+        if (widget.targetMessageId != null && !_didJumpToTargetMessage) {
+          _didJumpToTargetMessage = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToTargetMessage());
+        } else if (stickToBottom) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || !_messagesScroll.hasClients) return;
             _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
@@ -4076,6 +4192,17 @@ class _ChatPageState extends State<ChatPage> {
         setState(() => loading = false);
         showMsg(context, 'خطا در پیام‌ها: $e');
       }
+    }
+  }
+
+  void _jumpToTargetMessage() {
+    final targetId = widget.targetMessageId;
+    if (!mounted || targetId == null) return;
+    final targetContext = _messageKeys[targetId]?.currentContext;
+    if (targetContext != null) {
+      Scrollable.ensureVisible(targetContext, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic, alignment: .5);
+    } else if (_messagesScroll.hasClients) {
+      _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
     }
   }
 
@@ -4175,7 +4302,7 @@ class _ChatPageState extends State<ChatPage> {
     text.clear();
     setState(() {
       replyMessage = null;
-      sending = false;
+      sending = true;
       messages = [...messages, optimistic];
       timelineItems = [...timelineItems, {...optimistic, '__kind': 'message'}]
         ..sort((a, b) {
@@ -4225,6 +4352,15 @@ class _ChatPageState extends State<ChatPage> {
       });
       _composerFocus.requestFocus();
       showMsg(context, 'ارسال نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => sending = false);
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _composerFocus.requestFocus();
+          _scrollToLatestForKeyboard();
+        });
+      }
     }
   }
 
@@ -4672,6 +4808,23 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _copyGroupLink() async {
+    try {
+      final c = Map<String, dynamic>.from(await supabase.from('conversations')
+          .select('type,username,is_public').eq('id', widget.id).single());
+      if (c['type'] == 'direct') return;
+      final username = (c['username'] ?? '').toString().trim();
+      if (c['is_public'] == true && username.isNotEmpty) {
+        await Clipboard.setData(ClipboardData(text: 'arad://group/$username'));
+        if (mounted) showMsg(context, 'لینک عمومی گروه کپی شد؛ با باز کردن آن می‌توان وارد گروه شد.');
+      } else {
+        if (mounted) showMsg(context, 'این گروه خصوصی است. از «مدیریت گروه ← لینک گروه» لینک دعوت بسازید؛ لینک دعوت با کد، درخواست عضویت را ثبت می‌کند.');
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'ساخت لینک گروه ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
   Future<void> copyMessageLink(Map<String, dynamic> message) async {
     final link = "arad://chat/${widget.id}/message/${message['id']}";
     await Clipboard.setData(ClipboardData(text: link));
@@ -5113,6 +5266,7 @@ class _ChatPageState extends State<ChatPage> {
         ? (ThemeData.estimateBrightnessForColor(myBubble) == Brightness.dark ? Colors.white : Colors.black)
         : (dark ? Colors.white : const Color(0xFF20242A));
     final body = (m['body'] ?? '').toString();
+    final internalLinkMatch = RegExp(r'arad://(?:invite\\?code=[^\\s]+|group/[^\\s]+|chat/[^\\s]+)').firstMatch(body);
     final urlMatch = RegExp(r'https?://\S+').firstMatch(body);
     final isGroup = _chatType != 'direct';
 
@@ -5125,6 +5279,26 @@ class _ChatPageState extends State<ChatPage> {
       content = _voicePlayButton(m['id'].toString());
     } else if (m['message_type'] == 'file') {
       content = _fileAttachment(m);
+    } else if (internalLinkMatch != null && internalLinkMatch.start == 0) {
+      final link = internalLinkMatch.group(0)!;
+      content = InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => openAradLink(context, Uri.parse(link)),
+        child: Container(
+          width: 235,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (mine ? Colors.white : scheme.primary).withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.link_rounded, size: 28),
+            const SizedBox(height: 4),
+            Text(link, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
+            Text('باز کردن لینک در آراد', style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
+          ]),
+        ),
+      );
     } else if (urlMatch != null && urlMatch.start == 0) {
       final url = urlMatch.group(0)!;
       content = Container(
@@ -5376,6 +5550,12 @@ class _ChatPageState extends State<ChatPage> {
               ))),
               icon: const Icon(Icons.videocam_rounded),
             ),
+          if (_chatType != 'direct')
+            IconButton(
+              tooltip: 'کپی لینک گروه/کانال',
+              onPressed: _copyGroupLink,
+              icon: const Icon(Icons.link_rounded),
+            ),
           IconButton(
             tooltip: 'اطلاعات گفتگو',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title))),
@@ -5480,8 +5660,10 @@ class _ChatPageState extends State<ChatPage> {
                                 : item['__kind'] == 'system'
                                     ? _systemTimelineTile(item)
                                     : item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                            final messageId = item['id']?.toString();
+                            final itemKey = messageId == null ? null : _messageKeys.putIfAbsent(messageId, () => GlobalKey());
                             return KeyedSubtree(
-                              key: i == _displayTimelineItems.length - 1 ? _latestMessageKey : null,
+                              key: i == _displayTimelineItems.length - 1 ? _latestMessageKey : itemKey,
                               child: child,
                             );
                           },
@@ -5584,6 +5766,8 @@ class _ChatPageState extends State<ChatPage> {
                             child: TextField(
                               controller: text,
                               focusNode: _composerFocus,
+                              // Send-button taps must not unfocus the composer or dismiss the keyboard.
+                              onTapOutside: (_) {},
                               minLines: 1,
                               maxLines: 5,
                               textInputAction: TextInputAction.newline,
