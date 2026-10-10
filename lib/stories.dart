@@ -35,7 +35,7 @@ class _StoriesTrayState extends State<StoriesTray> {
       final ids = list.map((e) => e['user_id'].toString()).toSet().toList();
       final profiles = <String, Map<String, dynamic>>{};
       if (ids.isNotEmpty) {
-        final p = await _storiesSupabase.from('profiles').select('id,full_name,username,avatar_url').inFilter('id', ids);
+        final p = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
         for (final row in List<Map<String, dynamic>>.from(p)) profiles[row['id'].toString()] = row;
       }
       for (final row in list) row['profile'] = profiles[row['user_id'].toString()] ?? {};
@@ -77,7 +77,7 @@ class _StoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Map<String, dynamic>.from(story['profile'] ?? {});
-    final name = (p['full_name'] ?? p['username'] ?? 'کاربر').toString();
+    final name = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
     final avatar = p['avatar_url']?.toString();
     return GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
       Container(width: 62, height: 62, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
@@ -102,6 +102,7 @@ class _StoriesPageState extends State<StoriesPage> {
   final Set<String> _likedIds = <String>{};
   final Map<String, int> _likeCounts = <String, int>{};
   final Map<String, int> _commentCounts = <String, int>{};
+  final Map<String, int> _viewCounts = <String, int>{};
   Timer? _timer;
   RealtimeChannel? _channel;
 
@@ -122,7 +123,7 @@ class _StoriesPageState extends State<StoriesPage> {
       final urls = <String, String>{};
       final ids = stories.map((s) => s['id'].toString()).toList();
       final uid = _storiesSupabase.auth.currentUser?.id;
-      _likedIds.clear(); _likeCounts.clear(); _commentCounts.clear();
+      _likedIds.clear(); _likeCounts.clear(); _commentCounts.clear(); _viewCounts.clear();
       if (ids.isNotEmpty) {
         try {
           final likes = await _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids);
@@ -137,6 +138,13 @@ class _StoriesPageState extends State<StoriesPage> {
           for (final row in List<Map<String,dynamic>>.from(comments)) {
             final id = row['story_id'].toString();
             _commentCounts[id] = (_commentCounts[id] ?? 0) + 1;
+          }
+        } catch (_) {}
+        try {
+          final views = await _storiesSupabase.from('story_views').select('story_id,viewer_id').inFilter('story_id', ids);
+          for (final row in List<Map<String,dynamic>>.from(views)) {
+            final id = row['story_id'].toString();
+            _viewCounts[id] = (_viewCounts[id] ?? 0) + 1;
           }
         } catch (_) {}
       }
@@ -202,6 +210,51 @@ class _StoriesPageState extends State<StoriesPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ثبت پسندیدن انجام نشد.')));
       }
+    }
+  }
+
+  Future<void> _showViewers() async {
+    if (_stories.isEmpty) return;
+    final story = _stories[_index];
+    if (story['user_id']?.toString() != _storiesSupabase.auth.currentUser?.id) return;
+    try {
+      final rows = List<Map<String, dynamic>>.from(await _storiesSupabase
+          .from('story_views').select('viewer_id,viewed_at').eq('story_id', story['id']).order('viewed_at', ascending: false));
+      final ids = rows.map((r) => r['viewer_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet().toList();
+      final people = <String, Map<String, dynamic>>{};
+      if (ids.isNotEmpty) {
+        final profiles = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
+        for (final p in List<Map<String, dynamic>>.from(profiles)) people[p['id'].toString()] = p;
+      }
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context, showDragHandle: true,
+        builder: (ctx) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * .55,
+            child: Column(children: [
+              Padding(padding: const EdgeInsets.all(16), child: Align(alignment: Alignment.centerRight, child: Text('بازدیدکنندگان (${rows.length})', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)))),
+              Expanded(child: rows.isEmpty
+                ? const Center(child: Text('هنوز کسی این استوری را ندیده است.'))
+                : ListView(children: rows.map((r) {
+                    final id = r['viewer_id']?.toString() ?? '';
+                    final p = people[id] ?? {};
+                    final name = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
+                    final avatar = (p['avatar_url'] ?? '').toString();
+                    final at = DateTime.tryParse(r['viewed_at']?.toString() ?? '')?.toLocal();
+                    final time = at == null ? '' : '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
+                    return ListTile(
+                      leading: CircleAvatar(backgroundImage: avatar.isEmpty ? null : NetworkImage(avatar), child: avatar.isEmpty ? const Icon(Icons.person_outline) : null),
+                      title: Text(name),
+                      subtitle: Text(time),
+                    );
+                  }).toList())),
+            ]),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فهرست بازدیدکنندگان بارگذاری نشد.')));
     }
   }
 
@@ -324,6 +377,10 @@ class _StoriesPageState extends State<StoriesPage> {
               )),
               IconButton(tooltip: 'پسندیدن', onPressed: _toggleCurrentLike, icon: Icon(_likedIds.contains(s['id'].toString()) ? Icons.favorite : Icons.favorite_border, color: _likedIds.contains(s['id'].toString()) ? Colors.pinkAccent : Colors.white)),
               Text('${_likeCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+              if (mine) ...[
+                IconButton(tooltip: 'بازدیدکنندگان', onPressed: _showViewers, icon: const Icon(Icons.visibility_outlined, color: Colors.white)),
+                Text('${_viewCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+              ],
               IconButton(tooltip: 'نظرها', onPressed: _openComments, icon: const Icon(Icons.mode_comment_outlined, color: Colors.white)),
               Text('${_commentCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
               IconButton(tooltip: 'اشتراک‌گذاری', onPressed: _shareCurrent, icon: const Icon(Icons.share_outlined, color: Colors.white)),
