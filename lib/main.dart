@@ -2053,7 +2053,7 @@ class _HomePageState extends State<HomePage> {
   final Set<String> _handledIncomingCalls = <String>{};
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _inviteLinkSubscription;
-  final Set<String> _handledInviteCodes = <String>{};
+  final Map<String, DateTime> _recentInviteCodes = <String, DateTime>{};
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -2227,7 +2227,13 @@ class _HomePageState extends State<HomePage> {
   Future<void> _handleInviteUri(Uri uri) async {
     if (uri.scheme.toLowerCase() != 'arad' || uri.host.toLowerCase() != 'invite') return;
     final code = (uri.queryParameters['code'] ?? '').trim();
-    if (code.isEmpty || !mounted || !_handledInviteCodes.add(code.toLowerCase())) return;
+    if (code.isEmpty || !mounted) return;
+    final key = code.toLowerCase();
+    final now = DateTime.now();
+    _recentInviteCodes.removeWhere((_, seenAt) => now.difference(seenAt) > const Duration(minutes: 2));
+    final previous = _recentInviteCodes[key];
+    if (previous != null && now.difference(previous) < const Duration(seconds: 3)) return;
+    _recentInviteCodes[key] = now;
     await _joinGroupByCode(code);
   }
 
@@ -2281,7 +2287,6 @@ class _HomePageState extends State<HomePage> {
         title: (conversation['title'] ?? (conversation['type'] == 'channel' ? 'کانال' : 'گروه')).toString(),
       )));
     } catch (e) {
-      _handledInviteCodes.remove(code.toLowerCase());
       if (mounted) showMsg(context, 'پیوستن به گروه ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
