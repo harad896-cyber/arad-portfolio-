@@ -4154,23 +4154,72 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> sendText() async {
     final value = text.text.trim();
-    if (value.isEmpty || sending) return;
-    setState(() => sending = true);
+    final uid = supabase.auth.currentUser?.id;
+    if (value.isEmpty || sending || uid == null) return;
+
+    // Render the bubble immediately; don't wait for the full chat history,
+    // profile, reactions, attachments and call-session queries to finish.
+    final tempId = 'pending-${DateTime.now().microsecondsSinceEpoch}';
+    final replyId = replyMessage?['id'];
+    final optimistic = <String, dynamic>{
+      'id': tempId,
+      'conversation_id': widget.id,
+      'sender_id': uid,
+      'body': value,
+      'message_type': 'text',
+      'reply_to': replyId,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      '__pending': true,
+    };
+
+    text.clear();
+    setState(() {
+      replyMessage = null;
+      sending = false;
+      messages = [...messages, optimistic];
+      timelineItems = [...timelineItems, {...optimistic, '__kind': 'message'}]
+        ..sort((a, b) {
+          final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return ad.compareTo(bd);
+        });
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scrollToLatestForKeyboard();
+    });
+
     try {
-      await supabase.from('messages').insert({
+      final saved = Map<String, dynamic>.from(await supabase.from('messages').insert({
         'conversation_id': widget.id,
-        'sender_id': supabase.auth.currentUser!.id,
+        'sender_id': uid,
         'body': value,
         'message_type': 'text',
-        'reply_to': replyMessage?['id'],
+        'reply_to': replyId,
+      }).select().single());
+
+      if (!mounted) return;
+      setState(() {
+        messages = [
+          ...messages.where((m) => '${m['id']}' != tempId && '${m['id']}' != '${saved['id']}'),
+          saved,
+        ];
+        timelineItems = [
+          ...timelineItems.where((m) => '${m['id']}' != tempId && '${m['id']}' != '${saved['id']}'),
+          {...saved, '__kind': 'message'},
+        ]..sort((a, b) {
+          final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return ad.compareTo(bd);
+        });
       });
-      text.clear();
-      if (mounted) setState(() => replyMessage = null);
-      await load();
     } catch (e) {
-      if (mounted) showMsg(context, 'ارسال نشد: $e');
-    } finally {
-      if (mounted) setState(() => sending = false);
+      if (!mounted) return;
+      setState(() {
+        messages = messages.where((m) => '${m['id']}' != tempId).toList();
+        timelineItems = timelineItems.where((m) => '${m['id']}' != tempId).toList();
+        if (text.text.trim().isEmpty) text.text = value;
+      });
+      showMsg(context, 'ارسال نشد: ${_friendlyError(e.toString())}');
     }
   }
 
