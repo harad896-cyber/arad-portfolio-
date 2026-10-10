@@ -4184,8 +4184,12 @@ class _ChatPageState extends State<ChatPage> {
           return ad.compareTo(bd);
         });
     });
+    // Keep the composer focused after every send so the keyboard stays open.
+    _composerFocus.requestFocus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _scrollToLatestForKeyboard();
+      if (!mounted) return;
+      _composerFocus.requestFocus();
+      _scrollToLatestForKeyboard();
     });
 
     try {
@@ -4219,6 +4223,7 @@ class _ChatPageState extends State<ChatPage> {
         timelineItems = timelineItems.where((m) => '${m['id']}' != tempId).toList();
         if (text.text.trim().isEmpty) text.text = value;
       });
+      _composerFocus.requestFocus();
       showMsg(context, 'ارسال نشد: ${_friendlyError(e.toString())}');
     }
   }
@@ -5223,6 +5228,10 @@ class _ChatPageState extends State<ChatPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10.5, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
+                        if (m['edited_at'] != null) ...[
+                          const SizedBox(width: 4),
+                          Text('ویرایش‌شده', style: TextStyle(fontSize: 9.5, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
+                        ],
                         if (mine) ...[
                           const SizedBox(width: 4),
                           Icon(m['read_at'] != null ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: m['read_at'] != null ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
