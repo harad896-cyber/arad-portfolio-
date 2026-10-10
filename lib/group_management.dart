@@ -126,7 +126,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   }
 
   Future<void> addMembersFromContacts() async {
-    if (!admin || busy) return;
+    if (!canAddMembers || busy) return;
     final uid = db.auth.currentUser?.id;
     if (uid == null) { toast('ابتدا وارد حساب شوید.'); return; }
     setState(() => busy = true);
@@ -288,7 +288,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Map<String, dynamic>? group;
   List<Map<String, dynamic>> members = [];
   Map<String, Map<String, dynamic>> profiles = {};
-  bool loading = true, busy = false, admin = false, owner = false;
+  bool loading = true, busy = false, admin = false, owner = false, canEditGroup = false, canRemoveMembers = false, canAddMembers = false;
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
@@ -301,13 +301,29 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       final ids = ms.map((m) => m['user_id'].toString()).toList();
       final ps = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', ids));
       final uid = db.auth.currentUser?.id;
+      final isOwner = uid != null && g['created_by']?.toString() == uid;
+      final isAdmin = isOwner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
+      Map<String,dynamic> permissions = {};
+      if (isAdmin && !isOwner && uid != null) {
+        try {
+          final row = await db.from('group_admin_permissions').select('can_add_members,can_remove_members,can_edit_group').eq('conversation_id', widget.conversationId).eq('user_id', uid).maybeSingle();
+          if (row != null) permissions = Map<String,dynamic>.from(row);
+        } catch (_) {}
+      }
       if (!mounted) return;
-      setState(() { group = g; members = ms; profiles = {for (final p in ps) p['id'].toString(): p}; owner = uid != null && g['created_by']?.toString() == uid; admin = owner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role']))); loading = false; });
+      setState(() {
+        group = g; members = ms; profiles = {for (final p in ps) p['id'].toString(): p};
+        owner = isOwner; admin = isAdmin;
+        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false);
+        canRemoveMembers = isOwner || permissions['can_remove_members'] == true;
+        canEditGroup = isOwner || permissions['can_edit_group'] == true;
+        loading = false;
+      });
     } catch (_) { if (mounted) { setState(() => loading = false); toast('مدیریت گروه بارگذاری نشد.'); } }
   }
 
   Future<void> addMembers() async {
-    if (!admin || busy) return;
+    if (!canAddMembers || busy) return;
     final search = TextEditingController();
     final selected = <String>{};
     try {
@@ -449,7 +465,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   }
 
   Future<void> removeMember(String id) async {
-    if (!admin || busy || id == group?['created_by']?.toString()) return;
+    if (!canRemoveMembers || busy || id == group?['created_by']?.toString()) return;
     setState(() => busy = true);
     try { await db.rpc('remove_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id}); toast('عضو از گروه حذف شد.'); await load(); }
     catch (e) { toast('حذف عضو ناموفق بود: $e'); }
@@ -457,7 +473,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   }
 
   Future<void> banMember(String id) async {
-    if (!admin || busy || id == group?['created_by']?.toString()) return;
+    if (!canRemoveMembers || busy || id == group?['created_by']?.toString()) return;
     final c = TextEditingController();
     final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(title: Text('محروم کردن ${nameOf(id)}'), content: TextField(controller: c, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل (اختیاری)')), actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('محروم و حذف شود'))])) ?? false;
     final reason = c.text.trim(); c.dispose();
@@ -477,7 +493,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   }
 
   Future<void> editInfo() async {
-    if (!admin || group == null) return;
+    if (!canEditGroup || group == null) return;
     final t = TextEditingController(text: (group!['title'] ?? widget.title).toString());
     final u = TextEditingController(text: (group!['username'] ?? '').toString());
     final d = TextEditingController(text: (group!['description'] ?? '').toString());
@@ -498,7 +514,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     controller.dispose();
     if (username == null || username.trim().isEmpty) return;
     if (!RegExp(r'^[a-zA-Z0-9_]{3,32}
-    if (!admin || group == null || busy) return;
+    if (!canEditGroup || group == null || busy) return;
     final g = group!;
     setState(() => busy = true);
     try {
@@ -524,7 +540,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   @override Widget build(BuildContext context) {
     if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
-    return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (admin) IconButton(onPressed: editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
+    return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (canEditGroup) IconButton(onPressed: editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
       Card(child: ListTile(leading: CircleAvatar(backgroundImage: (group!['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(group!['avatar_url'].toString()) : null, child: (group!['avatar_url'] ?? '').toString().isEmpty ? const Icon(Icons.groups) : null), title: Text((group!['title'] ?? widget.title).toString(), style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(owner ? 'مالک گروه' : 'مدیر گروه'))),
       const SizedBox(height: 8),
       const Text('اعضا', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
@@ -538,12 +554,12 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       Card(child: Column(children: [
         const ListTile(title: Text('تنظیمات گروه', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
         SwitchListTile(title: const Text('گروه عمومی'), subtitle: Text((group!['username'] ?? '').toString().isEmpty ? 'برای فعال‌سازی، نام کاربری یکتا تعیین کنید.' : '@${group!['username']}'), value: group!['is_public'] == true, onChanged: admin ? changePublicVisibility : null),
-        SwitchListTile(title: const Text('تأیید درخواست عضویت'), value: group!['join_approval'] == true, onChanged: admin ? (v) => updateSettings(approval: v) : null),
-        SwitchListTile(title: const Text('فقط مدیران پیام بفرستند'), value: group!['only_admins_can_post'] == true, onChanged: admin ? (v) => updateSettings(adminsPost: v) : null),
-        SwitchListTile(title: const Text('فقط مدیران عضو اضافه کنند'), value: group!['only_admins_can_add'] == true, onChanged: admin ? (v) => updateSettings(adminsAdd: v) : null),
-        SwitchListTile(title: const Text('واکنش به پیام‌ها'), value: group!['allow_reactions'] != false, onChanged: admin ? (v) => updateSettings(reactions: v) : null),
+        SwitchListTile(title: const Text('تأیید درخواست عضویت'), value: group!['join_approval'] == true, onChanged: canEditGroup ? (v) => updateSettings(approval: v) : null),
+        SwitchListTile(title: const Text('فقط مدیران پیام بفرستند'), value: group!['only_admins_can_post'] == true, onChanged: canEditGroup ? (v) => updateSettings(adminsPost: v) : null),
+        SwitchListTile(title: const Text('فقط مدیران عضو اضافه کنند'), value: group!['only_admins_can_add'] == true, onChanged: canEditGroup ? (v) => updateSettings(adminsAdd: v) : null),
+        SwitchListTile(title: const Text('واکنش به پیام‌ها'), value: group!['allow_reactions'] != false, onChanged: canEditGroup ? (v) => updateSettings(reactions: v) : null),
       ])),
-      if (admin) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
+      if (canRemoveMembers || owner) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست‌های عضویت، محروم‌ها، محدودیت‌ها، سنجاق پیام و اختیارات مدیران'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.delete_forever_rounded), title: const Text('حذف کامل گروه', style: TextStyle(fontWeight: FontWeight.w900)), subtitle: const Text('این گزینه هیچ ارتباطی با حذف/محروم کردن اعضا ندارد.'), onTap: deleteGroup)),
       if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
