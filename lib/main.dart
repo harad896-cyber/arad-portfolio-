@@ -6023,7 +6023,7 @@ class _ChatPageState extends State<ChatPage> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: scheme.primaryContainer,
-                  backgroundImage: (_chatType == 'direct' ? profiles[_directPeerId]?['avatar_url']?.toString() : null) is String && (_chatType == 'direct' ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}' : '').trim().isNotEmpty
+                  backgroundImage: (_chatType == 'direct' && '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim().isNotEmpty)
                       ? NetworkImage('${profiles[_directPeerId]?['avatar_url']}')
                       : null,
                   child: (_chatType == 'direct' ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}' : '').trim().isEmpty
