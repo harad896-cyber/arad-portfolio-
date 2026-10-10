@@ -36,6 +36,17 @@ jobs:
           permissions = '    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.BLUETOOTH" />\n'
           if 'android.permission.CAMERA' not in s:
               s = s.replace(marker, permissions + marker, 1)
+          if 'arad://invite' not in s:
+              intent_filter = '''
+                  <intent-filter>
+                      <action android:name="android.intent.action.VIEW" />
+                      <category android:name="android.intent.category.DEFAULT" />
+                      <category android:name="android.intent.category.BROWSABLE" />
+                      <data android:scheme="arad" android:host="invite" />
+                  </intent-filter>
+              '''
+              if '</activity>' in s:
+                  s = s.replace('</activity>', intent_filter + '\\n        </activity>', 1)
           p.write_text(s)
           PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
