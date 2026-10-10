@@ -4158,6 +4158,7 @@ class _ChatPageState extends State<ChatPage> {
   bool _didJumpToTargetMessage = false;
   bool loading = true;
   bool sending = false;
+  bool _chatNotificationsMuted = false;
   Map<String, dynamic>? replyMessage;
   final AudioRecorder _voiceRecorder = AudioRecorder();
   final AudioPlayer _voicePlayer = AudioPlayer();
@@ -4336,6 +4337,57 @@ class _ChatPageState extends State<ChatPage> {
       _composerFocus.requestFocus();
       _scrollToLatestForKeyboard();
     });
+  }
+
+  String get _notificationPreferenceKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'chat_notifications_muted_${uid}_${widget.id}';
+  }
+
+  Future<void> _loadChatNotificationPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _chatNotificationsMuted = prefs.getBool(_notificationPreferenceKey) ?? false);
+  }
+
+  Future<void> _toggleChatNotifications() async {
+    final next = !_chatNotificationsMuted;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationPreferenceKey, next);
+    if (!mounted) return;
+    setState(() => _chatNotificationsMuted = next);
+    showMsg(context, next
+        ? 'اعلان‌های این گفتگو در این دستگاه بی‌صدا شد.'
+        : 'اعلان‌های این گفتگو دوباره روشن شد.');
+  }
+
+  Future<void> _copyChatUsername() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      String value = '';
+      if (_chatType == 'direct') {
+        final rows = await supabase.from('conversation_members')
+            .select('user_id').eq('conversation_id', widget.id);
+        final peerId = (rows as List).map((r) => '${r['user_id'] ?? ''}')
+            .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
+        if (peerId.isNotEmpty) {
+          final p = await supabase.from('profiles').select('username,display_name')
+              .eq('id', peerId).maybeSingle();
+          final username = '${p?['username'] ?? ''}'.trim();
+          value = username.isNotEmpty ? '@$username' : '${p?['display_name'] ?? widget.title}'.trim();
+        }
+      } else {
+        final c = await supabase.from('conversations').select('username,title')
+            .eq('id', widget.id).maybeSingle();
+        final username = '${c?['username'] ?? ''}'.trim();
+        value = username.isNotEmpty ? '@$username' : '${c?['title'] ?? widget.title}'.trim();
+      }
+      if (value.isEmpty) value = _localChatTitle ?? widget.title;
+      await Clipboard.setData(ClipboardData(text: value));
+      if (mounted) showMsg(context, 'کپی شد: $value');
+    } catch (e) {
+      if (mounted) showMsg(context, 'کپی ناموفق بود: ${_friendlyError(e.toString())}');
+    }
   }
 
   Future<void> _loadChatType() async {
@@ -5741,6 +5793,7 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     _composerFocus.addListener(_onComposerFocus);
+    _loadChatNotificationPreference();
     load();
     _loadChatType();
     channel = supabase.channel('chat-${widget.id}')
@@ -5869,6 +5922,11 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: _chatNotificationsMuted ? 'روشن‌کردن اعلان‌های گفتگو' : 'بی‌صداکردن اعلان‌های گفتگو',
+            onPressed: _toggleChatNotifications,
+            icon: Icon(_chatNotificationsMuted ? Icons.notifications_off_rounded : Icons.notifications_active_rounded),
+          ),
           if (_chatType == 'direct')
             IconButton(
               tooltip: 'تماس صوتی',
@@ -5907,6 +5965,7 @@ class _ChatPageState extends State<ChatPage> {
         title: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: _openChatProfile,
+          onLongPress: _copyChatUsername,
           child: Row(
           children: [
             Stack(
