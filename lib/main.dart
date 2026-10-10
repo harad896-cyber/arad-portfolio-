@@ -2773,6 +2773,11 @@ class _HomePageState extends State<HomePage> {
           Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage())))),
         ]),
       ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        child: _glassAction(Icons.person_add_alt_1_rounded, 'درخواست‌های دوستی', () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendRequestsPage()))),
+      ),
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
         future: _loadContacts(),
         builder: (context, snap) {
@@ -2902,9 +2907,114 @@ class PublicUserProfilePage extends StatefulWidget {
 
 class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
   bool busy = false;
+  bool isContact = false;
+  String localName = '';
   Map<String, dynamic> get profile => widget.profile;
-  String get displayName => '${profile['display_name'] ?? profile['username'] ?? 'کاربر'}'.trim();
+  String get displayName => localName.trim().isNotEmpty
+      ? localName.trim()
+      : '${profile['display_name'] ?? profile['username'] ?? 'کاربر'}'.trim();
   String get username => '${profile['username'] ?? ''}'.trim();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocalContactSettings();
+  }
+
+  Future<void> _loadLocalContactSettings() async {
+    final uid = supabase.auth.currentUser?.id;
+    final targetId = profile['id']?.toString();
+    if (uid == null || targetId == null || targetId == uid) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alias = prefs.getString('contact_alias_${uid}_${targetId}') ?? '';
+      final row = await supabase.from('contacts').select('id')
+          .eq('user_id', uid).eq('contact_id', targetId).maybeSingle();
+      if (mounted) setState(() { localName = alias; isContact = row != null; });
+    } catch (_) {}
+  }
+
+  Future<void> _editLocalName() async {
+    final controller = TextEditingController(text: localName);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('نام اختصاصی مخاطب'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 48,
+          decoration: const InputDecoration(hintText: 'فقط برای شما نمایش داده می‌شود'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('ذخیره')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null) return;
+    final uid = supabase.auth.currentUser?.id;
+    final targetId = profile['id']?.toString();
+    if (uid == null || targetId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'contact_alias_${uid}_${targetId}';
+    if (value.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(key, value);
+    }
+    if (mounted) setState(() => localName = value);
+    if (mounted) showMsg(context, value.isEmpty ? 'نام اختصاصی پاک شد.' : 'نام اختصاصی ذخیره شد.');
+  }
+
+  Future<void> _toggleContact() async {
+    final uid = supabase.auth.currentUser?.id;
+    final targetId = profile['id']?.toString();
+    if (uid == null || targetId == null || uid == targetId) return;
+    try {
+      if (isContact) {
+        await supabase.from('contacts').delete().eq('user_id', uid).eq('contact_id', targetId);
+        if (mounted) setState(() => isContact = false);
+        if (mounted) showMsg(context, 'مخاطب از فهرست شما حذف شد.');
+      } else {
+        await supabase.from('contacts').upsert(
+          {'user_id': uid, 'contact_id': targetId},
+          onConflict: 'user_id,contact_id',
+        );
+        if (mounted) setState(() => isContact = true);
+        if (mounted) showMsg(context, 'به مخاطبین شما اضافه شد.');
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر مخاطب ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> _sendFriendRequest() async {
+    final uid = supabase.auth.currentUser?.id;
+    final targetId = profile['id']?.toString();
+    if (uid == null || targetId == null || uid == targetId) return;
+    try {
+      final sent = await supabase.from('friend_requests').select('id,status')
+          .eq('requester_id', uid).eq('recipient_id', targetId).maybeSingle();
+      final received = await supabase.from('friend_requests').select('id,status')
+          .eq('requester_id', targetId).eq('recipient_id', uid).maybeSingle();
+      final existing = sent ?? received;
+      if (existing != null) {
+        final status = existing['status']?.toString();
+        showMsg(context, status == 'accepted' ? 'شما از قبل مخاطب یکدیگر هستید.' :
+            status == 'pending' ? 'درخواست دوستی قبلاً ثبت شده است.' :
+            'درخواست قبلی وجود دارد؛ از صندوق درخواست‌ها آن را بررسی کنید.');
+        return;
+      }
+      await supabase.from('friend_requests').insert({
+        'requester_id': uid, 'recipient_id': targetId, 'status': 'pending',
+      });
+      if (mounted) showMsg(context, 'درخواست دوستی ارسال شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ارسال درخواست دوستی ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
 
   Future<void> _openChat() async {
     if (busy) return;
@@ -2983,6 +3093,29 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                       Expanded(child: OutlinedButton.icon(onPressed: busy ? null : () => _startCall(video: false), icon: const Icon(Icons.call_rounded), label: const Text('تماس'))),
                     ]),
                     const SizedBox(height: 9),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _editLocalName,
+                          icon: const Icon(Icons.edit_rounded),
+                          label: const Text('تغییر نام مخاطب'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _toggleContact,
+                          icon: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded),
+                          label: Text(isContact ? 'حذف مخاطب' : 'افزودن مخاطب'),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: _sendFriendRequest,
+                          icon: const Icon(Icons.person_add_alt_rounded),
+                          label: const Text('درخواست دوستی'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 9),
                     SizedBox(width: double.infinity, child: OutlinedButton.icon(
                       onPressed: busy ? null : () => _startCall(video: true),
                       icon: const Icon(Icons.videocam_rounded), label: const Text('تماس تصویری'),
@@ -3012,6 +3145,110 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
           ])),
         ],
       ),
+    );
+  }
+}
+
+class FriendRequestsPage extends StatefulWidget {
+  const FriendRequestsPage({super.key});
+  @override
+  State<FriendRequestsPage> createState() => _FriendRequestsPageState();
+}
+
+class _FriendRequestsPageState extends State<FriendRequestsPage> {
+  bool loading = true;
+  List<Map<String, dynamic>> requests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadRequests();
+  }
+
+  Future<void> loadRequests() async {
+    setState(() => loading = true);
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final raw = await supabase.from('friend_requests').select('id,requester_id,created_at,status')
+          .eq('recipient_id', uid).eq('status', 'pending').order('created_at', ascending: false);
+      final rows = List<Map<String, dynamic>>.from(raw);
+      final ids = rows.map((r) => r['requester_id'].toString()).toSet().toList();
+      final people = ids.isEmpty ? <Map<String, dynamic>>[] :
+          List<Map<String, dynamic>>.from(await supabase.from('profiles')
+              .select('id,display_name,username,avatar_url,bio,is_verified').inFilter('id', ids));
+      final byId = {for (final p in people) p['id'].toString(): p};
+      for (final r in rows) { r['_profile'] = byId[r['requester_id'].toString()] ?? <String,dynamic>{}; }
+      if (mounted) setState(() => requests = rows);
+    } catch (e) {
+      if (mounted) showMsg(context, 'درخواست‌ها بارگذاری نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> respond(Map<String, dynamic> request, bool accept) async {
+    try {
+      await supabase.rpc('respond_to_friend_request', params: {
+        'p_request_id': request['id'], 'p_accept': accept,
+      });
+      if (!mounted) return;
+      showMsg(context, accept ? 'درخواست پذیرفته شد و مخاطب اضافه شد.' : 'درخواست رد شد.');
+      await loadRequests();
+    } catch (e) {
+      if (mounted) showMsg(context, 'عملیات ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('درخواست‌های دوستی'), actions: [
+        IconButton(onPressed: loadRequests, icon: const Icon(Icons.refresh_rounded)),
+      ]),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : requests.isEmpty
+              ? const Center(child: Text('درخواست دوستی جدیدی ندارید.'))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: requests.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) {
+                    final r = requests[i];
+                    final p = Map<String, dynamic>.from(r['_profile'] as Map);
+                    final name = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: avatar(p, size: 48),
+                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                            subtitle: Text(p['username'] == null ? 'درخواست دوستی' : '@${p['username']}'),
+                            onTap: () => Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => PublicUserProfilePage(profile: p),
+                            )),
+                          ),
+                          Row(children: [
+                            Expanded(child: FilledButton.icon(
+                              onPressed: () => respond(r, true),
+                              icon: const Icon(Icons.check_rounded), label: const Text('پذیرفتن'),
+                            )),
+                            const SizedBox(width: 8),
+                            Expanded(child: OutlinedButton.icon(
+                              onPressed: () => respond(r, false),
+                              icon: Icon(Icons.close_rounded, color: scheme.error),
+                              label: const Text('رد کردن'),
+                            )),
+                          ]),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }
