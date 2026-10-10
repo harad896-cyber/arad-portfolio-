@@ -1096,25 +1096,151 @@ class _ChoiceSheet extends StatelessWidget{
   const _ChoiceSheet({required this.title,required this.options,required this.value,required this.onChanged});
   @override Widget build(BuildContext context)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[Padding(padding:const EdgeInsets.all(18),child:Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w800))),...options.map((o)=>RadioListTile(value:o,groupValue:value,onChanged:(v)=>onChanged(v!),title:Text(o)))]));
 }
-class AppAppearancePage extends StatelessWidget {
+class AppAppearancePage extends StatefulWidget {
   const AppAppearancePage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('ظاهر برنامه')),
-    body:ListView(padding:const EdgeInsets.all(16),children:[
-      Card(child:RadioListTile<bool>(
-        value:false,
-        groupValue:appTheme.dark,
-        onChanged:(v) async { if(v==null)return; await appTheme.setDark(v); if(context.mounted)Navigator.pop(context); },
-        title:const Text('روشن'),
-      )),
-      Card(child:RadioListTile<bool>(
-        value:true,
-        groupValue:appTheme.dark,
-        onChanged:(v) async { if(v==null)return; await appTheme.setDark(v); if(context.mounted)Navigator.pop(context); },
-        title:const Text('تاریک'),
-      )),
-    ]),
-  );
+  @override State<AppAppearancePage> createState() => _AppAppearancePageState();
+}
+class _AppAppearancePageState extends State<AppAppearancePage> {
+  bool picking = false;
+  static const presets = <({String name, int color})>[
+    (name: 'شب آرام', color: 0xFF10131C),
+    (name: 'آبی اقیانوسی', color: 0xFF102B3A),
+    (name: 'بنفش مدرن', color: 0xFF25183D),
+    (name: 'سبز جنگلی', color: 0xFF142D26),
+    (name: 'ذغالی', color: 0xFF25272B),
+    (name: 'روشن مینیمال', color: 0xFFF2F3F7),
+    (name: 'صورتی ملایم', color: 0xFFF6EAF0),
+    (name: 'آبی یخی', color: 0xFFE8F2FA),
+  ];
+
+  Future<void> _pickWallpaper() async {
+    if (picking) return;
+    setState(() => picking = true);
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 78,
+        maxWidth: 1440,
+        maxHeight: 2560,
+      );
+      if (file == null || !mounted) return;
+      final bytes = await file.readAsBytes();
+      await appTheme.setBackgroundImage(base64Encode(bytes));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('پس‌زمینهٔ چت ذخیره شد.')),
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('انتخاب تصویر ناموفق بود: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => picking = false);
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    final dark = appTheme.dark;
+    final hasImage = appTheme.backgroundImageBase64 != null && appTheme.backgroundImageBase64!.isNotEmpty;
+    return Scaffold(
+      appBar: AppBar(title: const Text('قالب و پس‌زمینهٔ چت')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              height: 168,
+              decoration: BoxDecoration(
+                color: Color(appTheme.backgroundSeed),
+                image: hasImage ? DecorationImage(
+                  image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)),
+                  fit: BoxFit.cover,
+                ) : null,
+                gradient: hasImage ? null : LinearGradient(
+                  begin: Alignment.topRight, end: Alignment.bottomLeft,
+                  colors: [Color(appTheme.seed), Color(appTheme.backgroundSeed)],
+                ),
+              ),
+              child: Stack(children: [
+                Positioned(left: 14, right: 14, top: 14, child: Align(
+                  alignment: Alignment.centerRight,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: .48), borderRadius: BorderRadius.circular(18)),
+                    child: const Padding(padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9), child: Text('سلام! این پیش‌نمایش قالب چت است.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+                  ),
+                )),
+                Positioned(left: 14, bottom: 14, child: DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: .48), borderRadius: BorderRadius.circular(18)),
+                  child: const Padding(padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9), child: Text('پیام شما ✨', style: TextStyle(color: Colors.white))),
+                )),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text('حالت نمایش', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          Card(child: RadioListTile<bool>(
+            value: false, groupValue: dark,
+            onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
+            title: const Text('روشن'), secondary: const Icon(Icons.light_mode_rounded),
+          )),
+          Card(child: RadioListTile<bool>(
+            value: true, groupValue: dark,
+            onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
+            title: const Text('تاریک'), secondary: const Icon(Icons.dark_mode_rounded),
+          )),
+          const SizedBox(height: 18),
+          const Text('قالب‌های آمادهٔ پس‌زمینه', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: presets.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.15),
+            itemBuilder: (context, i) {
+              final p = presets[i];
+              final selected = appTheme.backgroundSeed == p.color && !hasImage;
+              return InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () async {
+                  await appTheme.setBackgroundImage(null);
+                  await appTheme.setBackgroundSeed(p.color);
+                  if (mounted) setState(() {});
+                },
+                child: Ink(
+                  decoration: BoxDecoration(
+                    color: Color(p.color),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor, width: selected ? 3 : 1),
+                  ),
+                  child: Row(children: [
+                    const SizedBox(width: 12),
+                    Icon(selected ? Icons.check_circle : Icons.palette_outlined, color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(p.name, style: TextStyle(color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white, fontWeight: FontWeight.w800))),
+                    const SizedBox(width: 8),
+                  ]),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: picking ? null : _pickWallpaper,
+            icon: picking ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wallpaper_rounded),
+            label: Text(picking ? 'در حال انتخاب تصویر…' : 'انتخاب عکس از گالری'),
+          ),
+          if (hasImage) OutlinedButton.icon(
+            onPressed: () async { await appTheme.setBackgroundImage(null); if (mounted) setState(() {}); },
+            icon: const Icon(Icons.image_not_supported_outlined),
+            label: const Text('حذف عکس پس‌زمینه'),
+          ),
+          const SizedBox(height: 8),
+          const Text('قالب و عکس پس‌زمینه روی همین حساب ذخیره می‌شود و برای همهٔ گفتگوها اعمال خواهد شد.', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
 }
 class CallHistoryPage extends StatefulWidget {
   const CallHistoryPage({super.key});
@@ -6020,6 +6146,11 @@ class _ChatPageState extends State<ChatPage> {
               ))),
               icon: const Icon(Icons.call_rounded, color: Color(0xFF039BE5)),
             ),
+          IconButton(
+            tooltip: 'قالب و پس‌زمینهٔ چت',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppAppearancePage())),
+            icon: const Icon(Icons.wallpaper_rounded),
+          ),
           IconButton(
             tooltip: _chatNotificationsMuted ? 'روشن‌کردن اعلان‌های گفتگو' : 'بی‌صداکردن اعلان‌های گفتگو',
             onPressed: _toggleChatNotifications,
