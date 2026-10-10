@@ -43,10 +43,19 @@ jobs:
                       <category android:name="android.intent.category.DEFAULT" />
                       <category android:name="android.intent.category.BROWSABLE" />
                       <data android:scheme="arad" android:host="invite" />
+                      <data android:scheme="arad" android:host="group" />
+                      <data android:scheme="arad" android:host="chat" />
                   </intent-filter>
               '''
               if '</activity>' in s:
                   s = s.replace('</activity>', intent_filter + '\n        </activity>', 1)
+          else:
+              # Existing builds already register invite links; extend the same
+              # activity filter so public group and message deep links launch the app.
+              invite_data = '<data android:scheme="arad" android:host="invite" />'
+              extra_data = '\n                      <data android:scheme="arad" android:host="group" />\n                      <data android:scheme="arad" android:host="chat" />'
+              if invite_data in s and 'android:host="group"' not in s:
+                  s = s.replace(invite_data, invite_data + extra_data, 1)
           p.write_text(s)
           PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
