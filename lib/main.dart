@@ -4333,7 +4333,8 @@ class _ChatPageState extends State<ChatPage> {
     final diff = today.difference(day).inDays;
     if (diff == 0) return 'امروز';
     if (diff == 1) return 'دیروز';
-    return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    const months = ['ژانویه', 'فوریه', 'مارس', 'آوریل', 'مه', 'ژوئن', 'ژوئیه', 'اوت', 'سپتامبر', 'اکتبر', 'نوامبر', 'دسامبر'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   String _senderName(Map<String, dynamic> m) {
