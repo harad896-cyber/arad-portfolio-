@@ -3592,9 +3592,19 @@ class _ChatPageState extends State<ChatPage> {
     final actorId = item['actor_id']?.toString() ?? '';
     final actor = profiles[actorId];
     final name = (actor?['display_name'] ?? actor?['username'] ?? 'کاربر').toString();
-    final label = item['system_action'] == 'group_created'
+    final targetId = item['target_user_id']?.toString() ?? '';
+    final target = profiles[targetId];
+    final targetName = (target?['display_name'] ?? target?['username'] ?? 'کاربر').toString();
+    final action = item['system_action'];
+    final label = action == 'group_created'
         ? '$name این گروه را ایجاد کرد'
-        : 'رویداد گروه';
+        : action == 'member_added'
+            ? '$name، $targetName را به گروه اضافه کرد'
+            : action == 'joined_by_link'
+                ? '$targetName از طریق لینک به گروه پیوست'
+                : action == 'join_requested_by_link'
+                    ? '$targetName از طریق لینک درخواست عضویت فرستاد'
+                    : 'رویداد گروه';
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
@@ -3644,6 +3654,8 @@ class _ChatPageState extends State<ChatPage> {
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
+  int _groupMemberCount = 0;
+  int _groupOnlineCount = 0;
   DateTime? _voiceStartedAt;
   Timer? _voiceTimer;
   int voiceSeconds = 0;
@@ -3826,12 +3838,32 @@ class _ChatPageState extends State<ChatPage> {
         loaded.removeWhere((m) => hidden.contains('${m['id']}'));
       }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
+      List<Map<String, dynamic>> groupMembers = [];
+      List<Map<String, dynamic>> groupEvents = [];
+      if (conversation['type'] == 'group') {
+        try {
+          groupMembers = List<Map<String, dynamic>>.from(await supabase.from('conversation_members')
+              .select('user_id,role,joined_at').eq('conversation_id', widget.id));
+        } catch (_) {}
+        try {
+          groupEvents = List<Map<String, dynamic>>.from(await supabase.from('group_audit_logs')
+              .select('id,actor_id,action,target_user_id,details,created_at')
+              .eq('conversation_id', widget.id).order('created_at', ascending: true).limit(100));
+        } catch (_) {}
+        for (final event in groupEvents) {
+          if (event['actor_id'] != null) senderIds.add(event['actor_id'].toString());
+          if (event['target_user_id'] != null) senderIds.add(event['target_user_id'].toString());
+        }
+        for (final member in groupMembers) {
+          if (member['user_id'] != null) senderIds.add(member['user_id'].toString());
+        }
+      }
       if (conversation['type'] == 'group' && conversation['created_by'] != null) {
         senderIds.add(conversation['created_by'].toString());
       }
       final senderIdList = senderIds.toList();
       if (senderIdList.isNotEmpty) {
-        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', senderIdList);
+        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_online,last_seen').inFilter('id', senderIdList);
         profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
       }
       final ids = loaded.map((m) => '${m['id']}').toList();
@@ -3862,6 +3894,13 @@ class _ChatPageState extends State<ChatPage> {
             'actor_id': conversation['created_by'],
             'created_at': conversation['created_at'],
           },
+        ...groupEvents.map((event) => <String, dynamic>{
+          '__kind': 'system',
+          'system_action': event['action'],
+          'actor_id': event['actor_id'],
+          'target_user_id': event['target_user_id'],
+          'created_at': event['created_at'],
+        }),
       ];
       merged.sort((a, b) {
         final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -3873,6 +3912,9 @@ class _ChatPageState extends State<ChatPage> {
           messages = loaded;
           callSessions = calls;
           timelineItems = merged;
+          _groupMemberCount = groupMembers.length;
+          _groupOnlineCount = groupMembers.where((member) =>
+            profiles[member['user_id']?.toString()]?['is_online'] == true).length;
           reactions = loadedReactions;
           attachments = loadedAttachments;
           loading = false;
@@ -5174,7 +5216,11 @@ class _ChatPageState extends State<ChatPage> {
                 children: [
                   Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                   Text(
-                    _chatType == 'direct' ? 'گفتگوی خصوصی' : (_chatType == 'group' ? 'گروه' : 'کانال'),
+                    _chatType == 'direct'
+                        ? 'گفتگوی خصوصی'
+                        : (_chatType == 'group'
+                            ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
+                            : 'کانال'),
                     style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                   ),
                 ],
