@@ -36,7 +36,7 @@ jobs:
           permissions = '    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.BLUETOOTH" />\n'
           if 'android.permission.CAMERA' not in s:
               s = s.replace(marker, permissions + marker, 1)
-          if 'arad://invite' not in s:
+          if 'android:scheme="arad"' not in s:
               intent_filter = '''
                   <intent-filter>
                       <action android:name="android.intent.action.VIEW" />
