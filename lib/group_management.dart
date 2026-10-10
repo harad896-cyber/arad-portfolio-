@@ -547,7 +547,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     final g = group!;
     setState(() => busy = true);
     try {
-      await db.rpc('update_group_settings', params: {'p_conversation_id': widget.conversationId, 'p_title': title ?? g['title'], 'p_description': description ?? g['description'], 'p_avatar_url': g['avatar_url'], 'p_is_public': publicGroup ?? g['is_public'] ?? false, 'p_username': g['username'], 'p_join_approval': approval ?? g['join_approval'] ?? false, 'p_only_admins_can_post': adminsPost ?? g['only_admins_can_post'] ?? false, 'p_only_admins_can_add': adminsAdd ?? g['only_admins_can_add'] ?? false, 'p_auto_delete_seconds': g['auto_delete_seconds'] ?? 0, 'p_allow_reactions': reactions ?? g['allow_reactions'] ?? true});
+      await db.rpc('update_group_settings', params: {'p_conversation_id': widget.conversationId, 'p_title': title ?? g['title'], 'p_description': description ?? g['description'], 'p_avatar_url': g['avatar_url'], 'p_is_public': publicGroup ?? g['is_public'] ?? false, 'p_username': username ?? g['username'], 'p_join_approval': approval ?? g['join_approval'] ?? false, 'p_only_admins_can_post': adminsPost ?? g['only_admins_can_post'] ?? false, 'p_only_admins_can_add': adminsAdd ?? g['only_admins_can_add'] ?? false, 'p_auto_delete_seconds': g['auto_delete_seconds'] ?? 0, 'p_allow_reactions': reactions ?? g['allow_reactions'] ?? true});
       await load();
     } catch (e) { toast('تنظیمات ذخیره نشد: $e'); }
     finally { if (mounted) setState(() => busy = false); }
