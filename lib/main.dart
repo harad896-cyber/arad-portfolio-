@@ -6036,6 +6036,36 @@ class _ChatPageState extends State<ChatPage> {
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title))),
             icon: const Icon(Icons.info_outline_rounded),
           ),
+          PopupMenuButton<String>(
+            tooltip: 'ابزارها و تنظیمات چت',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              switch (value) {
+                case 'search':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => MessageSearchPage(conversationId: widget.id)));
+                  break;
+                case 'media':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => SharedMediaPage(conversationId: widget.id)));
+                  break;
+                case 'info':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+                  break;
+                case 'settings':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatSettingsPage()));
+                  break;
+                case 'saved':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage()));
+                  break;
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text('جستجوی پیام‌ها'))),
+              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text('رسانه‌ها و فایل‌ها'))),
+              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text('اطلاعات گفتگو'))),
+              PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('تنظیمات گفتگو'))),
+              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text('پیام‌های ذخیره‌شده'))),
+            ],
+          ),
           FutureBuilder<bool>(
             future: _isGroupAdmin(),
             builder: (_,snap) => snap.data==true
