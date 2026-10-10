@@ -2209,6 +2209,54 @@ class _HomePageState extends State<HomePage> {
     } catch (e) { if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: ' + e.toString()); }
   }
 
+  Future<void> _joinGroupByInviteCode() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('پیوستن به گروه با لینک یا کد'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            labelText: 'کد دعوت گروه',
+            hintText: 'مثلاً ARAD-…',
+            prefixIcon: Icon(Icons.link_rounded),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('پیوستن')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (code == null || code.trim().isEmpty || !mounted) return;
+    try {
+      final result = await supabase.rpc('join_conversation_by_invite', params: {'p_code': code.trim()});
+      final conversationId = result.toString();
+      final conversation = Map<String, dynamic>.from(await supabase
+          .from('conversations').select('id,type,title').eq('id', conversationId).single());
+      final uid = supabase.auth.currentUser?.id;
+      final membership = uid == null ? null : await supabase.from('conversation_members')
+          .select('user_id').eq('conversation_id', conversationId).eq('user_id', uid).maybeSingle();
+      if (membership == null) {
+        if (mounted) showMsg(context, 'درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.');
+        await load();
+        return;
+      }
+      if (!mounted) return;
+      await load();
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(
+        id: conversationId,
+        title: (conversation['title'] ?? (conversation['type'] == 'channel' ? 'کانال' : 'گروه')).toString(),
+      )));
+    } catch (e) {
+      if (mounted) showMsg(context, 'پیوستن به گروه ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
   Future<void> createGroup() async {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage()));
     load();
@@ -2385,6 +2433,8 @@ class _HomePageState extends State<HomePage> {
             Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '\${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
           actionButton(icon: Icons.search_rounded, tooltip: 'جستجو', onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
+          const SizedBox(width: 8),
+          actionButton(icon: Icons.group_add_rounded, tooltip: 'پیوستن به گروه با کد دعوت', onTap: _joinGroupByInviteCode),
           const SizedBox(width: 8),
           actionButton(icon: Icons.edit_rounded, tooltip: 'گفتگوی جدید', onTap: createDirect),
         ]),
