@@ -6004,27 +6004,27 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: _chatNotificationsMuted ? 'روشن‌کردن اعلان‌های گفتگو' : 'بی‌صداکردن اعلان‌های گفتگو',
-            onPressed: _toggleChatNotifications,
-            icon: Icon(_chatNotificationsMuted ? Icons.notifications_off_rounded : Icons.notifications_active_rounded),
-          ),
-          if (_chatType == 'direct')
-            IconButton(
-              tooltip: 'تماس صوتی',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
-                conversationId: widget.id, title: widget.title, video: false,
-              ))),
-              icon: const Icon(Icons.call_rounded),
-            ),
           if (_chatType == 'direct')
             IconButton(
               tooltip: 'تماس تصویری',
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                 conversationId: widget.id, title: widget.title, video: true,
               ))),
-              icon: const Icon(Icons.videocam_rounded),
+              icon: const Icon(Icons.videocam_rounded, color: Color(0xFF039BE5)),
             ),
+          if (_chatType == 'direct')
+            IconButton(
+              tooltip: 'تماس صوتی',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                conversationId: widget.id, title: widget.title, video: false,
+              ))),
+              icon: const Icon(Icons.call_rounded, color: Color(0xFF039BE5)),
+            ),
+          IconButton(
+            tooltip: _chatNotificationsMuted ? 'روشن‌کردن اعلان‌های گفتگو' : 'بی‌صداکردن اعلان‌های گفتگو',
+            onPressed: _toggleChatNotifications,
+            icon: Icon(_chatNotificationsMuted ? Icons.notifications_off_rounded : Icons.notifications_active_rounded),
+          ),
           if (_chatType != 'direct')
             IconButton(
               tooltip: 'کپی لینک گروه/کانال',
@@ -6231,6 +6231,42 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
+            SizedBox(
+              height: 54,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                children: [
+                  for (final emoji in const ['❤️', '😂', '🥹', '👍', '😍', '🙏', '🔥', '👀'])
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 8),
+                      child: Material(
+                        color: scheme.surfaceContainerHighest.withValues(alpha: .92),
+                        shape: const StadiumBorder(),
+                        child: InkWell(
+                          customBorder: const StadiumBorder(),
+                          onTap: () {
+                            final value = text.text;
+                            final selection = text.selection;
+                            final start = selection.isValid ? selection.start : value.length;
+                            final end = selection.isValid ? selection.end : value.length;
+                            text.value = TextEditingValue(
+                              text: value.replaceRange(start, end, emoji),
+                              selection: TextSelection.collapsed(offset: start + emoji.length),
+                            );
+                            _composerFocus.requestFocus();
+                            _updateMentionSuggestions(text.text);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                            child: Text(emoji, style: const TextStyle(fontSize: 23)),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             SafeArea(
               top: false,
               child: Padding(
