@@ -4142,6 +4142,7 @@ class _ChatPageState extends State<ChatPage> {
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
+  String? _localChatTitle;
   int _groupMemberCount = 0;
   int _groupOnlineCount = 0;
   DateTime? _voiceStartedAt;
@@ -5799,6 +5800,11 @@ class _ChatPageState extends State<ChatPage> {
       await Navigator.push(context, MaterialPageRoute(
         builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
       ));
+      final prefs = await SharedPreferences.getInstance();
+      final alias = (prefs.getString('contact_alias_${uid}_${peerId}') ?? '').trim();
+      if (mounted) setState(() => _localChatTitle = alias.isEmpty
+          ? (row['display_name'] ?? row['username'] ?? widget.title).toString()
+          : alias);
     } catch (e) {
       if (mounted) showMsg(context, 'باز کردن پروفایل ناموفق بود: ${_friendlyError(e.toString())}');
     }
@@ -5910,7 +5916,7 @@ class _ChatPageState extends State<ChatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                   Text(
                     _chatType == 'direct'
                         ? 'گفتگوی خصوصی'
