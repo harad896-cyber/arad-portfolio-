@@ -11,7 +11,7 @@ class GroupModerationPage extends StatefulWidget {
 
 class _GroupModerationPageState extends State<GroupModerationPage> {
   final db = Supabase.instance.client;
-  bool loading = true, busy = false, isAdmin = false, isOwner = false;
+  bool loading = true, busy = false, isAdmin = false, isOwner = false, canDeleteMessages = false, canRemoveMembers = false;
   Map<String, dynamic>? group;
   List<Map<String, dynamic>> messages = [], members = [], banned = [];
   Map<String, Map<String, dynamic>> profiles = {};
@@ -34,12 +34,22 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
       final ids = <String>{...ms.map((m) => m['user_id'].toString()), ...bans.map((b) => b['user_id'].toString())};
       final people = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', ids.toList()));
       final uid = db.auth.currentUser?.id;
+      final isOwnerNow = uid != null && g['created_by'].toString() == uid;
+      final isAdminNow = uid != null && (isOwnerNow || ms.any((m) => m['user_id'].toString() == uid && ['admin', 'owner'].contains(m['role'])));
+      Map<String,dynamic> permissions = {};
+      if (isAdminNow && !isOwnerNow && uid != null) {
+        try {
+          final row = await db.from('group_admin_permissions').select('can_delete_messages,can_remove_members').eq('conversation_id', widget.conversationId).eq('user_id', uid).maybeSingle();
+          if (row != null) permissions = Map<String,dynamic>.from(row);
+        } catch (_) {}
+      }
       if (!mounted) return;
       setState(() {
         group = g; members = ms; messages = List<Map<String, dynamic>>.from(rawMessages); banned = bans;
         profiles = {for (final p in people) p['id'].toString(): p};
-        isOwner = uid != null && g['created_by'].toString() == uid;
-        isAdmin = uid != null && (isOwner || ms.any((m) => m['user_id'].toString() == uid && ['admin', 'owner'].contains(m['role'])));
+        isOwner = isOwnerNow; isAdmin = isAdminNow;
+        canDeleteMessages = isOwnerNow || permissions['can_delete_messages'] == true;
+        canRemoveMembers = isOwnerNow || permissions['can_remove_members'] == true;
         loading = false;
       });
     } catch (e) {
@@ -86,11 +96,11 @@ class _GroupModerationPageState extends State<GroupModerationPage> {
       body: RefreshIndicator(onRefresh: load, child: ListView(padding: const EdgeInsets.all(14), children: [
         Card(child: ListTile(leading: Icon(Icons.admin_panel_settings_rounded, color: Theme.of(context).colorScheme.primary), title: Text(isOwner ? 'کنترل کامل مالک' : 'مدیریت گروه'), subtitle: const Text('حذف پیام برای همه و مدیریت اعضا'))),
         const SizedBox(height: 12), Text('پیام‌های اخیر (${active.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        ...active.map((m) => Card(child: ListTile(title: Text(nameOf(m['sender_id'].toString()), style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text((m['body'] ?? '').toString(), maxLines: 3, overflow: TextOverflow.ellipsis), trailing: IconButton(onPressed: busy ? null : () => deleteMessage(m['id'].toString()), icon: const Icon(Icons.delete_sweep_rounded))))),
+        ...active.map((m) => Card(child: ListTile(title: Text(nameOf(m['sender_id'].toString()), style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text((m['body'] ?? '').toString(), maxLines: 3, overflow: TextOverflow.ellipsis), trailing: canDeleteMessages ? IconButton(onPressed: busy ? null : () => deleteMessage(m['id'].toString()), icon: const Icon(Icons.delete_sweep_rounded)) : null))),
         const SizedBox(height: 14), Text('اعضا (${members.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        ...members.map((m) { final id = m['user_id'].toString(); final owner = id == group?['created_by'].toString(); return Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.person)), title: Text(nameOf(id)), subtitle: Text(owner ? '👑 مالک' : (m['role'] ?? 'member').toString()), trailing: owner || id == db.auth.currentUser?.id ? null : IconButton(onPressed: busy ? null : () => banMember(id), icon: const Icon(Icons.person_remove_rounded)))); }),
+        ...members.map((m) { final id = m['user_id'].toString(); final owner = id == group?['created_by'].toString(); return Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.person)), title: Text(nameOf(id)), subtitle: Text(owner ? '👑 مالک' : (m['role'] ?? 'member').toString()), trailing: owner || id == db.auth.currentUser?.id || !canRemoveMembers ? null : IconButton(onPressed: busy ? null : () => banMember(id), icon: const Icon(Icons.person_remove_rounded)))); }),
         const SizedBox(height: 14), Text('محروم‌شده‌ها (${banned.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        ...banned.map((b) { final id = b['user_id'].toString(); return Card(child: ListTile(title: Text(nameOf(id)), subtitle: Text((b['reason'] ?? 'بدون دلیل').toString()), trailing: IconButton(onPressed: busy ? null : () => unbanMember(id), icon: const Icon(Icons.lock_open_rounded)))); }),
+        ...banned.map((b) { final id = b['user_id'].toString(); return Card(child: ListTile(title: Text(nameOf(id)), subtitle: Text((b['reason'] ?? 'بدون دلیل').toString()), trailing: canRemoveMembers ? IconButton(onPressed: busy ? null : () => unbanMember(id), icon: const Icon(Icons.lock_open_rounded)) : null)); }),
       ])),
     );
   }
