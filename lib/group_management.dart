@@ -467,12 +467,82 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Future<void> editInfo() async {
     if (!admin || group == null) return;
     final t = TextEditingController(text: (group!['title'] ?? widget.title).toString());
+    final u = TextEditingController(text: (group!['username'] ?? '').toString());
     final d = TextEditingController(text: (group!['description'] ?? '').toString());
-    await showDialog<void>(context: context, builder: (dialog) => AlertDialog(title: const Text('ویرایش پروفایل گروه'), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: t, decoration: const InputDecoration(labelText: 'نام گروه')), const SizedBox(height: 10), TextField(controller: d, maxLines: 3, decoration: const InputDecoration(labelText: 'توضیحات'))]), actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('لغو')), FilledButton(onPressed: () { Navigator.pop(dialog); updateSettings(title: t.text.trim(), description: d.text.trim()); }, child: const Text('ذخیره'))]));
-    t.dispose(); d.dispose();
+    await showDialog<void>(context: context, builder: (dialog) => AlertDialog(title: const Text('ویرایش پروفایل گروه'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: t, decoration: const InputDecoration(labelText: 'نام گروه')), const SizedBox(height: 10), TextField(controller: u, autocorrect: false, decoration: const InputDecoration(labelText: 'نام کاربری عمومی', prefixText: '@', helperText: 'برای عمومی کردن گروه لازم است؛ فقط حروف انگلیسی، عدد و زیرخط.')), const SizedBox(height: 10), TextField(controller: d, maxLines: 3, decoration: const InputDecoration(labelText: 'توضیحات'))])), actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('لغو')), FilledButton(onPressed: () { Navigator.pop(dialog); updateSettings(title: t.text.trim(), description: d.text.trim(), username: u.text.trim().replaceFirst('@', '')); }, child: const Text('ذخیره'))]));
+    t.dispose(); u.dispose(); d.dispose();
   }
 
-  Future<void> updateSettings({String? title, String? description, bool? publicGroup, bool? approval, bool? adminsPost, bool? adminsAdd, bool? reactions}) async {
+  Future<void> changePublicVisibility(bool value) async {
+    if (!value) { await updateSettings(publicGroup: false); return; }
+    final current = (group?['username'] ?? '').toString().trim();
+    if (current.isNotEmpty) { await updateSettings(publicGroup: true); return; }
+    final controller = TextEditingController();
+    final username = await showDialog<String>(context: context, builder: (dialog) => AlertDialog(
+      title: const Text('نام کاربری گروه عمومی'),
+      content: TextField(controller: controller, autofocus: true, autocorrect: false, decoration: const InputDecoration(prefixText: '@', hintText: 'arad_group', helperText: 'نام کوتاه و یکتا انتخاب کنید.')),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(dialog, controller.text.trim().replaceFirst('@', '')), child: const Text('عمومی کردن'))],
+    ));
+    controller.dispose();
+    if (username == null || username.trim().isEmpty) return;
+    if (!RegExp(r'^[a-zA-Z0-9_]{3,32}
+    if (!admin || group == null || busy) return;
+    final g = group!;
+    setState(() => busy = true);
+    try {
+      await db.rpc('update_group_settings', params: {'p_conversation_id': widget.conversationId, 'p_title': title ?? g['title'], 'p_description': description ?? g['description'], 'p_avatar_url': g['avatar_url'], 'p_is_public': publicGroup ?? g['is_public'] ?? false, 'p_username': username ?? g['username'], 'p_join_approval': approval ?? g['join_approval'] ?? false, 'p_only_admins_can_post': adminsPost ?? g['only_admins_can_post'] ?? false, 'p_only_admins_can_add': adminsAdd ?? g['only_admins_can_add'] ?? false, 'p_auto_delete_seconds': g['auto_delete_seconds'] ?? 0, 'p_allow_reactions': reactions ?? g['allow_reactions'] ?? true});
+      await load();
+    } catch (e) { toast('تنظیمات ذخیره نشد: $e'); }
+    finally { if (mounted) setState(() => busy = false); }
+  }
+
+  Future<void> deleteGroup() async {
+    if (!owner || busy) return;
+    final c = TextEditingController();
+    final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(title: const Text('حذف کامل گروه'), content: TextField(controller: c, decoration: const InputDecoration(labelText: 'بنویسید: حذف گروه')), actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(d, c.text.trim() == 'حذف گروه'), child: const Text('حذف دائمی'))])) ?? false;
+    c.dispose();
+    if (!ok) return;
+    setState(() => busy = true);
+    try { await db.rpc('delete_group', params: {'p_conversation_id': widget.conversationId}); if (mounted) Navigator.pop(context, true); }
+    catch (e) { toast('حذف گروه ناموفق بود: $e'); }
+    finally { if (mounted) setState(() => busy = false); }
+  }
+
+  @override void initState() { super.initState(); load(); }
+
+  @override Widget build(BuildContext context) {
+    if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
+    return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (admin) IconButton(onPressed: editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
+      Card(child: ListTile(leading: CircleAvatar(backgroundImage: (group!['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(group!['avatar_url'].toString()) : null, child: (group!['avatar_url'] ?? '').toString().isEmpty ? const Icon(Icons.groups) : null), title: Text((group!['title'] ?? widget.title).toString(), style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(owner ? 'مالک گروه' : 'مدیر گروه'))),
+      const SizedBox(height: 8),
+      const Text('اعضا', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+      const Text('«حذف از گروه» فقط اخراج است؛ «محروم کردن» اخراج + جلوگیری از عضویت دوباره است.'),
+      const SizedBox(height: 8),
+      ...members.map((m) {
+        final id = m['user_id'].toString(); final isGroupOwner = group!['created_by']?.toString() == id; final role = (m['role'] ?? 'member').toString(); final a = avatarOf(id);
+        return Card(margin: const EdgeInsets.symmetric(vertical: 4), child: ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(isGroupOwner ? '👑 مالک' : role), trailing: isGroupOwner ? const Icon(Icons.lock_rounded) : PopupMenuButton<String>(onSelected: (v) { if (v == 'remove') removeMember(id); else if (v == 'ban') banMember(id); else if (v == 'admin') setRole(id, 'admin'); else if (v == 'member') setRole(id, 'member'); }, itemBuilder: (_) => const [PopupMenuItem(value: 'remove', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_remove_rounded), title: Text('حذف از گروه'))), PopupMenuItem(value: 'ban', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.block_rounded), title: Text('محروم کردن'))), PopupMenuItem(value: 'admin', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.admin_panel_settings_rounded), title: Text('مدیر کردن'))), PopupMenuItem(value: 'member', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_rounded), title: Text('برداشتن مدیریت')))])));
+      }),
+      const SizedBox(height: 14),
+      Card(child: Column(children: [
+        const ListTile(title: Text('تنظیمات گروه', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+        SwitchListTile(title: const Text('گروه عمومی'), subtitle: Text((group!['username'] ?? '').toString().isEmpty ? 'برای فعال‌سازی، نام کاربری یکتا تعیین کنید.' : '@${group!['username']}'), value: group!['is_public'] == true, onChanged: admin ? changePublicVisibility : null),
+        SwitchListTile(title: const Text('تأیید درخواست عضویت'), value: group!['join_approval'] == true, onChanged: admin ? (v) => updateSettings(approval: v) : null),
+        SwitchListTile(title: const Text('فقط مدیران پیام بفرستند'), value: group!['only_admins_can_post'] == true, onChanged: admin ? (v) => updateSettings(adminsPost: v) : null),
+        SwitchListTile(title: const Text('فقط مدیران عضو اضافه کنند'), value: group!['only_admins_can_add'] == true, onChanged: admin ? (v) => updateSettings(adminsAdd: v) : null),
+        SwitchListTile(title: const Text('واکنش به پیام‌ها'), value: group!['allow_reactions'] != false, onChanged: admin ? (v) => updateSettings(reactions: v) : null),
+      ])),
+      if (admin) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
+      if (owner) Card(child: ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست‌های عضویت، محروم‌ها، محدودیت‌ها، سنجاق پیام و اختیارات مدیران'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: widget.title))))),
+      if (owner) Card(child: ListTile(leading: const Icon(Icons.delete_forever_rounded), title: const Text('حذف کامل گروه', style: TextStyle(fontWeight: FontWeight.w900)), subtitle: const Text('این گزینه هیچ ارتباطی با حذف/محروم کردن اعضا ندارد.'), onTap: deleteGroup)),
+      if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
+    ]));
+  }
+}
+).hasMatch(username)) { toast('نام کاربری باید ۳ تا ۳۲ نویسه و شامل حروف انگلیسی، عدد یا زیرخط باشد.'); return; }
+    await updateSettings(publicGroup: true, username: username.toLowerCase());
+  }
+
+  Future<void> updateSettings({String? title, String? description, String? username, bool? publicGroup, bool? approval, bool? adminsPost, bool? adminsAdd, bool? reactions}) async {
     if (!admin || group == null || busy) return;
     final g = group!;
     setState(() => busy = true);
