@@ -17,10 +17,10 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
     if (_choosingImage) return;
     setState(() => _choosingImage = true);
     try {
-      final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 68, maxWidth: 1280, maxHeight: 1280);
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 60, maxWidth: 900, maxHeight: 900);
       if (file == null) return;
       final bytes = await file.readAsBytes();
-      if (bytes.length > 1200 * 1024) {
+      if (bytes.length > 700 * 1024) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تصویر خیلی بزرگ است؛ عکس کوچک‌تری انتخاب کن.')));
         return;
       }
@@ -60,6 +60,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             height: 220,
             decoration: BoxDecoration(
               color: Color(selected),
+              image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .12), BlendMode.darken)),
               borderRadius: BorderRadius.circular(kPolishRadius),
               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
@@ -75,6 +76,14 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _choosingImage ? null : _chooseGalleryImage,
+            icon: _choosingImage ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.photo_library_outlined),
+            label: Text(_choosingImage ? 'در حال انتخاب...' : 'انتخاب عکس از گالری'),
+          ),
+          if (appTheme.backgroundImageBase64 != null)
+            TextButton.icon(onPressed: _removeGalleryImage, icon: const Icon(Icons.delete_outline), label: const Text('حذف عکس پس‌زمینه')),
           const SizedBox(height: 22),
           const Text('رنگ پس‌زمینه', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 12),
