@@ -4167,6 +4167,9 @@ class _ChatPageState extends State<ChatPage> {
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
   String? _localChatTitle;
+  String _directPeerId = '';
+  List<Map<String, dynamic>> _mentionSuggestions = [];
+  int _mentionStart = -1;
   int _groupMemberCount = 0;
   int _groupOnlineCount = 0;
   DateTime? _voiceStartedAt;
@@ -4329,6 +4332,41 @@ class _ChatPageState extends State<ChatPage> {
     return '${p['display_name'] ?? p['username'] ?? 'کاربر'}';
   }
 
+  void _updateMentionSuggestions(String value) {
+    if (_chatType != 'group') {
+      if (_mentionSuggestions.isNotEmpty) setState(() => _mentionSuggestions = []);
+      return;
+    }
+    final cursor = text.selection.baseOffset.clamp(0, value.length);
+    final before = value.substring(0, cursor);
+    final at = before.lastIndexOf('@');
+    if (at < 0 || (before.substring(at).contains(' ') || before.substring(at).contains('\n'))) {
+      if (_mentionSuggestions.isNotEmpty) setState(() { _mentionSuggestions = []; _mentionStart = -1; });
+      return;
+    }
+    final query = before.substring(at + 1).toLowerCase();
+    final matches = profiles.values.where((p) {
+      final username = '${p['username'] ?? ''}'.toLowerCase();
+      final display = '${p['display_name'] ?? ''}'.toLowerCase();
+      return username.isNotEmpty && (query.isEmpty || username.contains(query) || display.contains(query));
+    }).take(8).map((p) => Map<String, dynamic>.from(p)).toList();
+    if (_mentionStart != at || matches.length != _mentionSuggestions.length || matches.any((p) => !_mentionSuggestions.any((old) => old['id'] == p['id']))) {
+      setState(() { _mentionStart = at; _mentionSuggestions = matches; });
+    }
+  }
+
+  void _insertMention(Map<String, dynamic> profile) {
+    final username = '${profile['username'] ?? ''}'.trim();
+    if (username.isEmpty) return;
+    final cursor = text.selection.baseOffset.clamp(0, text.text.length);
+    final start = _mentionStart >= 0 ? _mentionStart : text.text.lastIndexOf('@', cursor - 1);
+    if (start < 0) return;
+    final next = '${text.text.substring(0, start)}@$username ${text.text.substring(cursor)}';
+    text.value = TextEditingValue(text: next, selection: TextSelection.collapsed(offset: start + username.length + 2));
+    setState(() { _mentionSuggestions = []; _mentionStart = -1; });
+    _restoreComposerFocus();
+  }
+
   void _restoreComposerFocus() {
     if (!mounted) return;
     _composerFocus.requestFocus();
@@ -4447,6 +4485,16 @@ class _ChatPageState extends State<ChatPage> {
       if (conversation['type'] == 'group' && conversation['created_by'] != null) {
         senderIds.add(conversation['created_by'].toString());
       }
+      var directPeerId = '';
+      if (conversation['type'] == 'direct' && uid != null) {
+        try {
+          final directMembers = await supabase.from('conversation_members')
+              .select('user_id').eq('conversation_id', widget.id);
+          directPeerId = (directMembers as List).map((m) => '${m['user_id'] ?? ''}')
+              .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
+          if (directPeerId.isNotEmpty) senderIds.add(directPeerId);
+        } catch (_) {}
+      }
       final senderIdList = senderIds.toList();
       if (senderIdList.isNotEmpty) {
         final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_online,last_seen').inFilter('id', senderIdList);
@@ -4498,6 +4546,7 @@ class _ChatPageState extends State<ChatPage> {
           messages = loaded;
           callSessions = calls;
           timelineItems = merged;
+          _directPeerId = directPeerId;
           _groupMemberCount = groupMembers.length;
           _groupOnlineCount = groupMembers.where((member) =>
             profiles[member['user_id']?.toString()]?['is_online'] == true).length;
@@ -5974,7 +6023,12 @@ class _ChatPageState extends State<ChatPage> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: scheme.primaryContainer,
-                  child: Icon(Icons.person_rounded, size: 20, color: scheme.primary),
+                  backgroundImage: (_chatType == 'direct' ? profiles[_directPeerId]?['avatar_url']?.toString() : null) is String && (_chatType == 'direct' ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}' : '').trim().isNotEmpty
+                      ? NetworkImage('${profiles[_directPeerId]?['avatar_url']}')
+                      : null,
+                  child: (_chatType == 'direct' ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}' : '').trim().isEmpty
+                      ? Icon(Icons.person_rounded, size: 20, color: scheme.primary)
+                      : null,
                 ),
                 if (_chatType == 'direct')
                   Positioned(
@@ -6068,6 +6122,38 @@ class _ChatPageState extends State<ChatPage> {
                           },
                         ),
             ),
+            if (_mentionSuggestions.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                decoration: BoxDecoration(
+                  color: scheme.surface.withValues(alpha: .97),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scheme.outline.withValues(alpha: .15)),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, -3))],
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: _mentionSuggestions.length,
+                  separatorBuilder: (_, __) => Divider(height: 1, color: scheme.outline.withValues(alpha: .08)),
+                  itemBuilder: (context, index) {
+                    final profile = _mentionSuggestions[index];
+                    final avatar = '${profile['avatar_url'] ?? ''}'.trim();
+                    return ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 17,
+                        backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                        child: avatar.isEmpty ? const Icon(Icons.person_outline_rounded, size: 18) : null,
+                      ),
+                      title: Text('${profile['display_name'] ?? profile['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text('@${profile['username']}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      onTap: () => _insertMention(profile),
+                    );
+                  },
+                ),
+              ),
             if (replyMessage != null)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
@@ -6165,6 +6251,7 @@ class _ChatPageState extends State<ChatPage> {
                             child: TextField(
                               controller: text,
                               focusNode: _composerFocus,
+                              onChanged: _updateMentionSuggestions,
                               // Send-button taps must not unfocus the composer or dismiss the keyboard.
                               onTapOutside: (_) {},
                               minLines: 1,
