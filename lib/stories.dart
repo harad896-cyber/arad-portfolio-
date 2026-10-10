@@ -261,7 +261,7 @@ class _StoriesPageState extends State<StoriesPage> {
     final caption = (story['caption'] ?? '').toString().trim();
     final id = story['id'].toString();
     final audience = (story['audience'] ?? 'contacts').toString();
-    await Share.share('استوری در پیام‌رسان آراد${caption.isEmpty ? '' : '\n$caption'}\nشناسه استوری: $id\nمحدوده نمایش: ${audience == 'everyone' ? 'همه' : audience == 'private' ? 'خصوصی' : 'مخاطبین'}');
+    await Share.share('استوری در پیام‌رسان آراد${caption.isEmpty ? '' : '\n$caption'}\nلینک باز کردن استوری: arad://story/${Uri.encodeComponent(id)}\nمحدوده نمایش: ${audience == 'everyone' ? 'همه' : audience == 'private' ? 'خصوصی' : 'مخاطبین'}');
   }
 
   Future<void> _deleteCurrent() async {
