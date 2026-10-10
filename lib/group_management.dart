@@ -136,14 +136,31 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 const Text('افزودن از مخاطبین', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                const Text('فقط مخاطبین ذخیره‌شده نمایش داده می‌شوند.', textAlign: TextAlign.center),
+                const Text('مخاطبین نمایش داده می‌شوند؛ با جستجو می‌توانید کاربران ثبت‌نام‌شده را هم پیدا کنید.', textAlign: TextAlign.center),
                 const SizedBox(height: 10),
-                TextField(controller: search, autofocus: true, onChanged: (q) {
-                  final term = q.trim().toLowerCase();
-                  setSheet(() => visible = contacts.where((p) =>
-                    (p['display_name'] ?? '').toString().toLowerCase().contains(term) ||
-                    (p['username'] ?? '').toString().toLowerCase().contains(term)).toList());
-                }, decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'جستجوی مخاطبین')),
+                TextField(controller: search, autofocus: true, onChanged: (q) async {
+                  final term = q.trim();
+                  if (term.isEmpty) {
+                    setSheet(() => visible = List<Map<String, dynamic>>.from(contacts));
+                    return;
+                  }
+                  try {
+                    final raw = await db.rpc('search_profiles', params: {'search_text': term});
+                    final currentIds = members.map((m) => m['user_id'].toString()).toSet();
+                    final uid = db.auth.currentUser?.id;
+                    final matches = List<Map<String, dynamic>>.from(raw as List)
+                      .where((p) => p['id'] != null &&
+                        p['id'].toString() != uid &&
+                        !currentIds.contains(p['id'].toString()))
+                      .toList();
+                    if (sheet.mounted) setSheet(() => visible = matches);
+                  } catch (_) {
+                    final lower = term.toLowerCase();
+                    if (sheet.mounted) setSheet(() => visible = contacts.where((p) =>
+                      (p['display_name'] ?? '').toString().toLowerCase().contains(lower) ||
+                      (p['username'] ?? '').toString().toLowerCase().contains(lower)).toList());
+                  }
+                }, decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'جستجوی مخاطب یا نام کاربری')),
                 if (contacts.isEmpty) const Padding(
                   padding: EdgeInsets.all(20),
                   child: Text('مخاطب جدیدی برای افزودن نیست. ابتدا از بخش مخاطبین، کاربر را اضافه کنید.', textAlign: TextAlign.center)),
