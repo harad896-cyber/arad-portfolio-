@@ -35,7 +35,7 @@ jobs:
                       <data android:scheme="arad" android:host="invite" />
                   </intent-filter>
               '''
-              s = s.replace('</activity>', intent_filter + '\\n        </activity>', 1)
+              s = s.replace('</activity>', intent_filter + '\n        </activity>', 1)
               p.write_text(s)
           PY
       - run: flutter pub get
