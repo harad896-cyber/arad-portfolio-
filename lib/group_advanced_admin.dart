@@ -9,7 +9,7 @@ class GroupAdvancedAdminPage extends StatefulWidget {
 }
 class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
   final db=Supabase.instance.client; bool loading=true,busy=false;
-  List<Map<String,dynamic>> requests=[],banned=[],pinned=[],messages=[];
+  List<Map<String,dynamic>> requests=[],banned=[],pinned=[],messages=[],admins=[];
   Map<String,Map<String,dynamic>> profiles={};
   String nameOf(String id)=>(profiles[id]?['display_name']??profiles[id]?['username']??'کاربر').toString();
   String avatarOf(String id)=>(profiles[id]?['avatar_url']??'').toString();
@@ -17,12 +17,13 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
   Future<void> load()async{
     try{
       final rs=List<Map<String,dynamic>>.from(await db.from('group_join_requests').select('id,user_id,created_at,status').eq('conversation_id',widget.conversationId).eq('status','pending').order('created_at',ascending:false));
+      final adminRows=List<Map<String,dynamic>>.from(await db.from('conversation_members').select('user_id,role').eq('conversation_id',widget.conversationId).eq('role','admin').order('joined_at'));
       final bs=List<Map<String,dynamic>>.from(await db.from('group_banned_members').select('user_id,reason,created_at').eq('conversation_id',widget.conversationId).order('created_at',ascending:false));
       final ps=List<Map<String,dynamic>>.from(await db.from('group_pinned_messages').select('message_id,pinned_by,pinned_at').eq('conversation_id',widget.conversationId).order('pinned_at',ascending:false));
       final ms=List<Map<String,dynamic>>.from(await db.from('messages').select('id,sender_id,body,message_type,created_at').eq('conversation_id',widget.conversationId).order('created_at',ascending:false).limit(60));
-      final ids=<String>{...rs.map((x)=>x['user_id'].toString()),...bs.map((x)=>x['user_id'].toString()),...ms.map((x)=>x['sender_id'].toString())};
+      final ids=<String>{...rs.map((x)=>x['user_id'].toString()),...adminRows.map((x)=>x['user_id'].toString()),...bs.map((x)=>x['user_id'].toString()),...ms.map((x)=>x['sender_id'].toString())};
       final prof=ids.isEmpty?<Map<String,dynamic>>[]:List<Map<String,dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id',ids.toList()));
-      if(!mounted)return; setState(() { requests=rs; banned=bs; pinned=ps; messages=ms; profiles={for(final p in prof)p['id'].toString():p}; loading=false; });
+      if(!mounted)return; setState(() { requests=rs; admins=adminRows; banned=bs; pinned=ps; messages=ms; profiles={for(final p in prof)p['id'].toString():p}; loading=false; });
     }catch(e){if(mounted){setState(()=>loading=false);toast('مدیریت پیشرفته بارگذاری نشد: $e');}}
   }
   Future<void> review(String id,bool approve)async{if(busy)return;setState(()=>busy=true);try{await db.rpc('review_group_join_request',params:{'p_request_id':id,'p_approve':approve});toast(approve?'درخواست پذیرفته شد.':'درخواست رد شد.');await load();}catch(e){toast('عملیات ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
@@ -47,6 +48,13 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
     if(loading)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:const AppSkeletonList(count: 6));
     final pinnedIds=pinned.map((p)=>p['message_id'].toString()).toSet();
     return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:ListView(padding:const EdgeInsets.all(12),children:[
+      Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        const Text('مدیران و اختیارات',style:TextStyle(fontSize:17,fontWeight:FontWeight.w900)),
+        const SizedBox(height:4),
+        const Text('اختیارات هر مدیر را جداگانه تنظیم کنید. مالک گروه همیشه کنترل کامل دارد.'),
+        if(admins.isEmpty) const ListTile(leading:Icon(Icons.admin_panel_settings_outlined),title:Text('مدیر دیگری تعیین نشده است')),
+        ...admins.map((m){final id=m['user_id'].toString();final a=avatarOf(id);return ListTile(contentPadding:EdgeInsets.zero,leading:CircleAvatar(backgroundImage:a.isNotEmpty?NetworkImage(a):null,child:a.isEmpty?const Icon(Icons.person):null),title:Text(nameOf(id)),subtitle:const Text('مدیر گروه'),trailing:IconButton(tooltip:'تنظیم اختیارات',onPressed:busy?null:()=>permissions(id),icon:const Icon(Icons.tune_rounded)));}),
+      ]))),
       Card(child:ListTile(leading:const Icon(Icons.how_to_reg_rounded),title:const Text('درخواست‌های عضویت',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text(requests.length.toString()+' درخواست در انتظار بررسی'))),
       ...requests.map((r){final id=r['user_id'].toString();final a=avatarOf(id);return Card(child:ListTile(leading:CircleAvatar(backgroundImage:a.isNotEmpty?NetworkImage(a):null,child:a.isEmpty?const Icon(Icons.person):null),title:Text(nameOf(id)),subtitle:const Text('درخواست عضویت'),trailing:Wrap(children:[IconButton(onPressed:busy?null:()=>review(r['id'].toString(),false),icon:const Icon(Icons.close_rounded)),IconButton(onPressed:busy?null:()=>review(r['id'].toString(),true),icon:const Icon(Icons.check_rounded))])));}),
       const SizedBox(height:8),
