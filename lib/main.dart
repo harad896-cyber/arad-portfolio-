@@ -2980,14 +2980,24 @@ class _HomePageState extends State<HomePage> {
     for (final p in profiles) {
       p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
     }
-    final members = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
-    for (final p in profiles) {
-      for (final m in (members as List)) {
-        final mm = await supabase.from('conversation_members').select('user_id').eq('conversation_id', m['conversation_id']);
-        if ((mm as List).length == 2 && mm.any((x) => x['user_id'].toString() == p['id'].toString())) {
-          p['_conversation_id'] = m['conversation_id'];
-          break;
-        }
+    // Fetch membership rows in one request instead of issuing one query
+    // per conversation. This avoids the N+1 request pattern that made contacts slow.
+    final memberRows = await supabase
+        .from('conversation_members')
+        .select('conversation_id,user_id')
+        .inFilter('user_id', [uid, ...ids]);
+    final grouped = <String, List<String>>{};
+    for (final row in List<Map<String, dynamic>>.from(memberRows)) {
+      grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
+          .add('${row['user_id']}');
+    }
+    final peerIds = ids.map((id) => id.toString()).toSet();
+    for (final entry in grouped.entries) {
+      if (entry.value.length != 2 || !entry.value.contains(uid)) continue;
+      final peer = entry.value.firstWhere((id) => id != uid, orElse: () => '');
+      if (peerIds.contains(peer)) {
+        final profile = profiles.where((p) => '${p['id']}' == peer);
+        if (profile.isNotEmpty) profile.first['_conversation_id'] = entry.key;
       }
     }
     return profiles.where((p) => p['_conversation_id'] != null).toList();
