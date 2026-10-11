@@ -4469,6 +4469,41 @@ class _ChatPageState extends State<ChatPage> {
     return '${p['display_name'] ?? p['username'] ?? 'کاربر'}';
   }
 
+  List<({String label, String message})> get _quickMessageSuggestions {
+    switch (aradLanguageController.locale.languageCode) {
+      case 'en':
+        return [
+          (label: '👋  Hello', message: 'Hello 👋'),
+          (label: '😊  How are you?', message: 'How are you? 😊'),
+          (label: '🙏  Thanks', message: 'Thanks 🙏'),
+          (label: '👍  Okay', message: 'Okay 👍'),
+          (label: '❤️  Great', message: 'Great ❤️'),
+          (label: '😂  Haha', message: '😂😂'),
+          (label: '🔥  Nice one', message: 'Nice one 🔥'),
+        ];
+      case 'ar':
+        return [
+          (label: '👋  مرحباً', message: 'مرحباً 👋'),
+          (label: '😊  كيف حالك؟', message: 'كيف حالك؟ 😊'),
+          (label: '🙏  شكراً', message: 'شكراً 🙏'),
+          (label: '👍  حسناً', message: 'حسناً 👍'),
+          (label: '❤️  رائع', message: 'رائع ❤️'),
+          (label: '😂  ههه', message: '😂😂'),
+          (label: '🔥  ممتاز', message: 'ممتاز 🔥'),
+        ];
+      default:
+        return [
+          (label: '👋  سلام', message: 'سلام 👋'),
+          (label: '😊  خوبی؟', message: 'خوبی؟ 😊'),
+          (label: '🙏  ممنون', message: 'ممنون 🙏'),
+          (label: '👍  باشه', message: 'باشه 👍'),
+          (label: '❤️  عالیه', message: 'عالیه ❤️'),
+          (label: '😂  خخخ', message: '😂😂'),
+          (label: '🔥  دمت گرم', message: 'دمت گرم 🔥'),
+        ];
+    }
+  }
+
   void _updateMentionSuggestions(String value) {
     if (_chatType != 'group') {
       if (_mentionSuggestions.isNotEmpty) setState(() => _mentionSuggestions = []);
@@ -6405,15 +6440,7 @@ class _ChatPageState extends State<ChatPage> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 children: [
-                  for (final suggestion in <({String label, String message})>[
-                    (label: '👋  سلام', message: 'سلام 👋'),
-                    (label: '😊  خوبی؟', message: 'خوبی؟ 😊'),
-                    (label: '🙏  ممنون', message: 'ممنون 🙏'),
-                    (label: '👍  باشه', message: 'باشه 👍'),
-                    (label: '❤️  عالیه', message: 'عالیه ❤️'),
-                    (label: '😂  خخخ', message: '😂😂'),
-                    (label: '🔥  دمت گرم', message: 'دمت گرم 🔥'),
-                  ])
+                  for (final suggestion in _quickMessageSuggestions)
                     Padding(
                       padding: const EdgeInsetsDirectional.only(end: 8),
                       child: Material(
