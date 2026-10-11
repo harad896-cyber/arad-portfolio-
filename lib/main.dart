@@ -5042,7 +5042,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> toggleVoiceRecording() async {
-    if (recordingVoice) { await _finishVoiceRecording(); } else { await _startVoiceRecording(); }
+    // Keep the chat surface mounted while the recorder starts/stops. Only the
+    // compact recording controls should change; do not replace the message body.
+    if (recordingVoice) {
+      await _finishVoiceRecording();
+    } else {
+      await _startVoiceRecording();
+    }
   }
 
 
@@ -6393,34 +6399,39 @@ class _ChatPageState extends State<ChatPage> {
                 ),
               ),
             SizedBox(
-              height: 54,
+              height: 52,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 children: [
-                  for (final emoji in const ['❤️', '😂', '🥹', '👍', '😍', '🙏', '🔥', '👀'])
+                  for (final suggestion in <({String label, String message})>[
+                    (label: '👋  سلام', message: 'سلام 👋'),
+                    (label: '😊  خوبی؟', message: 'خوبی؟ 😊'),
+                    (label: '🙏  ممنون', message: 'ممنون 🙏'),
+                    (label: '👍  باشه', message: 'باشه 👍'),
+                    (label: '❤️  عالیه', message: 'عالیه ❤️'),
+                    (label: '😂  خخخ', message: '😂😂'),
+                    (label: '🔥  دمت گرم', message: 'دمت گرم 🔥'),
+                  ])
                     Padding(
                       padding: const EdgeInsetsDirectional.only(end: 8),
                       child: Material(
-                        color: scheme.surfaceContainerHighest.withValues(alpha: .92),
+                        color: scheme.surfaceContainerHighest.withValues(alpha: .96),
                         shape: const StadiumBorder(),
                         child: InkWell(
                           customBorder: const StadiumBorder(),
                           onTap: () {
-                            final value = text.text;
-                            final selection = text.selection;
-                            final start = selection.isValid ? selection.start : value.length;
-                            final end = selection.isValid ? selection.end : value.length;
+                            if (sending) return;
                             text.value = TextEditingValue(
-                              text: value.replaceRange(start, end, emoji),
-                              selection: TextSelection.collapsed(offset: start + emoji.length),
+                              text: suggestion.message,
+                              selection: TextSelection.collapsed(offset: suggestion.message.length),
                             );
-                            _composerFocus.requestFocus();
-                            _updateMentionSuggestions(text.text);
+                            sendText();
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                            child: Text(emoji, style: const TextStyle(fontSize: 23)),
+                            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                            child: Text(suggestion.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: scheme.onSurface)),
                           ),
                         ),
                       ),
