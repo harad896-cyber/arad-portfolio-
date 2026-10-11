@@ -6645,10 +6645,6 @@ class _ChatPageState extends State<ChatPage> {
                                   color: (dark ? Colors.white : Colors.black).withValues(alpha: .62),
                                   fontWeight: FontWeight.w500,
                                 ),
-                                style: TextStyle(
-                                  color: dark ? Colors.white : Colors.black,
-                                  fontWeight: FontWeight.w500,
-                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(19),
                                   borderSide: BorderSide.none,
