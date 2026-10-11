@@ -6581,11 +6581,23 @@ class _ChatPageState extends State<ChatPage> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
+                              foregroundColor: scheme.primary,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(10),
+                            ),
                             onPressed: _showAttachmentPanel,
                             tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
                             icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary, size: 27),
                           ),
                           IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
+                              foregroundColor: scheme.primary,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(10),
+                            ),
                             onPressed: toggleVoiceRecording,
                             tooltip: recordingVoice ? ({'en':'Stop and send voice','ar':'إيقاف وإرسال الصوت'}[aradLanguageController.locale.languageCode] ?? 'توقف و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
                             icon: Icon(
@@ -6594,6 +6606,12 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                           ),
                           IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
+                              foregroundColor: scheme.primary,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(10),
+                            ),
                             onPressed: _showChatEmojiPicker,
                             tooltip: 'اموجی',
                             icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
