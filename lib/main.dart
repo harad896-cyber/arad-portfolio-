@@ -4317,6 +4317,7 @@ class _ChatPageState extends State<ChatPage> {
   Timer? _keyboardScrollTimer;
   double _lastKeyboardInset = 0;
   bool _showJumpToLatest = false;
+  bool _keepLatestVisibleOnKeyboard = false;
 
   void _onMessagesScroll() {
     if (!_messagesScroll.hasClients || !mounted) return;
@@ -4330,7 +4331,11 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _scheduleKeyboardScroll() {
-    // Do not force-scroll to the bottom on keyboard open.
+    if (!_keepLatestVisibleOnKeyboard) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_composerFocus.hasFocus || !_messagesScroll.hasClients) return;
+      _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+    });
   }
 
   void _jumpToLatest() {
@@ -6200,8 +6205,14 @@ class _ChatPageState extends State<ChatPage> {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     if ((keyboardInset - _lastKeyboardInset).abs() > 1) {
+      final keyboardJustOpened = _lastKeyboardInset <= 0 && keyboardInset > 0;
+      if (keyboardJustOpened && _messagesScroll.hasClients) {
+        final position = _messagesScroll.position;
+        _keepLatestVisibleOnKeyboard =
+            position.maxScrollExtent - position.pixels < 110;
+      }
       _lastKeyboardInset = keyboardInset;
-      if (keyboardInset > 0) _scheduleKeyboardScroll();
+      if (keyboardInset > 0 && _keepLatestVisibleOnKeyboard) _scheduleKeyboardScroll();
     }
     return Scaffold(
       // The chat body manages IME space explicitly below. This prevents
@@ -6371,7 +6382,7 @@ class _ChatPageState extends State<ChatPage> {
       ),
       floatingActionButton: _showJumpToLatest
           ? Padding(
-              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 68 : 74),
+              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 104 : 86),
               child: FloatingActionButton.small(
                 heroTag: 'jump-to-latest-${widget.id}',
                 onPressed: _jumpToLatest,
@@ -6630,6 +6641,14 @@ class _ChatPageState extends State<ChatPage> {
                                 hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
                                 filled: true,
                                 fillColor: scheme.surface.withValues(alpha: dark ? .24 : .32),
+                                hintStyle: TextStyle(
+                                  color: (dark ? Colors.white : Colors.black).withValues(alpha: .62),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                style: TextStyle(
+                                  color: dark ? Colors.white : Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(19),
                                   borderSide: BorderSide.none,
