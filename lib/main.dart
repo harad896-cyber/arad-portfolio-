@@ -5880,8 +5880,8 @@ class _ChatPageState extends State<ChatPage> {
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final myBubble = dark ? const Color(0xFF5B46B4) : scheme.primary;
-    final otherBubble = dark ? const Color(0xFF20242E) : const Color(0xFFF4F5F7);
+    final myBubble = dark ? const Color(0xFF7655A8).withValues(alpha: .78) : scheme.primary.withValues(alpha: .76);
+    final otherBubble = dark ? const Color(0xFF30363D).withValues(alpha: .72) : const Color(0xFFE8EAF0).withValues(alpha: .78);
     final textColor = mine
         ? Colors.white
         : (dark ? const Color(0xFFF4F5FA) : const Color(0xFF20242A));
@@ -6527,7 +6527,7 @@ class _ChatPageState extends State<ChatPage> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -6591,12 +6591,12 @@ class _ChatPageState extends State<ChatPage> {
                               decoration: InputDecoration(
                                 hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
                                 filled: true,
-                                fillColor: scheme.surface.withValues(alpha: .48),
+                                fillColor: scheme.surface.withValues(alpha: dark ? .24 : .32),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(19),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 isDense: true,
                               ),
                             ),
