@@ -4841,7 +4841,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Future<void> sendText() async {
+  Future<void> sendText({bool keepKeyboardOpen = true}) async {
     final value = text.text.trim();
     final uid = supabase.auth.currentUser?.id;
     if (value.isEmpty || sending || uid == null) return;
@@ -4873,13 +4873,19 @@ class _ChatPageState extends State<ChatPage> {
           return ad.compareTo(bd);
         });
     });
-    // Keep the composer focused after every send so the keyboard stays open.
-    _composerFocus.requestFocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+    // Normal sends keep the keyboard open; one-tap quick replies deliberately
+    // dismiss it so tapping a suggestion never unexpectedly opens the IME.
+    if (keepKeyboardOpen) {
       _composerFocus.requestFocus();
-      _scrollToLatestForKeyboard();
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _composerFocus.requestFocus();
+        _scrollToLatestForKeyboard();
+      });
+    } else {
+      _composerFocus.unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
 
     try {
       final saved = Map<String, dynamic>.from(await supabase.from('messages').insert({
@@ -6450,11 +6456,13 @@ class _ChatPageState extends State<ChatPage> {
                           customBorder: const StadiumBorder(),
                           onTap: () {
                             if (sending) return;
+                            _composerFocus.unfocus();
+                            FocusManager.instance.primaryFocus?.unfocus();
                             text.value = TextEditingValue(
                               text: suggestion.message,
                               selection: TextSelection.collapsed(offset: suggestion.message.length),
                             );
-                            sendText();
+                            sendText(keepKeyboardOpen: false);
                           },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
