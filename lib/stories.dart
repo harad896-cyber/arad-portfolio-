@@ -348,9 +348,28 @@ class _StoriesPageState extends State<StoriesPage> {
       body: GestureDetector(
         onTapUp: (d) => d.localPosition.dx < MediaQuery.of(context).size.width / 2 ? _previous() : _next(),
         child: Stack(fit: StackFit.expand, children: [
-          if (url == null) const Center(child: CircularProgressIndicator())
-          else if (s['media_type'] == 'video') StoryVideo(url: url)
-          else InteractiveViewer(child: Image.network(url, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)))),
+          if (url == null || url.isEmpty)
+            Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(s['media_type'] == 'video' ? Icons.videocam_off_rounded : Icons.broken_image_rounded, color: Colors.white70, size: 48),
+                const SizedBox(height: 10),
+                const Text('رسانهٔ استوری بارگذاری نشد', style: TextStyle(color: Colors.white, fontSize: 14)),
+                const SizedBox(height: 6),
+                TextButton.icon(onPressed: _load, icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره'), style: TextButton.styleFrom(foregroundColor: Colors.white)),
+              ]),
+            )
+          else if (s['media_type'] == 'video')
+            StoryVideo(key: ValueKey(s['id']), url: url)
+          else
+            InteractiveViewer(
+              child: Image.network(
+                url,
+                key: ValueKey(s['id']),
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(color: Colors.white)),
+                errorBuilder: (_, __, ___) => const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.broken_image_rounded, color: Colors.white, size: 48), SizedBox(height: 8), Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white))])),
+              ),
+            ),
           Positioned(
             top: 10, left: 12, right: 12,
             child: Row(
@@ -426,6 +445,16 @@ class _StoriesPageState extends State<StoriesPage> {
       ])),
     );
     if (audience == null) return;
+    final durationHours = await showModalBottomSheet<int>(
+      context: context,
+      builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const ListTile(title: Text('مدت نمایش استوری')),
+        ListTile(leading: const Icon(Icons.hourglass_bottom_rounded), title: const Text('۲ ساعت'), onTap: () => Navigator.pop(c, 2)),
+        ListTile(leading: const Icon(Icons.hourglass_bottom_rounded), title: const Text('۳ ساعت'), onTap: () => Navigator.pop(c, 3)),
+        ListTile(leading: const Icon(Icons.schedule_rounded), title: const Text('۲۴ ساعت (پیش‌فرض)'), onTap: () => Navigator.pop(c, 24)),
+      ])),
+    );
+    if (durationHours == null) return;
     final uid = _storiesSupabase.auth.currentUser?.id;
     if (uid == null) return;
     final bytes = await file.readAsBytes();
@@ -442,7 +471,7 @@ class _StoriesPageState extends State<StoriesPage> {
         ]));
         controller.dispose();
       }
-      await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_path': path, 'media_type': choice, 'caption': caption, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String()});
+      await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_path': path, 'media_type': choice, 'caption': caption, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(Duration(hours: durationHours)).toIso8601String()});
       if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.'))); await _load(); }
     } catch (_) {
       try { await _storiesSupabase.storage.from('stories').remove([path]); } catch (_) {}
