@@ -4316,36 +4316,27 @@ class _ChatPageState extends State<ChatPage> {
   StreamSubscription<Amplitude>? _voiceAmplitudeSub;
   Timer? _keyboardScrollTimer;
   double _lastKeyboardInset = 0;
+  bool _showJumpToLatest = false;
+
+  void _onMessagesScroll() {
+    if (!_messagesScroll.hasClients || !mounted) return;
+    final distance = _messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels;
+    final show = distance > 220;
+    if (show != _showJumpToLatest) setState(() => _showJumpToLatest = show);
+  }
 
   void _onComposerFocus() {
-    if (!_composerFocus.hasFocus) return;
-    _scheduleKeyboardScroll();
+    // Preserve the current reading position when the keyboard opens.
   }
 
   void _scheduleKeyboardScroll() {
-    _keyboardScrollTimer?.cancel();
-    // Android/iOS can resize the Scaffold in more than one frame while the
-    // IME animates. Re-scroll after the final inset is applied so the newest
-    // message never remains underneath the keyboard.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _scrollToLatestForKeyboard();
-      _keyboardScrollTimer = Timer(const Duration(milliseconds: 120), () {
-        if (!mounted || !_composerFocus.hasFocus) return;
-        _scrollToLatestForKeyboard();
-        _keyboardScrollTimer = Timer(const Duration(milliseconds: 220), () {
-          if (!mounted || !_composerFocus.hasFocus) return;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && _composerFocus.hasFocus) {
-              _scrollToLatestForKeyboard();
-              _keyboardScrollTimer = Timer(const Duration(milliseconds: 280), () {
-                if (mounted && _composerFocus.hasFocus) _scrollToLatestForKeyboard();
-              });
-            }
-          });
-        });
-      });
-    });
+    // Do not force-scroll to the bottom on keyboard open.
+  }
+
+  void _jumpToLatest() {
+    if (!_messagesScroll.hasClients) return;
+    _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
   }
 
   void _scrollToLatestForKeyboard() {
@@ -6089,6 +6080,7 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     _composerFocus.addListener(_onComposerFocus);
+    _messagesScroll.addListener(_onMessagesScroll);
     _loadChatNotificationPreference();
     load();
     _loadChatType();
@@ -6136,6 +6128,7 @@ class _ChatPageState extends State<ChatPage> {
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
+    _messagesScroll.removeListener(_onMessagesScroll);
     _messagesScroll.dispose();
     _composerFocus.dispose();
     text.dispose();
@@ -6248,7 +6241,20 @@ class _ChatPageState extends State<ChatPage> {
               ))),
               icon: const Icon(Icons.call_rounded, color: Color(0xFF039BE5)),
             ),
-                    PopupMenuButton<String>(
+          if (_chatType == 'group')
+            FutureBuilder<bool>(
+              future: _isGroupAdmin(),
+              builder: (_, snap) => snap.data == true
+                  ? IconButton(
+                      tooltip: 'شروع تماس گروهی',
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                        conversationId: widget.id, title: widget.title, video: false,
+                      ))),
+                      icon: const Icon(Icons.groups_rounded, color: Color(0xFF039BE5)),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          PopupMenuButton<String>(
             tooltip: 'ابزارها و تنظیمات چت',
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
@@ -6363,6 +6369,20 @@ class _ChatPageState extends State<ChatPage> {
         ),
         ),
       ),
+      floatingActionButton: _showJumpToLatest
+          ? Padding(
+              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 68 : 74),
+              child: FloatingActionButton.small(
+                heroTag: 'jump-to-latest-${widget.id}',
+                onPressed: _jumpToLatest,
+                tooltip: 'رفتن به آخرین پیام',
+                backgroundColor: scheme.surface.withValues(alpha: .72),
+                foregroundColor: scheme.primary,
+                elevation: 2,
+                child: const Icon(Icons.keyboard_double_arrow_down_rounded),
+              ),
+            )
+          : null,
       body: AnimatedPadding(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
