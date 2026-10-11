@@ -5614,39 +5614,65 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _messageActionsContent(BuildContext context, Map<String, dynamic> message) {
     const emojis = ['❤️', '👍', '😂', '🔥', '😍'];
+    final mine = message['sender_id'] == supabase.auth.currentUser?.id;
+    final canEdit = mine && message['message_type'] == 'text' && message['deleted_at'] == null;
+    final body = (message['body'] ?? '').toString();
+    void runAction(FutureOr<void> Function() action) {
+      Navigator.pop(context);
+      action();
+    }
+
+    Widget action(IconData icon, String label, FutureOr<void> Function() callback) {
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => runAction(callback),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, color: Colors.white, size: 21),
+              const SizedBox(height: 4),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 11)),
+            ]),
+          ),
+        ),
+      );
+    }
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
+        Container(width: 38, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
         const SizedBox(height: 8),
-        Row(children: [
-          const Expanded(child: Text('واکنش و گزینه‌ها', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800))),
-          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white70)),
-        ]),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha:.14), borderRadius: BorderRadius.circular(28)),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: .14), borderRadius: BorderRadius.circular(24)),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             ...emojis.map((e) => InkWell(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20),
               onTap: () { Navigator.pop(context); reactTo(message, e); },
-              child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 26))),
+              child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 23))),
             )),
-            IconButton(onPressed: () { Navigator.pop(context); _showMoreReactions(message); }, icon: const Icon(Icons.add_reaction_outlined, color: Colors.white)),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              onPressed: () { Navigator.pop(context); _showMoreReactions(message); },
+              icon: const Icon(Icons.add_reaction_outlined, color: Colors.white, size: 20),
+            ),
           ]),
         ),
-        const SizedBox(height: 6),
-        _actionTile(context, Icons.reply_rounded, 'پاسخ دادن', () => setReply(message)),
-        _actionTile(context, Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
-        _actionTile(context, Icons.share_rounded, 'اشتراک‌گذاری', () => shareMessage(message)),
-        _actionTile(context, Icons.link_rounded, 'کپی لینک پیام', () => copyMessageLink(message)),
-        _actionTile(context, Icons.info_outline_rounded, 'جزئیات پیام و زمان خواندن', () => _showMessageInfo(message)),
-        if (message['sender_id'] == supabase.auth.currentUser?.id && message['message_type'] == 'text')
-          _actionTile(context, Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
-        _actionTile(context, Icons.bookmark_add_outlined, 'ذخیره', () => saveMessage(message)),
-        _actionTile(context, Icons.delete_outline_rounded, 'حذف برای من', () => deleteForMe(message)),
-        if (message['sender_id'] == supabase.auth.currentUser?.id)
-          _actionTile(context, Icons.delete_forever_outlined, 'حذف برای همه', () => deleteForEveryone(message)),
+        const SizedBox(height: 5),
+        Row(children: [
+          action(Icons.reply_rounded, 'پاسخ', () => setReply(message)),
+          if (body.trim().isNotEmpty)
+            action(Icons.copy_rounded, 'کپی متن', () async {
+              await Clipboard.setData(ClipboardData(text: body));
+              if (mounted) showMsg(this.context, 'متن پیام کپی شد.');
+            }),
+          if (canEdit) action(Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
+          action(Icons.delete_outline_rounded, 'حذف', () => deleteForMe(message)),
+        ]),
       ]),
     );
   }
