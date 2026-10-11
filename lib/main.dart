@@ -5356,6 +5356,7 @@ class _ChatPageState extends State<ChatPage> {
     final previous = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
     final mine = previous.where((r) => r['user_id']?.toString() == uid).toList();
     final sameReaction = mine.any((r) => r['reaction']?.toString() == emoji);
+    _showReactionBurst(emoji);
     if (mounted) setState(() {
       final current = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
       current.removeWhere((r) => r['user_id']?.toString() == uid);
@@ -5887,26 +5888,98 @@ class _ChatPageState extends State<ChatPage> {
   Widget _reactionRow(Map<String, dynamic> message) {
     final list = reactions['${message['id']}'] ?? const <Map<String, dynamic>>[];
     if (list.isEmpty) return const SizedBox.shrink();
+    final uid = supabase.auth.currentUser?.id;
     final counts = <String, int>{};
     for (final r in list) {
       final emoji = '${r['reaction']}';
       counts[emoji] = (counts[emoji] ?? 0) + 1;
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 5),
+      padding: const EdgeInsets.only(top: 6),
       child: Wrap(
-        spacing: 4,
-        children: counts.entries.map((e) => InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => reactTo(message, e.key),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
-            child: Text('${e.key} ${e.value}', style: const TextStyle(fontSize: 12)),
-          ),
-        )).toList(),
+        spacing: 6,
+        runSpacing: 5,
+        children: counts.entries.map((e) {
+          final mine = list.any((r) => r['user_id']?.toString() == uid && r['reaction']?.toString() == e.key);
+          final color = _reactionAccent(e.key);
+          return TweenAnimationBuilder<double>(
+            key: ValueKey('${message['id']}-${e.key}-${e.value}'),
+            tween: Tween(begin: .72, end: 1),
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.elasticOut,
+            builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => reactTo(message, e.key),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    colors: mine
+                      ? [color.withValues(alpha: .30), color.withValues(alpha: .10)]
+                      : [Theme.of(context).colorScheme.surface.withValues(alpha: .96), color.withValues(alpha: .10)]),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: color.withValues(alpha: mine ? .82 : .36), width: mine ? 1.35 : .8),
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: mine ? .24 : .10), blurRadius: mine ? 13 : 6, spreadRadius: mine ? 1 : 0)],
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(e.key, style: const TextStyle(fontSize: 17, height: 1.05)),
+                  const SizedBox(width: 5),
+                  Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: mine ? color : Theme.of(context).colorScheme.onSurface)),
+                  if (mine) ...[
+                    const SizedBox(width: 3),
+                    Icon(Icons.check_rounded, size: 12, color: color),
+                  ],
+                ]),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
+  }
+
+  Color _reactionAccent(String emoji) {
+    if (emoji.contains('😂') || emoji.contains('🤣') || emoji.contains('😆')) return const Color(0xFFFFB52E);
+    if (emoji.contains('❤️') || emoji.contains('😍') || emoji.contains('🥰') || emoji.contains('💖')) return const Color(0xFFFF4F87);
+    if (emoji.contains('🔥') || emoji.contains('😡') || emoji.contains('💥')) return const Color(0xFFFF6A3D);
+    if (emoji.contains('⭐') || emoji.contains('✨') || emoji.contains('🌟')) return const Color(0xFFFFD45E);
+    if (emoji.contains('😢') || emoji.contains('😭') || emoji.contains('💙')) return const Color(0xFF58B9FF);
+    if (emoji.contains('👍') || emoji.contains('👏') || emoji.contains('💚')) return const Color(0xFF47D7A0);
+    if (emoji.contains('🚀') || emoji.contains('⚡') || emoji.contains('🤯')) return const Color(0xFF9B83FF);
+    return const Color(0xFF73C8FF);
+  }
+
+  void _showReactionBurst(String emoji) {
+    final overlay = Overlay.of(context);
+    late final OverlayEntry entry;
+    entry = OverlayEntry(builder: (context) => Positioned.fill(
+      child: IgnorePointer(child: Center(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: .25, end: 1.0),
+          duration: const Duration(milliseconds: 520),
+          curve: Curves.elasticOut,
+          builder: (context, scale, child) => Transform.scale(
+            scale: scale,
+            child: Opacity(
+              opacity: (1 - ((scale - 1).abs() * .45)).clamp(.0, 1.0),
+              child: child,
+            ),
+          ),
+          child: Container(
+            width: 112, height: 112,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(colors: [_reactionAccent(emoji).withValues(alpha: .34), _reactionAccent(emoji).withValues(alpha: .02), Colors.transparent]),
+              boxShadow: [BoxShadow(color: _reactionAccent(emoji).withValues(alpha: .30), blurRadius: 32, spreadRadius: 5)],
+            ),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 58, shadows: [Shadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))]))),
+          ),
+        ),
+      )),
+    ));
+    overlay.insert(entry);
+    Future<void>.delayed(const Duration(milliseconds: 850), () => entry.remove());
   }
 
   Widget _imageAttachment(Map<String, dynamic> m) {
