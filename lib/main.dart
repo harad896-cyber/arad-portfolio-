@@ -6279,8 +6279,8 @@ class _ChatPageState extends State<ChatPage> {
         padding: EdgeInsets.only(bottom: keyboardInset),
         child: Container(
         decoration: BoxDecoration(
-          color: dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
-          image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .12), BlendMode.darken)),
+          color: Color(appTheme.backgroundSeed),
+          image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .30 : .12), BlendMode.darken)),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
