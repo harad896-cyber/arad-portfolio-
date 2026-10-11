@@ -3986,6 +3986,112 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
         }),
   );
 }
+class GroupProfilePage extends StatefulWidget {
+  final String conversationId;
+  final String title;
+  const GroupProfilePage({super.key, required this.conversationId, required this.title});
+  @override State<GroupProfilePage> createState() => _GroupProfilePageState();
+}
+
+class _GroupProfilePageState extends State<GroupProfilePage> {
+  bool loading = true, saving = false;
+  Map<String,dynamic> group = {};
+  List<Map<String,dynamic>> members = [];
+  String myRole = 'member';
+  bool get canEditRules => myRole == 'owner' || myRole == 'admin';
+
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final c = await supabase.from('conversations').select().eq('id', widget.conversationId).single();
+      final rows = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId));
+      final ids = rows.map((e) => e['user_id'].toString()).toList();
+      final profiles = ids.isEmpty ? <Map<String,dynamic>>[] : List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online').inFilter('id', ids));
+      final byId = {for(final p in profiles) p['id'].toString():p};
+      final enriched = rows.map((m)=>{...m,'_profile':byId[m['user_id'].toString()] ?? <String,dynamic>{}}).toList()
+        ..sort((a,b) => (a['role']=='owner' ? 0 : a['role']=='admin' ? 1 : 2).compareTo(b['role']=='owner' ? 0 : b['role']=='admin' ? 1 : 2));
+      final mine = rows.where((m)=>m['user_id'].toString()==uid).toList();
+      if(!mounted)return;
+      setState(()=>{group=Map<String,dynamic>.from(c),members=enriched,myRole=mine.isEmpty?'member':(mine.first['role']??'member').toString(),loading=false});
+    } catch(e) {
+      if(!mounted)return; setState(()=>loading=false);
+      showMsg(context,'بارگذاری پروفایل گروه ناموفق بود: '+_friendlyError(e.toString()));
+    }
+  }
+
+  Future<void> _editRules() async {
+    final controller=TextEditingController(text:'${group['description'] ?? ''}');
+    final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
+      title:const Text('معرفی و قوانین گروه'),
+      content:TextField(controller:controller,maxLines:6,maxLength:1500,decoration:const InputDecoration(hintText:'قوانین، موضوع و توضیحات گروه',border:OutlineInputBorder())),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:()=>Navigator.pop(ctx,controller.text.trim()),child:const Text('ذخیره'))],
+    ));
+    if(value==null)return;
+    setState(()=>saving=true);
+    try { await supabase.from('conversations').update({'description':value}).eq('id',widget.conversationId); if(!mounted)return; setState(()=>group={...group,'description':value}); showMsg(context,'توضیحات گروه ذخیره شد'); }
+    catch(e){if(mounted)showMsg(context,'ذخیره قوانین ناموفق بود: '+_friendlyError(e.toString()));}
+    finally{if(mounted)setState(()=>saving=false);}
+  }
+
+  Future<void> _addMembers() async {
+    final uid=supabase.auth.currentUser!.id;
+    final existing=members.map((m)=>m['user_id'].toString()).toSet();
+    final query=TextEditingController();
+    final selected=<String>{};
+    final ids=await showDialog<List<String>>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
+      title:const Text('دعوت اعضا'),
+      content:SizedBox(width:420,height:420,child:Column(children:[
+        TextField(controller:query,decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'نام کاربری یا نام'),onChanged:(_)=>setDialog((){})),
+        const SizedBox(height:8),
+        Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:supabase.from('profiles').select('id,display_name,username,avatar_url').neq('id',uid).limit(150).then((v)=>List<Map<String,dynamic>>.from(v)),builder:(ctx,snap){
+          if(snap.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator());
+          if(snap.hasError)return const Center(child:Text('فهرست کاربران بارگذاری نشد'));
+          final q=query.text.trim().toLowerCase();
+          final people=(snap.data??[]).where((p)=>!existing.contains(p['id'].toString()) && ('${p['display_name']??''} ${p['username']??''}').toLowerCase().contains(q)).toList();
+          if(people.isEmpty)return const Center(child:Text('کاربر جدیدی پیدا نشد'));
+          return ListView.builder(itemCount:people.length,itemBuilder:(ctx,i){final p=people[i];final id=p['id'].toString();return CheckboxListTile(value:selected.contains(id),onChanged:(v)=>setDialog(()=>v==true?selected.add(id):selected.remove(id)),secondary:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'':'@${p['username']}'));});
+        })),
+      ])),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:selected.isEmpty?null:()=>Navigator.pop(ctx,selected.toList()),child:Text('دعوت (${selected.length})'))],
+    )));
+    if(ids==null || ids.isEmpty)return;
+    try {
+      for(final id in ids){await supabase.from('conversation_members').insert({'conversation_id':widget.conversationId,'user_id':id,'role':'member'});}
+      await _load(); if(mounted)showMsg(context,'اعضا به گروه اضافه شدند');
+    } catch(e){if(mounted)showMsg(context,'افزودن عضو ناموفق بود: '+_friendlyError(e.toString()));}
+  }
+
+  @override Widget build(BuildContext context) {
+    final scheme=Theme.of(context).colorScheme;
+    final title='${group['title']??widget.title}';
+    final image='${group['avatar_url']??''}';
+    final description='${group['description']??''}'.trim();
+    return Scaffold(appBar:AppBar(title:const Text('پروفایل گروه')),body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
+      Center(child:Column(children:[
+        CircleAvatar(radius:48,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),
+        const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
+        const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
+        const SizedBox(height:14),Wrap(alignment:WrapAlignment.center,spacing:10,runSpacing:8,children:[
+          FilledButton.icon(onPressed:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
+          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('ویرایش قوانین')),
+        ]),
+      ])),
+      const SizedBox(height:20),
+      Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(children:[const Icon(Icons.info_outline_rounded),const SizedBox(width:8),const Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)const Chip(label:Text('مدیر قابل ویرایش'))]),
+        const SizedBox(height:8),Text(description.isEmpty?'هنوز توضیح یا قانونی برای این گروه ثبت نشده است.':description,style:TextStyle(height:1.5,color:scheme.onSurfaceVariant)),
+      ]))),
+      const SizedBox(height:14),
+      Row(children:[const Icon(Icons.people_alt_rounded),const SizedBox(width:8),Text('اعضا  •  ${members.length}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
+      const SizedBox(height:8),
+      Card(clipBehavior:Clip.antiAlias,child:Column(children:members.map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};final role='${m['role']??'member'}';final roleLabel=role=='owner'?'مالک':role=='admin'?'مدیر':'عضو';return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Chip(label:Text(roleLabel)));}).toList())),
+      if(!canEditRules) Padding(padding:const EdgeInsets.only(top:10),child:Text('ویرایش قوانین فقط در اختیار مالک یا مدیر گروه است.',style:TextStyle(color:scheme.onSurfaceVariant))),
+    ]));
+  }
+}
+
 class ConversationInfoPage extends StatefulWidget {
   final String conversationId;
   final String fallbackTitle;
