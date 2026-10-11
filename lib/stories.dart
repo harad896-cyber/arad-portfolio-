@@ -52,7 +52,11 @@ class _StoriesTrayState extends State<StoriesTray> {
   @override
   Widget build(BuildContext context) {
     final grouped = <String, Map<String, dynamic>>{};
-    for (final s in _stories) grouped.putIfAbsent(s['user_id'].toString(), () => s);
+    for (final s in _stories) {
+      final key = s['user_id'].toString();
+      if (!grouped.containsKey(key)) grouped[key] = {...s, '_story_count': 1};
+      else grouped[key]!['_story_count'] = (grouped[key]!['_story_count'] as int? ?? 1) + 1;
+    }
     return SizedBox(height: 106, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 8, 12, 8), children: [
       _StoryAddTile(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load())),
       ...grouped.values.map((story) => _StoryTile(story: story, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage(initialStoryId: story['id'].toString()))).then((_) => _load()))),
@@ -81,7 +85,15 @@ class _StoryTile extends StatelessWidget {
     final avatar = p['avatar_url']?.toString();
     return GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
       Container(width: 62, height: 62, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
-      child: CircleAvatar(backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null)),
+      child: Stack(clipBehavior: Clip.none, children: [
+        CircleAvatar(backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null),
+        Positioned(left: -2, bottom: -2, child: Container(
+          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).colorScheme.surface, width: 1.5)),
+          child: Text('${story['_story_count'] ?? 1}', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900)),
+        )),
+      ])),
       const SizedBox(height: 5), Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
     ])));
   }
