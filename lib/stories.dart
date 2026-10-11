@@ -57,7 +57,7 @@ class _StoriesTrayState extends State<StoriesTray> {
       if (!grouped.containsKey(key)) grouped[key] = {...s, '_story_count': 1};
       else grouped[key]!['_story_count'] = (grouped[key]!['_story_count'] as int? ?? 1) + 1;
     }
-    return SizedBox(height: 106, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 8, 12, 8), children: [
+    return SizedBox(height: 70, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 3, 12, 3), children: [
       _StoryAddTile(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load())),
       ...grouped.values.map((story) => _StoryTile(story: story, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage(initialStoryId: story['id'].toString()))).then((_) => _load()))),
     ]));
@@ -68,8 +68,8 @@ class _StoryAddTile extends StatelessWidget {
   final VoidCallback onTap;
   const _StoryAddTile({required this.onTap});
   @override
-  Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
-    Container(width: 62, height: 62, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary.withValues(alpha:.18), Theme.of(context).colorScheme.secondary.withValues(alpha:.10)]), border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha:.75), width: 2), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.16), blurRadius: 12)]), child: const Icon(Icons.add_rounded, size: 30)),
+  Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: SizedBox(width: 64, child: Column(children: [
+    Container(width: 46, height: 46, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary.withValues(alpha:.18), Theme.of(context).colorScheme.secondary.withValues(alpha:.10)]), border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha:.75), width: 2), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.16), blurRadius: 12)]), child: const Icon(Icons.add_rounded, size: 30)),
     const SizedBox(height: 5), const Text('استوری من', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
   ])));
 }
@@ -83,8 +83,8 @@ class _StoryTile extends StatelessWidget {
     final p = Map<String, dynamic>.from(story['profile'] ?? {});
     final name = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
     final avatar = p['avatar_url']?.toString();
-    return GestureDetector(onTap: onTap, child: SizedBox(width: 76, child: Column(children: [
-      Container(width: 62, height: 62, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
+    return GestureDetector(onTap: onTap, child: SizedBox(width: 64, child: Column(children: [
+      Container(width: 46, height: 46, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
       child: Stack(clipBehavior: Clip.none, children: [
         CircleAvatar(backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null),
         Positioned(left: -2, bottom: -2, child: Container(
@@ -94,7 +94,7 @@ class _StoryTile extends StatelessWidget {
           child: Text('${story['_story_count'] ?? 1}', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900)),
         )),
       ])),
-      const SizedBox(height: 5), Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
+      const SizedBox(height: 5), Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700))
     ])));
   }
 }
