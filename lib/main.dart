@@ -5315,17 +5315,28 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
-    final uid = supabase.auth.currentUser!.id;
+    final uid = supabase.auth.currentUser?.id;
+    final messageId = message['id']?.toString();
+    if (uid == null || messageId == null || messageId.isEmpty) return;
     try {
-      final current = (reactions['${message['id']}'] ?? const <Map<String, dynamic>>[]).where((r) => r['user_id'] == uid).toList();
-      if (current.isNotEmpty && current.first['reaction'] == emoji) {
-        await supabase.from('message_reactions').delete().match({'message_id': message['id'], 'user_id': uid});
+      // Read the server state so a stale local cache cannot suppress or overwrite a reaction.
+      final existing = await supabase.from('message_reactions')
+          .select('message_id,user_id,reaction')
+          .eq('message_id', messageId).eq('user_id', uid).maybeSingle();
+      if (existing != null && existing['reaction'] == emoji) {
+        await supabase.from('message_reactions').delete()
+            .eq('message_id', messageId).eq('user_id', uid);
+      } else if (existing != null) {
+        await supabase.from('message_reactions').update({'reaction': emoji})
+            .eq('message_id', messageId).eq('user_id', uid);
       } else {
-        await supabase.from('message_reactions').upsert({'message_id': message['id'], 'user_id': uid, 'reaction': emoji});
+        await supabase.from('message_reactions').insert({
+          'message_id': messageId, 'user_id': uid, 'reaction': emoji,
+        });
       }
       await load();
     } catch (e) {
-      if (mounted) showMsg(context, 'واکنش ذخیره نشد: $e');
+      if (mounted) showMsg(context, 'واکنش ثبت نشد: ${_friendlyError(e.toString())}');
     }
   }
 
@@ -5698,6 +5709,11 @@ class _ChatPageState extends State<ChatPage> {
         const SizedBox(height: 5),
         Row(children: [
           action(Icons.reply_rounded, 'پاسخ', () => setReply(message)),
+          action(Icons.bookmark_add_rounded, 'ذخیره', () => saveMessage(message)),
+          action(Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
+        ]),
+        const SizedBox(height: 2),
+        Row(children: [
           if (body.trim().isNotEmpty)
             action(Icons.copy_rounded, 'کپی متن', () async {
               await Clipboard.setData(ClipboardData(text: body));
