@@ -4014,7 +4014,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         ..sort((a,b) => (a['role']=='owner' ? 0 : a['role']=='admin' ? 1 : 2).compareTo(b['role']=='owner' ? 0 : b['role']=='admin' ? 1 : 2));
       final mine = rows.where((m)=>m['user_id'].toString()==uid).toList();
       if(!mounted)return;
-      setState(()=>{group=Map<String,dynamic>.from(c),members=enriched,myRole=mine.isEmpty?'member':(mine.first['role']??'member').toString(),loading=false});
+      setState(() { group=Map<String,dynamic>.from(c); members=enriched; myRole=mine.isEmpty?'member':(mine.first['role']??'member').toString(); loading=false; });
     } catch(e) {
       if(!mounted)return; setState(()=>loading=false);
       showMsg(context,'بارگذاری پروفایل گروه ناموفق بود: '+_friendlyError(e.toString()));
