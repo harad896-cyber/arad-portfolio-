@@ -5258,48 +5258,82 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _showChatEmojiPicker() async {
-    const emojis = [
-      '😀','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩',
-      '😢','😭','😡','😮','🤔','🙌','👏','🙏','👍','👎',
-      '❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥',
-      '🔥','✨','🎉','🎊','💯','⭐','⚡','🚀','🌹','☀️',
-      '😇','🤗','😴','🤝','👀','💪','🫶','🦋','🎵','🍀',
+    // Original Arad-style sticker expressions: lightweight, no external API key required.
+    const stickers = [
+      '🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧',
+      '😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️',
+      '💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭',
+      '💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️',
+      '🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤',
+      '😀','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩','😢','😭','😡','😮','🤔',
+      '🙌','👏','🙏','👍','👎','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥',
+      '🔥','✨','🎉','🎊','💯','⭐','⚡','🚀','🌹','☀️','😇','🤗','😴','🤝','👀',
+      '💪','🫶','🦋','🎵','🍀','🥳','🤡','🫣','🫨','😤','🥶','🥳','💅','🧋','🪩',
     ];
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      showDragHandle: true,
+      showDragHandle: false,
       builder: (sheetContext) {
         final scheme = Theme.of(sheetContext).colorScheme;
-        return ClipRRect(
+        return SafeArea(child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
+              height: MediaQuery.of(sheetContext).size.height * .64,
               decoration: BoxDecoration(
-                color: scheme.surface.withValues(alpha: .88),
-                border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: .10))),
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  colors: [scheme.surface, scheme.surfaceContainerHighest]),
+                border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .25))),
               ),
-              padding: const EdgeInsets.fromLTRB(14, 4, 14, 18),
-              child: GridView.builder(
-                shrinkWrap: true,
-                itemCount: emojis.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  childAspectRatio: 1,
-                ),
-                itemBuilder: (_, i) => InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => Navigator.pop(sheetContext, emojis[i]),
-                  child: Center(child: Text(emojis[i], style: const TextStyle(fontSize: 28))),
-                ),
-              ),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+              child: Column(children: [
+                Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(5))),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 24),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('استیکرهای اختصاصی آراد', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+                  Text('${stickers.length}+', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+                ]),
+                const SizedBox(height: 4),
+                Align(alignment: Alignment.centerRight, child: Text('پک فضایی • احساسات • واکنش‌های بامزه', style: TextStyle(fontSize: 12, color: scheme.onSurface.withValues(alpha: .65)))),
+                const SizedBox(height: 12),
+                Expanded(child: GridView.builder(
+                  itemCount: stickers.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: .94,
+                  ),
+                  itemBuilder: (_, i) => TweenAnimationBuilder<double>(
+                    tween: Tween(begin: .92, end: 1),
+                    duration: Duration(milliseconds: 180 + (i % 5) * 35),
+                    curve: Curves.easeOutBack,
+                    builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
+                    child: Material(
+                      color: scheme.surface.withValues(alpha: .75),
+                      borderRadius: BorderRadius.circular(17),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(17),
+                        onTap: () => Navigator.pop(sheetContext, stickers[i]),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(17),
+                            border: Border.all(color: scheme.primary.withValues(alpha: .14)),
+                            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                              colors: [scheme.primary.withValues(alpha: .10), scheme.tertiary.withValues(alpha: .08)]),
+                          ),
+                          child: Center(child: Text(stickers[i], textAlign: TextAlign.center, style: TextStyle(fontSize: stickers[i].length > 3 ? 25 : 31))),
+                        ),
+                      ),
+                    ),
+                  ),
+                )),
+              ]),
             ),
           ),
-        );
+        ));
       },
     );
     if (selected != null && mounted) {
@@ -5311,6 +5345,7 @@ class _ChatPageState extends State<ChatPage> {
         text: value.replaceRange(start, end, selected),
         selection: TextSelection.collapsed(offset: start + selected.length),
       );
+      _composerFocus.requestFocus();
     }
   }
 
