@@ -5325,13 +5325,25 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> deleteForMe(Map<String, dynamic> message) async {
+    final messageId = '${message['id']}';
+    final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
+    final previousMessages = List<Map<String, dynamic>>.from(messages);
+    // Optimistic UI: remove the message immediately, then persist in the background.
+    if (mounted) setState(() {
+      timelineItems.removeWhere((item) => item['__kind'] == 'message' && '${item['id']}' == messageId);
+      messages.removeWhere((item) => '${item['id']}' == messageId);
+    });
     try {
       await supabase.from('message_user_deletions').upsert({
         'message_id': message['id'],
         'user_id': supabase.auth.currentUser!.id,
       });
-      await load();
+      unawaited(load());
     } catch (e) {
+      if (mounted) setState(() {
+        timelineItems = previousTimeline;
+        messages = previousMessages;
+      });
       if (mounted) showMsg(context, 'حذف برای من ناموفق بود: $e');
     }
   }
@@ -5350,13 +5362,25 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
     if (ok != true) return;
+    final messageId = '${message['id']}';
+    final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
+    final previousMessages = List<Map<String, dynamic>>.from(messages);
+    // Remove it from this screen immediately instead of waiting for a full chat reload.
+    if (mounted) setState(() {
+      timelineItems.removeWhere((item) => item['__kind'] == 'message' && '${item['id']}' == messageId);
+      messages.removeWhere((item) => '${item['id']}' == messageId);
+    });
     try {
       await supabase.from('messages').update({
         'deleted_at': DateTime.now().toUtc().toIso8601String(),
         'body': null,
       }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id);
-      await load();
+      unawaited(load());
     } catch (e) {
+      if (mounted) setState(() {
+        timelineItems = previousTimeline;
+        messages = previousMessages;
+      });
       if (mounted) showMsg(context, 'حذف برای همه ناموفق بود: $e');
     }
   }
