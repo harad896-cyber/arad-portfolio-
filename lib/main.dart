@@ -3226,99 +3226,138 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
     final s = Theme.of(context).colorScheme;
     final verified = profile['is_verified'] == true;
     final bio = '${profile['bio'] ?? ''}'.trim();
+    final isSelf = supabase.auth.currentUser?.id == profile['id']?.toString();
     return Scaffold(
-      appBar: AppBar(title: const Text('حساب کاربری')),
+      appBar: AppBar(
+        title: const Text('حساب کاربری'),
+        actions: [
+          if (!isSelf) PopupMenuButton<String>(
+            tooltip: 'گزینه‌های مخاطب',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) async {
+              if (value == 'rename') await _editLocalName();
+              if (value == 'friend') await _sendFriendRequest();
+              if (value == 'contact') await _toggleContact();
+              if (value == 'block') {
+                showMsg(context, 'قابلیت مسدودسازی هنوز به سرویس مسدودسازی متصل نشده است.');
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text('نام‌گذاری مخاطب'))),
+              PopupMenuItem(value: 'friend', child: ListTile(dense: true, leading: const Icon(Icons.person_add_alt_rounded), title: const Text('درخواست دوستی'))),
+              PopupMenuItem(value: 'contact', child: ListTile(dense: true, leading: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded), title: Text(isContact ? 'حذف از مخاطبین' : 'افزودن به مخاطبین'))),
+              const PopupMenuItem(value: 'block', child: ListTile(dense: true, leading: Icon(Icons.block_rounded), title: Text('مسدود کردن'))),
+            ],
+          ),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 22),
-                decoration: BoxDecoration(
-                  color: s.surface.withValues(alpha: .72),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: s.onSurface.withValues(alpha: .08)),
-                  boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .10), blurRadius: 28, spreadRadius: 1)],
-                ),
-                child: Column(
-                  children: [
-                    avatar(profile, size: 124),
-                    const SizedBox(height: 14),
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
-                      if (verified) ...[const SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
-                    ]),
-                    if (username.isNotEmpty) Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Text('@$username', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
-                    ),
-                    if (bio.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(bio, textAlign: TextAlign.center, style: TextStyle(color: s.onSurfaceVariant, height: 1.45)),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(children: [
-                      Expanded(child: FilledButton.icon(onPressed: busy ? null : _openChat, icon: const Icon(Icons.chat_bubble_rounded), label: const Text('پیام'))),
-                      const SizedBox(width: 8),
-                      Expanded(child: OutlinedButton.icon(onPressed: busy ? null : () => _startCall(video: false), icon: const Icon(Icons.call_rounded), label: const Text('تماس'))),
-                    ]),
-                    const SizedBox(height: 9),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: _editLocalName,
-                          icon: const Icon(Icons.edit_rounded),
-                          label: const Text('تغییر نام مخاطب'),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _toggleContact,
-                          icon: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded),
-                          label: Text(isContact ? 'حذف مخاطب' : 'افزودن مخاطب'),
-                        ),
-                        FilledButton.tonalIcon(
-                          onPressed: _sendFriendRequest,
-                          icon: const Icon(Icons.person_add_alt_rounded),
-                          label: const Text('درخواست دوستی'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 9),
-                    SizedBox(width: double.infinity, child: OutlinedButton.icon(
-                      onPressed: busy ? null : () => _startCall(video: true),
-                      icon: const Icon(Icons.videocam_rounded), label: const Text('تماس تصویری'),
-                    )),
-                  ],
-                ),
-              ),
-            ),
+          Center(child: Column(children: [
+            avatar(profile, size: 104),
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+              if (verified) ...[const SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
+            ]),
+            if (username.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text('@$username', style: TextStyle(color: s.onSurfaceVariant, fontSize: 15))),
+            const SizedBox(height: 18),
+          ])),
+          Row(children: [
+            Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام‌ها', busy ? null : _openChat)),
+            const SizedBox(width: 8),
+            Expanded(child: _profileAction(context, Icons.notifications_active_rounded, 'اعلان‌ها', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsPage(id: '${profile['id']}', title: 'اعلان‌های مخاطب')));
+            })),
+            const SizedBox(width: 8),
+            Expanded(child: _profileAction(context, Icons.call_rounded, 'تماس صوتی', busy ? null : () => _startCall(video: false))),
+            const SizedBox(width: 8),
+            Expanded(child: _profileAction(context, Icons.videocam_rounded, 'تماس تصویری', busy ? null : () => _startCall(video: true))),
+          ]),
+          const SizedBox(height: 18),
+          Card(child: Column(children: [
+            if (bio.isNotEmpty) ListTile(
+              leading: Icon(Icons.format_quote_rounded, color: s.primary),
+              title: Text(bio, textAlign: TextAlign.start, style: const TextStyle(height: 1.5)),
+              subtitle: const Text('بیوگرافی'),
+            ) else const ListTile(leading: Icon(Icons.format_quote_rounded), title: Text('بیوگرافی ثبت نشده است')),
+            if (username.isNotEmpty) const Divider(height: 1),
+            if (username.isNotEmpty) ListTile(leading: const Icon(Icons.alternate_email_rounded), title: Text('@$username'), subtitle: const Text('نام کاربری')),
+          ])),
+          const SizedBox(height: 12),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _loadMutualGroups(profile['id']?.toString() ?? ''),
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) return const Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text('گروه‌های مشترک'), subtitle: Text('در حال بررسی…')));
+              final groups = snap.data ?? [];
+              return Card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const ListTile(leading: Icon(Icons.groups_rounded), title: Text('گروه‌های مشترک')),
+                if (groups.isEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('هیچ گروه مشترکی ندارید.')),
+                ...groups.map((g) => ListTile(
+                  leading: CircleAvatar(child: Icon((g['type'] ?? 'group') == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded)),
+                  title: Text('${g['title'] ?? 'گروه'}'),
+                  subtitle: Text('${g['type'] == 'channel' ? 'کانال' : 'گروه'} مشترک'),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${g['id']}', title: '${g['title'] ?? 'گروه'}'))),
+                )),
+              ]));
+            },
           ),
           const SizedBox(height: 12),
           Card(child: Column(children: [
-            ListTile(
-              leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.call_rounded, color: s.primary)),
-              title: const Text('تماس صوتی', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: const Text('شروع تماس صوتی با همین کاربر'),
-              trailing: const Icon(Icons.chevron_left_rounded),
-              onTap: busy ? null : () => _startCall(video: false),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.videocam_rounded, color: s.primary)),
-              title: const Text('تماس تصویری', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: const Text('شروع تماس تصویری با همین کاربر'),
-              trailing: const Icon(Icons.chevron_left_rounded),
-              onTap: busy ? null : () => _startCall(video: true),
-            ),
+            ListTile(leading: const Icon(Icons.perm_media_outlined), title: const Text('رسانه‌های مشترک'), subtitle: const Text('عکس‌ها، ویدیوها، فایل‌ها و صداها'), trailing: const Icon(Icons.chevron_left_rounded), onTap: busy ? null : _openChatMedia),
           ])),
         ],
       ),
     );
+  }
+
+  Widget _profileAction(BuildContext context, IconData icon, String label, VoidCallback? onTap) {
+    final s = Theme.of(context).colorScheme;
+    return Material(
+      color: s.surfaceContainerHighest.withValues(alpha: .55),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 3),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: s.primary, size: 24),
+            const SizedBox(height: 8),
+            Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _loadMutualGroups(String targetId) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || targetId.isEmpty || uid == targetId) return [];
+    final mine = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+    final theirs = await supabase.from('conversation_members').select('conversation_id').eq('user_id', targetId);
+    final mineIds = (mine as List).map((e) => '${e['conversation_id']}').toSet();
+    final shared = (theirs as List).map((e) => '${e['conversation_id']}').where(mineIds.contains).toSet().toList();
+    if (shared.isEmpty) return [];
+    final rows = await supabase.from('conversations').select('id,type,title').inFilter('id', shared).inFilter('type', ['group', 'channel']);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<void> _openChatMedia() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final id = await _ensureDirectConversationForUser(profile);
+      if (id == null) throw Exception('گفتگوی خصوصی پیدا نشد.');
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => SharedMediaPage(conversationId: id)));
+    } catch (e) {
+      if (mounted) showMsg(context, 'رسانه‌ها باز نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 }
 
