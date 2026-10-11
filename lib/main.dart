@@ -6422,7 +6422,7 @@ class _ChatPageState extends State<ChatPage> {
                       : ListView.builder(
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
-                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
                           // Keep a real breathing zone below the last bubble.
                           // It scales with the IME instead of using a fixed value,
                           // so tall keyboards cannot cover the final message.
