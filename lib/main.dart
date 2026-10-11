@@ -5318,24 +5318,27 @@ class _ChatPageState extends State<ChatPage> {
     final uid = supabase.auth.currentUser?.id;
     final messageId = message['id']?.toString();
     if (uid == null || messageId == null || messageId.isEmpty) return;
+    final previous = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
+    final mine = previous.where((r) => r['user_id']?.toString() == uid).toList();
+    final sameReaction = mine.any((r) => r['reaction']?.toString() == emoji);
+    if (mounted) setState(() {
+      final current = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
+      current.removeWhere((r) => r['user_id']?.toString() == uid);
+      if (!sameReaction) current.add({'message_id': messageId, 'user_id': uid, 'reaction': emoji});
+      reactions[messageId] = current;
+    });
     try {
-      // Read the server state so a stale local cache cannot suppress or overwrite a reaction.
-      final existing = await supabase.from('message_reactions')
-          .select('message_id,user_id,reaction')
-          .eq('message_id', messageId).eq('user_id', uid).maybeSingle();
-      if (existing != null && existing['reaction'] == emoji) {
-        await supabase.from('message_reactions').delete()
-            .eq('message_id', messageId).eq('user_id', uid);
-      } else if (existing != null) {
-        await supabase.from('message_reactions').update({'reaction': emoji})
-            .eq('message_id', messageId).eq('user_id', uid);
-      } else {
+      // Remove any old/duplicate row first so switching ❤️ to 😂 is deterministic.
+      await supabase.from('message_reactions').delete()
+          .eq('message_id', messageId).eq('user_id', uid);
+      if (!sameReaction) {
         await supabase.from('message_reactions').insert({
           'message_id': messageId, 'user_id': uid, 'reaction': emoji,
         });
       }
       await load();
     } catch (e) {
+      if (mounted) setState(() => reactions[messageId] = previous);
       if (mounted) showMsg(context, 'واکنش ثبت نشد: ${_friendlyError(e.toString())}');
     }
   }
@@ -5710,7 +5713,7 @@ class _ChatPageState extends State<ChatPage> {
         Row(children: [
           action(Icons.reply_rounded, 'پاسخ', () => setReply(message)),
           action(Icons.bookmark_add_rounded, 'ذخیره', () => saveMessage(message)),
-          action(Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
+          action(Icons.forward_rounded, 'هدایت/فوروارد', () => forwardMessage(message)),
         ]),
         const SizedBox(height: 2),
         Row(children: [
@@ -5727,29 +5730,61 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _showMoreReactions(Map<String, dynamic> message) async {
-    const more = ['😂','😍','😎','😢','😡','👏','🎉','❤️‍🔥','💯','🙏','🤝','👀','🚀','⭐','⚡','😮'];
+    const more = ['😂','😍','😎','😢','😡','👏','🎉','❤️‍🔥','💯','🙏','🤝','👀','🚀','⭐','⚡','😮','🥳','🤩','💖','🤣','😇','💪','✨','🫶','🤯'];
     final selected = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: GridView.count(
-          shrinkWrap: true,
-          crossAxisCount: 5,
-          padding: const EdgeInsets.all(18),
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          children: more
-              .map((e) => InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => Navigator.pop(context, e),
-                    child: Center(child: Text(e, style: const TextStyle(fontSize: 30))),
-                  ))
-              .toList(),
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      showDragHandle: false,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return SafeArea(child: Container(
+          margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+              colors: [scheme.surface, scheme.surfaceContainerHighest]),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: scheme.primary.withValues(alpha: .22)),
+            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .18), blurRadius: 28, offset: const Offset(0, -5))],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
+            const SizedBox(height: 12),
+            const Text('واکنش به پیام', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 14),
+            GridView.count(
+              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 5, padding: EdgeInsets.zero,
+              mainAxisSpacing: 10, crossAxisSpacing: 10,
+              children: more.map((e) => TweenAnimationBuilder<double>(
+                key: ValueKey(e), tween: Tween(begin: .72, end: 1),
+                duration: const Duration(milliseconds: 260), curve: Curves.easeOutBack,
+                builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                child: Material(
+                  color: scheme.surface, borderRadius: BorderRadius.circular(17),
+                  elevation: 3, shadowColor: scheme.primary.withValues(alpha: .24),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(17),
+                    onTap: () => Navigator.pop(sheetContext, e),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(17),
+                        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          colors: [scheme.surface, scheme.primary.withValues(alpha: .09)]),
+                        border: Border.all(color: scheme.outline.withValues(alpha: .12)),
+                      ),
+                      child: Center(child: Text(e, style: const TextStyle(fontSize: 29, shadows: [Shadow(color: Color(0x33000000), blurRadius: 5, offset: Offset(0, 2))]))),
+                    ),
+                  ),
+                ),
+              )).toList(),
+            ),
+          ]),
+        ));
+      },
     );
-    if (selected != null) await reactTo(message, selected);
+    if (selected != null && mounted) await reactTo(message, selected);
   }
 
   Future<void> _showMessageInfo(Map<String, dynamic> message) async {
