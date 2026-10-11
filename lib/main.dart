@@ -6248,28 +6248,7 @@ class _ChatPageState extends State<ChatPage> {
               ))),
               icon: const Icon(Icons.call_rounded, color: Color(0xFF039BE5)),
             ),
-          IconButton(
-            tooltip: 'قالب و پس‌زمینهٔ چت',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppAppearancePage())),
-            icon: const Icon(Icons.wallpaper_rounded),
-          ),
-          IconButton(
-            tooltip: _chatNotificationsMuted ? 'روشن‌کردن اعلان‌های گفتگو' : 'بی‌صداکردن اعلان‌های گفتگو',
-            onPressed: _toggleChatNotifications,
-            icon: Icon(_chatNotificationsMuted ? Icons.notifications_off_rounded : Icons.notifications_active_rounded),
-          ),
-          if (_chatType != 'direct')
-            IconButton(
-              tooltip: 'کپی لینک گروه/کانال',
-              onPressed: _copyGroupLink,
-              icon: const Icon(Icons.link_rounded),
-            ),
-          IconButton(
-            tooltip: 'اطلاعات گفتگو',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title))),
-            icon: const Icon(Icons.info_outline_rounded),
-          ),
-          PopupMenuButton<String>(
+                    PopupMenuButton<String>(
             tooltip: 'ابزارها و تنظیمات چت',
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
@@ -6289,9 +6268,18 @@ class _ChatPageState extends State<ChatPage> {
                 case 'saved':
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage()));
                   break;
+                case 'appearance':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AppAppearancePage()));
+                  break;
+                case 'notifications':
+                  _toggleChatNotifications();
+                  break;
+                case 'link':
+                  _copyGroupLink();
+                  break;
               }
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text('جستجوی پیام‌ها'))),
               PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text('رسانه‌ها و فایل‌ها'))),
               PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text('اطلاعات گفتگو'))),
