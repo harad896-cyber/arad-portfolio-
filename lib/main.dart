@@ -5497,7 +5497,7 @@ class _ChatPageState extends State<ChatPage> {
       }
       if (mounted) showMsg(context, 'پیام در پیام‌های ذخیره‌شده ثبت شد.');
     } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}. بررسی جدول saved_messages و دسترسی RLS در Supabase لازم است.');
+      if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}');
     }
   }
 
