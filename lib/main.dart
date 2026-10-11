@@ -2736,11 +2736,30 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 2),
             Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '\${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
+          PopupMenuButton<String>(
+            tooltip: 'منوی اصلی',
+            icon: const Icon(Icons.menu_rounded),
+            onSelected: (value) {
+              if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
+              else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
+              else if (value == 'group') createGroup();
+              else if (value == 'chat') createDirect();
+              else if (value == 'join') _joinGroupByInviteCode();
+              else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage()));
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
+              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text('بایگانی'))),
+              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text('ساخت گروه'))),
+              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text('گفتگوی جدید'))),
+              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text('پیوستن با لینک گروه'))),
+              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: Icon(Icons.auto_stories_outlined), title: Text('دیدن استوری‌ها'))),
+            ],
+          ),
+          const SizedBox(width: 6),
           actionButton(icon: Icons.search_rounded, tooltip: 'جستجو', onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
-          const SizedBox(width: 8),
-          actionButton(icon: Icons.group_add_rounded, tooltip: 'پیوستن به گروه با کد دعوت', onTap: _joinGroupByInviteCode),
-          const SizedBox(width: 8),
-          actionButton(icon: Icons.edit_rounded, tooltip: 'گفتگوی جدید', onTap: createDirect),
+          const SizedBox(width: 6),
+          actionButton(icon: Icons.add_rounded, tooltip: 'گفتگوی جدید', onTap: createDirect),
         ]),
       ),
       Padding(
