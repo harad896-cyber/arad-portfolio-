@@ -473,9 +473,16 @@ class _StoriesPageState extends State<StoriesPage> {
       }
       await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_path': path, 'media_type': choice, 'caption': caption, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(Duration(hours: durationHours)).toIso8601String()});
       if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.'))); await _load(); }
-    } catch (_) {
+    } catch (error) {
       try { await _storiesSupabase.storage.from('stories').remove([path]); } catch (_) {}
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('انتشار استوری انجام نشد.')));
+      if (mounted) {
+        final detail = error.toString().replaceFirst('Exception: ', '').trim();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('استوری منتشر نشد: ${detail.isEmpty ? 'خطای ناشناخته' : detail}', maxLines: 3, overflow: TextOverflow.ellipsis),
+          duration: const Duration(seconds: 7),
+          action: SnackBarAction(label: 'تلاش دوباره', onPressed: () => _pickAndUploadStory()),
+        ));
+      }
     }
   }
 }
