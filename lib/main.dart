@@ -4830,17 +4830,47 @@ class _ChatPageState extends State<ChatPage> {
     if (rs.isEmpty) return const SizedBox.shrink();
     final grouped = <String,int>{};
     for (final r in rs) { final e = r['reaction'].toString(); grouped[e] = (grouped[e] ?? 0) + 1; }
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(top: 3),
+      padding: const EdgeInsets.only(top: 4),
       child: Wrap(
-        spacing: 4,
-        children: grouped.entries.map<Widget>((e) => InkWell(
-          onTap: () => _showReactionPeople(messageId),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
-            child: Text(e.key + (e.value > 1 ? ' ${e.value}' : '')),
+        spacing: 5,
+        runSpacing: 4,
+        children: grouped.entries.map<Widget>((e) => TweenAnimationBuilder<double>(
+          key: ValueKey('${messageId}_${e.key}_${e.value}'),
+          tween: Tween(begin: .78, end: 1),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutBack,
+          builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+          child: InkWell(
+            onTap: () => _showReactionPeople(messageId),
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: dark
+                      ? [const Color(0xFF394A65), const Color(0xFF202B40)]
+                      : [Colors.white, const Color(0xFFE7EEFF)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: .30)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 7, offset: const Offset(0, 3)),
+                  BoxShadow(color: Colors.white.withValues(alpha: dark ? .08 : .85), blurRadius: 2, offset: const Offset(0, 1)),
+                ],
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(e.key, style: const TextStyle(fontSize: 17, height: 1.0)),
+                if (e.value > 1) ...[
+                  const SizedBox(width: 4),
+                  Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
+                    color: dark ? Colors.white : const Color(0xFF27334A))),
+                ],
+              ]),
+            ),
           ),
         )).toList(),
       ),
@@ -5567,6 +5597,9 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> showMessageActions(Map<String, dynamic> message) async {
+    // Message actions must never activate the composer or leave the IME visible.
+    if (_composerFocus.hasFocus) _composerFocus.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
     final scheme = Theme.of(context).colorScheme;
     await showGeneralDialog<void>(
@@ -5996,8 +6029,14 @@ class _ChatPageState extends State<ChatPage> {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onTap: () => showMessageActions(m),
-        onLongPress: () => showMessageActions(m),
+        onTap: () {
+          if (_composerFocus.hasFocus) _composerFocus.unfocus();
+          showMessageActions(m);
+        },
+        onLongPress: () {
+          if (_composerFocus.hasFocus) _composerFocus.unfocus();
+          showMessageActions(m);
+        },
         onDoubleTap: () => reactTo(m, '❤️'),
         onHorizontalDragEnd: (details) {
           if ((details.primaryVelocity ?? 0).abs() > 450) setReply(m);
