@@ -480,7 +480,7 @@ class _StoriesPageState extends State<StoriesPage> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('استوری منتشر نشد: ${detail.isEmpty ? 'خطای ناشناخته' : detail}', maxLines: 3, overflow: TextOverflow.ellipsis),
           duration: const Duration(seconds: 7),
-          action: SnackBarAction(label: 'تلاش دوباره', onPressed: () => _pickAndUploadStory()),
+          action: SnackBarAction(label: 'بارگذاری دوباره', onPressed: () => _load()),
         ));
       }
     }
