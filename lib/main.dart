@@ -5158,13 +5158,13 @@ class _ChatPageState extends State<ChatPage> {
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 18),
-              Row(children: [Expanded(child: Text('افزودن به پیام', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
+              Row(children: [Expanded(child: Text({'en':'Add to message','ar':'إضافة إلى الرسالة'}[aradLanguageController.locale.languageCode] ?? 'افزودن به پیام', textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
               GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
-                _attachmentItem(sheetContext, Icons.photo_library_rounded, 'گالری', () { Navigator.pop(sheetContext); sendImage(); }),
-                _attachmentItem(sheetContext, Icons.camera_alt_rounded, 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
-                _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
-                _attachmentItem(sheetContext, Icons.videocam_rounded, 'ویدئو', () { Navigator.pop(sheetContext); sendVideo(); }),
-                _attachmentItem(sheetContext, Icons.music_note_rounded, 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.photo_library_rounded, {'en':'Gallery','ar':'المعرض'}[aradLanguageController.locale.languageCode] ?? 'گالری', () { Navigator.pop(sheetContext); sendImage(); }),
+                _attachmentItem(sheetContext, Icons.camera_alt_rounded, {'en':'Camera','ar':'الكاميرا'}[aradLanguageController.locale.languageCode] ?? 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
+                _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, {'en':'Files','ar':'الملفات'}[aradLanguageController.locale.languageCode] ?? 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.videocam_rounded, {'en':'Video','ar':'فيديو'}[aradLanguageController.locale.languageCode] ?? 'ویدئو', () { Navigator.pop(sheetContext); sendVideo(); }),
+                _attachmentItem(sheetContext, Icons.music_note_rounded, {'en':'Audio / Music','ar':'صوت / موسيقى'}[aradLanguageController.locale.languageCode] ?? 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
                 _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
               ]),
             ]),
@@ -6510,12 +6510,12 @@ class _ChatPageState extends State<ChatPage> {
                         children: [
                           IconButton(
                             onPressed: _showAttachmentPanel,
-                            tooltip: 'پیوست‌ها',
+                            tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
                             icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary, size: 27),
                           ),
                           IconButton(
                             onPressed: toggleVoiceRecording,
-                            tooltip: recordingVoice ? 'توقف و ارسال ویس' : 'ضبط ویس',
+                            tooltip: recordingVoice ? ({'en':'Stop and send voice','ar':'إيقاف وإرسال الصوت'}[aradLanguageController.locale.languageCode] ?? 'توقف و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
                             icon: Icon(
                               recordingVoice ? Icons.stop_circle_rounded : Icons.mic_rounded,
                               color: recordingVoice ? scheme.error : scheme.primary,
@@ -6537,7 +6537,7 @@ class _ChatPageState extends State<ChatPage> {
                               maxLines: 5,
                               textInputAction: TextInputAction.newline,
                               decoration: InputDecoration(
-                                hintText: 'پیام خود را بنویسید…',
+                                hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
                                 filled: true,
                                 fillColor: scheme.surface.withValues(alpha: .48),
                                 border: OutlineInputBorder(
@@ -6551,7 +6551,7 @@ class _ChatPageState extends State<ChatPage> {
                           ),
                           const SizedBox(width: 3),
                           IconButton.filled(
-                            tooltip: 'ارسال پیام',
+                            tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
                             style: IconButton.styleFrom(
                               minimumSize: const Size(44, 44),
                               shape: const CircleBorder(),
