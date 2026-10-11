@@ -4998,8 +4998,8 @@ class _ChatPageState extends State<ChatPage> {
       await _voiceRecorder.start(
         const RecordConfig(
           encoder: AudioEncoder.aacLc,
-          bitRate: 64000,
-          sampleRate: 44100,
+          bitRate: 96000,
+          sampleRate: 48000,
           numChannels: 1,
         ),
         path: voicePath,
@@ -5131,7 +5131,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendCameraImage() async {
     if (sending) return;
     try {
-      final image = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 88, maxWidth: 1800, maxHeight: 1800);
+      final image = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92, maxWidth: 2200, maxHeight: 2200);
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
@@ -5186,7 +5186,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendImage() async {
     if (sending) return;
     try {
-      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 88, maxWidth: 1800, maxHeight: 1800);
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 92, maxWidth: 2200, maxHeight: 2200);
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
@@ -6415,7 +6415,12 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           children: [
             Expanded(
-              child: loading
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  if (_composerFocus.hasFocus) FocusScope.of(context).unfocus();
+                },
+                child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : messages.isEmpty
                       ? const Center(child: Text('هنوز پیامی یا سابقه تماسی وجود ندارد.'))
@@ -6447,6 +6452,7 @@ class _ChatPageState extends State<ChatPage> {
                             );
                           },
                         ),
+              ),
             ),
             if (_mentionSuggestions.isNotEmpty)
               Container(
