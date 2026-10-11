@@ -5473,17 +5473,31 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> saveMessage(Map<String, dynamic> message) async {
     final uid = supabase.auth.currentUser?.id;
-    if (uid == null) return;
+    final sourceId = message['id']?.toString();
+    if (uid == null || sourceId == null || sourceId.startsWith('pending-')) {
+      if (mounted) showMsg(context, 'این پیام هنوز در سرور ثبت نشده است؛ کمی بعد دوباره امتحان کنید.');
+      return;
+    }
     try {
-      await supabase.from('saved_messages').upsert({
+      final existing = await supabase.from('saved_messages')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('source_message_id', sourceId)
+          .maybeSingle();
+      final payload = <String, dynamic>{
         'user_id': uid,
-        'source_message_id': message['id'],
+        'source_message_id': sourceId,
         'body': message['body'],
         'message_type': message['message_type'] ?? 'text',
-      }, onConflict: 'user_id,source_message_id');
-      if (mounted) showMsg(context, 'پیام ذخیره شد.');
+      };
+      if (existing != null) {
+        await supabase.from('saved_messages').update(payload).eq('id', existing['id']);
+      } else {
+        await supabase.from('saved_messages').insert(payload);
+      }
+      if (mounted) showMsg(context, 'پیام در پیام‌های ذخیره‌شده ثبت شد.');
     } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره پیام ناموفق بود. جدول saved_messages را در Supabase اجرا کنید.');
+      if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}. بررسی جدول saved_messages و دسترسی RLS در Supabase لازم است.');
     }
   }
 
@@ -5619,19 +5633,29 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
 
       final type = '${message['message_type'] ?? 'text'}';
+      var attachmentCopied = true;
       if (type != 'text') {
-        final attachment = await supabase.from('message_attachments')
-            .select('storage_path,file_name,file_size,mime_type')
-            .eq('message_id', message['id'])
-            .maybeSingle();
-        if (attachment != null) {
-          await supabase.from('message_attachments').insert({
-            'message_id': inserted['id'],
-            'storage_path': attachment['storage_path'],
-            'file_name': attachment['file_name'],
-            'file_size': attachment['file_size'],
-            'mime_type': attachment['mime_type'],
-          });
+        try {
+          final attachment = await supabase.from('message_attachments')
+              .select('storage_path,file_name,file_size,mime_type,duration_ms')
+              .eq('message_id', message['id'])
+              .maybeSingle();
+          if (attachment != null) {
+            await supabase.from('message_attachments').insert({
+              'message_id': inserted['id'],
+              'storage_path': attachment['storage_path'],
+              'file_name': attachment['file_name'],
+              'file_size': attachment['file_size'],
+              'mime_type': attachment['mime_type'],
+              if (attachment['duration_ms'] != null) 'duration_ms': attachment['duration_ms'],
+            });
+          } else {
+            attachmentCopied = false;
+          }
+        } catch (_) {
+          // The message row has already been inserted. Don't misreport it as
+          // a failed forward; explain that the attachment metadata needs attention.
+          attachmentCopied = false;
         }
       }
 
@@ -5639,7 +5663,9 @@ class _ChatPageState extends State<ChatPage> {
         Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => ChatPage(id: '${target['id']}', title: '${target['_display_title'] ?? target['title'] ?? 'گفتگو'}'),
         ));
-        showMsg(context, 'پیام با موفقیت فوروارد شد.');
+        showMsg(context, attachmentCopied
+          ? 'پیام با موفقیت فوروارد شد.'
+          : 'متن پیام فوروارد شد، اما پیوست منتقل نشد؛ تنظیمات پیوست و دسترسی Supabase باید بررسی شود.');
       }
     } catch (e) {
       if (mounted) showMsg(context, 'فوروارد پیام ناموفق بود: $e');
