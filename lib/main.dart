@@ -4086,7 +4086,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       const SizedBox(height:14),
       Row(children:[const Icon(Icons.people_alt_rounded),const SizedBox(width:8),Text('اعضا  •  ${members.length}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
       const SizedBox(height:8),
-      Card(clipBehavior:Clip.antiAlias,child:Column(children:members.map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};final role='${m['role']??'member'}';final roleLabel=role=='owner'?'مالک':role=='admin'?'مدیر':'عضو';return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Chip(label:Text(roleLabel)));}).toList())),
+      Card(clipBehavior:Clip.antiAlias,child:Column(children:members.map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};final role='${m['role']??'member'}';final roleLabel=role=='owner'?'مالک':role=='admin'?'مدیر':'عضو';return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Row(mainAxisSize:MainAxisSize.min,children:[Chip(label:Text(roleLabel)),const SizedBox(width:4),const Icon(Icons.chevron_left_rounded)]),onTap:p['id']==null?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfilePage(profile:{...p,'id':m['user_id']}))));}).toList())),
       if(!canEditRules) Padding(padding:const EdgeInsets.only(top:10),child:Text('ویرایش قوانین فقط در اختیار مالک یا مدیر گروه است.',style:TextStyle(color:scheme.onSurfaceVariant))),
     ]));
   }
