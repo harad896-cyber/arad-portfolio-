@@ -6398,7 +6398,7 @@ class _ChatPageState extends State<ChatPage> {
                           // The body itself is lifted by the IME inset.
                           // Keep only enough content space for the composer so
                           // the final bubble can always scroll above it.
-                          padding: const EdgeInsets.fromLTRB(12, 96, 12, 112),
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 82),
                           reverse: false,
                           itemCount: _displayTimelineItems.length,
                           itemBuilder: (context, i) {
@@ -6521,7 +6521,7 @@ class _ChatPageState extends State<ChatPage> {
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 6, 10, 9),
+                padding: const EdgeInsets.fromLTRB(8, 3, 8, 5),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: BackdropFilter(
@@ -6533,9 +6533,9 @@ class _ChatPageState extends State<ChatPage> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            scheme.surface.withValues(alpha: dark ? .88 : .94),
-                            scheme.primary.withValues(alpha: dark ? .10 : .055),
-                            scheme.surface.withValues(alpha: dark ? .76 : .86),
+                            scheme.surface.withValues(alpha: dark ? .58 : .66),
+                            scheme.primary.withValues(alpha: dark ? .13 : .08),
+                            scheme.surface.withValues(alpha: dark ? .46 : .56),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(25),
@@ -6545,10 +6545,10 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: scheme.primary.withValues(alpha: dark ? .22 : .10),
-                            blurRadius: 24,
-                            spreadRadius: -4,
-                            offset: const Offset(0, 8),
+                            color: scheme.primary.withValues(alpha: dark ? .12 : .07),
+                            blurRadius: 14,
+                            spreadRadius: -5,
+                            offset: const Offset(0, 3),
                           ),
                           BoxShadow(
                             color: Colors.white.withValues(alpha: dark ? .035 : .62),
