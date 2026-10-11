@@ -6482,12 +6482,13 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
-            SizedBox(
-              height: 52,
-              child: ListView(
+            if (keyboardInset <= 0 && !_composerFocus.hasFocus)
+              SizedBox(
+                height: 44,
+                child: ListView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 children: [
                   for (final suggestion in _quickMessageSuggestions)
                     Padding(
@@ -6516,7 +6517,7 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                 ],
               ),
-            ),
+              ),
             SafeArea(
               top: false,
               child: Padding(
