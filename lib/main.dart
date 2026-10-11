@@ -4197,7 +4197,32 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
             ListTile(leading:const Icon(Icons.photo_library_outlined),title:const Text('رسانه‌ها و فایل‌های مشترک'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>SharedMediaPage(conversationId:widget.conversationId)))),
             
           ])),
-          if(type=='group') Card(child:ExpansionTile(leading:const Icon(Icons.people_alt_outlined),title:const Text('اعضای گروه'),subtitle:const Text('برای دیدن پروفایل هر عضو روی نام او بزنید'),children:members.take(50).map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};final id='${m['user_id']??p['id']??''}';return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text('${m['role']??'member'}'),trailing:const Icon(Icons.chevron_left_rounded),onTap:id.isEmpty?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfilePage(profile:{...p,'id':id})));}).toList())),
+          if (type == 'group')
+            Card(
+              child: ExpansionTile(
+                leading: const Icon(Icons.people_alt_outlined),
+                title: const Text('اعضای گروه'),
+                subtitle: const Text('برای دیدن پروفایل هر عضو روی نام او بزنید'),
+                children: members.take(50).map((m) {
+                  final p = (m['_profile'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+                  final id = (m['user_id'] ?? p['id'] ?? '').toString();
+                  return ListTile(
+                    leading: avatar(p),
+                    title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}'),
+                    subtitle: Text('${m['role'] ?? 'member'}'),
+                    trailing: const Icon(Icons.chevron_left_rounded),
+                    onTap: id.isEmpty
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PublicUserProfilePage(profile: {...p, 'id': id}),
+                              ),
+                            ),
+                  );
+                }).toList(),
+              ),
+            ),
         ],
       ),
     );
