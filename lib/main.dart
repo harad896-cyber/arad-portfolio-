@@ -5865,6 +5865,13 @@ class _ChatPageState extends State<ChatPage> {
     final internalLinkMatch = RegExp(r'arad://(?:invite\?code=[^\s]+|group/[^\s]+|chat/[^\s]+)').firstMatch(body);
     final urlMatch = RegExp(r'https?://\S+').firstMatch(body);
     final isGroup = _chatType != 'direct';
+    // Show group sender details only at the beginning of a consecutive message run.
+    final timelineIndex = timelineItems.indexWhere((item) => item['__kind'] == 'message' && '${item['id']}' == '${m['id']}');
+    final previousTimelineItem = timelineIndex > 0 ? timelineItems[timelineIndex - 1] : null;
+    final showGroupSender = isGroup && !mine &&
+        (previousTimelineItem == null ||
+         previousTimelineItem['__kind'] != 'message' ||
+         '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
 
     Widget content;
     if (m['message_type'] == 'image') {
@@ -5943,14 +5950,17 @@ class _ChatPageState extends State<ChatPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (!mine && isGroup) ...[
-              CircleAvatar(
-                radius: 16,
-                backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null,
+            if (showGroupSender) ...[
+              GestureDetector(
+                onTap: () => _openGroupMemberProfile('${m['sender_id']}'),
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null,
+                ),
               ),
               const SizedBox(width: 6),
-            ],
+            ] else if (!mine && isGroup) const SizedBox(width: 38),
             Flexible(
               child: Container(
                 constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84),
@@ -5999,10 +6009,17 @@ class _ChatPageState extends State<ChatPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!mine && isGroup)
+                    if (showGroupSender)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 3),
-                        child: Text(sender, style: TextStyle(fontWeight: FontWeight.w900, color: dark ? const Color(0xFFD9C9FF) : const Color(0xFF5940B5))),
+                        child: InkWell(
+                          onTap: () => _openGroupMemberProfile('${m['sender_id']}'),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(sender, style: TextStyle(fontWeight: FontWeight.w900, color: dark ? const Color(0xFFD9C9FF) : const Color(0xFF5940B5))),
+                          ),
+                        ),
                       ),
                     _replyPreview(m),
                     content,
@@ -6108,6 +6125,20 @@ class _ChatPageState extends State<ChatPage> {
       return r!=null;
     } catch (_) { return false; }
   }
+  Future<void> _openGroupMemberProfile(String userId) async {
+    final id = userId.trim();
+    if (id.isEmpty) return;
+    try {
+      final row = await supabase.from('profiles').select().eq('id', id).maybeSingle();
+      if (row == null || !mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
+      ));
+    } catch (e) {
+      if (mounted) showMsg(context, 'باز کردن پروفایل ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
   Future<void> _openChatProfile() async {
     if (_chatType != 'direct') {
       if (mounted) await Navigator.push(context, MaterialPageRoute(
