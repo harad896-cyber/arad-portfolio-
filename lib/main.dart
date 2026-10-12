@@ -663,6 +663,13 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
           ))),
         ]),
         Card(child:ListTile(
+          leading:const Icon(Icons.switch_account_rounded),
+          title:const Text('افزودن یا تغییر حساب',style:TextStyle(fontWeight:FontWeight.w800)),
+          subtitle:const Text('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر'),
+          trailing:const Icon(Icons.chevron_left_rounded),
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccountSwitcherPage())),
+        )),
+        Card(child:ListTile(
           leading:Icon(Icons.logout_rounded,color:Theme.of(context).colorScheme.error),
           title:const Text('خروج از حساب',style:TextStyle(fontWeight:FontWeight.w800)),
           subtitle:const Text('خروج امن از این دستگاه'),onTap:_signOut,
@@ -1474,6 +1481,71 @@ Future<void> _removeSavedAccount(String email) async {
   final accounts = p.getStringList(_accountEmailsKey) ?? <String>[];
   accounts.removeWhere((e) => e.toLowerCase() == email.toLowerCase());
   await p.setStringList(_accountEmailsKey, accounts);
+}
+
+class AccountSwitcherPage extends StatefulWidget {
+  const AccountSwitcherPage({super.key});
+  @override State<AccountSwitcherPage> createState()=>_AccountSwitcherPageState();
+}
+class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
+  List<String> accounts=[];
+  bool loading=true,busy=false;
+  @override void initState(){super.initState();_load();}
+  Future<void> _load()async{
+    final list=await _savedAccountEmails();
+    if(mounted)setState(()=>accounts=list..removeWhere((e)=>e==supabase.auth.currentUser?.email?.toLowerCase()));
+    if(mounted)setState(()=>loading=false);
+  }
+  Future<void> _add()async{
+    await rememberCurrentSession();
+    if(!mounted)return;
+    await Navigator.push(context,MaterialPageRoute(builder:(_)=>const LoginPage(addAccount:true)));
+    if(mounted)await _load();
+  }
+  Future<void> _switch(String email)async{
+    if(busy)return;
+    setState(()=>busy=true);
+    try{
+      final refresh=await _secureAccounts.read(key:'account_refresh_${email.trim().toLowerCase()}');
+      if(refresh==null||refresh.isEmpty){
+        if(!mounted)return;
+        showMsg(context,'نشست ذخیره‌شده برای این حساب در دسترس نیست؛ از «افزودن حساب» دوباره وارد شوید.');
+        return;
+      }
+      await supabase.auth.setSession(refresh);
+      await rememberCurrentSession();
+      await appTheme.loadForUser();
+      if(!mounted)return;
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(route)=>false);
+    }catch(e){
+      if(mounted)showMsg(context,'تغییر حساب ناموفق بود؛ دوباره وارد شوید. ${_friendlyError(e.toString())}');
+    }finally{if(mounted)setState(()=>busy=false);}
+  }
+  Future<void> _forget(String email)async{
+    await _removeSavedAccount(email);
+    await _secureAccounts.delete(key:'account_refresh_${email.trim().toLowerCase()}');
+    if(mounted)await _load();
+  }
+  @override Widget build(BuildContext context){
+    final current=(supabase.auth.currentUser?.email??'حساب فعلی').toLowerCase();
+    return Scaffold(appBar:AppBar(title:const Text('مدیریت حساب‌ها')),body:loading
+      ?const Center(child:CircularProgressIndicator())
+      :ListView(padding:const EdgeInsets.all(16),children:[
+        Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.verified_user_rounded)),title:const Text('حساب فعلی'),subtitle:Text(current),trailing:const Icon(Icons.check_circle_rounded))),
+        const SizedBox(height:8),
+        if(accounts.isEmpty) const Padding(padding:EdgeInsets.symmetric(vertical:20),child:Text('حساب دیگری ذخیره نشده است. برای افزودن حساب جدید، دکمه زیر را بزنید.',textAlign:TextAlign.center)),
+        ...accounts.map((email)=>Card(child:ListTile(
+          leading:const CircleAvatar(child:Icon(Icons.person_outline_rounded)),title:Text(email),subtitle:const Text('حساب ذخیره‌شده'),
+          trailing:PopupMenuButton<String>(onSelected:(v){if(v=='switch')_switch(email);if(v=='forget')_forget(email);},itemBuilder:(_)=>const [
+            PopupMenuItem(value:'switch',child:Text('تغییر به این حساب')),
+            PopupMenuItem(value:'forget',child:Text('حذف از فهرست')),
+          ]),
+          onTap:busy?null:()=>_switch(email),
+        ))),
+        const SizedBox(height:12),
+        FilledButton.icon(onPressed:busy?null:_add,icon:const Icon(Icons.person_add_alt_1_rounded),label:Text(busy?'در حال تغییر حساب...':'افزودن حساب جدید')),
+      ]));
+  }
 }
 
 class AuthGate extends StatelessWidget {
