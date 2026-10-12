@@ -5447,18 +5447,24 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _showChatEmojiPicker() async {
-    // Original Arad-style sticker expressions: lightweight, no external API key required.
+    const emojis = [
+      '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢','🫣','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','🫥','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','🫤','😟','🙁','☹️','😮','😯','😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👻','👽','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
+      '👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','🫦',
+      '❤️','🧡','💛','💚','💙','🩵','💜','🩷','🤎','🖤','🩶','🤍','💔','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','💟','❣️','💌','💋','💯','💢','💥','💫','💦','💨','🕳️','💣','💬','👁️‍🗨️','🗨️','🗯️','💭','💤',
+      '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🦋','🐌','🐞','🐜','🪲','🕷️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐈','🐓','🦃','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦦','🦥','🐁','🐀','🐿️','🦔',
+      '🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🫖','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🧊',
+      '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚴','🚵','🎮','🕹️','🎲','♟️','🎯','🎳','🎮','🎸','🎹','🥁','🎷','🎺','🎻','🪇','🎤','🎧','🎼','🎵','🎶','🎙️','📻','🎬','🎨','🖌️','🧩','🪄','🎭','🎪','🎟️','🎫','🎉','🎊','🎈','🎁','🏆','🥇','🥈','🥉','🚀','🛸','🌍','🌎','🌏','🌕','🌙','⭐','🌟','✨','⚡','🔥','☀️','🌈','☁️','🌧️','❄️','☃️','🌊','🪐','💎','👑','🧿','🍀','🌹','🌷','🌻','🌼','🌸','💐','🪷','🪻','🌺','🌴','🌵','🌲','🌳','🍁','🍂','🍄','🪹','🪺','🪸','🪨'
+    ];
     const stickers = [
       '🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧',
       '😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️',
       '💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭',
       '💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️',
       '🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤',
-      '😀','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩','😢','😭','😡','😮','🤔',
-      '🙌','👏','🙏','👍','👎','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥',
-      '🔥','✨','🎉','🎊','💯','⭐','⚡','🚀','🌹','☀️','😇','🤗','😴','🤝','👀',
-      '💪','🫶','🦋','🎵','🍀','🥳','🤡','🫣','🫨','😤','🥶','🥳','💅','🧋','🪩',
+      '🫶✨','🥹💖','😹🔥','😴🌙','🤝💯','😤⚡','🤍🕊️','🖤🥀','💜🦋','🌈🫧'
     ];
+    String filter = '';
+    int tab = 0;
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -5466,63 +5472,72 @@ class _ChatPageState extends State<ChatPage> {
       showDragHandle: false,
       builder: (sheetContext) {
         final scheme = Theme.of(sheetContext).colorScheme;
-        return SafeArea(child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              height: MediaQuery.of(sheetContext).size.height * .64,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  colors: [scheme.surface, scheme.surfaceContainerHighest]),
-                border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .25))),
-              ),
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
-              child: Column(children: [
-                Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(5))),
-                const SizedBox(height: 10),
-                Row(children: [
-                  Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 24),
-                  const SizedBox(width: 8),
-                  const Expanded(child: Text('استیکرهای اختصاصی آراد', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
-                  Text('${stickers.length}+', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
-                ]),
-                const SizedBox(height: 4),
-                Align(alignment: Alignment.centerRight, child: Text('پک فضایی • احساسات • واکنش‌های بامزه', style: TextStyle(fontSize: 12, color: scheme.onSurface.withValues(alpha: .65)))),
-                const SizedBox(height: 12),
-                Expanded(child: GridView.builder(
-                  itemCount: stickers.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: .94,
-                  ),
-                  itemBuilder: (_, i) => TweenAnimationBuilder<double>(
-                    tween: Tween(begin: .92, end: 1),
-                    duration: Duration(milliseconds: 180 + (i % 5) * 35),
-                    curve: Curves.easeOutBack,
-                    builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
-                    child: Material(
-                      color: scheme.surface.withValues(alpha: .75),
-                      borderRadius: BorderRadius.circular(17),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(17),
-                        onTap: () => Navigator.pop(sheetContext, stickers[i]),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(17),
-                            border: Border.all(color: scheme.primary.withValues(alpha: .14)),
-                            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-                              colors: [scheme.primary.withValues(alpha: .10), scheme.tertiary.withValues(alpha: .08)]),
-                          ),
-                          child: Center(child: Text(stickers[i], textAlign: TextAlign.center, style: TextStyle(fontSize: stickers[i].length > 3 ? 25 : 31))),
-                        ),
-                      ),
+        return StatefulBuilder(builder: (context, setSheetState) {
+          final source = tab == 0 ? emojis : stickers;
+          final shown = filter.isEmpty ? source : source.where((e) => e.contains(filter)).toList();
+          return SafeArea(child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+              child: Container(
+                height: MediaQuery.of(context).size.height * .68,
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .3))),
+                ),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(children: [
+                  Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(8))),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24),
+                    const SizedBox(width: 8),
+                    const Expanded(child: Text('ایموجی و استیکر', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                    Text('${shown.length}', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+                  ]),
+                  const SizedBox(height: 12),
+                  TextField(
+                    onChanged: (value) => setSheetState(() => filter = value.trim()),
+                    decoration: InputDecoration(
+                      hintText: 'جست‌وجو یا نام ایموجی را وارد کنید',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      isDense: true,
+                      filled: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     ),
                   ),
-                )),
-              ]),
+                  const SizedBox(height: 10),
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text('ایموجی')),
+                      ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text('استیکرهای متنی')),
+                    ],
+                    selected: {tab},
+                    onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }),
+                    showSelectedIcon: false,
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(child: GridView.builder(
+                    itemCount: shown.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width < 380 ? 7 : 8,
+                      mainAxisSpacing: 5, crossAxisSpacing: 5, childAspectRatio: .95,
+                    ),
+                    itemBuilder: (_, i) => Material(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: .55),
+                      borderRadius: BorderRadius.circular(13),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(13),
+                        onTap: () => Navigator.pop(sheetContext, shown[i]),
+                        child: Center(child: Text(shown[i], textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 25))),
+                      ),
+                    ),
+                  )),
+                ]),
+              ),
             ),
-          ),
-        ));
+          ));
+        });
       },
     );
     if (selected != null && mounted) {
