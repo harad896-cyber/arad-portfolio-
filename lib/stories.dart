@@ -59,7 +59,7 @@ class _StoriesTrayState extends State<StoriesTray> {
     }
     final people = grouped.values.toList();
     return SizedBox(
-      height: 78,
+      height: 64,
       child: Row(
         children: [
           const SizedBox(width: 8),
@@ -167,7 +167,6 @@ class _StoriesPageState extends State<StoriesPage> {
     try {
       var query = _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
         .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']);
-      if (widget.initialUserId != null) query = query.eq('user_id', widget.initialUserId!);
       final rows = await query.order('created_at', ascending: true);
       final stories = List<Map<String, dynamic>>.from(rows);
       final urls = <String, String>{};
@@ -204,6 +203,9 @@ class _StoriesPageState extends State<StoriesPage> {
       var nextIndex = 0;
       if (widget.initialStoryId != null) {
         final found = stories.indexWhere((s) => s['id'].toString() == widget.initialStoryId);
+        if (found >= 0) nextIndex = found;
+      } else if (widget.initialUserId != null) {
+        final found = stories.indexWhere((s) => s['user_id']?.toString() == widget.initialUserId);
         if (found >= 0) nextIndex = found;
       }
       if (mounted) { setState(() { _stories = stories; _urls = urls; _index = nextIndex.clamp(0, stories.isEmpty ? 0 : stories.length - 1).toInt(); _loading = false; }); _startTimer(); }
