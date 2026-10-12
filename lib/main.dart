@@ -5943,10 +5943,13 @@ class _ChatPageState extends State<ChatPage> {
       );
       if (target == null) return;
 
+      final forwarder = await supabase.from('profiles').select('display_name,username').eq('id', uid).maybeSingle();
+      final forwarderName = '${forwarder?['display_name'] ?? forwarder?['username'] ?? 'کاربر'}'.trim();
+      final forwardedBody = '↪ فورواردشده توسط $forwarderName\n\n$body';
       final inserted = await supabase.from('messages').insert({
         'conversation_id': target['id'],
         'sender_id': uid,
-        'body': body,
+        'body': forwardedBody,
         'message_type': message['message_type'] ?? 'text',
         'reply_to': null,
       }).select().single();
