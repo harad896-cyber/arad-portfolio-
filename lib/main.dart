@@ -2727,7 +2727,7 @@ class _HomePageState extends State<HomePage> {
 
     return Column(children: [
       const SizedBox(height: 5),
-      SizedBox(height: 70, child: StoriesTray()),
+      SizedBox(height: 60, child: StoriesTray()),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 5, 14, 9),
         child: Row(children: [
