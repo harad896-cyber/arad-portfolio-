@@ -5873,7 +5873,7 @@ class _ChatPageState extends State<ChatPage> {
         if (mounted) showMsg(context, 'گفتگویی برای فوروارد وجود ندارد.');
         return;
       }
-      final rows = await supabase.from('conversations').select('id,title,type,created_at').inFilter('id', ids).order('created_at', ascending: false);
+      final rows = await supabase.from('conversations').select('id,title,type,avatar_url,created_at').inFilter('id', ids).order('created_at', ascending: false);
       final rawTargets = List<Map<String, dynamic>>.from(rows).where((c) => '${c['id']}' != '${widget.id}').toList();
       final targets = <Map<String, dynamic>>[];
       for (final c in rawTargets) {
@@ -5881,8 +5881,9 @@ class _ChatPageState extends State<ChatPage> {
         if (displayTitle.isEmpty && '${c['type']}' == 'direct') {
           final other = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']).neq('user_id', uid).maybeSingle();
           if (other != null) {
-            final p = await supabase.from('profiles').select('display_name,username').eq('id', other['user_id']).maybeSingle();
+            final p = await supabase.from('profiles').select('display_name,username,avatar_url').eq('id', other['user_id']).maybeSingle();
             displayTitle = '${p?['display_name'] ?? p?['username'] ?? 'کاربر'}';
+            c['_peer_avatar_url'] = p?['avatar_url'];
           }
         }
         if (displayTitle.isEmpty) {
@@ -5924,8 +5925,9 @@ class _ChatPageState extends State<ChatPage> {
                       final type = '${c['type']}';
                       final title = '${c['_display_title'] ?? c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
                       final icon = type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      final avatarUrl = '${c['_peer_avatar_url'] ?? c['avatar_url'] ?? ''}'.trim();
                       return ListTile(
-                        leading: CircleAvatar(child: Icon(icon)),
+                        leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
                         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
                         subtitle: Text(type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی شخصی'),
                         trailing: const Icon(Icons.chevron_left_rounded),
