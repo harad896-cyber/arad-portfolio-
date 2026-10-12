@@ -5514,29 +5514,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _showChatEmojiPicker() async {
-    const emojis = [
-      '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢','🫣','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','🫥','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','🫤','😟','🙁','☹️','😮','😯','😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👻','👽','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
-      '👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','🫦',
-      '❤️','🧡','💛','💚','💙','🩵','💜','🩷','🤎','🖤','🩶','🤍','💔','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','💟','❣️','💌','💋','💯','💢','💥','💫','💦','💨','🕳️','💣','💬','👁️‍🗨️','🗨️','🗯️','💭','💤',
-      '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🦋','🐌','🐞','🐜','🪲','🕷️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐈','🐓','🦃','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦦','🦥','🐁','🐀','🐿️','🦔',
-      '🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🫖','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🧊',
-      '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚴','🚵','🎮','🕹️','🎲','♟️','🎯','🎳','🎮','🎸','🎹','🥁','🎷','🎺','🎻','🪇','🎤','🎧','🎼','🎵','🎶','🎙️','📻','🎬','🎨','🖌️','🧩','🪄','🎭','🎪','🎟️','🎫','🎉','🎊','🎈','🎁','🏆','🥇','🥈','🥉','🚀','🛸','🌍','🌎','🌏','🌕','🌙','⭐','🌟','✨','⚡','🔥','☀️','🌈','☁️','🌧️','❄️','☃️','🌊','🪐','💎','👑','🧿','🍀','🌹','🌷','🌻','🌼','🌸','💐','🪷','🪻','🌺','🌴','🌵','🌲','🌳','🍁','🍂','🍄','🪹','🪺','🪸','🪨'
-    ];
-    const stickers = [
-      '🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧',
-      '😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️',
-      '💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭',
-      '💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️',
-      '🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤',
-      '🫶✨','🥹💖','😹🔥','😴🌙','🤝💯','😤⚡','🤍🕊️','🖤🥀','💜🦋','🌈🫧'
-    ];
+    const emojis = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','🥰','😍','🤩','🥲','😋','😜','🤗','🤔','😎','🥳','😢','😭','😡','🤖','👋','👌','✌️','🤞','👍','👎','👏','🙌','🫶','🙏','💪','👀','❤️','🧡','💛','💚','💙','🩵','💜','🩷','🤎','🖤','🤍','💔','❤️‍🔥','💕','💖','💯','🐶','🐱','🦊','🐻','🐼','🐸','🐵','🐺','🦄','🦋','🐢','🐬','🦁','🍎','🍊','🍉','🍇','🍓','🍒','🥑','🍔','🍕','🍜','🍦','🎂','☕','⚽','🎮','🎧','🎉','🎁','🏆','🚀','🌍','🌙','⭐','✨','⚡','🔥','☀️','🌈','❄️','🌊','🪐','💎','👑','🌹','🌸'];
+    const stickers = ['🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧','😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️','💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭','💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️','🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤','🫶✨','🥹💖','😹🔥','😴🌙','🤝💯','😤⚡','🤍🕊️','🖤🥀','💜🦋','🌈🫧'];
     String filter = '';
     int tab = 0;
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      showDragHandle: false,
+    final selected = <String>[];
+    final picked = await showModalBottomSheet<List<String>>(
+      context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
       builder: (sheetContext) {
         final scheme = Theme.of(sheetContext).colorScheme;
         return StatefulBuilder(builder: (context, setSheetState) {
@@ -5544,78 +5528,68 @@ class _ChatPageState extends State<ChatPage> {
           final shown = filter.isEmpty ? source : source.where((e) => e.contains(filter)).toList();
           return SafeArea(child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-              child: Container(
-                height: MediaQuery.of(context).size.height * .68,
-                decoration: BoxDecoration(
-                  color: scheme.surface,
-                  border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .3))),
-                ),
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                child: Column(children: [
-                  Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(8))),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24),
-                    const SizedBox(width: 8),
-                    const Expanded(child: Text('ایموجی و استیکر', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-                    Text('${shown.length}', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
-                  ]),
-                  const SizedBox(height: 12),
-                  TextField(
-                    onChanged: (value) => setSheetState(() => filter = value.trim()),
-                    decoration: InputDecoration(
-                      hintText: 'جست‌وجو یا نام ایموجی را وارد کنید',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      isDense: true,
-                      filled: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text('ایموجی')),
-                      ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text('استیکرهای متنی')),
-                    ],
-                    selected: {tab},
-                    onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }),
-                    showSelectedIcon: false,
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(child: GridView.builder(
-                    itemCount: shown.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: MediaQuery.of(context).size.width < 380 ? 7 : 8,
-                      mainAxisSpacing: 5, crossAxisSpacing: 5, childAspectRatio: .95,
-                    ),
-                    itemBuilder: (_, i) => Material(
-                      color: scheme.surfaceContainerHighest.withValues(alpha: .55),
-                      borderRadius: BorderRadius.circular(13),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(13),
-                        onTap: () => Navigator.pop(sheetContext, shown[i]),
-                        child: Center(child: Text(shown[i], textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 25))),
-                      ),
-                    ),
-                  )),
+            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18), child: Container(
+              height: MediaQuery.of(context).size.height * .72,
+              decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .3)))),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(children: [
+                Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(8))),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24), const SizedBox(width: 8),
+                  const Expanded(child: Text('ایموجی و استیکر', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                  Text('انتخاب‌شده: ' + selected.length.toString(), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+                  IconButton(tooltip: 'پاک کردن همه', onPressed: selected.isEmpty ? null : () => setSheetState(() => selected.clear()), icon: const Icon(Icons.backspace_outlined)),
                 ]),
-              ),
-            ),
+                if (selected.isNotEmpty) SizedBox(height: 46, child: ListView(scrollDirection: Axis.horizontal, children: [
+                  for (final item in selected) Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: InputChip(
+                    label: Text(item, style: const TextStyle(fontSize: 20)), deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => setSheetState(() => selected.remove(item)),
+                  )),
+                ])),
+                const SizedBox(height: 8),
+                TextField(onChanged: (value) => setSheetState(() => filter = value.trim()), decoration: InputDecoration(
+                  hintText: 'جست‌وجوی ایموجی', prefixIcon: const Icon(Icons.search_rounded), isDense: true, filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                )),
+                const SizedBox(height: 10),
+                SegmentedButton<int>(
+                  segments: const [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text('ایموجی')), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text('استیکرهای متنی'))],
+                  selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }), showSelectedIcon: false,
+                ),
+                const SizedBox(height: 10),
+                Expanded(child: GridView.builder(
+                  itemCount: shown.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: MediaQuery.of(context).size.width < 380 ? 7 : 8, mainAxisSpacing: 5, crossAxisSpacing: 5, childAspectRatio: .95),
+                  itemBuilder: (_, i) {
+                    final item = shown[i]; final isSelected = selected.contains(item);
+                    return Material(color: isSelected ? scheme.primaryContainer : scheme.surfaceContainerHighest.withValues(alpha: .55), borderRadius: BorderRadius.circular(13),
+                      child: InkWell(borderRadius: BorderRadius.circular(13), onTap: () => setSheetState(() {
+                        if (isSelected) { selected.remove(item); } else { selected.add(item); }
+                      }), child: Stack(alignment: Alignment.center, children: [
+                        Text(item, textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 23)),
+                        if (isSelected) PositionedDirectional(top: 2, end: 2, child: Icon(Icons.check_circle, size: 13, color: scheme.primary)),
+                      ])),
+                    );
+                  },
+                )),
+                const SizedBox(height: 8),
+                SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: () => Navigator.pop(sheetContext, List<String>.from(selected)),
+                  icon: const Icon(Icons.done_rounded), label: Text(selected.isEmpty ? 'بستن' : 'افزودن ' + selected.length.toString() + ' مورد'),
+                )),
+              ]),
+            )),
           ));
         });
       },
     );
-    if (selected != null && mounted) {
-      final value = text.text;
-      final selection = text.selection;
+    if (picked != null && picked.isNotEmpty && mounted) {
+      final value = text.text; final selection = text.selection;
       final start = selection.start < 0 ? value.length : selection.start;
       final end = selection.end < 0 ? value.length : selection.end;
-      text.value = TextEditingValue(
-        text: value.replaceRange(start, end, selected),
-        selection: TextSelection.collapsed(offset: start + selected.length),
-      );
+      final insertion = picked.join();
+      text.value = TextEditingValue(text: value.replaceRange(start, end, insertion), selection: TextSelection.collapsed(offset: start + insertion.length));
       _composerFocus.requestFocus();
     }
   }
