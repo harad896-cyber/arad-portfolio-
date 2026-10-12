@@ -57,25 +57,45 @@ class _StoriesTrayState extends State<StoriesTray> {
       if (!grouped.containsKey(key)) grouped[key] = {...s, '_story_count': 1};
       else grouped[key]!['_story_count'] = (grouped[key]!['_story_count'] as int? ?? 1) + 1;
     }
-    return SizedBox(height: 72, child: Row(children: [
-      const SizedBox(width: 10),
-      _StoryAddTile(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load())),
-      const SizedBox(width: 8),
-      Expanded(child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load()),
-        child: Container(height: 54, padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .45)),
-          child: Row(children: [
-            Icon(Icons.auto_stories_rounded, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            Expanded(child: Text('استوری‌ها • ${_stories.length}', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w800))),
-            const Icon(Icons.chevron_left_rounded),
-          ]),
-        ),
-      )),
-      const SizedBox(width: 10),
-    ]));
+    final people = grouped.values.toList();
+    return SizedBox(
+      height: 78,
+      child: Row(
+        children: [
+          const SizedBox(width: 8),
+          _StoryAddTile(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load()),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: people.isEmpty
+                ? Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('استوری جدیدی نیست', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    reverse: true,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    itemCount: people.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final story = people[index];
+                      final userId = story['user_id'].toString();
+                      return _StoryTile(
+                        story: story,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => StoriesPage(initialUserId: userId)),
+                        ).then((_) => _load()),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
   }
 }
 
