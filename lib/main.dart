@@ -5943,10 +5943,37 @@ class _ChatPageState extends State<ChatPage> {
       );
       if (target == null) return;
 
+      // Preserve the original author and source conversation in the forwarded
+      // message itself. This does not depend on a separate database column.
+      var originalAuthor = 'کاربر';
+      final originalSenderId = message['sender_id']?.toString() ?? '';
+      if (originalSenderId.isNotEmpty) {
+        try {
+          final originalProfile = await supabase
+              .from('profiles')
+              .select('display_name,username')
+              .eq('id', originalSenderId)
+              .maybeSingle();
+          originalAuthor = (originalProfile?['display_name'] ??
+                  originalProfile?['username'] ??
+                  'کاربر')
+              .toString()
+              .trim();
+          if (originalAuthor.isEmpty) originalAuthor = 'کاربر';
+        } catch (_) {
+          // Attribution still includes the source chat if profile lookup is restricted.
+        }
+      }
+      final sourceChat = widget.title.trim().isEmpty ? 'گفتگوی اصلی' : widget.title.trim();
+      final forwardedBody = '↪ فوروارد شده از: $originalAuthor\\n'
+          'منبع: $sourceChat\\n'
+          'ــــــــــــــــــــ\\n'
+          '$body';
+
       final inserted = await supabase.from('messages').insert({
         'conversation_id': target['id'],
         'sender_id': uid,
-        'body': body,
+        'body': forwardedBody,
         'message_type': message['message_type'] ?? 'text',
         'reply_to': null,
       }).select().single();
