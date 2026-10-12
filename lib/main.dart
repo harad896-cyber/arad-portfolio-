@@ -4478,6 +4478,69 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  final Set<String> _selectedMessageIds = <String>{};
+  bool get _selectionMode => _selectedMessageIds.isNotEmpty;
+
+  void _toggleMessageSelection(Map<String,dynamic> message) {
+    final id = message['id']?.toString();
+    if (id == null || id.isEmpty || id.startsWith('pending-')) return;
+    setState(() {
+      if (_selectedMessageIds.contains(id)) {
+        _selectedMessageIds.remove(id);
+      } else if (_selectedMessageIds.length < 100) {
+        _selectedMessageIds.add(id);
+      } else {
+        showMsg(context, 'حداکثر ۱۰۰ پیام را می‌توانید انتخاب کنید.');
+      }
+    });
+  }
+
+  Future<void> _bulkDelete({required bool everyone}) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || _selectedMessageIds.isEmpty) return;
+    final selected = messages.where((m) => _selectedMessageIds.contains('${m['id']}')).toList();
+    final eligible = everyone ? selected.where((m) => '${m['sender_id']}' == uid).toList() : selected;
+    if (eligible.isEmpty) {
+      showMsg(context, 'برای حذف برای همه فقط پیام‌های خودتان قابل انتخاب‌اند.');
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(everyone ? 'حذف پیام‌های انتخاب‌شده برای همه' : 'حذف پیام‌های انتخاب‌شده برای من'),
+        content: Text(everyone
+          ? '${eligible.length} پیام که خودتان فرستاده‌اید برای همه حذف می‌شود. پیام‌های دیگران حذف نمی‌شود.'
+          : '${eligible.length} پیام فقط از حساب شما حذف می‌شود.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final ids = eligible.map((m) => m['id']).toList();
+    setState(() => _selectedMessageIds.clear());
+    try {
+      if (everyone) {
+        for (final m in eligible) {
+          await supabase.from('messages').update({
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+            'body': null,
+          }).eq('id', m['id']).eq('sender_id', uid);
+        }
+      } else {
+        for (final id in ids) {
+          await supabase.from('message_user_deletions').upsert({'message_id': id, 'user_id': uid});
+        }
+      }
+      await load();
+      if (mounted) showMsg(context, everyone ? 'پیام‌های خودتان برای همه حذف شدند.' : 'پیام‌ها فقط از حساب شما حذف شدند.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'حذف کامل نشد: ${_friendlyError(e.toString())}');
+      await load();
+    }
+  }
+
   List<Map<String, dynamic>> get _displayTimelineItems {
     final output = <Map<String, dynamic>>[];
     DateTime? previousDay;
@@ -6543,12 +6606,20 @@ class _ChatPageState extends State<ChatPage> {
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
         onTap: () {
+          if (_selectionMode) {
+            _toggleMessageSelection(m);
+            return;
+          }
           if (_composerFocus.hasFocus) _composerFocus.unfocus();
           showMessageActions(m);
         },
         onLongPress: () {
           if (_composerFocus.hasFocus) _composerFocus.unfocus();
-          showMessageActions(m);
+          if (_selectionMode) {
+            _toggleMessageSelection(m);
+          } else {
+            _toggleMessageSelection(m);
+          }
         },
         onDoubleTap: () => reactTo(m, '❤️'),
         onHorizontalDragEnd: (details) {
@@ -7002,6 +7073,22 @@ class _ChatPageState extends State<ChatPage> {
         ),
         child: Column(
           children: [
+            if (_selectionMode)
+              Material(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Row(children: [
+                      IconButton(tooltip: 'لغو انتخاب', onPressed: () => setState(() => _selectedMessageIds.clear()), icon: const Icon(Icons.close_rounded)),
+                      Expanded(child: Text('${_selectedMessageIds.length} پیام انتخاب شد', style: const TextStyle(fontWeight: FontWeight.w800))),
+                      IconButton(tooltip: 'حذف برای من', onPressed: () => _bulkDelete(everyone: false), icon: const Icon(Icons.delete_outline_rounded)),
+                      IconButton(tooltip: 'حذف پیام‌های خودم برای همه', onPressed: () => _bulkDelete(everyone: true), icon: const Icon(Icons.delete_forever_rounded)),
+                    ]),
+                  ),
+                ),
+              ),
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
