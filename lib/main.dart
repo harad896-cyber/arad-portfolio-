@@ -4969,21 +4969,88 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
-  final List<String> quickReactions = const ['❤️','👍','😂','😮','😢','🙏'];
+  final List<String> quickReactions = const ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'];
   Future<void> _toggleReaction(String messageId, String emoji) async {
     final uid=supabase.auth.currentUser?.id; if(uid==null)return;
-    try { final existing=await supabase.from('message_reactions').select('message_id,user_id,reaction').eq('message_id',messageId).eq('user_id',uid).eq('reaction',emoji).maybeSingle();
-      if(existing!=null) await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid).eq('reaction',emoji);
-      else { await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid); await supabase.from('message_reactions').insert({'message_id':messageId,'user_id':uid,'reaction':emoji}); } await load();
+    try {
+      final existing=await supabase.from('message_reactions').select('message_id,user_id,reaction').eq('message_id',messageId).eq('user_id',uid).maybeSingle();
+      if(existing!=null && existing['reaction'] == emoji) {
+        await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid);
+      } else {
+        await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid);
+        await supabase.from('message_reactions').insert({'message_id':messageId,'user_id':uid,'reaction':emoji});
+      }
+      await load();
     } catch(_) { if(mounted)showMsg(context,'واکنش ثبت نشد'); }
   }
   Future<void> _showReactionPicker(Map<String,dynamic> m) async {
     final id = m['id'].toString();
-    await showModalBottomSheet<void>(context:context,backgroundColor:Colors.transparent,builder:(ctx){ final scheme=Theme.of(ctx).colorScheme;
-      return TweenAnimationBuilder<double>(tween:Tween(begin:.85,end:1),duration:const Duration(milliseconds:180),curve:Curves.easeOutBack,builder:(c,scale,child)=>Transform.scale(scale:scale,child:child),child:
-        Container(padding:const EdgeInsets.fromLTRB(12,10,12,18),decoration:BoxDecoration(color:scheme.surface,borderRadius:const BorderRadius.vertical(top:Radius.circular(28))),child:Row(mainAxisAlignment:MainAxisAlignment.spaceEvenly,children:[
-          ...quickReactions.map((e)=>InkWell(onTap:(){Navigator.pop(ctx);_toggleReaction(id,e);},borderRadius:BorderRadius.circular(18),child:Padding(padding:const EdgeInsets.all(8),child:Text(e,style:const TextStyle(fontSize:27))))),
-          IconButton(onPressed:(){Navigator.pop(ctx);_showReactionPeople(id);},icon:const Icon(Icons.add_circle_outline_rounded))]))); });
+    const categories = <String, List<String>>{
+      'محبوب': ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'],
+      'احساسات': ['😀','😁','🥹','🤣','😎','😍','😘','🥳','😭','😡','🤯','😴','🤗','😇','🙃','😔'],
+      'دست‌ها': ['👋','🤝','🫶','🤲','✌️','🤞','👌','💪','🫡','👏','🙌','🙏'],
+      'نمادها': ['✨','💫','⭐','🌟','❤️‍🔥','💔','💜','💙','💚','🖤','✅','❌','💯','🎯'],
+    };
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final scheme = Theme.of(ctx).colorScheme;
+        var selectedCategory = 'محبوب';
+        return StatefulBuilder(builder: (ctx, setSheetState) => SafeArea(
+          child: Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * .62),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: .55)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .22), blurRadius: 28, offset: const Offset(0, -6))],
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(9))),
+              const SizedBox(height: 14),
+              Row(children: [
+                const Expanded(child: Text('واکنش به پیام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                IconButton(tooltip: 'افرادی که واکنش داده‌اند', onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: const Icon(Icons.people_alt_outlined)),
+              ]),
+              SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: categories.keys.map((name) => Padding(
+                padding: const EdgeInsetsDirectional.only(end: 7),
+                child: ChoiceChip(label: Text(name), selected: selectedCategory == name, onSelected: (_) => setSheetState(() => selectedCategory = name)),
+              )).toList())),
+              const SizedBox(height: 10),
+              Flexible(child: GridView.builder(
+                shrinkWrap: true,
+                itemCount: categories[selectedCategory]!.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, mainAxisSpacing: 5, crossAxisSpacing: 5),
+                itemBuilder: (ctx, index) {
+                  final emoji = categories[selectedCategory]![index];
+                  return TweenAnimationBuilder<double>(
+                    key: ValueKey('$selectedCategory-$emoji'),
+                    tween: Tween(begin: .78, end: 1),
+                    duration: Duration(milliseconds: 150 + (index % 5) * 25),
+                    curve: Curves.easeOutBack,
+                    builder: (ctx, scale, child) => Transform.scale(scale: scale, child: child),
+                    child: Material(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: .55),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () { Navigator.pop(ctx); _toggleReaction(id, emoji); },
+                        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 27))),
+                      ),
+                    ),
+                  );
+                },
+              )),
+              const SizedBox(height: 8),
+              Text('واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+            ]),
+          ),
+        ));
+      },
+    );
   }
   Future<void> _showReactionPeople(String messageId) async {
     try {
