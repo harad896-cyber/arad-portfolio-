@@ -57,9 +57,24 @@ class _StoriesTrayState extends State<StoriesTray> {
       if (!grouped.containsKey(key)) grouped[key] = {...s, '_story_count': 1};
       else grouped[key]!['_story_count'] = (grouped[key]!['_story_count'] as int? ?? 1) + 1;
     }
-    return SizedBox(height: 70, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 3, 12, 3), children: [
+    return SizedBox(height: 72, child: Row(children: [
+      const SizedBox(width: 10),
       _StoryAddTile(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load())),
-      ...grouped.values.map((story) => _StoryTile(story: story, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage(initialStoryId: story['id'].toString(), initialUserId: story['user_id'].toString()))).then((_) => _load()))),
+      const SizedBox(width: 8),
+      Expanded(child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load()),
+        child: Container(height: 54, padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .45)),
+          child: Row(children: [
+            Icon(Icons.auto_stories_rounded, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text('استوری‌ها • ${_stories.length}', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w800))),
+            const Icon(Icons.chevron_left_rounded),
+          ]),
+        ),
+      )),
+      const SizedBox(width: 10),
     ]));
   }
 }
