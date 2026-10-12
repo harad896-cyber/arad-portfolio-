@@ -59,7 +59,7 @@ class _StoriesTrayState extends State<StoriesTray> {
     }
     return SizedBox(height: 70, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(12, 3, 12, 3), children: [
       _StoryAddTile(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage())).then((_) => _load())),
-      ...grouped.values.map((story) => _StoryTile(story: story, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage(initialStoryId: story['id'].toString()))).then((_) => _load()))),
+      ...grouped.values.map((story) => _StoryTile(story: story, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage(initialStoryId: story['id'].toString(), initialUserId: story['user_id'].toString()))).then((_) => _load()))),
     ]));
   }
 }
@@ -101,7 +101,8 @@ class _StoryTile extends StatelessWidget {
 
 class StoriesPage extends StatefulWidget {
   final String? initialStoryId;
-  const StoriesPage({super.key, this.initialStoryId});
+  final String? initialUserId;
+  const StoriesPage({super.key, this.initialStoryId, this.initialUserId});
   @override
   State<StoriesPage> createState() => _StoriesPageState();
 }
@@ -129,8 +130,10 @@ class _StoriesPageState extends State<StoriesPage> {
 
   Future<void> _load() async {
     try {
-      final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']).order('created_at', ascending: true);
+      var query = _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']);
+      if (widget.initialUserId != null) query = query.eq('user_id', widget.initialUserId!);
+      final rows = await query.order('created_at', ascending: true);
       final stories = List<Map<String, dynamic>>.from(rows);
       final urls = <String, String>{};
       final ids = stories.map((s) => s['id'].toString()).toList();
@@ -484,7 +487,15 @@ class _StoriesPageState extends State<StoriesPage> {
         controller.dispose();
       }
       await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_path': path, 'media_type': choice, 'caption': caption, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(Duration(hours: durationHours)).toIso8601String()});
-      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.'))); await _load(); }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.')));
+        await _load();
+        if (mounted && _stories.isNotEmpty) {
+          final mineIndex = _stories.indexWhere((s) => s['id']?.toString() == _stories.last['id']?.toString());
+          if (mineIndex >= 0) setState(() => _index = mineIndex);
+          _startTimer();
+        }
+      }
     } catch (error) {
       try { await _storiesSupabase.storage.from('stories').remove([path]); } catch (_) {}
       if (mounted) {
