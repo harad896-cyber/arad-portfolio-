@@ -5943,9 +5943,15 @@ class _ChatPageState extends State<ChatPage> {
       );
       if (target == null) return;
 
-      final forwarder = await supabase.from('profiles').select('display_name,username').eq('id', uid).maybeSingle();
-      final forwarderName = '${forwarder?['display_name'] ?? forwarder?['username'] ?? 'کاربر'}'.trim();
-      final forwardedBody = '↪ فورواردشده توسط $forwarderName\n\n$body';
+      // Preserve the original author's attribution. The person forwarding the
+      // message is the actual sender in the destination chat, but is not shown
+      // as the original author in the forwarded-message label.
+      final originalSenderId = message['sender_id']?.toString() ?? '';
+      final originalSender = originalSenderId.isEmpty
+          ? null
+          : await supabase.from('profiles').select('display_name,username').eq('id', originalSenderId).maybeSingle();
+      final originalSenderName = '${originalSender?['display_name'] ?? originalSender?['username'] ?? 'کاربر'}'.trim();
+      final forwardedBody = '↪ فوروارد از $originalSenderName\n\n$body';
       final inserted = await supabase.from('messages').insert({
         'conversation_id': target['id'],
         'sender_id': uid,
