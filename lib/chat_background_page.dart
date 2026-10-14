@@ -38,14 +38,20 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
     if (mounted) setState(() {});
   }
   static const colors = <int>[
+    0xFF11131A,
+    0xFF17152B,
+    0xFF10202D,
+    0xFF20242B,
+    0xFF302047,
+    0xFF173A45,
+    0xFF3B2437,
+    0xFF0B1220,
     0xFFF5F5F7,
     0xFFEAF4FF,
     0xFFEAFBF3,
     0xFFFFF4E5,
     0xFFFFEEF5,
     0xFFF1ECFF,
-    0xFF20242B,
-    0xFF111827,
   ];
 
   @override
