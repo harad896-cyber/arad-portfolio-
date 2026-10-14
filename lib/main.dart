@@ -4904,8 +4904,49 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
+  String get _chatCacheKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'arad_chat_cache_v1_${uid}_${widget.id}';
+  }
+
+  Future<void> _restoreCachedChat() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_chatCacheKey);
+      if (raw == null || raw.isEmpty || !mounted) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      final cached = decoded
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+      if (cached.isEmpty || !mounted || messages.isNotEmpty) return;
+      setState(() {
+        messages = cached;
+        timelineItems = cached.map((m) => <String, dynamic>{...m, '__kind': 'message'}).toList();
+        loading = false;
+      });
+    } catch (_) {
+      // A damaged cache must never prevent the live conversation from opening.
+    }
+  }
+
+  Future<void> _saveCachedChat(List<Map<String, dynamic>> rows) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cacheable = rows.where((m) =>
+          !'${m['id']}'.startsWith('pending-') &&
+          m['__kind'] != 'system' &&
+          m['__kind'] != 'call').toList();
+      await prefs.setString(_chatCacheKey, jsonEncode(cacheable.take(120).toList()));
+    } catch (_) {
+      // Cache is an optimization; the server remains the source of truth.
+    }
+  }
+
   Future<void> load() async {
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
+    await _restoreCachedChat();
     try {
       final conversation = Map<String, dynamic>.from(await supabase
           .from('conversations').select('id,type,title,avatar_url,created_by,created_at')
@@ -5032,6 +5073,8 @@ class _ChatPageState extends State<ChatPage> {
           attachments = loadedAttachments;
           loading = false;
         });
+        // Persist the latest server-confirmed messages for quick/offline reopening.
+        await _saveCachedChat(loaded);
         if (widget.targetMessageId != null && !_didJumpToTargetMessage) {
           _didJumpToTargetMessage = true;
           WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToTargetMessage());
@@ -5046,7 +5089,16 @@ class _ChatPageState extends State<ChatPage> {
     } catch (e) {
       if (mounted) {
         setState(() => loading = false);
-        showMsg(context, 'خطا در پیام‌ها: $e');
+        if (messages.isEmpty) {
+          showMsg(context, _isNetworkFailure(e)
+              ? 'اینترنت در دسترس نیست و هنوز نسخهٔ ذخیره‌شده‌ای از این گفتگو ندارید.'
+              : 'گفتگو بارگذاری نشد: ${_friendlyError(e.toString())}');
+        } else {
+          // Keep cached messages visible if the network request fails.
+          showMsg(context, _isNetworkFailure(e)
+              ? 'اتصال ضعیف است؛ پیام‌های ذخیره‌شده نمایش داده می‌شوند.'
+              : 'به‌روزرسانی گفتگو ناموفق بود؛ پیام‌های قبلی حفظ شدند.');
+        }
       }
     }
   }
