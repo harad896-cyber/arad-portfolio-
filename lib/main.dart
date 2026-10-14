@@ -1729,12 +1729,27 @@ class _LoginPageState extends State<LoginPage>{
     }else{
       setState(()=>busy=true);
       try{
-        await supabase.auth.signOut();
-        await supabase.auth.signInWithOtp(email:mail,shouldCreateUser:false);
-        if(mounted)Navigator.push(context,MaterialPageRoute(builder:(_)=>EmailVerificationPage(email:mail,verificationType:OtpType.email,allowCreateUser:false)));
-      }on AuthException catch(e){if(mounted)showMsg(context,'ارسال کد ورود ناموفق بود: ${e.message}');}
-      catch(e){if(mounted)showMsg(context,'ارسال کد ورود ناموفق بود: ${_friendlyError(e.toString())}');}
-      finally{if(mounted)setState(()=>busy=false);}
+        // Keep a valid existing session; otherwise authenticate with email + password.
+        final current = supabase.auth.currentSession;
+        final currentEmail = (supabase.auth.currentUser?.email ?? '').trim().toLowerCase();
+        if(current != null && currentEmail == mail){
+          await rememberCurrentSession();
+          if(mounted) Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder:(_)=>const ProfileGate()), (route)=>false);
+          return;
+        }
+        final secret = password.text;
+        if(secret.isEmpty){showMsg(context,'رمز عبور را وارد کنید.');return;}
+        await supabase.auth.signInWithPassword(email:mail,password:secret);
+        await rememberCurrentSession();
+        await appTheme.loadForUser();
+        if(mounted) Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder:(_)=>const ProfileGate()), (route)=>false);
+      }on AuthException catch(e){
+        if(mounted)showMsg(context,'ورود ناموفق بود: ${e.message}');
+      }catch(e){
+        if(mounted)showMsg(context,'ورود ناموفق بود: ${_friendlyError(e.toString())}');
+      }finally{if(mounted)setState(()=>busy=false);}
     }
   }
   Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
