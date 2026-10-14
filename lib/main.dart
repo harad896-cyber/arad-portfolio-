@@ -7045,7 +7045,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Container(
         decoration: BoxDecoration(
           color: Color(appTheme.backgroundSeed),
-          image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .30 : .12), BlendMode.darken)),
+          image: appTheme.backgroundImageBase64 == null ? const DecorationImage(image: AssetImage('assets/app_icon.jpg'), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Color(0xCC090A12), BlendMode.darken)) : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .30 : .12), BlendMode.darken)),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
