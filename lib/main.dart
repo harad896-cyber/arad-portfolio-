@@ -1450,12 +1450,16 @@ class AboutAppPage extends StatelessWidget {
     ]),
   );
 }
+const List<String> _profileCharacters = ['🐺','🦊','🐱','🦁','🐼','🐸','🐉','👾','🤖','👻','🦋','🦂','🕷️','⚡','🌙','🔥','🌌','♟️'];
+
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   final url = profile['avatar_url']?.toString() ?? '';
+  final isCharacter = url.startsWith('emoji:');
   return CircleAvatar(
     radius: size / 2,
-    backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
-    child: url.isEmpty ? const Icon(Icons.person) : null,
+    backgroundColor: isCharacter ? const Color(0xFF292344) : null,
+    backgroundImage: url.isNotEmpty && !isCharacter ? NetworkImage(url) : null,
+    child: isCharacter ? Text(url.substring(6), style: TextStyle(fontSize: size * .58)) : url.isEmpty ? const Icon(Icons.person) : null,
   );
 }
 
@@ -2078,6 +2082,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   XFile? avatarImage;
   Uint8List? avatarBytes;
   String? existingAvatarUrl;
+  String? selectedCharacter;
   String? nameError;
   String? usernameError;
   bool loading = true;
@@ -2089,6 +2094,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
       if (row != null) {
         existingAvatarUrl = '${row['avatar_url'] ?? ''}';
+        if ((existingAvatarUrl ?? '').startsWith('emoji:')) selectedCharacter = existingAvatarUrl!.substring(6);
         name.text = '${row['display_name'] ?? ''}';
         username.text = '${row['username'] ?? ''}';
         bio.text = '${row['bio'] ?? ''}';
@@ -2152,6 +2158,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         final path = '$uid/avatar.jpg';
         await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
         data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
+      } else if (selectedCharacter != null) {
+        data['avatar_url'] = 'emoji:$selectedCharacter';
       }
       await supabase.from('profiles').upsert(data);
       if (mounted) { showMsg(context, 'پروفایل با موفقیت ذخیره شد.'); Navigator.pop(context); }
@@ -2176,6 +2184,20 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('کاراکتر پروفایل', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            const SizedBox(height: 5),
+            const Text('کاراکتر آماده انتخاب کن یا عکس خودت را از دوربین و گالری بگذار.'),
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8, children: _profileCharacters.map((character) => InkWell(
+              borderRadius: BorderRadius.circular(30),
+              onTap: () => setState(() { selectedCharacter = character; avatarImage = null; avatarBytes = null; existingAvatarUrl = 'emoji:$character'; }),
+              child: Container(width: 44, height: 44, alignment: Alignment.center,
+                decoration: BoxDecoration(color: selectedCharacter == character ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(22), border: Border.all(color: selectedCharacter == character ? Theme.of(context).colorScheme.primary : Colors.transparent, width: 2)),
+                child: Text(character, style: const TextStyle(fontSize: 25))),
+            )).toList()),
+          ]))),
+          const SizedBox(height: 12),
           Center(
             child: GestureDetector(
               onTap: chooseAvatar,
@@ -2184,12 +2206,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 children: [
                   CircleAvatar(
                     radius: 58,
+                    backgroundColor: selectedCharacter != null ? const Color(0xFF292344) : null,
                     backgroundImage: avatarBytes != null
                         ? MemoryImage(avatarBytes!)
-                        : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty ? NetworkImage(existingAvatarUrl!) : null),
-                    child: avatarBytes == null && (existingAvatarUrl == null || existingAvatarUrl!.isEmpty)
-                        ? const Icon(Icons.person, size: 58)
-                        : null,
+                        : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty && !existingAvatarUrl!.startsWith('emoji:') ? NetworkImage(existingAvatarUrl!) : null),
+                    child: avatarBytes != null ? null : selectedCharacter != null
+                        ? Text(selectedCharacter!, style: const TextStyle(fontSize: 48))
+                        : (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
                   ),
                   const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
                 ],
