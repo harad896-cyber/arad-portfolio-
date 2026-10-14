@@ -3367,15 +3367,11 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
               if (value == 'rename') await _editLocalName();
               if (value == 'friend') await _sendFriendRequest();
               if (value == 'contact') await _toggleContact();
-              if (value == 'block') {
-                showMsg(context, 'قابلیت مسدودسازی هنوز به سرویس مسدودسازی متصل نشده است.');
-              }
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text('نام‌گذاری مخاطب'))),
               PopupMenuItem(value: 'friend', child: ListTile(dense: true, leading: const Icon(Icons.person_add_alt_rounded), title: const Text('درخواست دوستی'))),
               PopupMenuItem(value: 'contact', child: ListTile(dense: true, leading: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded), title: Text(isContact ? 'حذف از مخاطبین' : 'افزودن به مخاطبین'))),
-              const PopupMenuItem(value: 'block', child: ListTile(dense: true, leading: Icon(Icons.block_rounded), title: Text('مسدود کردن'))),
             ],
           ),
         ],
@@ -3394,11 +3390,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
             const SizedBox(height: 18),
           ])),
           Row(children: [
-            Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام‌ها', busy ? null : _openChat)),
-            const SizedBox(width: 8),
-            Expanded(child: _profileAction(context, Icons.notifications_active_rounded, 'اعلان‌ها', () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsPage(id: '${profile['id']}', title: 'اعلان‌های مخاطب')));
-            })),
+            Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام', busy ? null : _openChat)),
             const SizedBox(width: 8),
             Expanded(child: _profileAction(context, Icons.call_rounded, 'تماس صوتی', busy ? null : () => _startCall(video: false))),
             const SizedBox(width: 8),
