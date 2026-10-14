@@ -85,7 +85,7 @@ class AppThemeController extends ChangeNotifier {
   int seed = 0xFF7C5CFF;
   int backgroundSeed = 0xFF11131A;
   String? backgroundImageBase64;
-  static const int _themeRevision = 3;
+  static const int _themeRevision = 4;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -101,7 +101,7 @@ class AppThemeController extends ChangeNotifier {
       // One-time migration to the new high-contrast chat palette.
       dark = false;
       seed = 0xFF8B5CF6;
-      backgroundSeed = 0xFFF6F4FA;
+      backgroundSeed = 0xFF11131A;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
@@ -109,7 +109,7 @@ class AppThemeController extends ChangeNotifier {
     } else {
       dark = p.getBool('dark_mode_$key') ?? false;
       seed = p.getInt('accent_seed_$key') ?? 0xFF8B5CF6;
-      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFFF3F1F6;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF11131A;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     notifyListeners();
