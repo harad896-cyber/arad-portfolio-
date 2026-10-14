@@ -253,7 +253,7 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
                           children: [
                             Icon(Icons.cloud_off_rounded, size: 17, color: scheme.error),
                             const SizedBox(width: 8),
-                            Text('در حال اتصال...', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                            Text('آفلاین • پیام‌های ذخیره‌شده در دسترس‌اند', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
                           ],
                         ),
                       )
@@ -4950,8 +4950,8 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final conversation = Map<String, dynamic>.from(await supabase
           .from('conversations').select('id,type,title,avatar_url,created_by,created_at')
-          .eq('id', widget.id).single());
-      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120);
+          .eq('id', widget.id).single().timeout(const Duration(seconds: 8)));
+      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120).timeout(const Duration(seconds: 8));
       final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
       if (widget.targetMessageId != null && !loaded.any((m) => '${m['id']}' == widget.targetMessageId)) {
         try {
