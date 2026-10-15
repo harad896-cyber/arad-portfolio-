@@ -6979,6 +6979,27 @@ class _ChatPageState extends State<ChatPage> {
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
+        table: 'conversation_members',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete,
+        schema: 'public',
+        table: 'conversation_members',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'group_audit_logs',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
         table: 'message_user_deletions',
         callback: (_) => _scheduleChatReload(),
       )
