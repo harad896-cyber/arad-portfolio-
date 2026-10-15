@@ -8325,8 +8325,8 @@ class _ChatPageState extends State<ChatPage> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
-              color: scheme.surface.withValues(alpha: .20),
               decoration: BoxDecoration(
+                color: scheme.surface.withValues(alpha: .20),
                 border: Border(
                   bottom: BorderSide(color: scheme.onSurface.withValues(alpha: .07)),
                 ),
