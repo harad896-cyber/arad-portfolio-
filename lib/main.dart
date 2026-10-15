@@ -5822,6 +5822,36 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _chooseDeleteScope(Map<String, dynamic> message) async {
+    final mine = message['sender_id'] == supabase.auth.currentUser?.id;
+    final scope = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const ListTile(title: Text('حذف پیام', style: TextStyle(fontWeight: FontWeight.w900))),
+          ListTile(
+            leading: const Icon(Icons.person_outline_rounded),
+            title: const Text('حذف برای من'),
+            subtitle: const Text('فقط از فهرست پیام‌های شما حذف می‌شود.'),
+            onTap: () => Navigator.pop(ctx, 'me'),
+          ),
+          if (mine)
+            ListTile(
+              leading: Icon(Icons.delete_forever_rounded, color: Theme.of(ctx).colorScheme.error),
+              title: const Text('حذف برای همه'),
+              subtitle: const Text('پیام از گفتگوی همه اعضا حذف می‌شود.'),
+              onTap: () => Navigator.pop(ctx, 'everyone'),
+            ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (!mounted || scope == null) return;
+    if (scope == 'me') await deleteForMe(message);
+    if (scope == 'everyone') await deleteForEveryone(message);
+  }
+
   Future<void> deleteForMe(Map<String, dynamic> message) async {
     final messageId = '${message['id']}';
     final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
@@ -6226,7 +6256,7 @@ class _ChatPageState extends State<ChatPage> {
               if (mounted) showMsg(this.context, 'متن پیام کپی شد.');
             }),
           if (canEdit) action(Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
-          action(Icons.delete_outline_rounded, 'حذف', () => deleteForMe(message)),
+          action(Icons.delete_outline_rounded, 'حذف', () => _chooseDeleteScope(message)),
         ]),
       ]),
     );
