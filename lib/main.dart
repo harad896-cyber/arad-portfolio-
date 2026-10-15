@@ -5638,11 +5638,15 @@ class _ChatPageState extends State<ChatPage> {
       final bytes = await XFile(path).readAsBytes();
       if (bytes.isEmpty) throw Exception('فایل ویس خالی است');
       if (mounted) setState(() => sending = true);
-      final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      // Browser recorders commonly emit WebM/Opus; labeling those bytes as
+      // MP4 makes some browsers and media players refuse to play the voice note.
+      final voiceMime = kIsWeb ? 'audio/webm' : 'audio/mp4';
+      final voiceExtension = kIsWeb ? 'webm' : 'm4a';
+      final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension';
       await supabase.storage.from('chat-media').uploadBinary(
         storagePath,
         bytes,
-        fileOptions: const FileOptions(contentType: 'audio/mp4', upsert: false),
+        fileOptions: FileOptions(contentType: voiceMime, upsert: false),
       );
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
@@ -5655,7 +5659,7 @@ class _ChatPageState extends State<ChatPage> {
         'message_id': msg['id'],
         'storage_path': storagePath,
         'file_name': storagePath.split('/').last,
-        'mime_type': 'audio/mp4',
+        'mime_type': voiceMime,
         'file_size': bytes.length,
         'duration_ms': voiceSeconds * 1000,
       });
