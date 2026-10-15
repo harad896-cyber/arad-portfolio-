@@ -6673,7 +6673,7 @@ class _ChatPageState extends State<ChatPage> {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF20384A),
+                  color: scheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: _messageActionsContent(context, message),
@@ -6703,10 +6703,12 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _messageActionsContent(BuildContext context, Map<String, dynamic> message) {
     const emojis = ['❤️', '👍', '😂', '🔥', '😍'];
+    final scheme = Theme.of(context).colorScheme;
     final mine = message['sender_id'] == supabase.auth.currentUser?.id;
     final canEdit = mine && message['message_type'] == 'text' && message['deleted_at'] == null;
     final body = (message['body'] ?? '').toString();
     void runAction(FutureOr<void> Function() action) {
+      HapticFeedback.selectionClick();
       Navigator.pop(context);
       action();
     }
@@ -6719,10 +6721,10 @@ class _ChatPageState extends State<ChatPage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(icon, color: Colors.white, size: 21),
+              Icon(icon, color: scheme.onSurface, size: 21),
               const SizedBox(height: 4),
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 11)),
+                style: TextStyle(color: scheme.onSurface, fontSize: 11)),
             ]),
           ),
         ),
@@ -6732,22 +6734,22 @@ class _ChatPageState extends State<ChatPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 38, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
+        Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.onSurfaceVariant.withValues(alpha: .45), borderRadius: BorderRadius.circular(4))),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: .14), borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .65), borderRadius: BorderRadius.circular(24)),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             ...emojis.map((e) => InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () { Navigator.pop(context); reactTo(message, e); },
+              onTap: () { HapticFeedback.selectionClick(); Navigator.pop(context); reactTo(message, e); },
               child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 23))),
             )),
             IconButton(
               visualDensity: VisualDensity.compact,
               constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
               onPressed: () { Navigator.pop(context); _showMoreReactions(message); },
-              icon: const Icon(Icons.add_reaction_outlined, color: Colors.white, size: 20),
+              icon: Icon(Icons.add_reaction_outlined, color: scheme.onSurface, size: 20),
             ),
           ]),
         ),
