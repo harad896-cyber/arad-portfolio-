@@ -5163,10 +5163,12 @@ class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @
  Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:const Text('پیام‌های خودتخریب‌شونده'))),
 ]));}
 
-class AboutPage extends StatelessWidget { const AboutPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
- const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه $kAppVersion'))),
- const Card(child:ListTile(title:Text('حریم خصوصی و قوانین'))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'))),const Card(child:ListTile(title:Text('امتیاز به برنامه'))),
-]));}
+/// Compatibility entry point: keep one canonical About screen and one version display.
+class AboutPage extends StatelessWidget {
+  const AboutPage({super.key});
+  @override
+  Widget build(BuildContext context) => const AboutAppPage();
+}
 
 class CallsPage extends StatefulWidget {
   const CallsPage({super.key});
