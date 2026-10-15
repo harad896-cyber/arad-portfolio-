@@ -339,7 +339,8 @@ class AradMessenger extends StatelessWidget {
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: base,
+              // A gradient already paints the base color. Supplying both
+              // color and gradient triggers BoxDecoration's debug assertion.
               gradient: RadialGradient(
                 center: const Alignment(-0.8, -0.9),
                 radius: 1.45,
@@ -1295,7 +1296,9 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
             child: Container(
               height: 168,
               decoration: BoxDecoration(
-                color: Color(appTheme.backgroundSeed),
+                // Keep solid color only for photo wallpapers; use the gradient
+                // alone when no photo is selected.
+                color: hasImage ? Color(appTheme.backgroundSeed) : null,
                 image: hasImage ? DecorationImage(
                   image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)),
                   fit: BoxFit.cover,
