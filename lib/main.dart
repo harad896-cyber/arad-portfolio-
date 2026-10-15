@@ -4969,8 +4969,18 @@ class _ChatPageState extends State<ChatPage> {
       }
       final uid = supabase.auth.currentUser?.id;
       if (uid != null && loaded.isNotEmpty) {
-        final deletedRows = await supabase.from('message_user_deletions').select('message_id').eq('user_id', uid);
-        final hidden = {for (final r in List<Map<String, dynamic>>.from(deletedRows)) '${r['message_id']}'};
+        // Query only deletion markers for this page of messages, not every deletion ever made.
+        // This keeps chat reloads fast for accounts with a long message history.
+        final pageIds = loaded.map((m) => '${m['id']}').toList();
+        final deletedRows = await supabase
+            .from('message_user_deletions')
+            .select('message_id')
+            .eq('user_id', uid)
+            .inFilter('message_id', pageIds);
+        final hidden = {
+          for (final r in List<Map<String, dynamic>>.from(deletedRows))
+            '${r['message_id']}'
+        };
         loaded.removeWhere((m) => hidden.contains('${m['id']}'));
       }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
@@ -5826,13 +5836,13 @@ class _ChatPageState extends State<ChatPage> {
         'message_id': message['id'],
         'user_id': supabase.auth.currentUser!.id,
       });
-      unawaited(load());
+      await load();
     } catch (e) {
       if (mounted) setState(() {
         timelineItems = previousTimeline;
         messages = previousMessages;
       });
-      if (mounted) showMsg(context, 'حذف برای من ناموفق بود: $e');
+      if (mounted) showMsg(context, 'حذف برای من ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
 
@@ -5863,13 +5873,13 @@ class _ChatPageState extends State<ChatPage> {
         'deleted_at': DateTime.now().toUtc().toIso8601String(),
         'body': null,
       }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id);
-      unawaited(load());
+      await load();
     } catch (e) {
       if (mounted) setState(() {
         timelineItems = previousTimeline;
         messages = previousMessages;
       });
-      if (mounted) showMsg(context, 'حذف برای همه ناموفق بود: $e');
+      if (mounted) showMsg(context, 'حذف برای همه ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
 
