@@ -5841,6 +5841,8 @@ class _ChatPageState extends State<ChatPage> {
   final GlobalKey _latestMessageKey = GlobalKey();
   final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
   bool _didJumpToTargetMessage = false;
+  bool _chatLoadInProgress = false;
+  bool _chatLoadQueued = false;
   bool loading = true;
   bool _isSyncing = true;
   bool sending = false;
@@ -6233,6 +6235,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> load() async {
+    // Serialize refreshes triggered by sends, Realtime and screen lifecycle.
+    // A burst queues at most one follow-up refresh instead of racing state writes.
+    if (_chatLoadInProgress) {
+      _chatLoadQueued = true;
+      return;
+    }
+    _chatLoadInProgress = true;
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     await _ensureLocalHiddenIds();
     await _restoreCachedChat();
@@ -6254,7 +6263,14 @@ class _ChatPageState extends State<ChatPage> {
             .timeout(const Duration(seconds: 8)),
       ]);
       final conversation = Map<String, dynamic>.from(initialRows[0] as Map);
-      final loaded = List<Map<String, dynamic>>.from(initialRows[1] as List).reversed.toList();
+      // Deduplicate by server ID before composing the timeline. This guards
+      // against repeated rows returned during reconnects or overlapping writes.
+      final loadedById = <String, Map<String, dynamic>>{};
+      for (final row in List<Map<String, dynamic>>.from(initialRows[1] as List).reversed) {
+        final id = row['id']?.toString() ?? '';
+        if (id.isNotEmpty) loadedById[id] = row;
+      }
+      final loaded = loadedById.values.toList();
       // Call history is independent of messages/profiles; start it immediately
       // so it overlaps the rest of the chat hydration instead of adding latency.
       final callRowsFuture = supabase.from('call_sessions')
@@ -6440,6 +6456,12 @@ class _ChatPageState extends State<ChatPage> {
               ? 'اتصال ضعیف است؛ پیام‌های ذخیره‌شده نمایش داده می‌شوند.'
               : 'به‌روزرسانی گفتگو ناموفق بود؛ پیام‌های قبلی حفظ شدند.');
         }
+      }
+    } finally {
+      _chatLoadInProgress = false;
+      if (_chatLoadQueued && mounted) {
+        _chatLoadQueued = false;
+        unawaited(load());
       }
     }
   }
