@@ -11,8 +11,22 @@ class ChatBackgroundPage extends StatefulWidget {
   State<ChatBackgroundPage> createState() => _ChatBackgroundPageState();
 }
 
-class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
+class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTickerProviderStateMixin {
   bool _choosingImage = false;
+  late final AnimationController _previewMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewMotion = AnimationController(vsync: this, duration: const Duration(seconds: 9));
+    if (appTheme.backgroundEffects) _previewMotion.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _previewMotion.dispose();
+    super.dispose();
+  }
 
   Future<void> _chooseGalleryImage() async {
     if (_choosingImage) return;
@@ -97,32 +111,39 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (appTheme.backgroundEffects) ...[
-                    Positioned(
-                      top: -70, right: -45, width: 200, height: 200,
-                      child: IgnorePointer(child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(colors: [
-                            Theme.of(context).colorScheme.primary.withValues(alpha: .32),
-                            Theme.of(context).colorScheme.primary.withValues(alpha: .08),
-                            Colors.transparent,
-                          ]),
-                        ),
-                      )),
+                  if (appTheme.backgroundEffects)
+                    AnimatedBuilder(
+                      animation: _previewMotion,
+                      builder: (context, _) {
+                        final t = Curves.easeInOutSine.transform(_previewMotion.value);
+                        return Stack(children: [
+                          Positioned(
+                            top: -70 + t * 22, right: -45 + t * 16, width: 200, height: 200,
+                            child: IgnorePointer(child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(colors: [
+                                  Theme.of(context).colorScheme.primary.withValues(alpha: .32),
+                                  Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+                                  Colors.transparent,
+                                ]),
+                              ),
+                            )),
+                          ),
+                          Positioned(
+                            bottom: -95 + t * 18, left: -45 + t * 12, width: 220, height: 220,
+                            child: IgnorePointer(child: DecoratedBox(
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(colors: [
+                                  Color(0x4436B8FF), Color(0x1036B8FF), Colors.transparent,
+                                ]),
+                              ),
+                            )),
+                          ),
+                        ]);
+                      },
                     ),
-                    Positioned(
-                      bottom: -95, left: -45, width: 220, height: 220,
-                      child: IgnorePointer(child: DecoratedBox(
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(colors: [
-                            Color(0x4436B8FF), Color(0x1036B8FF), Colors.transparent,
-                          ]),
-                        ),
-                      )),
-                    ),
-                  ],
                   Center(
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 280),
@@ -152,6 +173,12 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
               onChanged: (value) async {
                 HapticFeedback.selectionClick();
                 await appTheme.setBackgroundEffects(value);
+                if (value) {
+                  _previewMotion.repeat(reverse: true);
+                } else {
+                  _previewMotion.stop();
+                  _previewMotion.value = 0;
+                }
                 if (mounted) setState(() {});
               },
               secondary: const Icon(Icons.auto_awesome_rounded),
