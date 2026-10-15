@@ -2754,6 +2754,24 @@ class _HomePageState extends State<HomePage> {
         callback: (_) => _scheduleHomeRefresh(),
       )
       .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_reactions',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_read_receipts',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_attachments',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'call_sessions',
@@ -6937,6 +6955,22 @@ class _ChatPageState extends State<ChatPage> {
   void _scheduleChatReload() {
     _chatReloadDebounce?.cancel();
     _chatReloadDebounce = Timer(const Duration(milliseconds: 350), () { if (mounted) unawaited(load()); });
+  }
+
+  void _scheduleChatReloadForMessageMetadata(dynamic payload) {
+    try {
+      final newer = payload.newRecord;
+      final older = payload.oldRecord;
+      final row = newer is Map && newer.isNotEmpty ? newer : older;
+      if (row is! Map) return;
+      final messageId = row['message_id']?.toString();
+      if (messageId == null || messageId.isEmpty) return;
+      if (messages.any((message) => '${message['id']}' == messageId)) {
+        _scheduleChatReload();
+      }
+    } catch (_) {
+      // Metadata updates are best-effort; a malformed payload must not break chat.
+    }
   }
 
   @override
