@@ -8010,6 +8010,25 @@ class _ChatPageState extends State<ChatPage> {
 
     Widget content;
     final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
+    if (stickerMatch != null) {
+      final art = stickerMatch.group(1) ?? '✨';
+      final caption = stickerMatch.group(2) ?? '';
+      content = Container(
+        constraints: const BoxConstraints(minWidth: 118, minHeight: 112, maxWidth: 190),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF352064), Color(0xFF7951C7), Color(0xFF1C315C)]),
+          border: Border.all(color: Colors.white.withValues(alpha: .28)),
+          boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: const Offset(0, 5))],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(art, style: const TextStyle(fontSize: 58, shadows: [Shadow(color: Color(0xAAFFFFFF), blurRadius: 12, offset: Offset(0, 2))])),
+          const SizedBox(height: 4),
+          Text(caption, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+        ]),
+      );
+    } else if (m['message_type'] == 'image') {
       content = _imageAttachment(m);
     } else if (m['message_type'] == 'video') {
       content = _videoAttachment(m);
