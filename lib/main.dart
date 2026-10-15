@@ -156,6 +156,41 @@ final appTheme = AppThemeController();
 
 final aradLanguageController = LanguageController();
 
+class AppAccessibilityController extends ChangeNotifier {
+  double textScale = 1.0;
+  bool highContrast = false;
+  String get _scope => supabase.auth.currentUser?.id ?? 'guest';
+
+  Future<void> load() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      textScale = (p.getDouble('accessibility_text_scale_$_scope') ?? 1.0).clamp(.8, 1.5);
+      highContrast = p.getBool('accessibility_high_contrast_$_scope') ?? false;
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> setTextScale(double value) async {
+    textScale = value.clamp(.8, 1.5);
+    notifyListeners();
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setDouble('accessibility_text_scale_$_scope', textScale);
+    } catch (_) {}
+  }
+
+  Future<void> setHighContrast(bool value) async {
+    highContrast = value;
+    notifyListeners();
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setBool('accessibility_high_contrast_$_scope', value);
+    } catch (_) {}
+  }
+}
+
+final appAccessibility = AppAccessibilityController();
+
 class AppStrings {
   static const supported = ['fa', 'en', 'ar', 'tr', 'fr', 'de'];
   static const names = {'fa':'فارسی','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
@@ -191,6 +226,7 @@ Future<void> main() async {
   runApp(const AradMessenger());
   unawaited(appTheme.load().catchError((_) {}));
   unawaited(aradLanguageController.load().catchError((_) {}));
+  unawaited(appAccessibility.load().catchError((_) {}));
 }
 
 class _NetworkStatusBanner extends StatefulWidget {
@@ -284,7 +320,7 @@ class AradMessenger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(animation: Listenable.merge([appTheme, aradLanguageController]), builder: (context, _) => MaterialApp(
+    return AnimatedBuilder(animation: Listenable.merge([appTheme, aradLanguageController, appAccessibility]), builder: (context, _) => MaterialApp(
       locale: aradLanguageController.locale,
       supportedLocales: AppStrings.supported.map((x) => Locale(x)),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -319,7 +355,28 @@ class AradMessenger extends StatelessWidget {
                 ),
                 Directionality(
                   textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
-                  child: child ?? const SizedBox.shrink(),
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.linear(appAccessibility.textScale),
+                    ),
+                    child: appAccessibility.highContrast
+                        ? Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme.copyWith(
+                                primary: dark ? const Color(0xFFD6C4FF) : const Color(0xFF4C239D),
+                                onSurface: dark ? Colors.white : const Color(0xFF101018),
+                                outline: dark ? const Color(0xFFBDB4D4) : const Color(0xFF555064),
+                                outlineVariant: dark ? const Color(0xFF79718C) : const Color(0xFF777185),
+                              ),
+                              dividerTheme: DividerThemeData(
+                                color: dark ? const Color(0xFF79718C) : const Color(0xFF777185),
+                                thickness: 1.2,
+                              ),
+                            ),
+                            child: child ?? const SizedBox.shrink(),
+                          )
+                        : child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ],
             ),
@@ -4368,11 +4425,91 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
   );
 }
 
-class AccessibilityPage extends StatefulWidget {const AccessibilityPage({super.key});@override State<AccessibilityPage> createState()=>_AccessibilityPageState();}
-class _AccessibilityPageState extends State<AccessibilityPage>{double size=1;bool contrast=false;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(16),children:[
- Card(child:ListTile(title:const Text('اندازه متن'),subtitle:Slider(value:size,min:.8,max:1.5,divisions:7,onChanged:(v)=>setState(()=>size=v)))),
- Card(child:SwitchListTile(value:contrast,onChanged:(v)=>setState(()=>contrast=v),title:const Text('کنتراست بالا'))),
-]));}
+class AccessibilityPage extends StatefulWidget {
+  const AccessibilityPage({super.key});
+  @override State<AccessibilityPage> createState() => _AccessibilityPageState();
+}
+class _AccessibilityPageState extends State<AccessibilityPage> {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final scale = appAccessibility.textScale;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('دسترسی‌پذیری'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await appAccessibility.setTextScale(1);
+              await appAccessibility.setHighContrast(false);
+              if (mounted) showMsg(context, 'تنظیمات خوانایی به حالت پیش‌فرض برگشت.');
+            },
+            child: const Text('بازنشانی'),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Icon(Icons.text_fields_rounded, color: scheme.primary),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('اندازه متن در کل برنامه', style: TextStyle(fontWeight: FontWeight.w800))),
+                    Text('${(scale * 100).round()}%', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w900)),
+                  ]),
+                  Slider(
+                    value: scale,
+                    min: .8,
+                    max: 1.5,
+                    divisions: 7,
+                    label: '${(scale * 100).round()}%',
+                    onChanged: (v) => appAccessibility.setTextScale(v),
+                  ),
+                  const Text('این اندازه در صفحه‌ها و گفتگوها اعمال می‌شود و پس از بستن برنامه هم می‌ماند.',
+                    style: TextStyle(fontSize: 12)),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text('نمونه متن پیام • سلام، حالت چطوره؟',
+                      style: TextStyle(fontSize: 14 * scale, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: SwitchListTile(
+              value: appAccessibility.highContrast,
+              onChanged: appAccessibility.setHighContrast,
+              secondary: Icon(Icons.contrast_rounded, color: scheme.primary),
+              title: const Text('کنتراست بالا', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: const Text('مرزها و متن‌ها واضح‌تر می‌شوند؛ این تنظیم روی کل برنامه اثر دارد.'),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.touch_app_rounded, color: scheme.primary),
+              title: const Text('کنترل آسان‌تر'),
+              subtitle: const Text('دکمه‌های اصلی با فاصله و بازخورد لمسی طراحی شده‌اند. برای تغییر ظاهر و پس‌زمینه از کنترل سریع تنظیمات استفاده کنید.'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class PermissionScreensPage extends StatelessWidget {const PermissionScreensPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌های برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
  const Card(child:ListTile(leading:Icon(Icons.contacts_rounded),title:Text('مخاطبین'),subtitle:Text('برای پیدا کردن دوستان لازم است.'))),
