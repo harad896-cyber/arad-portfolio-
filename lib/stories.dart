@@ -595,20 +595,63 @@ class StoryVideo extends StatefulWidget {
 
 class _StoryVideoState extends State<StoryVideo> {
   VideoPlayerController? _controller;
+  bool _failed = false;
+  bool _loading = true;
+
   @override
-  void initState() { super.initState(); _init(); }
-  Future<void> _init() async {
-    final c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    _controller = c;
-    await c.initialize(); await c.setLooping(true); await c.play();
-    if (mounted) setState(() {});
+  void initState() {
+    super.initState();
+    unawaited(_init());
   }
+
+  Future<void> _init() async {
+    if (!mounted) return;
+    setState(() { _loading = true; _failed = false; });
+    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller = controller;
+    try {
+      await controller.initialize().timeout(const Duration(seconds: 20));
+      await controller.setLooping(true);
+      await controller.play();
+      if (mounted && identical(_controller, controller)) {
+        setState(() { _loading = false; _failed = false; });
+      }
+    } catch (_) {
+      try { await controller.dispose(); } catch (_) {}
+      if (identical(_controller, controller)) _controller = null;
+      if (mounted) setState(() { _loading = false; _failed = true; });
+    }
+  }
+
   @override
-  void dispose() { _controller?.dispose(); super.dispose(); }
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = _controller;
-    if (c == null || !c.value.isInitialized) return const Center(child: CircularProgressIndicator());
+    if (_loading) return const Center(child: CircularProgressIndicator(color: Colors.white));
+    if (_failed || c == null || !c.value.isInitialized) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.videocam_off_rounded, color: Colors.white70, size: 48),
+            const SizedBox(height: 8),
+            const Text('پخش ویدئو ناموفق بود', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _init,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('تلاش دوباره'),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+            ),
+          ],
+        ),
+      );
+    }
     return Center(child: AspectRatio(aspectRatio: c.value.aspectRatio, child: VideoPlayer(c)));
   }
 }
