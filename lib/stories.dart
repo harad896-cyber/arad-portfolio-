@@ -163,61 +163,73 @@ class _StoriesPageState extends State<StoriesPage> {
       .subscribe();
   }
 
+  int _loadGeneration = 0;
+
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
+    final previousStoryId = _stories.isNotEmpty && _index < _stories.length
+        ? _stories[_index]['id']?.toString()
+        : null;
     try {
-      var query = _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,created_at,expires_at')
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']);
-      final rows = await query.order('created_at', ascending: true);
+      final rows = await _storiesSupabase
+          .from('stories')
+          .select('id,user_id,media_path,media_type,caption,created_at,expires_at')
+          .gt('expires_at', DateTime.now().toUtc().toIso8601String())
+          .inFilter('media_type', ['image', 'video'])
+          .order('created_at', ascending: true)
+          .limit(80);
       final stories = List<Map<String, dynamic>>.from(rows);
-      final urls = <String, String>{};
+      if (!mounted || generation != _loadGeneration) return;
+
+      if (stories.isEmpty) {
+        setState(() {
+          _stories = [];
+          _urls = {};
+          _index = 0;
+          _loading = false;
+          _likedIds.clear();
+          _likeCounts.clear();
+          _commentCounts.clear();
+          _viewCounts.clear();
+        });
+        _timer?.cancel();
+        return;
+      }
+
       final ids = stories.map((s) => s['id'].toString()).toList();
       final uid = _storiesSupabase.auth.currentUser?.id;
-      _likedIds.clear(); _likeCounts.clear(); _commentCounts.clear(); _viewCounts.clear();
-      if (ids.isNotEmpty) {
-        // Load independent engagement counters together; serial queries made
-        // the story viewer stay black while waiting for each response.
-        final analytics = await Future.wait<dynamic>([
-          _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids)
-              .then<dynamic>((v) => v).catchError((_) => <Map<String,dynamic>>[]),
-          _storiesSupabase.from('story_comments').select('story_id').inFilter('story_id', ids)
-              .then<dynamic>((v) => v).catchError((_) => <Map<String,dynamic>>[]),
-          _storiesSupabase.from('story_views').select('story_id,viewer_id').inFilter('story_id', ids)
-              .then<dynamic>((v) => v).catchError((_) => <Map<String,dynamic>>[]),
-        ]);
-        for (final row in List<Map<String,dynamic>>.from(analytics[0] as List)) {
-          final id = row['story_id'].toString();
-          _likeCounts[id] = (_likeCounts[id] ?? 0) + 1;
-          if (row['user_id']?.toString() == uid) _likedIds.add(id);
-        }
-        for (final row in List<Map<String,dynamic>>.from(analytics[1] as List)) {
-          final id = row['story_id'].toString();
-          _commentCounts[id] = (_commentCounts[id] ?? 0) + 1;
-        }
-        for (final row in List<Map<String,dynamic>>.from(analytics[2] as List)) {
-          final id = row['story_id'].toString();
-          _viewCounts[id] = (_viewCounts[id] ?? 0) + 1;
-        }
-      }
-      // Sign media URLs concurrently so the viewer doesn't wait for one request
-      // per story before it can display the first frame.
+
+      // Sign media URLs immediately; engagement counters load in the background
+      // so slow likes/comments queries cannot leave the story viewer blank.
       final signedUrls = await Future.wait<MapEntry<String, String>?>(stories.map((s) async {
         try {
-          final signed = await _storiesSupabase.storage.from('stories')
+          final signed = await _storiesSupabase.storage
+              .from('stories')
               .createSignedUrl(s['media_path'].toString(), 3600);
           return MapEntry(s['id'].toString(), signed);
         } catch (_) {
           return null;
         }
       }));
+      if (!mounted || generation != _loadGeneration) return;
+
+      final urls = <String, String>{};
       for (final entry in signedUrls) {
         if (entry != null) urls[entry.key] = entry.value;
       }
+
       var nextIndex = 0;
-      if (widget.initialStoryId != null) {
-        final found = stories.indexWhere((s) => s['id'].toString() == widget.initialStoryId);
-        if (found >= 0) nextIndex = found;
-      } else if (widget.initialUserId != null) {
-        // Stories are sorted oldest-first in the viewer, so open the user's newest one.
+      var foundSelection = false;
+      for (final candidate in [previousStoryId, widget.initialStoryId]) {
+        if (candidate == null || candidate.isEmpty) continue;
+        final found = stories.indexWhere((s) => s['id'].toString() == candidate);
+        if (found >= 0) {
+          nextIndex = found;
+          foundSelection = true;
+          break;
+        }
+      }
+      if (!foundSelection && widget.initialUserId != null) {
         for (var i = stories.length - 1; i >= 0; i--) {
           if (stories[i]['user_id']?.toString() == widget.initialUserId) {
             nextIndex = i;
@@ -225,8 +237,68 @@ class _StoriesPageState extends State<StoriesPage> {
           }
         }
       }
-      if (mounted) { setState(() { _stories = stories; _urls = urls; _index = nextIndex.clamp(0, stories.isEmpty ? 0 : stories.length - 1).toInt(); _loading = false; }); _startTimer(); }
-    } catch (_) { if (mounted) setState(() => _loading = false); }
+      final selectedId = stories[nextIndex]['id']?.toString();
+      setState(() {
+        _stories = stories;
+        _urls = urls;
+        _index = nextIndex;
+        _loading = false;
+      });
+      if (selectedId != previousStoryId || _timer == null) _startTimer();
+      unawaited(_loadEngagement(ids, uid, generation));
+    } catch (_) {
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _loadEngagement(List<String> ids, String? uid, int generation) async {
+    if (ids.isEmpty) return;
+    try {
+      final analytics = await Future.wait<dynamic>([
+        _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids)
+            .then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
+        _storiesSupabase.from('story_comments').select('story_id').inFilter('story_id', ids)
+            .then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
+        _storiesSupabase.from('story_views').select('story_id,viewer_id').inFilter('story_id', ids)
+            .then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
+      ]);
+      final liked = <String>{};
+      final likes = <String, int>{};
+      final comments = <String, int>{};
+      final views = <String, int>{};
+      for (final row in List<Map<String, dynamic>>.from(analytics[0] as List)) {
+        final id = row['story_id'].toString();
+        likes[id] = (likes[id] ?? 0) + 1;
+        if (row['user_id']?.toString() == uid) liked.add(id);
+      }
+      for (final row in List<Map<String, dynamic>>.from(analytics[1] as List)) {
+        final id = row['story_id'].toString();
+        comments[id] = (comments[id] ?? 0) + 1;
+      }
+      for (final row in List<Map<String, dynamic>>.from(analytics[2] as List)) {
+        final id = row['story_id'].toString();
+        views[id] = (views[id] ?? 0) + 1;
+      }
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _likedIds
+          ..clear()
+          ..addAll(liked);
+        _likeCounts
+          ..clear()
+          ..addAll(likes);
+        _commentCounts
+          ..clear()
+          ..addAll(comments);
+        _viewCounts
+          ..clear()
+          ..addAll(views);
+      });
+    } catch (_) {
+      // Story media stays usable even if optional engagement tables are unavailable.
+    }
   }
 
   void _startTimer() {
