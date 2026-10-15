@@ -4249,9 +4249,19 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final selected=<String>{};
     // Keep one request for the lifetime of the dialog; typing/selecting must not
     // trigger a new profiles query on every StatefulBuilder rebuild.
-    final peopleFuture = supabase.from('profiles').select('id,display_name,username,avatar_url')
-        .neq('id', uid).limit(150)
-        .then<List<Map<String,dynamic>>>((v) => List<Map<String,dynamic>>.from(v as List));
+    final peopleFuture = supabase.from('contacts').select('contact_id')
+        .eq('user_id', uid)
+        .then<List<String>>((rows) => (rows as List)
+            .map((row) => row['contact_id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty && !existing.contains(id) && id != uid)
+            .toList())
+        .then<List<Map<String,dynamic>>>((ids) async {
+          if (ids.isEmpty) return <Map<String,dynamic>>[];
+          final rows = await supabase.from('profiles')
+              .select('id,display_name,username,avatar_url')
+              .inFilter('id', ids).limit(150);
+          return List<Map<String,dynamic>>.from(rows as List);
+        });
     final ids=await showDialog<List<String>>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
       title:const Text('دعوت اعضا'),
       content:SizedBox(width:420,height:420,child:Column(children:[
@@ -4262,7 +4272,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
           if(snap.hasError)return const Center(child:Text('فهرست کاربران بارگذاری نشد'));
           final q=query.text.trim().toLowerCase();
           final people=(snap.data??[]).where((p)=>!existing.contains(p['id'].toString()) && ('${p['display_name']??''} ${p['username']??''}').toLowerCase().contains(q)).toList();
-          if(people.isEmpty)return const Center(child:Text('کاربر جدیدی پیدا نشد'));
+          if(people.isEmpty)return Center(child:Text(q.isEmpty ? 'مخاطب جدیدی در فهرست مخاطبان شما نیست.' : 'مخاطبی با این نام پیدا نشد.'));
           return ListView.builder(itemCount:people.length,itemBuilder:(ctx,i){final p=people[i];final id=p['id'].toString();return CheckboxListTile(value:selected.contains(id),onChanged:(v)=>setDialog(()=>v==true?selected.add(id):selected.remove(id)),secondary:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'':'@${p['username']}'));});
         })),
       ])),
