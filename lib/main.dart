@@ -4211,8 +4211,12 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Future<void> _load() async {
     try {
       final uid = supabase.auth.currentUser!.id;
-      final c = await supabase.from('conversations').select().eq('id', widget.conversationId).single();
-      final rows = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId));
+      final groupRows = await Future.wait<dynamic>([
+        supabase.from('conversations').select().eq('id', widget.conversationId).single(),
+        supabase.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId),
+      ]);
+      final c = Map<String,dynamic>.from(groupRows[0] as Map);
+      final rows = List<Map<String,dynamic>>.from(groupRows[1] as List);
       final ids = rows.map((e) => e['user_id'].toString()).toList();
       final profiles = ids.isEmpty ? <Map<String,dynamic>>[] : List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online').inFilter('id', ids));
       final byId = {for(final p in profiles) p['id'].toString():p};
@@ -4278,6 +4282,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       ])),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:selected.isEmpty?null:()=>Navigator.pop(ctx,selected.toList()),child:Text('دعوت (${selected.length})'))],
     )));
+    query.dispose();
     if(ids==null || ids.isEmpty)return;
     try {
       // One bulk insert avoids a network round-trip for every selected contact.
