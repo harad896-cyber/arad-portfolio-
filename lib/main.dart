@@ -5163,13 +5163,6 @@ class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @
  Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:const Text('پیام‌های خودتخریب‌شونده'))),
 ]));}
 
-/// Compatibility entry point: keep one canonical About screen and one version display.
-class AboutPage extends StatelessWidget {
-  const AboutPage({super.key});
-  @override
-  Widget build(BuildContext context) => const AboutAppPage();
-}
-
 class CallsPage extends StatefulWidget {
   const CallsPage({super.key});
   @override State<CallsPage> createState() => _CallsPageState();
