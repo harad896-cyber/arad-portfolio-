@@ -1,5 +1,8 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
+
+/// Supplied by the build workflows from pubspec.yaml so release UI and APK share one version source.
+const String kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -2154,7 +2157,7 @@ class AboutAppPage extends StatelessWidget {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('درباره برنامه')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه 1.0.1+17'))),
+      const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه $kAppVersion'))),
       const Card(child:ListTile(title:Text('معماری'),subtitle:Text('Flutter + Supabase + GitHub Actions'))),
       const Card(child:ListTile(title:Text('اصل محصول'),subtitle:Text('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.'))),
     ]),
@@ -5161,7 +5164,7 @@ class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @
 ]));}
 
 class AboutPage extends StatelessWidget { const AboutPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('درباره برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
- const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه حرفه‌ای پیام‌رسان'))),
+ const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه $kAppVersion'))),
  const Card(child:ListTile(title:Text('حریم خصوصی و قوانین'))),const Card(child:ListTile(title:Text('تماس با پشتیبانی'))),const Card(child:ListTile(title:Text('امتیاز به برنامه'))),
 ]));}
 
