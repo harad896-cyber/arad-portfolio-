@@ -5619,7 +5619,23 @@ class _AmbientChatGlowState extends State<_AmbientChatGlow> with SingleTickerPro
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 12),
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.enabled) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AmbientChatGlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.enabled && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.enabled && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
 
   @override
   void dispose() {
