@@ -3083,6 +3083,8 @@ class _HomePageState extends State<HomePage> {
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
   final Set<String> _shownMessageNotificationIds = <String>{};
+  OverlayEntry? _messageNotificationEntry;
+  Timer? _messageNotificationTimer;
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _inviteLinkSubscription;
   final Map<String, DateTime> _recentInviteCodes = <String, DateTime>{};
@@ -3453,6 +3455,106 @@ class _HomePageState extends State<HomePage> {
       .subscribe();
   }
 
+  void _dismissFloatingMessageNotification() {
+    _messageNotificationTimer?.cancel();
+    _messageNotificationTimer = null;
+    _messageNotificationEntry?.remove();
+    _messageNotificationEntry = null;
+  }
+
+  void _showFloatingMessageNotification({
+    required String title,
+    required String preview,
+    required VoidCallback onOpen,
+  }) {
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    _dismissFloatingMessageNotification();
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late final OverlayEntry entry;
+    entry = OverlayEntry(builder: (overlayContext) {
+      final scheme = Theme.of(overlayContext).colorScheme;
+      return Positioned(
+        top: MediaQuery.of(overlayContext).padding.top + 8,
+        left: 12,
+        right: 12,
+        child: SafeArea(
+          bottom: false,
+          child: TweenAnimationBuilder<Offset>(
+            tween: Tween(begin: const Offset(0, -1.15), end: Offset.zero),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      scheme.surface.withValues(alpha: .97),
+                      Color.alphaBlend(scheme.primary.withValues(alpha: .09), scheme.surface),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: scheme.primary.withValues(alpha: .30)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: .14), blurRadius: 24, offset: const Offset(0, 8)),
+                    BoxShadow(color: scheme.primary.withValues(alpha: .10), blurRadius: 18),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: InkWell(
+                      onTap: () {
+                        _dismissFloatingMessageNotification();
+                        onOpen();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                        child: Row(children: [
+                          Container(
+                            width: 42, height: 42,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [scheme.primary, Color.lerp(scheme.primary, const Color(0xFF45B8FF), .45)!]),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(Icons.notifications_active_rounded, color: scheme.onPrimary, size: 22),
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                              const SizedBox(height: 3),
+                              Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                            ],
+                          )),
+                          IconButton(
+                            tooltip: 'بستن اعلان',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: _dismissFloatingMessageNotification,
+                            icon: Icon(Icons.close_rounded, size: 19, color: scheme.onSurfaceVariant),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            builder: (context, offset, child) => Transform.translate(offset: Offset(0, offset.dy * 12), child: child),
+          ),
+        ),
+      );
+    });
+    _messageNotificationEntry = entry;
+    overlay.insert(entry);
+    _messageNotificationTimer = Timer(const Duration(seconds: 5), _dismissFloatingMessageNotification);
+  }
+
   Future<void> _handleIncomingMessage(Map<String, dynamic> row) async {
     final uid = supabase.auth.currentUser?.id;
     final senderId = row['sender_id']?.toString() ?? '';
@@ -3500,19 +3602,14 @@ class _HomePageState extends State<HomePage> {
       _ => body.isEmpty ? 'پیام جدید دریافت شد' : body,
     };
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text('$title: $preview', maxLines: 2, overflow: TextOverflow.ellipsis),
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'باز کردن',
-          onPressed: () {
-            if (!mounted) return;
-            Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title)));
-          },
-        ),
-      ));
+    _showFloatingMessageNotification(
+      title: title,
+      preview: preview,
+      onOpen: () {
+        if (!mounted) return;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title)));
+      },
+    );
   }
 
   Future<void> _handleIncomingCall(Map<String, dynamic> row) async {
@@ -3584,6 +3681,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _homeRefreshTimer?.cancel();
+    _messageNotificationTimer?.cancel();
+    _messageNotificationEntry?.remove();
+    _messageNotificationEntry = null;
     _inviteLinkSubscription?.cancel();
     if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
     if (_callChannel != null) supabase.removeChannel(_callChannel!);
@@ -5467,6 +5567,79 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           ],
         ]);
       },
+    );
+  }
+}
+
+class _AmbientChatGlow extends StatefulWidget {
+  final bool enabled;
+  final Color primary;
+  const _AmbientChatGlow({required this.enabled, required this.primary});
+
+  @override
+  State<_AmbientChatGlow> createState() => _AmbientChatGlowState();
+}
+
+class _AmbientChatGlowState extends State<_AmbientChatGlow> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 12),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return const SizedBox.shrink();
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final t = Curves.easeInOutSine.transform(_controller.value);
+              return Stack(children: [
+                Positioned(
+                  top: -92 + (t * 38),
+                  right: -76 + (t * 28),
+                  width: 285,
+                  height: 285,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [
+                        widget.primary.withValues(alpha: .17),
+                        widget.primary.withValues(alpha: .055),
+                        Colors.transparent,
+                      ]),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 54 + (t * 34),
+                  left: -96 + (t * 22),
+                  width: 300,
+                  height: 300,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [
+                        const Color(0xFF36B8FF).withValues(alpha: .105),
+                        const Color(0xFF36B8FF).withValues(alpha: .025),
+                        Colors.transparent,
+                      ]),
+                    ),
+                  ),
+                ),
+              ]);
+            },
+          ),
+        ),
+      ),
     );
   }
 }
@@ -8286,24 +8459,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (appTheme.backgroundEffects) ...[
-              Positioned(
-                top: -100, right: -70, width: 270, height: 270,
-                child: IgnorePointer(child: DecoratedBox(
-                  decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
-                    colors: [scheme.primary.withValues(alpha: .15), scheme.primary.withValues(alpha: .045), Colors.transparent],
-                  )),
-                )),
-              ),
-              Positioned(
-                bottom: 65, left: -95, width: 290, height: 290,
-                child: IgnorePointer(child: DecoratedBox(
-                  decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
-                    colors: [const Color(0xFF36B8FF).withValues(alpha: .09), Colors.transparent],
-                  )),
-                )),
-              ),
-            ],
+            _AmbientChatGlow(enabled: appTheme.backgroundEffects, primary: scheme.primary),
             Column(
           children: [
             Expanded(
