@@ -217,8 +217,13 @@ class _StoriesPageState extends State<StoriesPage> {
         final found = stories.indexWhere((s) => s['id'].toString() == widget.initialStoryId);
         if (found >= 0) nextIndex = found;
       } else if (widget.initialUserId != null) {
-        final found = stories.indexWhere((s) => s['user_id']?.toString() == widget.initialUserId);
-        if (found >= 0) nextIndex = found;
+        // Stories are sorted oldest-first in the viewer, so open the user's newest one.
+        for (var i = stories.length - 1; i >= 0; i--) {
+          if (stories[i]['user_id']?.toString() == widget.initialUserId) {
+            nextIndex = i;
+            break;
+          }
+        }
       }
       if (mounted) { setState(() { _stories = stories; _urls = urls; _index = nextIndex.clamp(0, stories.isEmpty ? 0 : stories.length - 1).toInt(); _loading = false; }); _startTimer(); }
     } catch (_) { if (mounted) setState(() => _loading = false); }
@@ -556,7 +561,13 @@ class _StoriesPageState extends State<StoriesPage> {
         await _load();
         if (mounted && _stories.isNotEmpty) {
           final uid = _storiesSupabase.auth.currentUser?.id;
-          final mineIndex = _stories.indexWhere((s) => s['user_id']?.toString() == uid);
+          var mineIndex = -1;
+          for (var i = _stories.length - 1; i >= 0; i--) {
+            if (_stories[i]['user_id']?.toString() == uid) {
+              mineIndex = i;
+              break;
+            }
+          }
           if (mineIndex >= 0) setState(() => _index = mineIndex);
           _startTimer();
         }
