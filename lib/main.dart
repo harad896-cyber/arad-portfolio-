@@ -5471,15 +5471,22 @@ class _ChatPageState extends State<ChatPage> {
         timelineItems = timelineItems.where((m) => '${m['id']}' != tempId).toList();
         if (text.text.trim().isEmpty) text.text = value;
       });
-      _composerFocus.requestFocus();
+      if (keepKeyboardOpen) _composerFocus.requestFocus();
       showMsg(context, 'ارسال نشد: ${_friendlyError(e.toString())}');
     } finally {
       if (mounted) setState(() => sending = false);
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          _composerFocus.requestFocus();
-          _scrollToLatestForKeyboard();
+          if (keepKeyboardOpen) {
+            _composerFocus.requestFocus();
+            _scrollToLatestForKeyboard();
+          } else {
+            // Quick replies must remain keyboard-free even after the network send completes.
+            _composerFocus.unfocus();
+            FocusManager.instance.primaryFocus?.unfocus();
+            _scrollToLatestForKeyboard();
+          }
         });
       }
     }
