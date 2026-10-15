@@ -85,6 +85,7 @@ class AppThemeController extends ChangeNotifier {
   int seed = 0xFF7C5CFF;
   int backgroundSeed = 0xFF11131A;
   String? backgroundImageBase64;
+  bool backgroundEffects = true;
   static const int _themeRevision = 4;
 
   String get _scope {
@@ -112,6 +113,7 @@ class AppThemeController extends ChangeNotifier {
       backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF11131A;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
+    backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
     notifyListeners();
   }
   Future<void> setDark(bool value) async {
@@ -135,6 +137,12 @@ class AppThemeController extends ChangeNotifier {
     backgroundSeed = value;
     final p = await SharedPreferences.getInstance();
     await p.setInt('chat_background_seed_$_scope', value);
+    notifyListeners();
+  }
+  Future<void> setBackgroundEffects(bool value) async {
+    backgroundEffects = value;
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('chat_background_effects_$_scope', value);
     notifyListeners();
   }
   Future<void> setSeed(int value) async {
@@ -7608,7 +7616,28 @@ class _ChatPageState extends State<ChatPage> {
             ],
           ),
         ),
-        child: Column(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (appTheme.backgroundEffects) ...[
+              Positioned(
+                top: -100, right: -70, width: 270, height: 270,
+                child: IgnorePointer(child: DecoratedBox(
+                  decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
+                    colors: [scheme.primary.withValues(alpha: .15), scheme.primary.withValues(alpha: .045), Colors.transparent],
+                  )),
+                )),
+              ),
+              Positioned(
+                bottom: 65, left: -95, width: 290, height: 290,
+                child: IgnorePointer(child: DecoratedBox(
+                  decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
+                    colors: [const Color(0xFF36B8FF).withValues(alpha: .09), Colors.transparent],
+                  )),
+                )),
+              ),
+            ],
+            Column(
           children: [
             Expanded(
               child: GestureDetector(
@@ -7876,6 +7905,8 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
+            ),
+          ],
             ),
           ],
         ),
