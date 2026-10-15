@@ -2024,8 +2024,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             backgroundColor: scheme.primaryContainer,
                             child: Icon(Icons.devices_rounded, color: scheme.primary),
                           ),
-                          title: Text('$activeCount دستگاه فعال', style: const TextStyle(fontWeight: FontWeight.w900)),
-                          subtitle: const Text('فعالیت دستگاه‌ها هر ۳۰ ثانیه بررسی می‌شود. دستگاه خارج‌شده هنگام اتصال دوباره اجازه ورود به نشست قبلی را ندارد.'),
+                          title: Text('$activeCount دستگاه فعال برای این حساب', style: const TextStyle(fontWeight: FontWeight.w900)),
+                          subtitle: const Text('این فهرست فقط دستگاه‌های همین حساب را نشان می‌دهد؛ حساب‌های دیگر جدا هستند. فعالیت هر ۳۰ ثانیه بررسی می‌شود و دستگاه خارج‌شده نمی‌تواند نشست قبلی را ادامه دهد.'),
                         ),
                       ),
                       if (devices.where((row) => row['revoked_at'] == null).any((row) => '${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
@@ -2199,7 +2199,8 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
       :ListView(padding:const EdgeInsets.all(16),children:[
         Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.verified_user_rounded)),title:const Text('حساب فعلی'),subtitle:Text(current),trailing:const Icon(Icons.check_circle_rounded))),
         const SizedBox(height:8),
-        if(accounts.isEmpty) const Padding(padding:EdgeInsets.symmetric(vertical:20),child:Text('حساب دیگری ذخیره نشده است. برای افزودن حساب جدید، دکمه زیر را بزنید.',textAlign:TextAlign.center)),
+        const Card(child: Padding(padding: EdgeInsets.all(14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.privacy_tip_outlined), SizedBox(width: 10), Expanded(child: Text('حساب‌ها فقط در فهرست همین دستگاه ذخیره می‌شوند. هیچ حساب دیگری این فهرست را از دستگاه خودش نمی‌بیند؛ پیام‌ها و دستگاه‌های فعال هر حساب جداگانه‌اند.'))]))),
+        if(accounts.isEmpty) const Padding(padding:EdgeInsets.symmetric(vertical:20),child:Text('حساب دیگری برای تغییر سریع روی این دستگاه ذخیره نشده است. برای افزودن حساب جدید، دکمه زیر را بزنید.',textAlign:TextAlign.center)),
         ...accounts.map((email)=>Card(child:ListTile(
           leading:const CircleAvatar(child:Icon(Icons.person_outline_rounded)),title:Text(email),subtitle:const Text('حساب ذخیره‌شده'),
           trailing:PopupMenuButton<String>(onSelected:(v){if(v=='switch')_switch(email);if(v=='forget')_forget(email);},itemBuilder:(_)=>const [
