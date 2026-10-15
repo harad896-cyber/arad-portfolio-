@@ -1,6 +1,7 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
@@ -1746,43 +1747,348 @@ class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
   @override Widget build(BuildContext context)=>DefaultTabController(length:3,child:Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی'),bottom:const TabBar(tabs:[Tab(text:'استیکرها'),Tab(text:'GIF'),Tab(text:'ایموجی')])),body:TabBarView(children:[ListView(children:const[ListTile(leading:Icon(Icons.stars_rounded),title:Text('پک‌های استیکر من')),ListTile(leading:Icon(Icons.add_rounded),title:Text('افزودن پک'))]),Center(child:TextField(decoration:InputDecoration(hintText:'جستجوی GIF',prefixIcon:Icon(Icons.search_rounded)))),GridView.count(crossAxisCount:6,children:List.generate(24,(i)=>Center(child:Text(['😀','❤️','👍','😂','🔥','🎉'][i%6],style:const TextStyle(fontSize:25)))))])));
 }
-class SecurityCenterPage extends StatelessWidget {
-  const SecurityCenterPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('امنیت پیشرفته')),
-    body:ListView(padding:const EdgeInsets.all(16),children:[
-      const AppEmptyState(
-        icon:Icons.verified_user_outlined,
-        title:'قابلیت‌های امنیتی پیشرفته',
-        subtitle:'تأیید دومرحله‌ای، مدیریت دستگاه‌ها و حذف خودکار پیام‌ها فقط پس از اتصال به سرویس واقعی فعال خواهند شد.',
-      ),
-      Card(child:ListTile(
-        leading:const Icon(Icons.logout_rounded),
-        title:const Text('خروج از همه نشست‌ها'),
-        subtitle:const Text('نشست‌های فعال حساب را از سمت سرویس پایان می‌دهد.'),
-        onTap:() async {
-          final ok=await showDialog<bool>(
-            context:context,
-            builder:(ctx)=>AlertDialog(
-              title:const Text('خروج از همه دستگاه‌ها؟'),
-              content:const Text('این عملیات نشست‌های فعال حساب را پایان می‌دهد.'),
-              actions:[
-                TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('لغو')),
-                FilledButton(
-                  style:FilledButton.styleFrom(backgroundColor:Theme.of(ctx).colorScheme.error),
-                  onPressed:()=>Navigator.pop(ctx,true),
-                  child:const Text('خروج'),
-                ),
-              ],
-            ),
-          ) ?? false;
-          if(!ok || !context.mounted) return;
-          await supabase.auth.signOut(scope:SignOutScope.global);
-        },
-      )),
-    ]),
-  );
+const _deviceSessionIdKey = 'arad_device_session_id_v1';
+
+Future<String> _getDeviceSessionId() async {
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getString(_deviceSessionIdKey);
+  if (saved != null && saved.length >= 32) return saved;
+  final random = math.Random.secure();
+  final id = List<int>.generate(32, (_) => random.nextInt(256))
+      .map((value) => value.toRadixString(16).padLeft(2, '0'))
+      .join();
+  await prefs.setString(_deviceSessionIdKey, id);
+  return id;
 }
+
+String _deviceDisplayName() {
+  if (kIsWeb) return 'مرورگر وب';
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.android => 'گوشی اندروید',
+    TargetPlatform.iOS => 'آیفون یا آیپد',
+    TargetPlatform.windows => 'رایانه ویندوز',
+    TargetPlatform.macOS => 'رایانه مک',
+    TargetPlatform.linux => 'رایانه لینوکس',
+    TargetPlatform.fuchsia => 'دستگاه',
+  };
+}
+
+class DeviceSessionGate extends StatefulWidget {
+  final Widget child;
+  const DeviceSessionGate({super.key, required this.child});
+  @override
+  State<DeviceSessionGate> createState() => _DeviceSessionGateState();
+}
+
+class _DeviceSessionGateState extends State<DeviceSessionGate>
+    with WidgetsBindingObserver {
+  Timer? _heartbeatTimer;
+  String? _deviceId;
+  bool _busy = false;
+  bool _signedOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_heartbeat());
+    _heartbeatTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => unawaited(_heartbeat()),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_heartbeat());
+  }
+
+  Future<void> _heartbeat() async {
+    if (_busy || _signedOut || supabase.auth.currentUser == null) return;
+    _busy = true;
+    try {
+      _deviceId ??= await _getDeviceSessionId();
+      final active = await supabase.rpc(
+        'register_device_session',
+        params: {
+          'p_device_id': _deviceId,
+          'p_device_name': _deviceDisplayName(),
+        },
+      ).timeout(const Duration(seconds: 8));
+      if (active != true && mounted && !_signedOut) {
+        _signedOut = true;
+        await supabase.auth.signOut(scope: SignOutScope.local);
+      }
+    } catch (_) {
+      // Temporary network failure must not log a user out. Retry on the next
+      // heartbeat or when the app returns to the foreground.
+    } finally {
+      _busy = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _heartbeatTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class SecurityCenterPage extends StatefulWidget {
+  const SecurityCenterPage({super.key});
+  @override
+  State<SecurityCenterPage> createState() => _SecurityCenterPageState();
+}
+
+class _SecurityCenterPageState extends State<SecurityCenterPage> {
+  List<Map<String, dynamic>> devices = [];
+  String? currentDeviceId;
+  bool loading = true;
+  bool busy = false;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadDevices());
+  }
+
+  Future<void> _loadDevices() async {
+    if (mounted) setState(() { loading = true; error = null; });
+    try {
+      final user = supabase.auth.currentUser;
+      if (user == null) throw Exception('ابتدا وارد حساب شوید.');
+      currentDeviceId = await _getDeviceSessionId();
+      final result = await supabase
+          .from('device_sessions')
+          .select('id,device_id,device_name,created_at,last_seen_at,revoked_at')
+          .eq('user_id', user.id)
+          .order('last_seen_at', ascending: false)
+          .limit(50);
+      if (!mounted) return;
+      setState(() {
+        devices = List<Map<String, dynamic>>.from(result);
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { loading = false; error = _friendlyError(e.toString()); });
+    }
+  }
+
+  bool _isRecent(Map<String, dynamic> row) {
+    if (row['revoked_at'] != null) return false;
+    final last = DateTime.tryParse('\${row['last_seen_at'] ?? ''}')?.toLocal();
+    return last != null && DateTime.now().difference(last).inMinutes < 2;
+  }
+
+  String _lastSeen(Map<String, dynamic> row) {
+    if (row['revoked_at'] != null) return 'دسترسی این دستگاه لغو شده';
+    final last = DateTime.tryParse('\${row['last_seen_at'] ?? ''}')?.toLocal();
+    if (last == null) return 'زمان فعالیت نامشخص';
+    final difference = DateTime.now().difference(last);
+    if (difference.inSeconds < 60) return 'فعال همین لحظه';
+    if (difference.inMinutes < 60) return '\${difference.inMinutes} دقیقه پیش';
+    if (difference.inHours < 24) return '\${difference.inHours} ساعت پیش';
+    return '\${last.year}/\${last.month.toString().padLeft(2, '0')}/\${last.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<bool> _confirmRevoke({required String title, required String message}) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('لغو')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('خروج از دستگاه'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  Future<void> _revoke(String deviceId, String deviceName) async {
+    if (busy || deviceId == currentDeviceId) return;
+    final confirmed = await _confirmRevoke(
+      title: 'خروج از $deviceName؟',
+      message: 'این دستگاه از حساب خارج می‌شود. اگر آنلاین باشد، حداکثر طی حدود ۳۰ ثانیه تغییر را دریافت می‌کند.',
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => busy = true);
+    try {
+      final result = await supabase.rpc(
+        'revoke_device_session',
+        params: {'p_device_id': deviceId},
+      );
+      if (result != true) throw Exception('این دستگاه قبلاً خارج شده یا دیگر فعال نیست.');
+      if (mounted) showMsg(context, 'دسترسی دستگاه لغو شد.');
+      await _loadDevices();
+    } catch (e) {
+      if (mounted) showMsg(context, 'خروج از دستگاه انجام نشد: \${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _revokeOtherDevices() async {
+    if (busy) return;
+    final others = devices.where((row) =>
+      row['revoked_at'] == null &&
+      '\${row['device_id'] ?? ''}' != (currentDeviceId ?? '')).toList();
+    if (others.isEmpty) {
+      showMsg(context, 'دستگاه فعال دیگری برای خروج وجود ندارد.');
+      return;
+    }
+    final confirmed = await _confirmRevoke(
+      title: 'خروج از دستگاه‌های دیگر؟',
+      message: 'دسترسی \${others.length} دستگاه دیگر لغو می‌شود؛ حساب فعلی باز می‌ماند.',
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => busy = true);
+    var count = 0;
+    try {
+      for (final row in others) {
+        final id = row['device_id']?.toString() ?? '';
+        if (id.isEmpty) continue;
+        final result = await supabase.rpc(
+          'revoke_device_session',
+          params: {'p_device_id': id},
+        );
+        if (result == true) count++;
+      }
+      if (mounted) showMsg(context, 'دسترسی $count دستگاه لغو شد.');
+      await _loadDevices();
+    } catch (e) {
+      if (mounted) showMsg(context, 'بعضی دستگاه‌ها خارج نشدند: \${_friendlyError(e.toString())}');
+      await _loadDevices();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _signOutEverywhere() async {
+    final confirmed = await _confirmRevoke(
+      title: 'خروج از همه دستگاه‌ها؟',
+      message: 'نشست‌های احراز هویت حساب پایان می‌یابند و ممکن است لازم شود دوباره وارد شوید.',
+    );
+    if (!confirmed || !mounted) return;
+    await supabase.auth.signOut(scope: SignOutScope.global);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final activeCount = devices.where(_isRecent).length;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('امنیت و دستگاه‌ها'),
+        actions: [
+          IconButton(
+            tooltip: 'تازه‌سازی',
+            onPressed: loading ? null : _loadDevices,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: loading
+          ? const AppSkeletonList(count: 4)
+          : error != null
+              ? Center(child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.cloud_off_rounded, size: 44),
+                    const SizedBox(height: 12),
+                    const Text('فهرست دستگاه‌ها بارگذاری نشد'),
+                    const SizedBox(height: 8),
+                    Text(error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(onPressed: _loadDevices, icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره')),
+                  ]),
+                ))
+              : RefreshIndicator(
+                  onRefresh: _loadDevices,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+                    children: [
+                      Card(
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: scheme.primaryContainer,
+                            child: Icon(Icons.devices_rounded, color: scheme.primary),
+                          ),
+                          title: Text('$activeCount دستگاه فعال', style: const TextStyle(fontWeight: FontWeight.w900)),
+                          subtitle: const Text('فعالیت دستگاه‌ها هر ۳۰ ثانیه بررسی می‌شود. دستگاه خارج‌شده هنگام اتصال دوباره اجازه ورود به نشست قبلی را ندارد.'),
+                        ),
+                      ),
+                      if (devices.where((row) => row['revoked_at'] == null).any((row) => '\${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 8),
+                          child: FilledButton.tonalIcon(
+                            onPressed: busy ? null : _revokeOtherDevices,
+                            icon: const Icon(Icons.phonelink_erase_rounded),
+                            label: const Text('خروج از همه دستگاه‌های دیگر'),
+                          ),
+                        ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
+                        child: Text('دستگاه‌های حساب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                      ),
+                      if (devices.isEmpty)
+                        const Card(child: Padding(
+                          padding: EdgeInsets.all(18),
+                          child: Text('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.'),
+                        )),
+                      ...devices.map((row) {
+                        final id = row['device_id']?.toString() ?? '';
+                        final name = row['device_name']?.toString() ?? 'دستگاه';
+                        final current = id.isNotEmpty && id == currentDeviceId;
+                        final recent = _isRecent(row);
+                        final revoked = row['revoked_at'] != null;
+                        final color = revoked ? scheme.error : recent ? Colors.green : scheme.onSurfaceVariant;
+                        return Card(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: color.withValues(alpha: .12),
+                              child: Icon(
+                                current ? Icons.phone_android_rounded : name.contains('مرورگر') ? Icons.language_rounded : Icons.devices_other_rounded,
+                                color: color,
+                              ),
+                            ),
+                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                            subtitle: Text('\${current ? 'این دستگاه • ' : ''}\${_lastSeen(row)}'),
+                            trailing: current
+                                ? const Chip(label: Text('فعلی'))
+                                : revoked
+                                    ? const Icon(Icons.block_rounded)
+                                    : IconButton(
+                                        tooltip: 'خروج از این دستگاه',
+                                        onPressed: busy ? null : () => _revoke(id, name),
+                                        icon: const Icon(Icons.logout_rounded),
+                                      ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 20),
+                      OutlinedButton.icon(
+                        onPressed: busy ? null : _signOutEverywhere,
+                        icon: const Icon(Icons.logout_rounded),
+                        label: const Text('خروج از همه نشست‌های حساب'),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+}
+
 class GroupAdvancedPage extends StatelessWidget {
   const GroupAdvancedPage({super.key});
   @override Widget build(BuildContext context)=>Scaffold(
@@ -2047,7 +2353,7 @@ class ProfileGate extends StatelessWidget {
         if (!snapshot.hasData) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        return snapshot.data! ? const AppLockGate(child: HomePage()) : const ProfileSetupPage();
+        return snapshot.data! ? const DeviceSessionGate(child: AppLockGate(child: HomePage())) : const ProfileSetupPage();
       },
     );
   }
