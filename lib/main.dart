@@ -8009,7 +8009,7 @@ class _ChatPageState extends State<ChatPage> {
          '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
 
     Widget content;
-    final stickerMatch = RegExp(r'^\\[\\[ARAD_STICKER\\]\\](.*?)\\|(.*)
+    final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
       content = _imageAttachment(m);
     } else if (m['message_type'] == 'video') {
       content = _videoAttachment(m);
