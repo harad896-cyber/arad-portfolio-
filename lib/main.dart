@@ -3508,7 +3508,7 @@ class _HomePageState extends State<HomePage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                     child: InkWell(
                       onTap: () {
                         _dismissFloatingMessageNotification();
@@ -3705,6 +3705,7 @@ class _HomePageState extends State<HomePage> {
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
     final glass = scheme.surface.withValues(alpha: dark ? .96 : .98);
+    final filteredChats = visibleChats;
     final unreadTotal = chats.fold<int>(
       0,
       (total, chat) => total + (int.tryParse('${chat['unread_count'] ?? 0}') ?? 0),
@@ -3759,7 +3760,7 @@ class _HomePageState extends State<HomePage> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(activeFolder?['name']?.toString() ?? 'گفتگوها', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             const SizedBox(height: 2),
-            Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+            Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '${filteredChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
           Stack(
             clipBehavior: Clip.none,
@@ -3868,7 +3869,7 @@ class _HomePageState extends State<HomePage> {
       Expanded(
         child: loading
             ? ListView.builder(padding: const EdgeInsets.fromLTRB(12, 5, 12, 96), itemCount: 7, itemBuilder: (_, __) => const _ChatSkeleton())
-            : visibleChats.isEmpty
+            : filteredChats.isEmpty
                 ? Center(child: Padding(
                     padding: const EdgeInsets.all(28),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -3885,10 +3886,10 @@ class _HomePageState extends State<HomePage> {
                   ))
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(11, 5, 11, 96),
-                    itemCount: visibleChats.length,
+                    itemCount: filteredChats.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 4),
                     itemBuilder: (context, i) {
-                      final c = visibleChats[i];
+                      final c = filteredChats[i];
                       final id = c['id'].toString();
                       final type = c['type'].toString();
                       final peer = c['_peer'] as Map<String,dynamic>?;
@@ -8313,6 +8314,7 @@ class _ChatPageState extends State<ChatPage> {
       _lastKeyboardInset = keyboardInset;
       if (keyboardInset > 0 && _keepLatestVisibleOnKeyboard) _scheduleKeyboardScroll();
     }
+    final displayItems = _displayTimelineItems;
     return Scaffold(
       // The chat body manages IME space explicitly below. This prevents
       // Flutter's Scaffold resize and our keyboard animation from fighting
@@ -8323,7 +8325,7 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: scheme.surface.withValues(alpha: .62),
         flexibleSpace: ClipRect(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
                 color: scheme.surface.withValues(alpha: .20),
@@ -8552,9 +8554,9 @@ class _ChatPageState extends State<ChatPage> {
                           // the final bubble can always scroll above it.
                           padding: const EdgeInsets.fromLTRB(10, 10, 10, 68),
                           reverse: false,
-                          itemCount: _displayTimelineItems.length,
+                          itemCount: displayItems.length,
                           itemBuilder: (context, i) {
-                            final item = _displayTimelineItems[i];
+                            final item = displayItems[i];
                             final child = item['__kind'] == 'date_separator'
                                 ? _dateSeparator((item['label'] ?? '').toString())
                                 : item['__kind'] == 'system'
@@ -8563,7 +8565,7 @@ class _ChatPageState extends State<ChatPage> {
                             final messageId = item['id']?.toString();
                             final itemKey = messageId == null ? null : _messageKeys.putIfAbsent(messageId, () => GlobalKey());
                             return KeyedSubtree(
-                              key: i == _displayTimelineItems.length - 1 ? _latestMessageKey : itemKey,
+                              key: i == displayItems.length - 1 ? _latestMessageKey : itemKey,
                               child: child,
                             );
                           },
@@ -8678,7 +8680,7 @@ class _ChatPageState extends State<ChatPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
                       decoration: BoxDecoration(
