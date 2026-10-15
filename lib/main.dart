@@ -4593,6 +4593,7 @@ class _ChatPageState extends State<ChatPage> {
   final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
   bool _didJumpToTargetMessage = false;
   bool loading = true;
+  bool _isSyncing = true;
   bool sending = false;
   bool _chatNotificationsMuted = false;
   Map<String, dynamic>? replyMessage;
@@ -4947,6 +4948,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> load() async {
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     await _restoreCachedChat();
+    if (mounted) setState(() { _isSyncing = true; if (messages.isEmpty) loading = false; });
     try {
       final conversation = Map<String, dynamic>.from(await supabase
           .from('conversations').select('id,type,title,avatar_url,created_by,created_at')
@@ -5072,6 +5074,7 @@ class _ChatPageState extends State<ChatPage> {
           readReceipts = loadedReadReceipts;
           attachments = loadedAttachments;
           loading = false;
+          _isSyncing = false;
         });
         // Persist the latest server-confirmed messages for quick/offline reopening.
         await _saveCachedChat(loaded);
@@ -5088,7 +5091,7 @@ class _ChatPageState extends State<ChatPage> {
       await markRead();
     } catch (e) {
       if (mounted) {
-        setState(() => loading = false);
+        setState(() { loading = false; _isSyncing = false; });
         if (messages.isEmpty) {
           showMsg(context, _isNetworkFailure(e)
               ? 'اینترنت در دسترس نیست و هنوز نسخهٔ ذخیره‌شده‌ای از این گفتگو ندارید.'
@@ -7054,12 +7057,18 @@ class _ChatPageState extends State<ChatPage> {
                 children: [
                   Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: dark ? const Color(0xFFF8F5FF) : const Color(0xFF211B2B))),
                   Text(
-                    _chatType == 'direct'
-                        ? 'گفتگوی خصوصی'
-                        : (_chatType == 'group'
-                            ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
-                            : 'کانال'),
-                    style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+                    _isSyncing
+                        ? 'در حال اتصال…'
+                        : (_chatType == 'direct'
+                            ? 'گفتگوی خصوصی'
+                            : (_chatType == 'group'
+                                ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
+                                : 'کانال')),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _isSyncing ? scheme.primary : scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
