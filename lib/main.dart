@@ -2754,24 +2754,6 @@ class _HomePageState extends State<HomePage> {
         callback: (_) => _scheduleHomeRefresh(),
       )
       .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'message_reactions',
-        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
-      )
-      .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'message_read_receipts',
-        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
-      )
-      .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'message_attachments',
-        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
-      )
-      .onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'call_sessions',
@@ -6995,6 +6977,24 @@ class _ChatPageState extends State<ChatPage> {
         table: 'messages',
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
         callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_reactions',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_read_receipts',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_attachments',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
