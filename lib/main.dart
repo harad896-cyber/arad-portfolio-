@@ -6913,20 +6913,20 @@ class _ChatPageState extends State<ChatPage> {
         schema: 'public',
         table: 'call_sessions',
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
-        callback: (_) => load(),
+        callback: (_) => _scheduleChatReload(),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.update,
         schema: 'public',
         table: 'call_sessions',
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
-        callback: (_) => load(),
+        callback: (_) => _scheduleChatReload(),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'message_user_deletions',
-        callback: (_) => load(),
+        callback: (_) => _scheduleChatReload(),
       )
       .subscribe();  }
 
