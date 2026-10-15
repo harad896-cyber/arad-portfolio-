@@ -353,10 +353,14 @@ class _CallSessionPageState extends State<CallSessionPage> {
           _pendingRemoteCandidates.add(ice);
         }
       } else if (type == 'reject' || type == 'hangup') {
-        if (mounted && !_ending) setState(() => _status = type == 'reject' ? 'تماس رد شد' : 'تماس پایان یافت');
-        await _finishStatus(type == 'reject' ? 'rejected' : 'ended');
-        await _cleanup();
-        if (mounted) Navigator.of(context).pop();
+        if (_ending) return;
+        _ending = true;
+        if (mounted) {
+          setState(() => _status = type == 'reject' ? 'تماس رد شد' : 'تماس پایان یافت');
+          Navigator.of(context).pop();
+        }
+        unawaited(_finishStatus(type == 'reject' ? 'rejected' : 'ended'));
+        unawaited(_cleanup());
       }
     } catch (_) {
       await _failCall('خطا در برقراری ارتباط صوتی.');
@@ -489,10 +493,12 @@ class _CallSessionPageState extends State<CallSessionPage> {
   Future<void> _failCall(String message) async {
     if (_ending) return;
     _ending = true;
-    if (mounted) setState(() => _status = message);
-    await _finishStatus('failed');
-    await _cleanup();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      setState(() => _status = message);
+      Navigator.of(context).pop();
+    }
+    unawaited(_finishStatus('failed'));
+    unawaited(_cleanup());
   }
 
   Future<void> _finishStatus(String status) async {
