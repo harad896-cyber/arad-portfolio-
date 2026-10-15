@@ -1882,19 +1882,19 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   bool _isRecent(Map<String, dynamic> row) {
     if (row['revoked_at'] != null) return false;
-    final last = DateTime.tryParse('\${row['last_seen_at'] ?? ''}')?.toLocal();
+    final last = DateTime.tryParse('${row['last_seen_at'] ?? ''}')?.toLocal();
     return last != null && DateTime.now().difference(last).inMinutes < 2;
   }
 
   String _lastSeen(Map<String, dynamic> row) {
     if (row['revoked_at'] != null) return 'دسترسی این دستگاه لغو شده';
-    final last = DateTime.tryParse('\${row['last_seen_at'] ?? ''}')?.toLocal();
+    final last = DateTime.tryParse('${row['last_seen_at'] ?? ''}')?.toLocal();
     if (last == null) return 'زمان فعالیت نامشخص';
     final difference = DateTime.now().difference(last);
     if (difference.inSeconds < 60) return 'فعال همین لحظه';
-    if (difference.inMinutes < 60) return '\${difference.inMinutes} دقیقه پیش';
-    if (difference.inHours < 24) return '\${difference.inHours} ساعت پیش';
-    return '\${last.year}/\${last.month.toString().padLeft(2, '0')}/\${last.day.toString().padLeft(2, '0')}';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} دقیقه پیش';
+    if (difference.inHours < 24) return '${difference.inHours} ساعت پیش';
+    return '${last.year}/${last.month.toString().padLeft(2, '0')}/${last.day.toString().padLeft(2, '0')}';
   }
 
   Future<bool> _confirmRevoke({required String title, required String message}) async {
@@ -1932,7 +1932,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       if (mounted) showMsg(context, 'دسترسی دستگاه لغو شد.');
       await _loadDevices();
     } catch (e) {
-      if (mounted) showMsg(context, 'خروج از دستگاه انجام نشد: \${_friendlyError(e.toString())}');
+      if (mounted) showMsg(context, 'خروج از دستگاه انجام نشد: ${_friendlyError(e.toString())}');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1942,14 +1942,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     if (busy) return;
     final others = devices.where((row) =>
       row['revoked_at'] == null &&
-      '\${row['device_id'] ?? ''}' != (currentDeviceId ?? '')).toList();
+      '${row['device_id'] ?? ''}' != (currentDeviceId ?? '')).toList();
     if (others.isEmpty) {
       showMsg(context, 'دستگاه فعال دیگری برای خروج وجود ندارد.');
       return;
     }
     final confirmed = await _confirmRevoke(
       title: 'خروج از دستگاه‌های دیگر؟',
-      message: 'دسترسی \${others.length} دستگاه دیگر لغو می‌شود؛ حساب فعلی باز می‌ماند.',
+      message: 'دسترسی ${others.length} دستگاه دیگر لغو می‌شود؛ حساب فعلی باز می‌ماند.',
     );
     if (!confirmed || !mounted) return;
     setState(() => busy = true);
@@ -1967,7 +1967,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       if (mounted) showMsg(context, 'دسترسی $count دستگاه لغو شد.');
       await _loadDevices();
     } catch (e) {
-      if (mounted) showMsg(context, 'بعضی دستگاه‌ها خارج نشدند: \${_friendlyError(e.toString())}');
+      if (mounted) showMsg(context, 'بعضی دستگاه‌ها خارج نشدند: ${_friendlyError(e.toString())}');
       await _loadDevices();
     } finally {
       if (mounted) setState(() => busy = false);
@@ -2028,7 +2028,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                           subtitle: const Text('فعالیت دستگاه‌ها هر ۳۰ ثانیه بررسی می‌شود. دستگاه خارج‌شده هنگام اتصال دوباره اجازه ورود به نشست قبلی را ندارد.'),
                         ),
                       ),
-                      if (devices.where((row) => row['revoked_at'] == null).any((row) => '\${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
+                      if (devices.where((row) => row['revoked_at'] == null).any((row) => '${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
                         Padding(
                           padding: const EdgeInsets.only(top: 8, bottom: 8),
                           child: FilledButton.tonalIcon(
@@ -2063,7 +2063,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                               ),
                             ),
                             title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                            subtitle: Text('\${current ? 'این دستگاه • ' : ''}\${_lastSeen(row)}'),
+                            subtitle: Text('${current ? 'این دستگاه • ' : ''}${_lastSeen(row)}'),
                             trailing: current
                                 ? const Chip(label: Text('فعلی'))
                                 : revoked
