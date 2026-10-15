@@ -20,8 +20,11 @@ git config --global --add safe.directory "$(pwd)/${FLUTTER_DIR}" 2>/dev/null || 
 "${FLUTTER_DIR}/bin/flutter" config --enable-web
 "${FLUTTER_DIR}/bin/flutter" pub get
 
+APP_VERSION="$(awk '/^version:/ {print $2; exit}' pubspec.yaml | tr -d "'\"")"
+test -n "${APP_VERSION}"
+
 if [ -n "${BASE_HREF:-}" ]; then
-  "${FLUTTER_DIR}/bin/flutter" build web --release --no-wasm-dry-run --base-href "${BASE_HREF}"
+  "${FLUTTER_DIR}/bin/flutter" build web --release --no-wasm-dry-run --base-href "${BASE_HREF}" --dart-define="APP_VERSION=${APP_VERSION}"
 else
-  "${FLUTTER_DIR}/bin/flutter" build web --release --no-wasm-dry-run
+  "${FLUTTER_DIR}/bin/flutter" build web --release --no-wasm-dry-run --dart-define="APP_VERSION=${APP_VERSION}"
 fi
