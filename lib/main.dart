@@ -2456,7 +2456,7 @@ class _HomePageState extends State<HomePage> {
           '_peer': peer,
           '_last': last,
           '_preview': r['preview'] ?? 'هنوز پیامی ارسال نشده',
-          'unread_count': int.tryParse('\${r['unread_count'] ?? 0}') ?? 0,
+          'unread_count': int.tryParse('${r['unread_count'] ?? 0}') ?? 0,
           'is_online': peer?['is_online'] == true,
         };
       }).toList();
@@ -2560,7 +2560,7 @@ class _HomePageState extends State<HomePage> {
           .select('conversation_id')
           .eq('user_id', uid);
       final existingIds = (existingRows as List)
-          .map((r) => '\${r['conversation_id']}')
+          .map((r) => '${r['conversation_id']}')
           .where((id) => id.isNotEmpty)
           .toSet()
           .toList();
@@ -2571,7 +2571,7 @@ class _HomePageState extends State<HomePage> {
             .inFilter('id', existingIds)
             .eq('type', 'direct');
         final directIds = (directRows as List)
-            .map((r) => '\${r['id']}')
+            .map((r) => '${r['id']}')
             .where((id) => id.isNotEmpty)
             .toSet()
             .toList();
@@ -2582,15 +2582,15 @@ class _HomePageState extends State<HomePage> {
               .inFilter('conversation_id', directIds);
           final membersByConversation = <String, Set<String>>{};
           for (final member in memberRows as List) {
-            final conversationId = '\${member['conversation_id'] ?? ''}';
-            final memberId = '\${member['user_id'] ?? ''}';
+            final conversationId = '${member['conversation_id'] ?? ''}';
+            final memberId = '${member['user_id'] ?? ''}';
             if (conversationId.isNotEmpty && memberId.isNotEmpty) {
               (membersByConversation[conversationId] ??= <String>{}).add(memberId);
             }
           }
           for (final conversationId in directIds) {
             final memberIds = membersByConversation[conversationId] ?? <String>{};
-            if (memberIds.length == 2 && memberIds.contains('\${result['id']}') && memberIds.contains(uid)) {
+            if (memberIds.length == 2 && memberIds.contains('${result['id']}') && memberIds.contains(uid)) {
               if (mounted) {
                 Navigator.push(context, MaterialPageRoute(
                   builder: (_) => ChatPage(
@@ -2887,7 +2887,7 @@ class _HomePageState extends State<HomePage> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(activeFolder?['name']?.toString() ?? 'گفتگوها', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             const SizedBox(height: 2),
-            Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '\${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+            Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
           PopupMenuButton<String>(
             tooltip: 'منوی اصلی',
