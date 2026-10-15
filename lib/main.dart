@@ -4204,6 +4204,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   List<Map<String,dynamic>> members = [];
   String myRole = 'member';
   bool get canEditRules => myRole == 'owner' || myRole == 'admin';
+  bool get canManageMembers => myRole == 'owner' || myRole == 'admin';
 
   @override void initState() { super.initState(); _load(); }
 
@@ -4243,14 +4244,20 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Future<void> _addMembers() async {
     final uid=supabase.auth.currentUser!.id;
     final existing=members.map((m)=>m['user_id'].toString()).toSet();
+    if (!canManageMembers) { showMsg(context, 'فقط مدیر یا سازنده گروه می‌تواند اعضا را اضافه کند.'); return; }
     final query=TextEditingController();
     final selected=<String>{};
+    // Keep one request for the lifetime of the dialog; typing/selecting must not
+    // trigger a new profiles query on every StatefulBuilder rebuild.
+    final peopleFuture = supabase.from('profiles').select('id,display_name,username,avatar_url')
+        .neq('id', uid).limit(150)
+        .then<List<Map<String,dynamic>>>((v) => List<Map<String,dynamic>>.from(v as List));
     final ids=await showDialog<List<String>>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
       title:const Text('دعوت اعضا'),
       content:SizedBox(width:420,height:420,child:Column(children:[
         TextField(controller:query,decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'نام کاربری یا نام'),onChanged:(_)=>setDialog((){})),
         const SizedBox(height:8),
-        Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:supabase.from('profiles').select('id,display_name,username,avatar_url').neq('id',uid).limit(150).then((v)=>List<Map<String,dynamic>>.from(v)),builder:(ctx,snap){
+        Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:peopleFuture,builder:(ctx,snap){
           if(snap.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator());
           if(snap.hasError)return const Center(child:Text('فهرست کاربران بارگذاری نشد'));
           final q=query.text.trim().toLowerCase();
@@ -4263,7 +4270,14 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     )));
     if(ids==null || ids.isEmpty)return;
     try {
-      for(final id in ids){await supabase.from('conversation_members').insert({'conversation_id':widget.conversationId,'user_id':id,'role':'member'});}
+      // One bulk insert avoids a network round-trip for every selected contact.
+      final additions = ids.where((id) => !existing.contains(id)).map((id) => <String,dynamic>{
+        'conversation_id': widget.conversationId,
+        'user_id': id,
+        'role': 'member',
+      }).toList();
+      if (additions.isEmpty) { if (mounted) showMsg(context, 'این کاربران از قبل عضو گروه هستند.'); return; }
+      await supabase.from('conversation_members').insert(additions);
       await _load(); if(mounted)showMsg(context,'اعضا به گروه اضافه شدند');
     } catch(e){if(mounted)showMsg(context,'افزودن عضو ناموفق بود: '+_friendlyError(e.toString()));}
   }
@@ -4279,7 +4293,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
         const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
         const SizedBox(height:14),Wrap(alignment:WrapAlignment.center,spacing:10,runSpacing:8,children:[
-          FilledButton.icon(onPressed:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
+          if(canManageMembers) FilledButton.icon(onPressed:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
           if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('ویرایش قوانین')),
         ]),
       ])),
@@ -6009,7 +6023,11 @@ class _ChatPageState extends State<ChatPage> {
       final payload = <String, dynamic>{
         'user_id': uid,
         'source_message_id': sourceId,
-        'body': message['body'],
+        // saved_messages.body is NOT NULL in the live database; media messages
+        // may have no textual caption, so store a useful fallback label.
+        'body': (message['body'] ?? '').toString().trim().isNotEmpty
+            ? message['body'].toString()
+            : ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[message['message_type']?.toString()] ?? 'پیام'),
         'message_type': message['message_type'] ?? 'text',
       };
       if (existing != null) {
