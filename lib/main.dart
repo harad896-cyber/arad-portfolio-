@@ -5835,6 +5835,8 @@ class _ChatPageState extends State<ChatPage> {
   double _lastKeyboardInset = 0;
   bool _showJumpToLatest = false;
   bool _keepLatestVisibleOnKeyboard = false;
+  final Set<String> _locallyHiddenMessageIds = <String>{};
+  bool _localHiddenIdsLoaded = false;
 
   void _onMessagesScroll() {
     if (!_messagesScroll.hasClients || !mounted) return;
@@ -6125,7 +6127,39 @@ class _ChatPageState extends State<ChatPage> {
     return 'arad_chat_cache_v1_${uid}_${widget.id}';
   }
 
+  String get _hiddenMessageIdsKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'arad_hidden_messages_v1_${uid}_${widget.id}';
+  }
+
+  Future<void> _ensureLocalHiddenIds() async {
+    if (_localHiddenIdsLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _locallyHiddenMessageIds.addAll(prefs.getStringList(_hiddenMessageIdsKey) ?? const <String>[]);
+    } catch (_) {}
+    _localHiddenIdsLoaded = true;
+  }
+
+  Future<void> _setLocalMessageHidden(String messageId, bool hidden) async {
+    await _ensureLocalHiddenIds();
+    if (hidden) {
+      _locallyHiddenMessageIds.add(messageId);
+      // Bound the local tombstone list so it cannot grow without limit.
+      while (_locallyHiddenMessageIds.length > 2000) {
+        _locallyHiddenMessageIds.remove(_locallyHiddenMessageIds.first);
+      }
+    } else {
+      _locallyHiddenMessageIds.remove(messageId);
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_hiddenMessageIdsKey, _locallyHiddenMessageIds.toList());
+    } catch (_) {}
+  }
+
   Future<void> _restoreCachedChat() async {
+    await _ensureLocalHiddenIds();
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_chatCacheKey);
@@ -6135,6 +6169,9 @@ class _ChatPageState extends State<ChatPage> {
       final cached = decoded
           .whereType<Map>()
           .map((row) => Map<String, dynamic>.from(row))
+          .where((row) =>
+              !_locallyHiddenMessageIds.contains('${row['id']}') &&
+              row['deleted_at'] == null)
           .toList();
       if (cached.isEmpty || !mounted || messages.isNotEmpty) return;
       setState(() {
@@ -6150,8 +6187,11 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _saveCachedChat(List<Map<String, dynamic>> rows) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await _ensureLocalHiddenIds();
       final cacheable = rows.where((m) =>
           !'${m['id']}'.startsWith('pending-') &&
+          !_locallyHiddenMessageIds.contains('${m['id']}') &&
+          m['deleted_at'] == null &&
           m['__kind'] != 'system' &&
           m['__kind'] != 'call').toList();
       await prefs.setString(_chatCacheKey, jsonEncode(cacheable.take(120).toList()));
@@ -6162,6 +6202,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> load() async {
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
+    await _ensureLocalHiddenIds();
     await _restoreCachedChat();
     if (mounted) setState(() { _isSyncing = true; loading = messages.isEmpty; });
     try {
@@ -6175,6 +6216,7 @@ class _ChatPageState extends State<ChatPage> {
         supabase.from('messages')
             .select()
             .eq('conversation_id', widget.id)
+            .isFilter('deleted_at', null)
             .order('created_at', ascending: false)
             .limit(120)
             .timeout(const Duration(seconds: 8)),
@@ -6193,7 +6235,8 @@ class _ChatPageState extends State<ChatPage> {
       if (widget.targetMessageId != null && !loaded.any((m) => '${m['id']}' == widget.targetMessageId)) {
         try {
           final target = await supabase.from('messages').select()
-              .eq('id', widget.targetMessageId!).eq('conversation_id', widget.id).maybeSingle();
+              .eq('id', widget.targetMessageId!).eq('conversation_id', widget.id)
+              .isFilter('deleted_at', null).maybeSingle();
           if (target != null) loaded.add(Map<String, dynamic>.from(target));
           loaded.sort((a, b) {
             final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -6216,7 +6259,10 @@ class _ChatPageState extends State<ChatPage> {
           for (final r in List<Map<String, dynamic>>.from(deletedRows))
             '${r['message_id']}'
         };
-        loaded.removeWhere((m) => hidden.contains('${m['id']}'));
+        loaded.removeWhere((m) =>
+            hidden.contains('${m['id']}') ||
+            _locallyHiddenMessageIds.contains('${m['id']}') ||
+            m['deleted_at'] != null);
       }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
       List<Map<String, dynamic>> groupMembers = [];
@@ -7146,16 +7192,20 @@ class _ChatPageState extends State<ChatPage> {
       messages.removeWhere((item) => '${item['id']}' == messageId);
     });
     try {
+      await _setLocalMessageHidden(messageId, true);
       await supabase.from('message_user_deletions').upsert({
         'message_id': message['id'],
         'user_id': supabase.auth.currentUser!.id,
       });
+      await _saveCachedChat(messages);
       await load();
     } catch (e) {
+      await _setLocalMessageHidden(messageId, false);
       if (mounted) setState(() {
         timelineItems = previousTimeline;
         messages = previousMessages;
       });
+      await _saveCachedChat(previousMessages);
       if (mounted) showMsg(context, 'حذف برای من ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
@@ -7183,16 +7233,20 @@ class _ChatPageState extends State<ChatPage> {
       messages.removeWhere((item) => '${item['id']}' == messageId);
     });
     try {
+      await _setLocalMessageHidden(messageId, true);
       await supabase.from('messages').update({
         'deleted_at': DateTime.now().toUtc().toIso8601String(),
         'body': null,
       }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id);
+      await _saveCachedChat(messages);
       await load();
     } catch (e) {
+      await _setLocalMessageHidden(messageId, false);
       if (mounted) setState(() {
         timelineItems = previousTimeline;
         messages = previousMessages;
       });
+      await _saveCachedChat(previousMessages);
       if (mounted) showMsg(context, 'حذف برای همه ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
