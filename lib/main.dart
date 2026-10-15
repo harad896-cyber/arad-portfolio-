@@ -8480,14 +8480,20 @@ class _ChatPageState extends State<ChatPage> {
         child: Container(
         decoration: BoxDecoration(
           color: Color(appTheme.backgroundSeed),
-          image: appTheme.backgroundImageBase64 == null ? const DecorationImage(image: AssetImage('assets/app_icon.jpg'), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Color(0xCC090A12), BlendMode.darken)) : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .30 : .12), BlendMode.darken)),
+          // A custom photo replaces the color wallpaper; otherwise let the
+          // selected color remain visible instead of covering it with the app icon.
+          image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(
+            image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .22 : .08), BlendMode.darken),
+          ),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
-              Color.alphaBlend(scheme.primary.withValues(alpha: dark ? .035 : .035), dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed)),
-              dark ? const Color(0xFF090A0F) : Color(appTheme.backgroundSeed),
+              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
+              Color.alphaBlend(scheme.primary.withValues(alpha: .045), dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed)),
+              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
             ],
           ),
         ),
