@@ -278,9 +278,9 @@ class AradMessenger extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
-        final base = dark ? const Color(0xFF07060D) : const Color(0xFFF1EEFA);
-        final glowA = dark ? const Color(0xFF17102F) : const Color(0xFFE5DEFF);
-        final glowB = dark ? const Color(0xFF0B2030) : const Color(0xFFE0F4FF);
+        final base = dark ? const Color(0xFF10121A) : const Color(0xFFF6F7FB);
+        final glowA = dark ? const Color(0xFF171827) : const Color(0xFFF0EDFA);
+        final glowB = dark ? const Color(0xFF111D28) : const Color(0xFFEDF4FB);
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -300,7 +300,7 @@ class AradMessenger extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topRight,
                         end: Alignment.bottomLeft,
-                        colors: [glowB.withValues(alpha: .22), Colors.transparent, glowA.withValues(alpha: .12)],
+                        colors: [glowB.withValues(alpha: .10), Colors.transparent, glowA.withValues(alpha: .06)],
                       ),
                     ),
                   ),
@@ -321,9 +321,9 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF536DFA),
+          seedColor: const Color(0xFF8B5CF6),
           brightness: Brightness.light,
-          surface: const Color(0xFFF7F8FC),
+          surface: const Color(0xFFFCFCFE),
         ),
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
@@ -338,21 +338,21 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 1,
           shadowColor: Color(0x14536DFA),
-          backgroundColor: Color(0xFFF7F8FC),
+          backgroundColor: Color(0xFFFCFCFE),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF171320)),
           iconTheme: IconThemeData(color: Color(0xFF6F6480)),
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
-          shadowColor: Color(0x0D172554),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           color: Color(0xFFFFFFFF),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(18)),
-            side: BorderSide(color: Color(0xFFE8EAF2)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            side: BorderSide(color: Color(0xFFE9EAF1)),
           ),
         ),
         listTileTheme: ListTileThemeData(
@@ -403,9 +403,9 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7890FF),
+          seedColor: const Color(0xFF9B7BFF),
           brightness: Brightness.dark,
-          surface: const Color(0xFF111522),
+          surface: const Color(0xFF141722),
         ),
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
@@ -420,19 +420,19 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 1,
           shadowColor: Color(0x227890FF),
-          backgroundColor: Color(0xFF111522),
+          backgroundColor: Color(0xFF141722),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
-          shadowColor: Color(0x22101530),
-          color: Color(0xFF191F30),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          color: Color(0xFF1A1E2B),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(18)),
-            side: BorderSide(color: Color(0xFF2A3349)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            side: BorderSide(color: Color(0xFF292D3C)),
           ),
         ),
         listTileTheme: ListTileThemeData(
@@ -2793,7 +2793,7 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
-    final glass = scheme.surface.withValues(alpha: dark ? .72 : .88);
+    final glass = scheme.surface.withValues(alpha: dark ? .96 : .98);
 
     Widget actionButton({required IconData icon, required VoidCallback onTap, String? tooltip}) => Tooltip(
       message: tooltip ?? '',
@@ -2836,13 +2836,13 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
-      const SizedBox(height: 5),
-      SizedBox(height: 60, child: StoriesTray()),
+      const SizedBox(height: 4),
+      SizedBox(height: 56, child: StoriesTray()),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 5, 14, 9),
+        padding: const EdgeInsets.fromLTRB(16, 4, 14, 7),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(activeFolder?['name']?.toString() ?? 'گفتگوها', style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900, letterSpacing: -.35)),
+            Text(activeFolder?['name']?.toString() ?? 'گفتگوها', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             const SizedBox(height: 2),
             Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '\${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
@@ -2954,27 +2954,27 @@ class _HomePageState extends State<HomePage> {
                       final archived = archivedChatIds.contains(id);
 
                       return Material(
-                        color: scheme.surfaceContainerHighest.withValues(alpha: dark ? .58 : .76),
-                        elevation: isPinned || unread ? 8 : 5,
-                        shadowColor: scheme.primary.withValues(alpha: dark ? .28 : .14),
-                        surfaceTintColor: scheme.primary.withValues(alpha: dark ? .10 : .055),
+                        color: scheme.surface,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(21),
+                          borderRadius: BorderRadius.circular(17),
                           side: BorderSide(
-                            color: scheme.primary.withValues(alpha: dark ? .16 : .075),
-                            width: 1,
+                            color: scheme.outlineVariant.withValues(alpha: dark ? .55 : .72),
+                            width: .8,
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load()),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
+                            padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
                             child: Row(children: [
                               Stack(clipBehavior: Clip.none, children: [
                                 Material(
-                                  elevation: 7,
-                                  shadowColor: scheme.primary.withValues(alpha: dark ? .30 : .16),
+                                  elevation: 0,
+                                  shadowColor: Colors.transparent,
                                   shape: const CircleBorder(),
                                   color: scheme.primaryContainer,
                                   child: CircleAvatar(
@@ -3135,7 +3135,7 @@ class _HomePageState extends State<HomePage> {
   Widget _glassAction(IconData icon, String label, VoidCallback onTap) {
     final s = Theme.of(context).colorScheme;
     return ClipRRect(borderRadius: BorderRadius.circular(kAppRadius), child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+      filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
       child: Material(color: s.surface.withValues(alpha: .70), child: InkWell(
         onTap: onTap, borderRadius: BorderRadius.circular(kAppRadius),
         child: Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
@@ -3159,9 +3159,9 @@ class _HomePageState extends State<HomePage> {
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
       bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: NavigationBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -7227,7 +7227,7 @@ class _ChatPageState extends State<ChatPage> {
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
