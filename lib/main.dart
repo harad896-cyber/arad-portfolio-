@@ -4214,8 +4214,9 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Map<String,dynamic> group = {};
   List<Map<String,dynamic>> members = [];
   String myRole = 'member';
-  bool get canEditRules => myRole == 'owner' || myRole == 'admin';
-  bool get canManageMembers => myRole == 'owner' || myRole == 'admin';
+  bool get isCreator => group['created_by']?.toString() == supabase.auth.currentUser?.id;
+  bool get canEditRules => isCreator || myRole == 'owner' || myRole == 'admin';
+  bool get canManageMembers => isCreator || myRole == 'owner' || myRole == 'admin';
 
   @override void initState() { super.initState(); _load(); }
 
