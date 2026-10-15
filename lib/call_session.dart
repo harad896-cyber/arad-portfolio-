@@ -92,16 +92,20 @@ class _CallSessionPageState extends State<CallSessionPage> {
 
   Future<void> _startIncomingCall() async {
     try {
+      if (_ending || !mounted) return;
       final uid = supabase.auth.currentUser?.id;
       if (uid == null) throw Exception('برای تماس باید وارد حساب شوید.');
       _callId = widget.existingCallId;
       if (_callId == null) throw Exception('شناسه تماس نامعتبر است.');
       final row = await supabase.from('call_sessions').select('caller_id,callee_id,status,call_type,offer_sdp').eq('id', _callId!).single();
+      if (_ending || !mounted) return;
       _pendingOfferSdp = row['offer_sdp']?.toString();
       _peerUserId = row['caller_id']?.toString();
       if (_peerUserId == null || _peerUserId == uid) throw Exception('تماس‌کننده نامعتبر است.');
       await _setupChannel();
+      if (_ending || !mounted) return;
       await _createPeerConnection();
+      if (_ending || !mounted) return;
       _startCallStatusMonitor();
       if (mounted) {
         setState(() {
@@ -110,6 +114,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
         });
       }
     } catch (e) {
+      if (_ending || !mounted) {
+        unawaited(_cleanup());
+        return;
+      }
       if (mounted) {
         setState(() { _starting = false; _status = 'تماس برقرار نشد'; });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
@@ -146,6 +154,8 @@ class _CallSessionPageState extends State<CallSessionPage> {
   }
 
   Future<void> _rejectIncoming() async {
+    if (_ending) return;
+    _ending = true;
     // Rejection must leave the screen even when Realtime or the database is slow.
     unawaited(_sendSignal({'type': 'reject'}).timeout(const Duration(seconds: 1)).catchError((_) {}));
     unawaited(_finishStatus('rejected'));
@@ -168,9 +178,11 @@ class _CallSessionPageState extends State<CallSessionPage> {
 
   Future<void> _startOutgoingCall() async {
     try {
+      if (_ending || !mounted) return;
       final uid = supabase.auth.currentUser?.id;
       if (uid == null) throw Exception('برای تماس باید وارد حساب شوید.');
       _peerUserId = await _findPeerUserId();
+      if (_ending || !mounted) return;
       if (_peerUserId == null) throw Exception('طرف مقابل این گفت‌وگو پیدا نشد.');
 
       final row = await supabase.from('call_sessions').insert({
@@ -180,12 +192,16 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'call_type': widget.video ? 'video' : 'voice',
         'status': 'ringing',
       }).select('id').single();
+      if (_ending || !mounted) return;
       _callId = row['id'].toString();
 
       await _setupChannel();
+      if (_ending || !mounted) return;
       await _createPeerConnection();
+      if (_ending || !mounted) return;
       _startCallStatusMonitor();
       await _createAndSendOffer();
+      if (_ending || !mounted) return;
 
       if (mounted) {
         setState(() {
@@ -194,6 +210,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
         });
       }
     } catch (e) {
+      if (_ending || !mounted) {
+        unawaited(_cleanup());
+        return;
+      }
       if (mounted) {
         setState(() {
           _starting = false;
@@ -261,6 +281,11 @@ class _CallSessionPageState extends State<CallSessionPage> {
     };
 
     final peer = await createPeerConnection(configuration);
+    if (_ending || !mounted) {
+      try { await peer.close(); } catch (_) {}
+      try { await peer.dispose(); } catch (_) {}
+      return;
+    }
     _peer = peer;
 
     peer.onIceCandidate = (candidate) {
@@ -283,7 +308,7 @@ class _CallSessionPageState extends State<CallSessionPage> {
       }
     };
 
-    _localStream = await navigator.mediaDevices.getUserMedia({
+    final localStream = await navigator.mediaDevices.getUserMedia({
       'audio': {
         'echoCancellation': true,
         'noiseSuppression': true,
@@ -296,11 +321,20 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'facingMode': 'user',
       } : false,
     });
+    if (_ending || !mounted) {
+      for (final track in localStream.getTracks()) {
+        try { await track.stop(); } catch (_) {}
+      }
+      try { await localStream.dispose(); } catch (_) {}
+      return;
+    }
+    _localStream = localStream;
 
     if (widget.video && _localRenderer != null) {
       _localRenderer!.srcObject = _localStream;
     }
     for (final track in _localStream!.getTracks()) {
+      if (_ending || !mounted) return;
       await peer.addTrack(track, _localStream!);
     }
     peer.onTrack = (event) {
