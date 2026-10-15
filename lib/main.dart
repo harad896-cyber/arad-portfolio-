@@ -3474,7 +3474,7 @@ class _HomePageState extends State<HomePage> {
     entry = OverlayEntry(builder: (overlayContext) {
       final scheme = Theme.of(overlayContext).colorScheme;
       return Positioned(
-        top: MediaQuery.of(overlayContext).padding.top + 8,
+        top: 8,
         left: 12,
         right: 12,
         child: SafeArea(
@@ -3696,6 +3696,10 @@ class _HomePageState extends State<HomePage> {
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
     final glass = scheme.surface.withValues(alpha: dark ? .96 : .98);
+    final unreadTotal = chats.fold<int>(
+      0,
+      (total, chat) => total + (int.tryParse('${chat['unread_count'] ?? 0}') ?? 0),
+    );
 
     Widget actionButton({required IconData icon, required VoidCallback onTap, String? tooltip}) => Tooltip(
       message: tooltip ?? '',
@@ -3748,6 +3752,37 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 2),
             Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '${visibleChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'اعلان‌ها',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage())),
+                icon: const Icon(Icons.notifications_none_rounded),
+              ),
+              if (unreadTotal > 0)
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: IgnorePointer(
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: scheme.error,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: scheme.surface, width: 1.5),
+                      ),
+                      child: Text(
+                        unreadTotal > 99 ? '99+' : '$unreadTotal',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: scheme.onError, fontSize: 9, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           PopupMenuButton<String>(
             tooltip: 'منوی اصلی',
             icon: const Icon(Icons.menu_rounded),
