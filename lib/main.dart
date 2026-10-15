@@ -907,7 +907,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
         children: [
           Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
           const SizedBox(height: 3),
-          Text(subtitle, style: TextStyle(fontSize: 12.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -2821,7 +2821,7 @@ class _HomePageState extends State<HomePage> {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(icon, size: 16, color: selected ? scheme.onPrimary : scheme.onSurfaceVariant),
               const SizedBox(width: 6),
-              Text(label, style: TextStyle(fontSize: 12.5, fontWeight: selected ? FontWeight.w800 : FontWeight.w600, color: selected ? scheme.onPrimary : scheme.onSurface)),
+              Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w800 : FontWeight.w600, color: selected ? scheme.onPrimary : scheme.onSurface)),
             ]),
           ),
         ),
@@ -2873,10 +2873,10 @@ class _HomePageState extends State<HomePage> {
         ]),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 9),
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 7),
         child: Material(
           color: glass,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(15),
           child: TextField(
             controller: chatSearch,
             onChanged: (v) => setState(() => chatQuery = v),
@@ -2889,16 +2889,16 @@ class _HomePageState extends State<HomePage> {
               isDense: true,
               filled: true,
               fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
             ),
           ),
         ),
       ),
       SizedBox(
-        height: 43,
+        height: 40,
         child: ListView(
           scrollDirection: Axis.horizontal,
           reverse: true,
@@ -2936,7 +2936,7 @@ class _HomePageState extends State<HomePage> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(11, 5, 11, 96),
                     itemCount: visibleChats.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 5),
+                    separatorBuilder: (_, __) => const SizedBox(height: 4),
                     itemBuilder: (context, i) {
                       final c = visibleChats[i];
                       final id = c['id'].toString();
@@ -2959,17 +2959,17 @@ class _HomePageState extends State<HomePage> {
                         shadowColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(17),
+                          borderRadius: BorderRadius.circular(15),
                           side: BorderSide(
-                            color: scheme.outlineVariant.withValues(alpha: dark ? .55 : .72),
-                            width: .8,
+                            color: scheme.outlineVariant.withValues(alpha: dark ? .38 : .48),
+                            width: .7,
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load()),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+                            padding: const EdgeInsets.fromLTRB(10, 7, 5, 7),
                             child: Row(children: [
                               Stack(clipBehavior: Clip.none, children: [
                                 Material(
@@ -2978,7 +2978,7 @@ class _HomePageState extends State<HomePage> {
                                   shape: const CircleBorder(),
                                   color: scheme.primaryContainer,
                                   child: CircleAvatar(
-                                    radius: 27,
+                                    radius: 25,
                                     backgroundColor: scheme.primaryContainer,
                                     backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
                                     child: avatarUrl.isEmpty ? Icon(icon, color: scheme.primary, size: 24) : null,
@@ -2987,11 +2987,11 @@ class _HomePageState extends State<HomePage> {
                                 if (c['is_online'] == true)
                                   Positioned(right: -1, bottom: -1, child: Container(width: 13, height: 13, decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 2.3)))),
                               ]),
-                              const SizedBox(width: 11),
+                              const SizedBox(width: 10),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Row(children: [
                                   Expanded(child: Row(children: [
-                                    Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15.5))),
+                                    Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
                                     if (type == 'direct' && peer?['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: AnimatedVerifiedBadge(size: 16)),
                                   ])),
                                   if (lastAt != null) Text(_homeTime(lastAt), style: TextStyle(fontSize: 10.5, color: unread ? scheme.primary : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w800 : FontWeight.w500)),
@@ -3000,7 +3000,7 @@ class _HomePageState extends State<HomePage> {
                                 Row(children: [
                                   if (isPinned) ...[Icon(Icons.push_pin_rounded, size: 14, color: scheme.primary), const SizedBox(width: 4)],
                                   if (archived) ...[Icon(Icons.archive_rounded, size: 13, color: scheme.onSurfaceVariant), const SizedBox(width: 4)],
-                                  Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: unread ? scheme.onSurface : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w700 : FontWeight.w400, fontSize: 12.5))),
+                                  Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: unread ? scheme.onSurface : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w700 : FontWeight.w400, fontSize: 12))),
                                   if (unread) Container(constraints: const BoxConstraints(minWidth: 21), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(10)), child: Text(unreadCount > 0 ? unreadCount.toString() : '•', textAlign: TextAlign.center, style: TextStyle(color: scheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900))),
                                 ]),
                               ])),
@@ -3159,9 +3159,9 @@ class _HomePageState extends State<HomePage> {
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
       bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: NavigationBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -6378,7 +6378,7 @@ class _ChatPageState extends State<ChatPage> {
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -7225,7 +7225,7 @@ class _ChatPageState extends State<ChatPage> {
               ),
             if (replyMessage != null)
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
                   child: Container(
