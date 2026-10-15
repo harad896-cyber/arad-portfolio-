@@ -632,6 +632,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     {'cat':'حساب کاربری','title':'حساب کاربری','desc':'نام، نام کاربری، ایمیل، بیو و عکس پروفایل'},
     {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل'},
     {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی'},
+    {'cat':'اعلان‌ها','title':'اعلان‌ها','desc':'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها'},
     {'cat':'تماس‌ها','title':'تماس‌ها','desc':'تماس صوتی و تصویری و سابقه تماس'},
     {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم روشن/تاریک و رنگ رابط برنامه'},
     {'cat':'ظاهر و شخصی‌سازی','title':'پس‌زمینه چت','desc':'انتخاب عکس از گالری و رنگ پس‌زمینه گفتگو'},
@@ -692,6 +693,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'حساب کاربری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ProfilePage())); break;
       case 'حریم خصوصی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const PrivacySettingsPage())); break;
       case 'امنیت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage())); break;
+      case 'اعلان‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsCenterPage())); break;
       case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage())); break;
       case 'ظاهر': _showThemeSheet(); break;
       case 'پس‌زمینه چت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())); break;
@@ -1331,16 +1333,171 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
   }
 }
 
-class NotificationsCenterPage extends StatelessWidget {
+class NotificationsCenterPage extends StatefulWidget {
   const NotificationsCenterPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('مرکز اعلان‌ها')),
-    body:const AppEmptyState(
-      icon:Icons.notifications_none_rounded,
-      title:'اعلان جدیدی وجود ندارد',
-      subtitle:'اعلان‌های واقعی حساب و گفتگوها پس از دریافت در این بخش نمایش داده می‌شوند.',
-    ),
-  );
+  @override State<NotificationsCenterPage> createState() => _NotificationsCenterPageState();
+}
+
+class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
+  List<Map<String, dynamic>> rows = [];
+  bool loading = true;
+  String? error;
+  int _generation = 0;
+  Timer? _refreshTimer;
+  RealtimeChannel? _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+    _channel = supabase.channel('notification-center-${supabase.auth.currentUser?.id ?? 'guest'}')
+      .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'messages', callback: (_) => _scheduleRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'messages', callback: (_) => _scheduleRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'conversation_members', callback: (_) => _scheduleRefresh())
+      .subscribe();
+  }
+
+  void _scheduleRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) unawaited(_load(showLoading: false));
+    });
+  }
+
+  Future<void> _load({bool showLoading = true}) async {
+    final generation = ++_generation;
+    if (showLoading && mounted) setState(() { loading = true; error = null; });
+    try {
+      final raw = await supabase.rpc('get_home_conversations');
+      final conversations = List<Map<String, dynamic>>.from(raw as List);
+      final next = <Map<String, dynamic>>[];
+      for (final row in conversations) {
+        final unread = int.tryParse('${row['unread_count'] ?? 0}') ?? 0;
+        if (unread <= 0) continue;
+        final peer = row['peer'] is Map
+            ? Map<String, dynamic>.from(row['peer'] as Map)
+            : <String, dynamic>{};
+        final type = (row['type'] ?? 'direct').toString();
+        final fallback = type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی شخصی';
+        final title = (row['title'] ?? peer['display_name'] ?? peer['username'] ?? row['username'] ?? fallback)
+            .toString().trim();
+        next.add({
+          ...row,
+          'id': (row['conversation_id'] ?? row['id'] ?? '').toString(),
+          'type': type,
+          'title': title.isEmpty ? fallback : title,
+          'unread_count': unread,
+          '_peer': peer,
+          '_preview': (row['preview'] ?? 'پیام جدید').toString(),
+          '_last': row['last_message'] is Map ? Map<String, dynamic>.from(row['last_message'] as Map) : null,
+        });
+      }
+      next.sort((a, b) {
+        final count = (int.tryParse('${b['unread_count']}') ?? 0)
+            .compareTo(int.tryParse('${a['unread_count']}') ?? 0);
+        if (count != 0) return count;
+        final at = (a['_last']?['created_at'] ?? '').toString();
+        final bt = (b['_last']?['created_at'] ?? '').toString();
+        return bt.compareTo(at);
+      });
+      if (!mounted || generation != _generation) return;
+      setState(() { rows = next; loading = false; error = null; });
+    } catch (e) {
+      if (!mounted || generation != _generation) return;
+      setState(() { loading = false; error = _friendlyError(e.toString()); });
+    }
+  }
+
+  Future<void> _openConversation(Map<String, dynamic> row) async {
+    final id = row['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(
+      id: id,
+      title: (row['title'] ?? 'گفتگو').toString(),
+    )));
+    if (mounted) await _load(showLoading: false);
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    if (_channel != null) unawaited(supabase.removeChannel(_channel!));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('مرکز اعلان‌ها'),
+        actions: [IconButton(tooltip: 'تازه‌سازی', onPressed: () => _load(), icon: const Icon(Icons.refresh_rounded))],
+      ),
+      body: loading
+          ? const AppSkeletonList(count: 5)
+          : error != null
+              ? Center(child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.cloud_off_rounded, size: 44, color: scheme.error),
+                    const SizedBox(height: 12),
+                    const Text('اعلان‌ها بارگذاری نشدند', style: TextStyle(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 8),
+                    Text(error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(onPressed: () => _load(), icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره')),
+                  ]),
+                ))
+              : rows.isEmpty
+                  ? RefreshIndicator(
+                      onRefresh: () => _load(showLoading: false),
+                      child: ListView(children: const [
+                        SizedBox(height: 150),
+                        Icon(Icons.notifications_none_rounded, size: 62),
+                        SizedBox(height: 14),
+                        Center(child: Text('پیام خوانده‌نشده‌ای ندارید')),
+                        SizedBox(height: 8),
+                        Center(child: Text('پیام‌های جدید در این بخش ظاهر می‌شوند.')),
+                      ]),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () => _load(showLoading: false),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                        itemCount: rows.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 7),
+                        itemBuilder: (_, i) {
+                          final row = rows[i];
+                          final type = (row['type'] ?? 'direct').toString();
+                          final unread = int.tryParse('${row['unread_count'] ?? 0}') ?? 0;
+                          final peer = row['_peer'] is Map ? Map<String, dynamic>.from(row['_peer'] as Map) : <String, dynamic>{};
+                          final avatar = (type == 'direct' ? peer['avatar_url'] : row['avatar_url'])?.toString() ?? '';
+                          final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                          return Card(
+                            clipBehavior: Clip.antiAlias,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                              leading: CircleAvatar(
+                                backgroundColor: scheme.primaryContainer,
+                                backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                                child: avatar.isEmpty ? Icon(icon, color: scheme.primary) : null,
+                              ),
+                              title: Text((row['title'] ?? 'گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                              subtitle: Text((row['_preview'] ?? 'پیام جدید').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              trailing: Container(
+                                constraints: const BoxConstraints(minWidth: 26),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(14)),
+                                child: Text('$unread', textAlign: TextAlign.center, style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w900)),
+                              ),
+                              onTap: () => _openConversation(row),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+    );
+  }
 }
 class SharedMediaFilesPage extends StatelessWidget {
   const SharedMediaFilesPage({super.key});
@@ -2411,6 +2568,8 @@ class _HomePageState extends State<HomePage> {
   String chatQuery = '';
   RealtimeChannel? _homeChannel;
   Timer? _homeRefreshTimer;
+  bool _homeLoadInProgress = false;
+  bool _homeLoadQueued = false;
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
   final AppLinks _appLinks = AppLinks();
@@ -2442,6 +2601,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> load() async {
+    // Coalesce overlapping refreshes. Realtime bursts should trigger one
+    // follow-up fetch, not several competing requests that can overwrite newer state.
+    if (_homeLoadInProgress) {
+      _homeLoadQueued = true;
+      return;
+    }
+    _homeLoadInProgress = true;
     try {
       final uid = supabase.auth.currentUser!.id;
       final rpcRows = List<Map<String,dynamic>>.from(await supabase.rpc('get_home_conversations'));
@@ -2500,6 +2666,12 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (e) {
       if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: ' + _friendlyError(e.toString())); }
+    } finally {
+      _homeLoadInProgress = false;
+      if (_homeLoadQueued && mounted) {
+        _homeLoadQueued = false;
+        unawaited(load());
+      }
     }
   }
   Future<void> _toggleManualUnread(Map<String,dynamic> chat) async {
@@ -4022,23 +4194,12 @@ class AdvancedMessagingPage extends StatelessWidget {const AdvancedMessagingPage
 ]));}
 
 
-class NotificationsPage extends StatefulWidget {
+class NotificationsPage extends StatelessWidget {
   final String id;
   final String title;
-  const NotificationsPage({super.key,this.id='',this.title='اعلان‌ها'});
-  @override State<NotificationsPage> createState()=>_NotificationsPageState();
-}
-class _NotificationsPageState extends State<NotificationsPage> {
-  Widget _actionTile(BuildContext context, IconData icon, String label, VoidCallback onTap)=>ListTile(leading:Icon(icon),title:Text(label),onTap:onTap);
-  void _showChatEmojiPicker()=>showModalBottomSheet(context:context,builder:(_)=>const SizedBox(height:260,child:Center(child:Text('😀  ❤️  👍  😂  🔥'))));
-  final List<bool> read=[false,true,false];
-  final List<String> titles=['پیام جدید','درخواست عضویت گروه','به‌روزرسانی برنامه'];
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مرکز اعلان‌ها')),body:ListView.builder(
-    padding:const EdgeInsets.all(16),itemCount:titles.length,itemBuilder:(_,i)=>Card(child:ListTile(
-      leading:Icon(read[i]?Icons.notifications_none_rounded:Icons.notifications_active_rounded),
-      title:Text(titles[i],style:TextStyle(fontWeight:read[i]?FontWeight.w500:FontWeight.w900)),
-      subtitle:Text(read[i]?'خوانده شده':'جدید'),
-      onTap:()=>setState(()=>read[i]=true)))));
+  const NotificationsPage({super.key, this.id = '', this.title = 'اعلان‌ها'});
+  @override
+  Widget build(BuildContext context) => const NotificationsCenterPage();
 }
 
 class SharedMediaPage extends StatefulWidget {
