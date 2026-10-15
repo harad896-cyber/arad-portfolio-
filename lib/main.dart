@@ -3479,9 +3479,9 @@ class _HomePageState extends State<HomePage> {
         right: 12,
         child: SafeArea(
           bottom: false,
-          child: TweenAnimationBuilder<Offset>(
-            tween: Tween(begin: const Offset(0, -1.15), end: Offset.zero),
-            duration: const Duration(milliseconds: 300),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 420),
             curve: Curves.easeOutCubic,
             child: Material(
               color: Colors.transparent,
@@ -3491,15 +3491,15 @@ class _HomePageState extends State<HomePage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      scheme.surface.withValues(alpha: .97),
-                      Color.alphaBlend(scheme.primary.withValues(alpha: .09), scheme.surface),
+                      scheme.surface.withValues(alpha: .90),
+                      Color.alphaBlend(scheme.primary.withValues(alpha: .13), scheme.surface.withValues(alpha: .94)),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: scheme.primary.withValues(alpha: .30)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: .14), blurRadius: 24, offset: const Offset(0, 8)),
-                    BoxShadow(color: scheme.primary.withValues(alpha: .10), blurRadius: 18),
+                    BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 28, offset: const Offset(0, 10)),
+                    BoxShadow(color: scheme.primary.withValues(alpha: .14), blurRadius: 24, spreadRadius: -3),
                   ],
                 ),
                 child: ClipRRect(
@@ -3545,7 +3545,13 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            builder: (context, offset, child) => Transform.translate(offset: Offset(0, offset.dy * 12), child: child),
+            builder: (context, progress, child) => Opacity(
+              opacity: Curves.easeOut.transform(progress),
+              child: Transform.translate(
+                offset: Offset(0, (1 - Curves.easeOutCubic.transform(progress)) * -76),
+                child: child,
+              ),
+            ),
           ),
         ),
       );
@@ -8496,15 +8502,16 @@ class _ChatPageState extends State<ChatPage> {
         padding: EdgeInsets.only(bottom: keyboardInset),
         child: Container(
         decoration: BoxDecoration(
-          color: Color(appTheme.backgroundSeed),
-          // A custom photo replaces the color wallpaper; otherwise let the
-          // selected color remain visible instead of covering it with the app icon.
+          // BoxDecoration forbids setting both color and gradient. The old
+          // combination asserted during chat rendering, hiding the wallpaper
+          // and its ambient effects on some builds.
+          color: appTheme.backgroundEffects ? null : Color(appTheme.backgroundSeed),
           image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(
             image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .22 : .08), BlendMode.darken),
           ),
-          gradient: LinearGradient(
+          gradient: appTheme.backgroundEffects ? LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
@@ -8512,7 +8519,7 @@ class _ChatPageState extends State<ChatPage> {
               Color.alphaBlend(scheme.primary.withValues(alpha: .045), dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed)),
               dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
             ],
-          ),
+          ) : null,
         ),
         child: Stack(
           fit: StackFit.expand,
