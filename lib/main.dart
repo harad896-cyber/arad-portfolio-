@@ -6376,9 +6376,9 @@ class _ChatPageState extends State<ChatPage> {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -6392,10 +6392,10 @@ class _ChatPageState extends State<ChatPage> {
       counts[emoji] = (counts[emoji] ?? 0) + 1;
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: 4),
       child: Wrap(
-        spacing: 6,
-        runSpacing: 5,
+        spacing: 5,
+        runSpacing: 4,
         children: counts.entries.map((e) {
           final mine = list.any((r) => r['user_id']?.toString() == uid && r['reaction']?.toString() == e.key);
           final color = _reactionAccent(e.key);
@@ -6409,7 +6409,7 @@ class _ChatPageState extends State<ChatPage> {
               borderRadius: BorderRadius.circular(18),
               onTap: () => reactTo(message, e.key),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
                     colors: mine
@@ -6420,7 +6420,7 @@ class _ChatPageState extends State<ChatPage> {
                   boxShadow: [BoxShadow(color: color.withValues(alpha: mine ? .24 : .10), blurRadius: mine ? 13 : 6, spreadRadius: mine ? 1 : 0)],
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(e.key, style: const TextStyle(fontSize: 17, height: 1.05)),
+                  Text(e.key, style: const TextStyle(fontSize: 16, height: 1.0)),
                   const SizedBox(width: 5),
                   Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: mine ? color : Theme.of(context).colorScheme.onSurface)),
                   if (mine) ...[
@@ -6679,7 +6679,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
     } else {
-      content = Text(body, style: TextStyle(fontSize: 15.5, height: 1.38, color: textColor));
+      content = Text(body, style: TextStyle(fontSize: 15, height: 1.34, color: textColor));
     }
 
     return Align(
@@ -6714,9 +6714,9 @@ class _ChatPageState extends State<ChatPage> {
             ] else if (!mine && isGroup) const SizedBox(width: 38),
             Flexible(
               child: Container(
-                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84),
-                margin: const EdgeInsets.only(bottom: 7),
-                padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
+                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * (isGroup ? .79 : .82)),
+                margin: const EdgeInsets.only(bottom: 5),
+                padding: const EdgeInsets.fromLTRB(12, 8, 10, 6),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -6732,10 +6732,10 @@ class _ChatPageState extends State<ChatPage> {
                           ],
                   ),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(22),
-                    topRight: const Radius.circular(22),
-                    bottomLeft: Radius.circular(mine ? 22 : 6),
-                    bottomRight: Radius.circular(mine ? 6 : 22),
+                    topLeft: const Radius.circular(19),
+                    topRight: const Radius.circular(19),
+                    bottomLeft: Radius.circular(mine ? 19 : 5),
+                    bottomRight: Radius.circular(mine ? 5 : 19),
                   ),
                   border: Border.all(
                     color: mine
@@ -6746,9 +6746,9 @@ class _ChatPageState extends State<ChatPage> {
                   boxShadow: [
                     BoxShadow(
                       color: (mine ? myBubble : Colors.black).withValues(alpha: dark ? .34 : .13),
-                      blurRadius: 18,
-                      spreadRadius: -2,
-                      offset: const Offset(0, 7),
+                      blurRadius: 12,
+                      spreadRadius: -3,
+                      offset: const Offset(0, 4),
                     ),
                     BoxShadow(
                       color: Colors.white.withValues(alpha: dark ? .025 : .70),
@@ -6778,10 +6778,10 @@ class _ChatPageState extends State<ChatPage> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10.5, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
+                        Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10,  color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
                         if (m['edited_at'] != null) ...[
                           const SizedBox(width: 4),
-                          Text('ویرایش‌شده', style: TextStyle(fontSize: 9.5, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
+                          Text('ویرایش‌شده', style: TextStyle(fontSize: 9, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
                         ],
                         if (mine) ...[
                           const SizedBox(width: 4),
@@ -6789,7 +6789,7 @@ class _ChatPageState extends State<ChatPage> {
                           const SizedBox(width: 2),
                           Text(
                             m['__pending'] == true ? 'در حال ارسال' : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? 'دیده‌شده ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
-                            style: TextStyle(fontSize: 9.5, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
                       ],
