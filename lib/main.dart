@@ -2572,6 +2572,7 @@ class _HomePageState extends State<HomePage> {
   bool _homeLoadQueued = false;
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
+  final Set<String> _shownMessageNotificationIds = <String>{};
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _inviteLinkSubscription;
   final Map<String, DateTime> _recentInviteCodes = <String, DateTime>{};
@@ -2912,7 +2913,15 @@ class _HomePageState extends State<HomePage> {
     load();
     unawaited(_initInviteLinks());
     _homeChannel = supabase.channel('home-' + (supabase.auth.currentUser?.id ?? 'guest'))
-      .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'messages',
+        callback: (payload) {
+          _scheduleHomeRefresh();
+          unawaited(_handleIncomingMessage(payload.newRecord));
+        },
+      )
       .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
       .onPostgresChanges(event: PostgresChangeEvent.insert, schema: 'public', table: 'conversation_members', callback: (_) => _scheduleHomeRefresh())
       .onPostgresChanges(event: PostgresChangeEvent.delete, schema: 'public', table: 'conversation_members', callback: (_) => _scheduleHomeRefresh())
@@ -2932,6 +2941,68 @@ class _HomePageState extends State<HomePage> {
         callback: (payload) => _handleIncomingCall(payload.newRecord),
       )
       .subscribe();
+  }
+
+  Future<void> _handleIncomingMessage(Map<String, dynamic> row) async {
+    final uid = supabase.auth.currentUser?.id;
+    final senderId = row['sender_id']?.toString() ?? '';
+    final conversationId = row['conversation_id']?.toString() ?? '';
+    final messageId = row['id']?.toString() ?? '';
+    if (!mounted || uid == null || senderId.isEmpty || senderId == uid ||
+        conversationId.isEmpty || messageId.isEmpty) return;
+    if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    if (!_shownMessageNotificationIds.add(messageId)) return;
+    if (_shownMessageNotificationIds.length > 100) {
+      _shownMessageNotificationIds.remove(_shownMessageNotificationIds.first);
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('chat_notifications_muted_${uid}_${conversationId}') == true) return;
+    } catch (_) {}
+
+    String title = 'پیام جدید';
+    for (final chat in chats) {
+      if (chat['id']?.toString() != conversationId) continue;
+      final peer = chat['_peer'] is Map ? Map<String, dynamic>.from(chat['_peer'] as Map) : <String, dynamic>{};
+      title = (chat['title'] ?? peer['display_name'] ?? peer['username'] ?? 'گفتگوی جدید').toString();
+      break;
+    }
+    if (title == 'پیام جدید' || title.trim().isEmpty) {
+      try {
+        final details = await Future.wait<dynamic>([
+          supabase.from('conversations').select('type,title').eq('id', conversationId).maybeSingle(),
+          supabase.from('profiles').select('display_name,username').eq('id', senderId).maybeSingle(),
+        ]);
+        final conversation = details[0] is Map ? Map<String, dynamic>.from(details[0] as Map) : <String, dynamic>{};
+        final sender = details[1] is Map ? Map<String, dynamic>.from(details[1] as Map) : <String, dynamic>{};
+        title = (conversation['title'] ?? sender['display_name'] ?? sender['username'] ?? 'پیام جدید').toString();
+      } catch (_) {}
+    }
+
+    final type = (row['message_type'] ?? 'text').toString().toLowerCase();
+    final body = (row['body'] ?? '').toString().trim();
+    final preview = switch (type) {
+      'image' => '📷 عکس جدید',
+      'video' => '🎬 ویدئوی جدید',
+      'audio' || 'voice' => '🎙 پیام صوتی جدید',
+      'file' => '📎 فایل جدید',
+      _ => body.isEmpty ? 'پیام جدید دریافت شد' : body,
+    };
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('$title: $preview', maxLines: 2, overflow: TextOverflow.ellipsis),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'باز کردن',
+          onPressed: () {
+            if (!mounted) return;
+            Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title)));
+          },
+        ),
+      ));
   }
 
   Future<void> _handleIncomingCall(Map<String, dynamic> row) async {
