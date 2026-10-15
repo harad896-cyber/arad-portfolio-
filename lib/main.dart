@@ -176,9 +176,13 @@ Future<void> main() async {
     url: supabaseUrl,
     publishableKey: supabasePublishableKey,
   );
-  await appTheme.load();
-  await aradLanguageController.load();
+
+  // Render the first frame as soon as the backend client is ready. Preferences
+  // are local-only and must not delay startup or prevent the APK from showing
+  // its UI if Android storage temporarily fails.
   runApp(const AradMessenger());
+  unawaited(appTheme.load().catchError((_) {}));
+  unawaited(aradLanguageController.load().catchError((_) {}));
 }
 
 class _NetworkStatusBanner extends StatefulWidget {
