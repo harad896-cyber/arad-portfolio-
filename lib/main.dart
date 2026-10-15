@@ -4299,11 +4299,64 @@ class WalletPage extends StatelessWidget {
   ]));
 }
 
-class DataSettingsPage extends StatefulWidget {const DataSettingsPage({super.key});@override State<DataSettingsPage> createState()=>_DataSettingsPageState();}
-class _DataSettingsPageState extends State<DataSettingsPage>{bool low=false,wifi=true;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مصرف داده')),body:ListView(padding:const EdgeInsets.all(16),children:[
- Card(child:SwitchListTile(value:low,onChanged:(v)=>setState(()=>low=v),title:const Text('حالت کم‌مصرف'))),
- Card(child:SwitchListTile(value:wifi,onChanged:(v)=>setState(()=>wifi=v),title:const Text('دانلود خودکار فقط با وای‌فای'))),
-]));}
+class DataSettingsPage extends StatefulWidget {
+  const DataSettingsPage({super.key});
+  @override State<DataSettingsPage> createState() => _DataSettingsPageState();
+}
+class _DataSettingsPageState extends State<DataSettingsPage> {
+  bool low = false, wifi = true, loading = true;
+  @override void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    try {
+      final values = await loadUserSettings();
+      if (!mounted) return;
+      setState(() {
+        low = values['low_data_mode'] ?? false;
+        wifi = values['wifi_only_downloads'] ?? true;
+        loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+  Future<void> _change(String key, bool value, bool previous, ValueChanged<bool> update) async {
+    update(value);
+    try {
+      await saveUserSettings({key: value});
+      if (mounted) showMsg(context, 'تنظیم ذخیره شد.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => update(previous));
+      showMsg(context, 'ذخیره تنظیم انجام نشد: '+_friendlyError(e.toString()));
+    }
+  }
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('مصرف داده')),
+    body: loading ? const Center(child: CircularProgressIndicator()) : ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(child: SwitchListTile(
+          value: low,
+          onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
+          title: const Text('حالت کم‌مصرف'),
+          subtitle: const Text('ترجیح برای کاهش مصرف اینترنت و داده'),
+          secondary: const Icon(Icons.data_saver_on_rounded),
+        )),
+        Card(child: SwitchListTile(
+          value: wifi,
+          onChanged: (v) => _change('wifi_only_downloads', v, wifi, (next) => wifi = next),
+          title: const Text('دانلود خودکار فقط با وای‌فای'),
+          subtitle: const Text('برای جلوگیری از مصرف ناخواسته اینترنت همراه'),
+          secondary: const Icon(Icons.wifi_rounded),
+        )),
+        const Padding(
+          padding: EdgeInsets.all(8),
+          child: Text('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.'),
+        ),
+      ],
+    ),
+  );
+}
 
 class AccessibilityPage extends StatefulWidget {const AccessibilityPage({super.key});@override State<AccessibilityPage> createState()=>_AccessibilityPageState();}
 class _AccessibilityPageState extends State<AccessibilityPage>{double size=1;bool contrast=false;@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(16),children:[
