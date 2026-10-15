@@ -146,10 +146,11 @@ class _CallSessionPageState extends State<CallSessionPage> {
   }
 
   Future<void> _rejectIncoming() async {
-    try { await _sendSignal({'type': 'reject'}); } catch (_) {}
-    await _finishStatus('rejected');
-    await _cleanup();
+    // Rejection must leave the screen even when Realtime or the database is slow.
+    unawaited(_sendSignal({'type': 'reject'}).timeout(const Duration(seconds: 1)).catchError((_) {}));
+    unawaited(_finishStatus('rejected'));
     if (mounted) Navigator.of(context).pop();
+    unawaited(_cleanup());
   }
 
   Future<String?> _findPeerUserId() async {
@@ -510,19 +511,14 @@ class _CallSessionPageState extends State<CallSessionPage> {
     _ending = true;
     final status = _connected ? 'ended' : 'cancelled';
 
-    // Send the hangup first, then immediately stop all media/WebRTC resources.
-    // The database status is also monitored by the other device, so hangup does
-    // not depend on a single Realtime broadcast arriving successfully.
-    // Never make leaving the call screen depend on a network round-trip.
-    // Signal/status updates are best-effort; local media must stop immediately.
+    // Do not wait for Realtime, Postgres, camera shutdown, or channel removal
+    // before dismissing the call UI. Those operations are best-effort cleanup.
     if (notifyPeer) {
-      try { await _sendSignal({'type': 'hangup'}).timeout(const Duration(seconds: 1)); } catch (_) {}
+      unawaited(_sendSignal({'type': 'hangup'}).timeout(const Duration(seconds: 1)).catchError((_) {}));
     }
     unawaited(_finishStatus(status));
-    await _cleanup();
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    if (mounted) Navigator.of(context).pop();
+    unawaited(_cleanup());
   }
 
   Future<void> _cleanup() async {
