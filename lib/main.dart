@@ -7171,7 +7171,7 @@ class _ChatPageState extends State<ChatPage> {
                           // The body itself is lifted by the IME inset.
                           // Keep only enough content space for the composer so
                           // the final bubble can always scroll above it.
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 82),
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 68),
                           reverse: false,
                           itemCount: _displayTimelineItems.length,
                           itemBuilder: (context, i) {
@@ -7295,11 +7295,11 @@ class _ChatPageState extends State<ChatPage> {
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 3, 8, 5),
+                padding: const EdgeInsets.fromLTRB(6, 2, 6, 4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
                       decoration: BoxDecoration(
@@ -7312,9 +7312,9 @@ class _ChatPageState extends State<ChatPage> {
                             scheme.surface.withValues(alpha: dark ? .46 : .56),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(
-                          color: scheme.primary.withValues(alpha: dark ? .28 : .16),
+                          color: scheme.primary.withValues(alpha: dark ? .24 : .14),
                           width: 1.1,
                         ),
                         boxShadow: [
@@ -7378,7 +7378,7 @@ class _ChatPageState extends State<ChatPage> {
                               // Send-button taps must not unfocus the composer or dismiss the keyboard.
                               onTapOutside: (_) {},
                               minLines: 1,
-                              maxLines: 5,
+                              maxLines: 4,
                               textInputAction: TextInputAction.newline,
                               decoration: InputDecoration(
                                 hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
@@ -7392,7 +7392,7 @@ class _ChatPageState extends State<ChatPage> {
                                   borderRadius: BorderRadius.circular(19),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
                                 isDense: true,
                               ),
                             ),
@@ -7401,7 +7401,9 @@ class _ChatPageState extends State<ChatPage> {
                           IconButton.filled(
                             tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
                             style: IconButton.styleFrom(
-                              minimumSize: const Size(44, 44),
+                              minimumSize: const Size(42, 42),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
                               shape: const CircleBorder(),
                             ),
                             onPressed: sending ? null : sendText,
