@@ -6179,10 +6179,8 @@ class _ChatPageState extends State<ChatPage> {
     await _ensureLocalHiddenIds();
     if (hidden) {
       _locallyHiddenMessageIds.add(messageId);
-      // Bound the local tombstone list so it cannot grow without limit.
-      while (_locallyHiddenMessageIds.length > 2000) {
-        _locallyHiddenMessageIds.remove(_locallyHiddenMessageIds.first);
-      }
+      // Keep deletion tombstones persistent. Evicting old IDs can make deleted
+      // messages reappear after cache refreshes or app restarts.
     } else {
       _locallyHiddenMessageIds.remove(messageId);
     }
@@ -7108,16 +7106,30 @@ class _ChatPageState extends State<ChatPage> {
       },
     );
     if (picked != null && picked.isNotEmpty && mounted) {
-      final value = text.text; final selection = text.selection;
+      final value = text.text;
+      final selection = text.selection;
       final start = selection.start < 0 ? value.length : selection.start;
       final end = selection.end < 0 ? value.length : selection.end;
       if (tab == 1) {
-        final item = picked.last;
-        final art = stickerArt[stickers.indexOf(item)];
-        await sendText('[[ARAD_STICKER]]$art|$item', keepKeyboardOpen: false);
+        // Send every selected sticker, not just the last one. Reuse the normal
+        // optimistic send path so sticker delivery/error handling stays consistent.
+        for (final item in picked) {
+          if (!mounted) break;
+          final index = stickers.indexOf(item);
+          if (index < 0) continue;
+          final art = stickerArt[index];
+          text.value = TextEditingValue(
+            text: '[[ARAD_STICKER]]$art|$item',
+            selection: TextSelection.collapsed(offset: '[[ARAD_STICKER]]$art|$item'.length),
+          );
+          await sendText(keepKeyboardOpen: false);
+        }
       } else {
         final insertion = picked.join();
-        text.value = TextEditingValue(text: value.replaceRange(start, end, insertion), selection: TextSelection.collapsed(offset: start + insertion.length));
+        text.value = TextEditingValue(
+          text: value.replaceRange(start, end, insertion),
+          selection: TextSelection.collapsed(offset: start + insertion.length),
+        );
         _composerFocus.requestFocus();
       }
     }
@@ -7242,13 +7254,11 @@ class _ChatPageState extends State<ChatPage> {
       await _saveCachedChat(messages);
       await load();
     } catch (e) {
-      await _setLocalMessageHidden(messageId, false);
-      if (mounted) setState(() {
-        timelineItems = previousTimeline;
-        messages = previousMessages;
-      });
-      await _saveCachedChat(previousMessages);
-      if (mounted) showMsg(context, 'حذف برای من ناموفق بود: ${_friendlyError(e.toString())}');
+      // A local "delete for me" should remain deleted on this device even if
+      // the network/RLS write fails. Keep the tombstone and filtered cache;
+      // report that cloud sync failed rather than resurrecting the message.
+      await _saveCachedChat(messages);
+      if (mounted) showMsg(context, 'پیام از این دستگاه حذف شد؛ همگام‌سازی حذف با سرور ناموفق بود. اتصال را بررسی کنید.');
     }
   }
 
