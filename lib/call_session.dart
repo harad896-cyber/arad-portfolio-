@@ -192,8 +192,13 @@ class _CallSessionPageState extends State<CallSessionPage> {
         'call_type': widget.video ? 'video' : 'voice',
         'status': 'ringing',
       }).select('id').single();
-      if (_ending || !mounted) return;
+      // If the user hangs up while the insert is in flight, still retain the
+      // session id and close the server-side ringing state instead of orphaning it.
       _callId = row['id'].toString();
+      if (_ending || !mounted) {
+        unawaited(_finishStatus('cancelled'));
+        return;
+      }
 
       await _setupChannel();
       if (_ending || !mounted) return;
@@ -258,6 +263,12 @@ class _CallSessionPageState extends State<CallSessionPage> {
       unawaited(_handleSignal(payload));
     });
     await channel.subscribe();
+    // The call may have been dismissed while Realtime was subscribing. In that
+    // case cleanup has already run, so remove this late channel explicitly.
+    if (_ending || !mounted) {
+      try { await supabase.removeChannel(channel).timeout(const Duration(seconds: 2)); } catch (_) {}
+      return;
+    }
     _channel = channel;
   }
 
