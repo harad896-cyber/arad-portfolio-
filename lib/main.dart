@@ -1212,15 +1212,24 @@ class _ChatSettingsPageState extends State<ChatSettingsPage>{
       });
     }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'تنظیمات گفتگو بارگذاری نشد: $e');}}
   }
-  Future<void> _set(String key,bool value)async{try{await saveUserSettings({key:value});}catch(e){if(mounted)showMsg(context,'ذخیره تنظیمات انجام نشد: $e');}}
+  Future<void> _change(String key, bool value, bool previous, ValueChanged<bool> update) async {
+    if (mounted) setState(() => update(value));
+    try {
+      await saveUserSettings({key: value});
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => update(previous));
+      showMsg(context, 'تنظیم ذخیره نشد؛ مقدار قبلی برگشت. ${_friendlyError(e.toString())}');
+    }
+  }
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('تنظیمات گفتگو')),
     body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
-      Card(child:SwitchListTile(title:const Text('رسید خواندن'),subtitle:const Text('وضعیت خوانده‌شدن پیام‌ها'),value:receipts,onChanged:(v){setState(()=>receipts=v);_set('read_receipts',v);})),
-      Card(child:SwitchListTile(title:const Text('پیش‌نمایش لینک'),value:preview,onChanged:(v){setState(()=>preview=v);_set('link_previews',v);})),
-      Card(child:SwitchListTile(title:const Text('ارسال با Enter'),value:enterSend,onChanged:(v){setState(()=>enterSend=v);_set('enter_to_send',v);})),
-      Card(child:SwitchListTile(title:const Text('پخش خودکار صدا'),value:autoplay,onChanged:(v){setState(()=>autoplay=v);_set('autoplay_voice',v);})),
-      Card(child:SwitchListTile(title:const Text('ذخیره رسانه در گالری'),value:saveGallery,onChanged:(v){setState(()=>saveGallery=v);_set('save_media_to_gallery',v);})),
+      Card(child:SwitchListTile(title:const Text('رسید خواندن'),subtitle:const Text('وضعیت خوانده‌شدن پیام‌ها'),value:receipts,onChanged:(v)=>_change('read_receipts',v,receipts,(n)=>receipts=n))),
+      Card(child:SwitchListTile(title:const Text('پیش‌نمایش لینک'),value:preview,onChanged:(v)=>_change('link_previews',v,preview,(n)=>preview=n))),
+      Card(child:SwitchListTile(title:const Text('ارسال با Enter'),value:enterSend,onChanged:(v)=>_change('enter_to_send',v,enterSend,(n)=>enterSend=n))),
+      Card(child:SwitchListTile(title:const Text('پخش خودکار صدا'),value:autoplay,onChanged:(v)=>_change('autoplay_voice',v,autoplay,(n)=>autoplay=n))),
+      Card(child:SwitchListTile(title:const Text('ذخیره رسانه در گالری'),value:saveGallery,onChanged:(v)=>_change('save_media_to_gallery',v,saveGallery,(n)=>saveGallery=n))),
     ]),
   );
 }
