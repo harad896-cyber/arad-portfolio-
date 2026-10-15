@@ -7705,13 +7705,13 @@ class _ChatPageState extends State<ChatPage> {
     entry = OverlayEntry(builder: (context) => Positioned.fill(
       child: IgnorePointer(child: Center(
         child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: .25, end: 1.0),
-          duration: const Duration(milliseconds: 520),
-          curve: Curves.elasticOut,
-          builder: (context, scale, child) => Transform.scale(
-            scale: scale,
-            child: Opacity(
-              opacity: (1 - ((scale - 1).abs() * .45)).clamp(.0, 1.0),
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 850),
+          curve: Curves.easeOutCubic,
+          builder: (context, progress, child) => Opacity(
+            opacity: (1 - progress).clamp(0.0, 1.0),
+            child: Transform.scale(
+              scale: Curves.easeOutBack.transform(progress).clamp(.0, 1.08),
               child: child,
             ),
           ),
