@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'polish_widgets.dart';
 import 'main.dart';
@@ -116,15 +117,22 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             runSpacing: 12,
             children: colors.map((value) {
               final active = value == selected;
-              return GestureDetector(
-                onTap: () async {
-                  await appTheme.setBackgroundSeed(value);
-                  if (mounted) setState(() {});
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 54,
-                  height: 54,
+              return Tooltip(
+                message: active ? 'رنگ انتخاب‌شده' : 'انتخاب رنگ پس‌زمینه',
+                child: Semantics(
+                  button: true,
+                  selected: active,
+                  label: active ? 'رنگ پس‌زمینه فعلی' : 'انتخاب این رنگ پس‌زمینه',
+                  child: GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.selectionClick();
+                      await appTheme.setBackgroundSeed(value);
+                      if (mounted) setState(() {});
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 58,
+                      height: 58,
                   decoration: BoxDecoration(
                     color: Color(value),
                     shape: BoxShape.circle,
@@ -134,7 +142,9 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
                     ),
                     boxShadow: const [BoxShadow(blurRadius: 8, offset: Offset(0, 3), color: Color(0x22000000))],
                   ),
-                  child: active ? Icon(Icons.check_rounded, color: value == 0xFF20242B || value == 0xFF111827 ? Colors.white : Colors.black87) : null,
+                      child: active ? Icon(Icons.check_rounded, color: value == 0xFF20242B || value == 0xFF111827 ? Colors.white : Colors.black87) : null,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
