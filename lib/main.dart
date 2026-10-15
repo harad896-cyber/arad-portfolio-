@@ -155,6 +155,10 @@ class AppThemeController extends ChangeNotifier {
 }
 final appTheme = AppThemeController();
 
+// Track open chat routes so foreground message notifications can float above
+// another chat without duplicating a toast for the conversation already open.
+final Map<String, int> _openChatConversationCounts = <String, int>{};
+
 final aradLanguageController = LanguageController();
 
 class AppAccessibilityController extends ChangeNotifier {
@@ -3470,7 +3474,7 @@ class _HomePageState extends State<HomePage> {
     required String preview,
     required VoidCallback onOpen,
   }) {
-    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    if (!mounted) return;
     _dismissFloatingMessageNotification();
     final overlay = Overlay.of(context, rootOverlay: true);
     late final OverlayEntry entry;
@@ -3571,7 +3575,8 @@ class _HomePageState extends State<HomePage> {
     final messageId = row['id']?.toString() ?? '';
     if (!mounted || uid == null || senderId.isEmpty || senderId == uid ||
         conversationId.isEmpty || messageId.isEmpty) return;
-    if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    // A route-level check hid all notifications while any chat was open.
+    if ((_openChatConversationCounts[conversationId] ?? 0) > 0) return;
     if (!_shownMessageNotificationIds.add(messageId)) return;
     if (_shownMessageNotificationIds.length > 100) {
       _shownMessageNotificationIds.remove(_shownMessageNotificationIds.first);
@@ -3610,7 +3615,7 @@ class _HomePageState extends State<HomePage> {
       'file' => '📎 فایل جدید',
       _ => body.isEmpty ? 'پیام جدید دریافت شد' : body,
     };
-    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    if (!mounted || (_openChatConversationCounts[conversationId] ?? 0) > 0) return;
     _showFloatingMessageNotification(
       title: title,
       preview: preview,
@@ -8141,6 +8146,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    _openChatConversationCounts.update(widget.id, (count) => count + 1, ifAbsent: () => 1);
     _composerFocus.addListener(_onComposerFocus);
     _messagesScroll.addListener(_onMessagesScroll);
     _loadChatNotificationPreference();
@@ -8224,6 +8230,12 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    final openCount = _openChatConversationCounts[widget.id] ?? 0;
+    if (openCount <= 1) {
+      _openChatConversationCounts.remove(widget.id);
+    } else {
+      _openChatConversationCounts[widget.id] = openCount - 1;
+    }
     _chatReloadDebounce?.cancel();
     for (final timer in _reactionRefreshTimers.values) {
       timer.cancel();
