@@ -159,6 +159,7 @@ final aradLanguageController = LanguageController();
 class AppAccessibilityController extends ChangeNotifier {
   double textScale = 1.0;
   bool highContrast = false;
+  Timer? _scaleSaveTimer;
   String get _scope => supabase.auth.currentUser?.id ?? 'guest';
 
   Future<void> load() async {
@@ -173,10 +174,15 @@ class AppAccessibilityController extends ChangeNotifier {
   Future<void> setTextScale(double value) async {
     textScale = value.clamp(.8, 1.5);
     notifyListeners();
-    try {
-      final p = await SharedPreferences.getInstance();
-      await p.setDouble('accessibility_text_scale_$_scope', textScale);
-    } catch (_) {}
+    // Avoid writing preferences on every slider frame; save the final value
+    // after the user stops dragging for a moment.
+    _scaleSaveTimer?.cancel();
+    _scaleSaveTimer = Timer(const Duration(milliseconds: 250), () async {
+      try {
+        final p = await SharedPreferences.getInstance();
+        await p.setDouble('accessibility_text_scale_$_scope', textScale);
+      } catch (_) {}
+    });
   }
 
   Future<void> setHighContrast(bool value) async {
@@ -1795,6 +1801,7 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
       await supabase.auth.setSession(refresh);
       await rememberCurrentSession();
       await appTheme.loadForUser();
+      await appAccessibility.load();
       if(!mounted)return;
       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(route)=>false);
     }catch(e){
@@ -4482,7 +4489,7 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text('نمونه متن پیام • سلام، حالت چطوره؟',
-                      style: TextStyle(fontSize: 14 * scale, fontWeight: FontWeight.w700)),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
