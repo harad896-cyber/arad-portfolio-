@@ -1,8 +1,6 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
 
-/// Supplied by the build workflows from pubspec.yaml so release UI and APK share one version source.
-const String kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -39,6 +37,8 @@ import 'polish_widgets.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
 
+/// Supplied by the build workflows from pubspec.yaml so release UI and APK share one version source.
+const String kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
 
 const double kAppRadius = 18.0;
 const Duration kFastMotion = Duration(milliseconds: 200);
