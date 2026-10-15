@@ -2461,16 +2461,18 @@ class _HomePageState extends State<HomePage> {
         };
       }).toList();
 
-      final unreadRows = await supabase.from('chat_unread_marks').select('conversation_id').eq('user_id', uid);
-      final manualUnread = (unreadRows as List).map((r) => r['conversation_id'].toString()).toSet();
-      final pinRows = await supabase.from('chat_pins').select('conversation_id').eq('user_id', uid);
-      final pinned = (pinRows as List).map((r) => r['conversation_id'].toString()).toSet();
-      final archiveRows = await supabase.from('chat_archives').select('conversation_id').eq('user_id', uid);
-      final archived = (archiveRows as List).map((r) => r['conversation_id'].toString()).toSet();
-
-      final folderRows = List<Map<String, dynamic>>.from(
-        await supabase.from('chat_folders').select('id,name,icon_name,sort_order').eq('user_id', uid).order('sort_order').order('created_at'),
-      );
+      // These per-user settings are independent; fetch them concurrently so
+      // the chat list does not pay the network latency of four serial requests.
+      final auxiliaryRows = await Future.wait<dynamic>([
+        supabase.from('chat_unread_marks').select('conversation_id').eq('user_id', uid),
+        supabase.from('chat_pins').select('conversation_id').eq('user_id', uid),
+        supabase.from('chat_archives').select('conversation_id').eq('user_id', uid),
+        supabase.from('chat_folders').select('id,name,icon_name,sort_order').eq('user_id', uid).order('sort_order').order('created_at'),
+      ]);
+      final manualUnread = (auxiliaryRows[0] as List).map((r) => r['conversation_id'].toString()).toSet();
+      final pinned = (auxiliaryRows[1] as List).map((r) => r['conversation_id'].toString()).toSet();
+      final archived = (auxiliaryRows[2] as List).map((r) => r['conversation_id'].toString()).toSet();
+      final folderRows = List<Map<String, dynamic>>.from(auxiliaryRows[3] as List);
       final assignmentMap = <String, Set<String>>{};
       for (final folder in folderRows) {
         assignmentMap[folder['id'].toString()] = <String>{};
