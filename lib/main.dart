@@ -3144,6 +3144,7 @@ class _HomePageState extends State<HomePage> {
             onSelected: (value) {
               if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
+              else if (value == 'notifications') Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage()));
               else if (value == 'group') createGroup();
               else if (value == 'chat') createDirect();
               else if (value == 'join') _joinGroupByInviteCode();
@@ -3151,6 +3152,7 @@ class _HomePageState extends State<HomePage> {
             },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
+              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text('مرکز اعلان‌ها'))),
               PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text('بایگانی'))),
               PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text('ساخت گروه'))),
               PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text('گفتگوی جدید'))),
