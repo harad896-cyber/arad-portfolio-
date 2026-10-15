@@ -4320,7 +4320,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
     }
   }
   Future<void> _change(String key, bool value, bool previous, ValueChanged<bool> update) async {
-    update(value);
+    if (mounted) setState(() => update(value));
     try {
       await saveUserSettings({key: value});
       if (mounted) showMsg(context, 'تنظیم ذخیره شد.');
