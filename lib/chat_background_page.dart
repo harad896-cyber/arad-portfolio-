@@ -92,15 +92,50 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
               borderRadius: BorderRadius.circular(kPolishRadius),
               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 280),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: .13),
-                  borderRadius: BorderRadius.circular(kPolishRadius),
-                ),
-                child: const Text('پیش‌نمایش پس‌زمینه پیام‌ها', textAlign: TextAlign.center),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(kPolishRadius),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (appTheme.backgroundEffects) ...[
+                    Positioned(
+                      top: -70, right: -45, width: 200, height: 200,
+                      child: IgnorePointer(child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(colors: [
+                            Theme.of(context).colorScheme.primary.withValues(alpha: .32),
+                            Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+                            Colors.transparent,
+                          ]),
+                        ),
+                      )),
+                    ),
+                    Positioned(
+                      bottom: -95, left: -45, width: 220, height: 220,
+                      child: IgnorePointer(child: DecoratedBox(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(colors: [
+                            Color(0x4436B8FF), Color(0x1036B8FF), Colors.transparent,
+                          ]),
+                        ),
+                      )),
+                    ),
+                  ],
+                  Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 280),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: .68),
+                        borderRadius: BorderRadius.circular(kPolishRadius),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: .15)),
+                      ),
+                      child: const Text('پیش‌نمایش پس‌زمینه پیام‌ها', textAlign: TextAlign.center),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
