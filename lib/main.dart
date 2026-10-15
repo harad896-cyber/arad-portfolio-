@@ -5540,6 +5540,24 @@ class _ChatPageState extends State<ChatPage> {
                 const Expanded(child: Text('واکنش به پیام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
                 IconButton(tooltip: 'افرادی که واکنش داده‌اند', onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: const Icon(Icons.people_alt_outlined)),
               ]),
+              // One-tap favorites stay visible so the most common reactions need
+              // no category change or precise tap on a small grid cell.
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: ['❤️', '👍', '😂', '🔥', '🥰', '👏'].map((emoji) => Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: Material(
+                    color: scheme.primaryContainer.withValues(alpha: .55),
+                    borderRadius: BorderRadius.circular(15),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(15),
+                      onTap: () { Navigator.pop(ctx); _toggleReaction(id, emoji); },
+                      child: SizedBox(width: 48, height: 46, child: Center(child: Text(emoji, style: const TextStyle(fontSize: 27)))),
+                    ),
+                  ),
+                )).toList()),
+              ),
+              const SizedBox(height: 10),
               SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: categories.keys.map((name) => Padding(
                 padding: const EdgeInsetsDirectional.only(end: 7),
                 child: ChoiceChip(label: Text(name), selected: selectedCategory == name, onSelected: (_) => setSheetState(() => selectedCategory = name)),
