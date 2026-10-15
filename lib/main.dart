@@ -1454,6 +1454,70 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
   }
 }
 
+class QuickControlsPage extends StatefulWidget {
+  const QuickControlsPage({super.key});
+  @override State<QuickControlsPage> createState() => _QuickControlsPageState();
+}
+class _QuickControlsPageState extends State<QuickControlsPage> {
+  Widget _shortcut(IconData icon, String title, String subtitle, Widget page) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(backgroundColor: scheme.primaryContainer, child: Icon(icon, color: scheme.primary)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_left_rounded),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+        },
+      ),
+    );
+  }
+  @override Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('کنترل سریع برنامه')),
+      body: ListView(
+        padding: const EdgeInsets.all(14),
+        children: [
+          Card(child: SwitchListTile(
+            value: appTheme.dark,
+            secondary: Icon(appTheme.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: scheme.primary),
+            title: const Text('حالت تاریک', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('تغییر فوری ظاهر کل برنامه'),
+            onChanged: (v) async {
+              await appTheme.setDark(v);
+              try { await saveUserSettings({'theme_mode': v ? 'dark' : 'light'}); } catch (_) {}
+              if (mounted) setState(() {});
+            },
+          )),
+          Card(child: SwitchListTile(
+            value: appTheme.backgroundEffects,
+            secondary: Icon(Icons.auto_awesome_rounded, color: scheme.primary),
+            title: const Text('افکت نور پس‌زمینه', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('اگر برنامه کند است، افکت را خاموش کن'),
+            onChanged: (v) async {
+              await appTheme.setBackgroundEffects(v);
+              if (mounted) setState(() {});
+            },
+          )),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
+            child: Text('تنظیمات پرکاربرد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          ),
+          _shortcut(Icons.wallpaper_rounded, 'پس‌زمینه و افکت‌ها', 'انتخاب رنگ، عکس و نور ملایم', const ChatBackgroundPage()),
+          _shortcut(Icons.notifications_active_outlined, 'اعلان‌ها', 'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها', const NotificationsCenterPage()),
+          _shortcut(Icons.data_saver_on_rounded, 'مصرف داده', 'کنترل مصرف اینترنت و دانلودها', const DataSettingsPage()),
+          _shortcut(Icons.text_fields_rounded, 'خوانایی و اندازه متن', 'اندازه متن و کنتراست کل برنامه', const AccessibilityPage()),
+          _shortcut(Icons.chat_bubble_outline_rounded, 'تنظیمات گفتگو', 'رسید خواندن، پیش‌نمایش و رفتار پیام‌ها', const ChatSettingsPage()),
+          _shortcut(Icons.palette_outlined, 'ظاهر و رنگ برنامه', 'حالت روشن/تاریک و شخصی‌سازی', const ProfessionalSettingsPage()),
+        ],
+      ),
+    );
+  }
+}
+
 class NotificationsCenterPage extends StatefulWidget {
   const NotificationsCenterPage({super.key});
   @override State<NotificationsCenterPage> createState() => _NotificationsCenterPageState();
@@ -3264,7 +3328,8 @@ class _HomePageState extends State<HomePage> {
             tooltip: 'منوی اصلی',
             icon: const Icon(Icons.menu_rounded),
             onSelected: (value) {
-              if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
+              if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickControlsPage()));
+              else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
               else if (value == 'notifications') Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage()));
               else if (value == 'group') createGroup();
@@ -3273,6 +3338,7 @@ class _HomePageState extends State<HomePage> {
               else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage()));
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('کنترل سریع برنامه'))),
               PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
               PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text('مرکز اعلان‌ها'))),
               PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text('بایگانی'))),
