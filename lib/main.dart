@@ -5616,14 +5616,15 @@ class _AmbientChatGlow extends StatefulWidget {
 }
 
 class _AmbientChatGlowState extends State<_AmbientChatGlow> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 12),
-  );
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    );
     if (widget.enabled) _controller.repeat(reverse: true);
   }
 
