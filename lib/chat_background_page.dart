@@ -54,6 +54,22 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
     0xFFFFEEF5,
     0xFFF1ECFF,
   ];
+  static const colorLabels = <int, String>{
+    0xFF11131A: 'ذغالی',
+    0xFF17152B: 'بنفش شب',
+    0xFF10202D: 'آبی نفتی',
+    0xFF20242B: 'خاکستری تیره',
+    0xFF302047: 'بنفش عمیق',
+    0xFF173A45: 'سبز دریایی',
+    0xFF3B2437: 'زرشکی تیره',
+    0xFF0B1220: 'سرمه‌ای',
+    0xFFF5F5F7: 'سفید روشن',
+    0xFFEAF4FF: 'آبی روشن',
+    0xFFEAFBF3: 'سبز روشن',
+    0xFFFFF4E5: 'کرم',
+    0xFFFFEEF5: 'صورتی روشن',
+    0xFFF1ECFF: 'یاسی روشن',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +115,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             child: SwitchListTile(
               value: appTheme.backgroundEffects,
               onChanged: (value) async {
+                HapticFeedback.selectionClick();
                 await appTheme.setBackgroundEffects(value);
                 if (mounted) setState(() {});
               },
@@ -108,7 +125,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             ),
           ),
           if (appTheme.backgroundImageBase64 != null)
-            TextButton.icon(onPressed: _removeGalleryImage, icon: const Icon(Icons.delete_outline), label: const Text('حذف عکس پس‌زمینه')),
+            TextButton.icon(onPressed: () { HapticFeedback.selectionClick(); _removeGalleryImage(); }, icon: const Icon(Icons.delete_outline), label: const Text('حذف عکس پس‌زمینه')),
           const SizedBox(height: 22),
           const Text('رنگ پس‌زمینه', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 12),
@@ -118,11 +135,11 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             children: colors.map((value) {
               final active = value == selected;
               return Tooltip(
-                message: active ? 'رنگ انتخاب‌شده' : 'انتخاب رنگ پس‌زمینه',
+                message: active ? '${colorLabels[value]} — انتخاب‌شده' : 'انتخاب ${colorLabels[value]}',
                 child: Semantics(
                   button: true,
                   selected: active,
-                  label: active ? 'رنگ پس‌زمینه فعلی' : 'انتخاب این رنگ پس‌زمینه',
+                  label: active ? 'رنگ فعلی: ${colorLabels[value]}' : 'انتخاب رنگ ${colorLabels[value]}',
                   child: GestureDetector(
                     onTap: () async {
                       HapticFeedback.selectionClick();
