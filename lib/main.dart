@@ -4993,7 +4993,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> load() async {
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     await _restoreCachedChat();
-    if (mounted) setState(() { _isSyncing = true; if (messages.isEmpty) loading = false; });
+    if (mounted) setState(() { _isSyncing = true; loading = messages.isEmpty; });
     try {
       // Conversation metadata and recent messages are independent reads.
       // Run them together so opening a chat waits for one network round-trip, not two.
