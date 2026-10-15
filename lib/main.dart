@@ -4995,11 +4995,22 @@ class _ChatPageState extends State<ChatPage> {
     await _restoreCachedChat();
     if (mounted) setState(() { _isSyncing = true; if (messages.isEmpty) loading = false; });
     try {
-      final conversation = Map<String, dynamic>.from(await supabase
-          .from('conversations').select('id,type,title,avatar_url,created_by,created_at')
-          .eq('id', widget.id).single().timeout(const Duration(seconds: 8)));
-      final rows = await supabase.from('messages').select().eq('conversation_id', widget.id).order('created_at', ascending: false).limit(120).timeout(const Duration(seconds: 8));
-      final loaded = List<Map<String, dynamic>>.from(rows).reversed.toList();
+      // Conversation metadata and recent messages are independent reads.
+      // Run them together so opening a chat waits for one network round-trip, not two.
+      final initialRows = await Future.wait<dynamic>([
+        supabase.from('conversations')
+            .select('id,type,title,avatar_url,created_by,created_at')
+            .eq('id', widget.id).single()
+            .timeout(const Duration(seconds: 8)),
+        supabase.from('messages')
+            .select()
+            .eq('conversation_id', widget.id)
+            .order('created_at', ascending: false)
+            .limit(120)
+            .timeout(const Duration(seconds: 8)),
+      ]);
+      final conversation = Map<String, dynamic>.from(initialRows[0] as Map);
+      final loaded = List<Map<String, dynamic>>.from(initialRows[1] as List).reversed.toList();
       if (widget.targetMessageId != null && !loaded.any((m) => '${m['id']}' == widget.targetMessageId)) {
         try {
           final target = await supabase.from('messages').select()
@@ -5032,15 +5043,21 @@ class _ChatPageState extends State<ChatPage> {
       List<Map<String, dynamic>> groupMembers = [];
       List<Map<String, dynamic>> groupEvents = [];
       if (conversation['type'] == 'group') {
-        try {
-          groupMembers = List<Map<String, dynamic>>.from(await supabase.from('conversation_members')
-              .select('user_id,role,joined_at').eq('conversation_id', widget.id));
-        } catch (_) {}
-        try {
-          groupEvents = List<Map<String, dynamic>>.from(await supabase.from('group_audit_logs')
+        // Member roster and audit history are also independent; neither should
+        // block the other before profiles can be requested.
+        final groupReads = await Future.wait<dynamic>([
+          supabase.from('conversation_members')
+              .select('user_id,role,joined_at').eq('conversation_id', widget.id)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          supabase.from('group_audit_logs')
               .select('id,actor_id,action,target_user_id,details,created_at')
-              .eq('conversation_id', widget.id).order('created_at', ascending: true).limit(100));
-        } catch (_) {}
+              .eq('conversation_id', widget.id).order('created_at', ascending: true).limit(100)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+        ]);
+        groupMembers = List<Map<String, dynamic>>.from(groupReads[0] as List);
+        groupEvents = List<Map<String, dynamic>>.from(groupReads[1] as List);
         for (final event in groupEvents) {
           if (event['actor_id'] != null) senderIds.add(event['actor_id'].toString());
           if (event['target_user_id'] != null) senderIds.add(event['target_user_id'].toString());
@@ -5072,18 +5089,29 @@ class _ChatPageState extends State<ChatPage> {
       final loadedReadReceipts = <String, List<Map<String, dynamic>>>{};
       final loadedAttachments = <String, Map<String, dynamic>>{};
       if (ids.isNotEmpty) {
-        try {
-          final receipts = await supabase.from('message_read_receipts').select('message_id,reader_id,read_at').inFilter('message_id', ids);
-          for (final receipt in List<Map<String, dynamic>>.from(receipts)) {
-            loadedReadReceipts.putIfAbsent('${receipt['message_id']}', () => []).add(receipt);
-          }
-        } catch (_) {}
-        final rr = await supabase.from('message_reactions').select('message_id,user_id,reaction,created_at').inFilter('message_id', ids);
-        for (final r in List<Map<String, dynamic>>.from(rr)) {
+        // Receipts, reactions and attachment metadata are independent lookups
+        // for the same page of messages. Fetch together to shorten chat refreshes.
+        final messageMeta = await Future.wait<dynamic>([
+          supabase.from('message_read_receipts')
+              .select('message_id,reader_id,read_at').inFilter('message_id', ids)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          supabase.from('message_reactions')
+              .select('message_id,user_id,reaction,created_at').inFilter('message_id', ids)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          supabase.from('message_attachments')
+              .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+        ]);
+        for (final receipt in List<Map<String, dynamic>>.from(messageMeta[0] as List)) {
+          loadedReadReceipts.putIfAbsent('${receipt['message_id']}', () => []).add(receipt);
+        }
+        for (final r in List<Map<String, dynamic>>.from(messageMeta[1] as List)) {
           loadedReactions.putIfAbsent('${r['message_id']}', () => []).add(r);
         }
-        final aa = await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids);
-        for (final a in List<Map<String, dynamic>>.from(aa)) {
+        for (final a in List<Map<String, dynamic>>.from(messageMeta[2] as List)) {
           loadedAttachments['${a['message_id']}'] = a;
         }
       }
