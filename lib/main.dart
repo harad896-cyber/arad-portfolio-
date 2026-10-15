@@ -717,7 +717,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       color: scheme.surfaceContainerHighest.withValues(alpha: .62),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
+        onTap: () { HapticFeedback.selectionClick(); onTap(); },
         borderRadius: BorderRadius.circular(14),
         child: Container(
           constraints: const BoxConstraints(minWidth: 92, minHeight: 76),
@@ -3518,7 +3518,17 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             selectedIndex: navIndex,
-            onDestinationSelected: (i) => setState(() => navIndex = i),
+            onDestinationSelected: (i) {
+              HapticFeedback.selectionClick();
+              if (i == navIndex) {
+                if (i == 0) {
+                  setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
+                  unawaited(load());
+                }
+                return;
+              }
+              setState(() => navIndex = i);
+            },
             destinations: const [
           NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
           NavigationDestination(icon: Icon(Icons.people_outline_rounded), selectedIcon: Icon(Icons.people_rounded), label: 'مخاطبین'),
@@ -6259,7 +6269,8 @@ class _ChatPageState extends State<ChatPage> {
     final mine = previous.where((r) => r['user_id']?.toString() == uid).toList();
     final sameReaction = mine.any((r) => r['reaction']?.toString() == emoji);
 
-    // Update immediately; never block the interaction on a full chat reload.
+    // Give immediate feedback; network reconciliation happens after the UI update.
+    HapticFeedback.selectionClick();
     _showReactionBurst(emoji);
     if (mounted) setState(() {
       final current = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
