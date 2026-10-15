@@ -1752,7 +1752,41 @@ class _BackupPageState extends State<BackupPage>{
 }
 class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
-  @override Widget build(BuildContext context)=>DefaultTabController(length:3,child:Scaffold(appBar:AppBar(title:const Text('استیکر و ایموجی'),bottom:const TabBar(tabs:[Tab(text:'استیکرها'),Tab(text:'GIF'),Tab(text:'ایموجی')])),body:TabBarView(children:[ListView(children:const[ListTile(leading:Icon(Icons.stars_rounded),title:Text('پک‌های استیکر من')),ListTile(leading:Icon(Icons.add_rounded),title:Text('افزودن پک'))]),Center(child:TextField(decoration:InputDecoration(hintText:'جستجوی GIF',prefixIcon:Icon(Icons.search_rounded)))),GridView.count(crossAxisCount:6,children:List.generate(24,(i)=>Center(child:Text(['😀','❤️','👍','😂','🔥','🎉'][i%6],style:const TextStyle(fontSize:25)))))])));
+  @override Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DefaultTabController(length: 3, child: Scaffold(
+      appBar: AppBar(title: const Text('استیکر و ایموجی'), bottom: const TabBar(tabs: [
+        Tab(text: 'استیکرها'), Tab(text: 'GIF'), Tab(text: 'ایموجی'),
+      ])),
+      body: TabBarView(children: [
+        ListView(padding: const EdgeInsets.all(14), children: [
+          const Text('پک‌های تصویری آراد', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+          const SizedBox(height: 10),
+          for (final pack in const [
+            ('🌌', 'فضایی', '🚀✨  🪐🌟  👾💜  🛸👽  🌌💫'),
+            ('💜', 'احساسات', '🥹🫶  😭💔  😍🌹  💌✨  🫶✨'),
+            ('🎮', 'حال‌و‌هوا', '😎🕶️  😂⚡  🎧🎵  🏆🔥  😴🌙'),
+          ])
+            Card(child: ListTile(
+              leading: CircleAvatar(backgroundColor: scheme.primaryContainer, child: Text(pack.$1, style: const TextStyle(fontSize: 23))),
+              title: Text(pack.$2, style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(pack.$3),
+              trailing: const Icon(Icons.check_circle_rounded, color: Colors.green),
+            )),
+          const SizedBox(height: 8),
+          const AppEmptyState(icon: Icons.auto_awesome_rounded, title: 'استیکرهای تصویری آماده‌اند',
+            subtitle: 'برای ارسال، داخل گفتگو روی 😀 بزنید و بخش استیکرها را باز کنید.'),
+        ]),
+        Center(child: Padding(padding: const EdgeInsets.all(18), child: TextField(
+          decoration: const InputDecoration(hintText: 'جستجوی GIF', prefixIcon: Icon(Icons.search_rounded)),
+          onSubmitted: (value) { if (value.trim().isNotEmpty) showMsg(context, 'جست‌وجوی GIF آنلاین هنوز به سرویس مستقل متصل نیست.'); },
+        ))),
+        GridView.count(crossAxisCount: 6, children: List.generate(24, (i) => Center(
+          child: Text(['😀','❤️','👍','😂','🔥','🎉'][i % 6], style: const TextStyle(fontSize: 25)),
+        ))),
+      ]),
+    ));
+  }
 }
 const _deviceSessionIdKey = 'arad_device_session_id_v1';
 
@@ -7003,6 +7037,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _showChatEmojiPicker() async {
     const emojis = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','🥰','😍','🤩','🥲','😋','😜','🤗','🤔','😎','🥳','😢','😭','😡','🤖','👋','👌','✌️','🤞','👍','👎','👏','🙌','🫶','🙏','💪','👀','❤️','🧡','💛','💚','💙','🩵','💜','🩷','🤎','🖤','🤍','💔','❤️‍🔥','💕','💖','💯','🐶','🐱','🦊','🐻','🐼','🐸','🐵','🐺','🦄','🦋','🐢','🐬','🦁','🍎','🍊','🍉','🍇','🍓','🍒','🥑','🍔','🍕','🍜','🍦','🎂','☕','⚽','🎮','🎧','🎉','🎁','🏆','🚀','🌍','🌙','⭐','✨','⚡','🔥','☀️','🌈','❄️','🌊','🪐','💎','👑','🌹','🌸'];
     const stickers = ['🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧','😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️','💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭','💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️','🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤','🫶✨','🥹💖','😹🔥','😴🌙','🤝💯','😤⚡','🤍🕊️','🖤🥀','💜🦋','🌈🫧'];
+    const stickerArt = ['🚀','👾','🪐','🛸','🌌','🤖','🐸','🦊','🐼','🐱','😎','🥹','😭','😂','😍','🤯','😈','👑','🫡','🫠','💀','🧠','🦋','🐉','🦄','🐙','🐳','🦖','🐣','🦝','💌','💘','❤️‍🔥','💜','💚','💙','🧡','🤍','🖤','💛','🎮','🎧','🏆','🎯','🧿','🍓','🍉','🍄','☕','🌙','🫶','🥹','😹','😴','🤝','😤','🕊️','🥀','🦋','🌈'];
     String filter = '';
     int tab = 0;
     final selected = <String>[];
@@ -7050,11 +7085,12 @@ class _ChatPageState extends State<ChatPage> {
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: MediaQuery.of(context).size.width < 380 ? 7 : 8, mainAxisSpacing: 5, crossAxisSpacing: 5, childAspectRatio: .95),
                   itemBuilder: (_, i) {
                     final item = shown[i]; final isSelected = selected.contains(item);
+                    final art = tab == 1 ? stickerArt[stickers.indexOf(item)] : item;
                     return Material(color: isSelected ? scheme.primaryContainer : scheme.surfaceContainerHighest.withValues(alpha: .55), borderRadius: BorderRadius.circular(13),
                       child: InkWell(borderRadius: BorderRadius.circular(13), onTap: () => setSheetState(() {
                         if (isSelected) { selected.remove(item); } else { selected.add(item); }
                       }), child: Stack(alignment: Alignment.center, children: [
-                        Text(item, textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 23)),
+                        Text(art, textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 34, shadows: tab == 1 ? const [Shadow(color: Color(0x667C3AED), blurRadius: 10, offset: Offset(0, 2))] : const [])),
                         if (isSelected) PositionedDirectional(top: 2, end: 2, child: Icon(Icons.check_circle, size: 13, color: scheme.primary)),
                       ])),
                     );
@@ -7075,9 +7111,15 @@ class _ChatPageState extends State<ChatPage> {
       final value = text.text; final selection = text.selection;
       final start = selection.start < 0 ? value.length : selection.start;
       final end = selection.end < 0 ? value.length : selection.end;
-      final insertion = picked.join();
-      text.value = TextEditingValue(text: value.replaceRange(start, end, insertion), selection: TextSelection.collapsed(offset: start + insertion.length));
-      _composerFocus.requestFocus();
+      if (tab == 1) {
+        final item = picked.last;
+        final art = stickerArt[stickers.indexOf(item)];
+        await sendText('[[ARAD_STICKER]]$art|$item', keepKeyboardOpen: false);
+      } else {
+        final insertion = picked.join();
+        text.value = TextEditingValue(text: value.replaceRange(start, end, insertion), selection: TextSelection.collapsed(offset: start + insertion.length));
+        _composerFocus.requestFocus();
+      }
     }
   }
 
@@ -7961,7 +8003,27 @@ class _ChatPageState extends State<ChatPage> {
          '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
 
     Widget content;
-    if (m['message_type'] == 'image') {
+    final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
+    if (stickerMatch != null) {
+      final art = stickerMatch.group(1) ?? '✨';
+      final caption = stickerMatch.group(2) ?? '';
+      content = Container(
+        constraints: const BoxConstraints(minWidth: 118, minHeight: 112, maxWidth: 190),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [Color(0xFF352064), Color(0xFF7951C7), Color(0xFF1C315C)]),
+          border: Border.all(color: Colors.white.withValues(alpha: .28)),
+          boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: const Offset(0, 5))],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(art, style: const TextStyle(fontSize: 58, shadows: [Shadow(color: Color(0xAAFFFFFF), blurRadius: 12, offset: Offset(0, 2))])),
+          const SizedBox(height: 4),
+          Text(caption, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+        ]),
+      );
+    } else if (m['message_type'] == 'image') {
       content = _imageAttachment(m);
     } else if (m['message_type'] == 'video') {
       content = _videoAttachment(m);
