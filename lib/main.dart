@@ -2456,7 +2456,7 @@ class _HomePageState extends State<HomePage> {
           '_peer': peer,
           '_last': last,
           '_preview': r['preview'] ?? 'هنوز پیامی ارسال نشده',
-          'unread_count': int.tryParse('0') ?? 0,
+          'unread_count': int.tryParse('\${r['unread_count'] ?? 0}') ?? 0,
           'is_online': peer?['is_online'] == true,
         };
       }).toList();
@@ -2553,12 +2553,55 @@ class _HomePageState extends State<HomePage> {
     try {
       final uid = supabase.auth.currentUser!.id;
       if (result['id'].toString() == uid) { showMsg(context, 'نمی‌توانید با خودتان گفتگوی شخصی بسازید.'); return; }
-      final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
-      for (final r in existing) {
-        final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', r['conversation_id']);
-        if ((members as List).length == 2 && members.any((m) => m['user_id'] == result['id'])) {
-          if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: r['conversation_id'].toString(), title: (result['display_name'] ?? result['username'] ?? 'گفتگو').toString())));
-          return;
+      // Resolve an existing direct chat with bounded queries instead of one
+      // network request per conversation. This matters for accounts with many chats.
+      final existingRows = await supabase
+          .from('conversation_members')
+          .select('conversation_id')
+          .eq('user_id', uid);
+      final existingIds = (existingRows as List)
+          .map((r) => '\${r['conversation_id']}')
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
+      if (existingIds.isNotEmpty) {
+        final directRows = await supabase
+            .from('conversations')
+            .select('id')
+            .inFilter('id', existingIds)
+            .eq('type', 'direct');
+        final directIds = (directRows as List)
+            .map((r) => '\${r['id']}')
+            .where((id) => id.isNotEmpty)
+            .toSet()
+            .toList();
+        if (directIds.isNotEmpty) {
+          final memberRows = await supabase
+              .from('conversation_members')
+              .select('conversation_id,user_id')
+              .inFilter('conversation_id', directIds);
+          final membersByConversation = <String, Set<String>>{};
+          for (final member in memberRows as List) {
+            final conversationId = '\${member['conversation_id'] ?? ''}';
+            final memberId = '\${member['user_id'] ?? ''}';
+            if (conversationId.isNotEmpty && memberId.isNotEmpty) {
+              (membersByConversation[conversationId] ??= <String>{}).add(memberId);
+            }
+          }
+          for (final conversationId in directIds) {
+            final memberIds = membersByConversation[conversationId] ?? <String>{};
+            if (memberIds.length == 2 && memberIds.contains('\${result['id']}') && memberIds.contains(uid)) {
+              if (mounted) {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ChatPage(
+                    id: conversationId,
+                    title: (result['display_name'] ?? result['username'] ?? 'گفتگو').toString(),
+                  ),
+                ));
+              }
+              return;
+            }
+          }
         }
       }
       final c = await supabase.from('conversations').insert({'type': 'direct', 'created_by': uid}).select().single();
