@@ -65,7 +65,12 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
           Container(
             height: 220,
             decoration: BoxDecoration(
-              color: Color(selected),
+              color: appTheme.backgroundEffects ? null : Color(selected),
+              gradient: appTheme.backgroundEffects ? RadialGradient(
+                center: const Alignment(-.65, -.75),
+                radius: 1.35,
+                colors: [Theme.of(context).colorScheme.primary.withValues(alpha: .28), Color(selected)],
+              ) : null,
               image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .12), BlendMode.darken)),
               borderRadius: BorderRadius.circular(kPolishRadius),
               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
@@ -87,6 +92,19 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             onPressed: _choosingImage ? null : _chooseGalleryImage,
             icon: _choosingImage ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.photo_library_outlined),
             label: Text(_choosingImage ? 'در حال انتخاب...' : 'انتخاب عکس از گالری'),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: SwitchListTile(
+              value: appTheme.backgroundEffects,
+              onChanged: (value) async {
+                await appTheme.setBackgroundEffects(value);
+                if (mounted) setState(() {});
+              },
+              secondary: const Icon(Icons.auto_awesome_rounded),
+              title: const Text('افکت نور ملایم'),
+              subtitle: const Text('درخشش بنفش و آبی با مصرف سبک؛ هر زمان خواستی خاموشش کن.'),
+            ),
           ),
           if (appTheme.backgroundImageBase64 != null)
             TextButton.icon(onPressed: _removeGalleryImage, icon: const Icon(Icons.delete_outline), label: const Text('حذف عکس پس‌زمینه')),
