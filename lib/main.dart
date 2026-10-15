@@ -336,7 +336,7 @@ class AradMessenger extends StatelessWidget {
         ),
         appBarTheme: const AppBarTheme(
           elevation: 0,
-          scrolledUnderElevation: 1,
+          scrolledUnderElevation: 0,
           shadowColor: Color(0x14536DFA),
           backgroundColor: Color(0xFFFCFCFE),
           surfaceTintColor: Colors.transparent,
@@ -357,7 +357,7 @@ class AradMessenger extends StatelessWidget {
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           tileColor: const Color(0xFFFFFFFF),
           selectedTileColor: const Color(0xFFEAF0FF),
           iconColor: const Color(0xFF766A88),
@@ -366,36 +366,36 @@ class AradMessenger extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xFFF0F2F8),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFF7C5CFF), width: 1.8),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            elevation: 7,
-            shadowColor: const Color(0x557C5CFF),
-            minimumSize: const Size.fromHeight(48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            minimumSize: const Size.fromHeight(46),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          elevation: 4,
+          elevation: 2,
           shape: StadiumBorder(),
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           insetPadding: const EdgeInsets.all(16),
         ),
       ),
@@ -418,7 +418,7 @@ class AradMessenger extends StatelessWidget {
         ),
         appBarTheme: const AppBarTheme(
           elevation: 0,
-          scrolledUnderElevation: 1,
+          scrolledUnderElevation: 0,
           shadowColor: Color(0x227890FF),
           backgroundColor: Color(0xFF141722),
           surfaceTintColor: Colors.transparent,
@@ -437,7 +437,7 @@ class AradMessenger extends StatelessWidget {
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           tileColor: const Color(0xFF191F30),
           selectedTileColor: const Color(0xFF283657),
           iconColor: const Color(0xFFBDB1D0),
@@ -446,31 +446,31 @@ class AradMessenger extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xFF191F30),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFF2A3349)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFF2A3349)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFFB99CFF), width: 1.8),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            elevation: 8,
-            shadowColor: const Color(0x779B7BFF),
-            minimumSize: const Size.fromHeight(48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            minimumSize: const Size.fromHeight(46),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          elevation: 5,
+          elevation: 2,
           shape: StadiumBorder(),
         ),
       ),      home: const AuthGate(),
@@ -4571,7 +4571,7 @@ class _ChatPageState extends State<ChatPage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: scheme.surface.withValues(alpha: .88),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: scheme.outline.withValues(alpha: .14)),
         ),
         child: Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
@@ -6230,7 +6230,7 @@ class _ChatPageState extends State<ChatPage> {
           decoration: BoxDecoration(color: Colors.black.withValues(alpha: .14), borderRadius: BorderRadius.circular(24)),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             ...emojis.map((e) => InkWell(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               onTap: () { Navigator.pop(context); reactTo(message, e); },
               child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 23))),
             )),
