@@ -174,31 +174,43 @@ class _StoriesPageState extends State<StoriesPage> {
       final uid = _storiesSupabase.auth.currentUser?.id;
       _likedIds.clear(); _likeCounts.clear(); _commentCounts.clear(); _viewCounts.clear();
       if (ids.isNotEmpty) {
-        try {
-          final likes = await _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids);
-          for (final row in List<Map<String,dynamic>>.from(likes)) {
-            final id = row['story_id'].toString();
-            _likeCounts[id] = (_likeCounts[id] ?? 0) + 1;
-            if (row['user_id']?.toString() == uid) _likedIds.add(id);
-          }
-        } catch (_) {}
-        try {
-          final comments = await _storiesSupabase.from('story_comments').select('story_id').inFilter('story_id', ids);
-          for (final row in List<Map<String,dynamic>>.from(comments)) {
-            final id = row['story_id'].toString();
-            _commentCounts[id] = (_commentCounts[id] ?? 0) + 1;
-          }
-        } catch (_) {}
-        try {
-          final views = await _storiesSupabase.from('story_views').select('story_id,viewer_id').inFilter('story_id', ids);
-          for (final row in List<Map<String,dynamic>>.from(views)) {
-            final id = row['story_id'].toString();
-            _viewCounts[id] = (_viewCounts[id] ?? 0) + 1;
-          }
-        } catch (_) {}
+        // Load independent engagement counters together; serial queries made
+        // the story viewer stay black while waiting for each response.
+        final analytics = await Future.wait<dynamic>([
+          _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids)
+              .then<dynamic>((v) => v).catchError((_) => <Map<String,dynamic>>[]),
+          _storiesSupabase.from('story_comments').select('story_id').inFilter('story_id', ids)
+              .then<dynamic>((v) => v).catchError((_) => <Map<String,dynamic>>[]),
+          _storiesSupabase.from('story_views').select('story_id,viewer_id').inFilter('story_id', ids)
+              .then<dynamic>((v) => v).catchError((_) => <Map<String,dynamic>>[]),
+        ]);
+        for (final row in List<Map<String,dynamic>>.from(analytics[0] as List)) {
+          final id = row['story_id'].toString();
+          _likeCounts[id] = (_likeCounts[id] ?? 0) + 1;
+          if (row['user_id']?.toString() == uid) _likedIds.add(id);
+        }
+        for (final row in List<Map<String,dynamic>>.from(analytics[1] as List)) {
+          final id = row['story_id'].toString();
+          _commentCounts[id] = (_commentCounts[id] ?? 0) + 1;
+        }
+        for (final row in List<Map<String,dynamic>>.from(analytics[2] as List)) {
+          final id = row['story_id'].toString();
+          _viewCounts[id] = (_viewCounts[id] ?? 0) + 1;
+        }
       }
-      for (final s in stories) {
-        try { urls[s['id'].toString()] = await _storiesSupabase.storage.from('stories').createSignedUrl(s['media_path'].toString(), 3600); } catch (_) {}
+      // Sign media URLs concurrently so the viewer doesn't wait for one request
+      // per story before it can display the first frame.
+      final signedUrls = await Future.wait<MapEntry<String, String>?>(stories.map((s) async {
+        try {
+          final signed = await _storiesSupabase.storage.from('stories')
+              .createSignedUrl(s['media_path'].toString(), 3600);
+          return MapEntry(s['id'].toString(), signed);
+        } catch (_) {
+          return null;
+        }
+      }));
+      for (final entry in signedUrls) {
+        if (entry != null) urls[entry.key] = entry.value;
       }
       var nextIndex = 0;
       if (widget.initialStoryId != null) {
@@ -513,7 +525,22 @@ class _StoriesPageState extends State<StoriesPage> {
     final ext = file.name.contains('.') ? file.name.split('.').last.toLowerCase() : (choice == 'video' ? 'mp4' : 'jpg');
     final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.$ext';
     try {
-      await _storiesSupabase.storage.from('stories').uploadBinary(path, Uint8List.fromList(bytes), fileOptions: FileOptions(upsert: false, contentType: choice == 'video' ? 'video/mp4' : 'image/jpeg'));
+      final contentType = switch (ext) {
+        'jpg' || 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'gif' => 'image/gif',
+        'mov' => 'video/quicktime',
+        'webm' => 'video/webm',
+        'm4v' => 'video/x-m4v',
+        'mp4' => 'video/mp4',
+        _ => choice == 'video' ? 'video/mp4' : 'image/jpeg',
+      };
+      await _storiesSupabase.storage.from('stories').uploadBinary(
+        path,
+        Uint8List.fromList(bytes),
+        fileOptions: FileOptions(upsert: false, contentType: contentType),
+      );
       String? caption;
       if (mounted) {
         final controller = TextEditingController();
@@ -528,7 +555,8 @@ class _StoriesPageState extends State<StoriesPage> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.')));
         await _load();
         if (mounted && _stories.isNotEmpty) {
-          final mineIndex = _stories.indexWhere((s) => s['id']?.toString() == _stories.last['id']?.toString());
+          final uid = _storiesSupabase.auth.currentUser?.id;
+          final mineIndex = _stories.indexWhere((s) => s['user_id']?.toString() == uid);
           if (mineIndex >= 0) setState(() => _index = mineIndex);
           _startTimer();
         }
