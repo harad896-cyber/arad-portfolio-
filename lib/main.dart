@@ -6656,7 +6656,6 @@ class _ChatPageState extends State<ChatPage> {
     // Message actions must never activate the composer or leave the IME visible.
     if (_composerFocus.hasFocus) _composerFocus.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
-    const emojis = ['❤️', '😁', '💘', '👍', '👎', '🔥', '🥰'];
     final scheme = Theme.of(context).colorScheme;
     await showGeneralDialog<void>(
       context: context,
@@ -6757,7 +6756,7 @@ class _ChatPageState extends State<ChatPage> {
         Row(children: [
           action(Icons.reply_rounded, 'پاسخ', () => setReply(message)),
           action(Icons.bookmark_add_rounded, 'ذخیره', () => saveMessage(message)),
-          action(Icons.forward_rounded, 'هدایت/فوروارد', () => forwardMessage(message)),
+          action(Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
         ]),
         const SizedBox(height: 2),
         Row(children: [
