@@ -5493,17 +5493,12 @@ class _ChatPageState extends State<ChatPage> {
 
   final List<String> quickReactions = const ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'];
   Future<void> _toggleReaction(String messageId, String emoji) async {
-    final uid=supabase.auth.currentUser?.id; if(uid==null)return;
-    try {
-      final existing=await supabase.from('message_reactions').select('message_id,user_id,reaction').eq('message_id',messageId).eq('user_id',uid).maybeSingle();
-      if(existing!=null && existing['reaction'] == emoji) {
-        await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid);
-      } else {
-        await supabase.from('message_reactions').delete().eq('message_id',messageId).eq('user_id',uid);
-        await supabase.from('message_reactions').insert({'message_id':messageId,'user_id':uid,'reaction':emoji});
-      }
-      await load();
-    } catch(_) { if(mounted)showMsg(context,'واکنش ثبت نشد'); }
+    final message = messages.cast<Map<String, dynamic>>().firstWhere(
+      (item) => '${item['id']}' == messageId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (message.isEmpty) return;
+    await reactTo(message, emoji);
   }
   Future<void> _showReactionPicker(Map<String,dynamic> m) async {
     final id = m['id'].toString();
@@ -6134,6 +6129,8 @@ class _ChatPageState extends State<ChatPage> {
     final previous = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
     final mine = previous.where((r) => r['user_id']?.toString() == uid).toList();
     final sameReaction = mine.any((r) => r['reaction']?.toString() == emoji);
+
+    // Update immediately; never block the interaction on a full chat reload.
     _showReactionBurst(emoji);
     if (mounted) setState(() {
       final current = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
@@ -6141,8 +6138,8 @@ class _ChatPageState extends State<ChatPage> {
       if (!sameReaction) current.add({'message_id': messageId, 'user_id': uid, 'reaction': emoji});
       reactions[messageId] = current;
     });
+
     try {
-      // Remove any old/duplicate row first so switching ❤️ to 😂 is deterministic.
       await supabase.from('message_reactions').delete()
           .eq('message_id', messageId).eq('user_id', uid);
       if (!sameReaction) {
@@ -6150,7 +6147,14 @@ class _ChatPageState extends State<ChatPage> {
           'message_id': messageId, 'user_id': uid, 'reaction': emoji,
         });
       }
-      await load();
+      // Reconcile only this message's reactions. Fetching all chat metadata here
+      // used to cause a visible pause after every tap.
+      final fresh = List<Map<String, dynamic>>.from(
+        await supabase.from('message_reactions')
+          .select('message_id,user_id,reaction,created_at')
+          .eq('message_id', messageId),
+      );
+      if (mounted) setState(() => reactions[messageId] = fresh);
     } catch (e) {
       if (mounted) setState(() => reactions[messageId] = previous);
       if (mounted) showMsg(context, 'واکنش ثبت نشد: ${_friendlyError(e.toString())}');
@@ -7171,6 +7175,37 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Timer? _chatReloadDebounce;
+  final Map<String, Timer> _reactionRefreshTimers = <String, Timer>{};
+
+  void _scheduleReactionRefresh(dynamic payload) {
+    try {
+      final newer = payload.newRecord;
+      final older = payload.oldRecord;
+      final row = newer is Map && newer.isNotEmpty ? newer : older;
+      if (row is! Map) return;
+      final messageId = row['message_id']?.toString();
+      if (messageId == null || messageId.isEmpty ||
+          !messages.any((message) => '${message['id']}' == messageId)) return;
+      _reactionRefreshTimers.remove(messageId)?.cancel();
+      _reactionRefreshTimers[messageId] = Timer(const Duration(milliseconds: 260), () async {
+        _reactionRefreshTimers.remove(messageId);
+        try {
+          final rows = List<Map<String, dynamic>>.from(
+            await supabase.from('message_reactions')
+              .select('message_id,user_id,reaction,created_at')
+              .eq('message_id', messageId),
+          );
+          if (mounted && messages.any((message) => '${message['id']}' == messageId)) {
+            setState(() => reactions[messageId] = rows);
+          }
+        } catch (_) {
+          // The optimistic reaction remains visible if the refresh is unavailable.
+        }
+      });
+    } catch (_) {
+      // Realtime metadata is best-effort and must not interrupt chat interactions.
+    }
+  }
 
   void _scheduleChatReload() {
     _chatReloadDebounce?.cancel();
@@ -7220,7 +7255,7 @@ class _ChatPageState extends State<ChatPage> {
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'message_reactions',
-        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+        callback: (payload) => _scheduleReactionRefresh(payload),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
@@ -7280,6 +7315,10 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _chatReloadDebounce?.cancel();
+    for (final timer in _reactionRefreshTimers.values) {
+      timer.cancel();
+    }
+    _reactionRefreshTimers.clear();
     _keyboardScrollTimer?.cancel();
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
