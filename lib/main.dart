@@ -4179,8 +4179,15 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
     }
   }
   Future<void> _remove(String id) async {
-    try { await supabase.from('saved_messages').delete().eq('id', id); await _load(); }
-    catch (e) { if (mounted) showMsg(context, 'حذف پیام ناموفق بود'); }
+    final previous = List<Map<String,dynamic>>.from(items);
+    if (mounted) setState(() => items = items.where((m) => '${m['id']}' != id).toList());
+    try {
+      await supabase.from('saved_messages').delete().eq('id', id);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => items = previous);
+      showMsg(context, 'حذف پیام ناموفق بود؛ پیام برگردانده شد.');
+    }
   }
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('پیام‌های ذخیره‌شده')),
@@ -6041,11 +6048,6 @@ class _ChatPageState extends State<ChatPage> {
       return;
     }
     try {
-      final existing = await supabase.from('saved_messages')
-          .select('id')
-          .eq('user_id', uid)
-          .eq('source_message_id', sourceId)
-          .maybeSingle();
       final payload = <String, dynamic>{
         'user_id': uid,
         'source_message_id': sourceId,
@@ -6056,11 +6058,11 @@ class _ChatPageState extends State<ChatPage> {
             : ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[message['message_type']?.toString()] ?? 'پیام'),
         'message_type': message['message_type'] ?? 'text',
       };
-      if (existing != null) {
-        await supabase.from('saved_messages').update(payload).eq('id', existing['id']);
-      } else {
-        await supabase.from('saved_messages').insert(payload);
-      }
+      // The unique key makes this one request both idempotent and race-safe.
+      await supabase.from('saved_messages').upsert(
+        payload,
+        onConflict: 'user_id,source_message_id',
+      );
       if (mounted) showMsg(context, 'پیام در پیام‌های ذخیره‌شده ثبت شد.');
     } catch (e) {
       if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}');
