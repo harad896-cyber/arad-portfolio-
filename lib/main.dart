@@ -1953,21 +1953,29 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
     if (!confirmed || !mounted) return;
     setState(() => busy = true);
-    var count = 0;
     try {
-      for (final row in others) {
-        final id = row['device_id']?.toString() ?? '';
-        if (id.isEmpty) continue;
-        final result = await supabase.rpc(
+      // Revoke sessions concurrently; the database function scopes every
+      // request to auth.uid(), so other accounts remain untouched.
+      final deviceIds = others
+          .map((row) => row['device_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
+      final results = await Future.wait(
+        deviceIds.map((id) => supabase.rpc(
           'revoke_device_session',
           params: {'p_device_id': id},
-        );
-        if (result == true) count++;
+        ).timeout(const Duration(seconds: 10)).catchError((_) => false)),
+      );
+      final count = results.where((result) => result == true).length;
+      if (mounted) {
+        showMsg(context, count == deviceIds.length
+            ? 'دسترسی $count دستگاه دیگر لغو شد.'
+            : 'دسترسی $count از ${deviceIds.length} دستگاه لغو شد؛ موارد باقی‌مانده را دوباره بررسی کنید.');
       }
-      if (mounted) showMsg(context, 'دسترسی $count دستگاه لغو شد.');
       await _loadDevices();
     } catch (e) {
-      if (mounted) showMsg(context, 'بعضی دستگاه‌ها خارج نشدند: ${_friendlyError(e.toString())}');
+      if (mounted) showMsg(context, 'خروج از دستگاه‌ها انجام نشد: ' + _friendlyError(e.toString()));
       await _loadDevices();
     } finally {
       if (mounted) setState(() => busy = false);
@@ -2025,7 +2033,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             child: Icon(Icons.devices_rounded, color: scheme.primary),
                           ),
                           title: Text('$activeCount دستگاه فعال برای این حساب', style: const TextStyle(fontWeight: FontWeight.w900)),
-                          subtitle: const Text('این فهرست فقط دستگاه‌های همین حساب را نشان می‌دهد؛ حساب‌های دیگر جدا هستند. فعالیت هر ۳۰ ثانیه بررسی می‌شود و دستگاه خارج‌شده نمی‌تواند نشست قبلی را ادامه دهد.'),
+                          subtitle: const Text('فقط نشست‌های همین حساب نمایش داده می‌شوند؛ ورود به حساب دیگر، دستگاه‌های آن را اینجا نشان نمی‌دهد. فعالیت هر ۳۰ ثانیه بررسی می‌شود و دستگاه خارج‌شده نمی‌تواند این نشست را ادامه دهد.'),
                         ),
                       ),
                       if (devices.where((row) => row['revoked_at'] == null).any((row) => '${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
