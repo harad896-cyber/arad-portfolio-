@@ -7234,10 +7234,14 @@ class _ChatPageState extends State<ChatPage> {
     });
     try {
       await _setLocalMessageHidden(messageId, true);
-      await supabase.from('messages').update({
+      final updated = await supabase.from('messages').update({
         'deleted_at': DateTime.now().toUtc().toIso8601String(),
         'body': null,
-      }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id);
+      }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id)
+        .select('id').maybeSingle();
+      if (updated == null) {
+        throw StateError('پیام در سرور حذف نشد؛ دسترسی حذف برای این پیام تأیید نشد.');
+      }
       await _saveCachedChat(messages);
       await load();
     } catch (e) {
