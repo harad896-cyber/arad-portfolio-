@@ -165,14 +165,14 @@ class AppAccessibilityController extends ChangeNotifier {
   Future<void> load() async {
     try {
       final p = await SharedPreferences.getInstance();
-      textScale = (p.getDouble('accessibility_text_scale_$_scope') ?? 1.0).clamp(.8, 1.5);
+      textScale = ((p.getDouble('accessibility_text_scale_$_scope') ?? 1.0).clamp(.8, 1.5)).toDouble();
       highContrast = p.getBool('accessibility_high_contrast_$_scope') ?? false;
       notifyListeners();
     } catch (_) {}
   }
 
   Future<void> setTextScale(double value) async {
-    textScale = value.clamp(.8, 1.5);
+    textScale = value.clamp(.8, 1.5).toDouble();
     notifyListeners();
     // Avoid writing preferences on every slider frame; save the final value
     // after the user stops dragging for a moment.
