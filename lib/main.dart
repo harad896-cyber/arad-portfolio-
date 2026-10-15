@@ -5011,6 +5011,15 @@ class _ChatPageState extends State<ChatPage> {
       ]);
       final conversation = Map<String, dynamic>.from(initialRows[0] as Map);
       final loaded = List<Map<String, dynamic>>.from(initialRows[1] as List).reversed.toList();
+      // Call history is independent of messages/profiles; start it immediately
+      // so it overlaps the rest of the chat hydration instead of adding latency.
+      final callRowsFuture = supabase.from('call_sessions')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,started_at,accepted_at,ended_at,created_at')
+          .eq('conversation_id', widget.id)
+          .order('created_at', ascending: true)
+          .limit(80)
+          .then<List<Map<String, dynamic>>>((value) => List<Map<String, dynamic>>.from(value as List))
+          .catchError((_) => <Map<String, dynamic>>[]);
       if (widget.targetMessageId != null && !loaded.any((m) => '${m['id']}' == widget.targetMessageId)) {
         try {
           final target = await supabase.from('messages').select()
@@ -5115,11 +5124,9 @@ class _ChatPageState extends State<ChatPage> {
           loadedAttachments['${a['message_id']}'] = a;
         }
       }
-      List<Map<String, dynamic>> calls = [];
-      try {
-        final callRows = await supabase.from('call_sessions').select('id,conversation_id,caller_id,callee_id,call_type,status,started_at,accepted_at,ended_at,created_at').eq('conversation_id', widget.id).order('created_at', ascending: true).limit(80);
-        calls = List<Map<String, dynamic>>.from(callRows);
-      } catch (_) {}
+      // The request was started when the initial message page arrived; await it only
+      // when assembling the timeline so profile/reaction lookups run concurrently.
+      final calls = await callRowsFuture;
       final merged = <Map<String, dynamic>>[
         ...loaded.map((m) => <String, dynamic>{...m, '__kind': 'message'}),
         ...calls.map((c) => <String, dynamic>{...c, '__kind': 'call', 'created_at': c['created_at'] ?? c['started_at']}),
