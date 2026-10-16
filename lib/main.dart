@@ -4313,35 +4313,6 @@ class _HomePageState extends State<HomePage> {
         const Expanded(child: ProfessionalSettingsPage()),
       ]);
     }
-    Widget tile(IconData icon, String title, String subtitle, VoidCallback onTap) =>
-      Card(
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        color: scheme.surfaceContainer.withValues(alpha: .82),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-          leading: Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), borderRadius: BorderRadius.circular(14)),
-            child: Icon(icon, color: scheme.primary),
-          ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-          subtitle: Text(subtitle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: onTap,
-        ),
-      );
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(8, 18, 8, 24),
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
-          child: Text('شخصی', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
-        ),
-        tile(Icons.people_alt_rounded, 'مخاطبین', 'جستجو و مدیریت مخاطبین', () => setState(() => personalSection = 1)),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -4374,6 +4345,9 @@ class _HomePageState extends State<HomePage> {
             onDestinationSelected: (i) {
               HapticFeedback.selectionClick();
               if (i == navIndex) {
+                if (i == 1) {
+                  setState(() => showContacts = false);
+                }
                 if (i == 0) {
                   setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
                   unawaited(load());
