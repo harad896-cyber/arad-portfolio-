@@ -4288,7 +4288,6 @@ class _HomePageState extends State<HomePage> {
   }
 
 
-    final scheme = Theme.of(context).colorScheme;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
