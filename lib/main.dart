@@ -6887,11 +6887,21 @@ class _ChatPageState extends State<ChatPage> {
         path: voicePath,
       );
       _voiceStartedAt = DateTime.now();
+      if (mounted) {
+        setState(() {
+          recordingVoice = true;
+          voiceLocked = false;
+          voiceCancelArmed = false;
+          voiceSeconds = 0;
+          voiceWaveform = [];
+          voiceAmplitude = .08;
+        });
+      }
       _voiceTimer?.cancel();
-      _voiceTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted && recordingVoice && _voiceStartedAt != null) {
-          setState(() => voiceSeconds = DateTime.now().difference(_voiceStartedAt!).inSeconds);
-        }
+      _voiceTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+        if (!mounted || _voiceStartedAt == null || !recordingVoice) return;
+        final elapsed = DateTime.now().difference(_voiceStartedAt!).inSeconds;
+        if (elapsed != voiceSeconds) setState(() => voiceSeconds = elapsed);
       });
       await _voiceAmplitudeSub?.cancel();
       _voiceAmplitudeSub = _voiceRecorder.onAmplitudeChanged(const Duration(milliseconds: 120)).listen((a) {
@@ -6903,16 +6913,6 @@ class _ChatPageState extends State<ChatPage> {
           if (voiceWaveform.length > 34) voiceWaveform.removeAt(0);
         });
       }, onError: (_) {});
-      if (mounted) {
-        setState(() {
-          recordingVoice = true;
-          voiceLocked = false;
-          voiceCancelArmed = false;
-          voiceSeconds = 0;
-          voiceWaveform = [];
-          voiceAmplitude = .08;
-        });
-      }
     } catch (e) {
       _voiceTimer?.cancel();
       _voiceTimer = null;
@@ -9043,33 +9043,6 @@ class _ChatPageState extends State<ChatPage> {
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: _showAttachmentPanel,
-                            tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
-                            icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary, size: 27),
-                          ),
-                          IconButton(
-                            style: IconButton.styleFrom(
-                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
-                              foregroundColor: scheme.primary,
-                              shape: const CircleBorder(),
-                              padding: const EdgeInsets.all(10),
-                            ),
-                            onPressed: _voiceStarting ? null : (recordingVoice ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording),
-                            tooltip: _voiceStarting ? 'در حال آماده‌سازی میکروفون' : (recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
-                            icon: _voiceStarting
-                                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary))
-                                : Icon(
-                                    recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
-                                    color: recordingVoice ? scheme.error : scheme.primary,
-                                  ),
-                          ),
-                          IconButton(
-                            style: IconButton.styleFrom(
-                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
-                              foregroundColor: scheme.primary,
-                              shape: const CircleBorder(),
-                              padding: const EdgeInsets.all(10),
-                            ),
                             onPressed: _showChatEmojiPicker,
                             tooltip: 'اموجی',
                             icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
@@ -9102,6 +9075,37 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                           ),
                           const SizedBox(width: 3),
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
+                              foregroundColor: scheme.primary,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(10),
+                            ),
+                            onPressed: _showAttachmentPanel,
+                            tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
+                            icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary, size: 27),
+                          ),
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF079FE8),
+                              foregroundColor: Colors.white,
+                              shape: const CircleBorder(),
+                              minimumSize: const Size(54, 54),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.all(12),
+                            ),
+                            onPressed: _voiceStarting ? null : (recordingVoice ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording),
+                            tooltip: _voiceStarting ? 'در حال آماده‌سازی میکروفون' : (recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
+                            icon: _voiceStarting
+                                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary))
+                                : Icon(
+                                    recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
+                                    color: Colors.white,
+                                    size: 31,
+                                  ),
+                          ),
                           IconButton.filled(
                             tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
                             style: IconButton.styleFrom(
