@@ -8219,7 +8219,7 @@ class _ChatPageState extends State<ChatPage> {
     final otherBubble = scheme.surfaceContainerHighest.withValues(alpha: dark ? .94 : .92);
     final textColor = mine
         ? Colors.white
-        : (dark ? const Color(0xFFF4F5FA) : const Color(0xFF20242A));
+        : scheme.onSurface;
     final body = (m['body'] ?? '').toString();
     final internalLinkMatch = RegExp(r'arad://(?:invite\?code=[^\s]+|group/[^\s]+|chat/[^\s]+)').firstMatch(body);
     final urlMatch = RegExp(r'https?://\S+').firstMatch(body);
@@ -8402,7 +8402,7 @@ class _ChatPageState extends State<ChatPage> {
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2),
-                            child: Text(sender, style: TextStyle(fontWeight: FontWeight.w900, color: dark ? const Color(0xFFD9C9FF) : const Color(0xFF5940B5))),
+                            child: Text(sender, style: TextStyle(fontWeight: FontWeight.w900, color: scheme.primary)),
                           ),
                         ),
                       ),
@@ -8419,11 +8419,11 @@ class _ChatPageState extends State<ChatPage> {
                         ],
                         if (mine) ...[
                           const SizedBox(width: 4),
-                          Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .7)),
+                          Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.primary : textColor.withValues(alpha: .7)),
                           const SizedBox(width: 2),
                           Text(
                             m['__pending'] == true ? 'در حال ارسال' : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? 'دیده‌شده ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
-                            style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? const Color(0xFF62B7FF) : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.primary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
                       ],
@@ -9155,7 +9155,7 @@ class _ChatPageState extends State<ChatPage> {
                           IconButton(
                             style: IconButton.styleFrom(
                               backgroundColor: Colors.transparent,
-                              foregroundColor: dark ? const Color(0xFFCBD5E1) : const Color(0xFF667085),
+                              foregroundColor: scheme.onSurfaceVariant,
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
@@ -9183,7 +9183,7 @@ class _ChatPageState extends State<ChatPage> {
                                 filled: true,
                                 fillColor: Colors.transparent,
                                 hintStyle: TextStyle(
-                                  color: dark ? const Color(0xFF9AA9B8) : const Color(0xFF718096),
+                                  color: scheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                                 border: OutlineInputBorder(
@@ -9205,7 +9205,7 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                             onPressed: _showAttachmentPanel,
                             tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
-                            icon: Icon(Icons.attach_file_rounded, color: dark ? const Color(0xFFCBD5E1) : const Color(0xFF667085), size: 29),
+                            icon: Icon(Icons.attach_file_rounded, color: scheme.primary, size: 27),
                           ),
                           // Telegram-style single action at the far right:
                           // send replaces the microphone as soon as text is entered.
@@ -9213,7 +9213,7 @@ class _ChatPageState extends State<ChatPage> {
                             IconButton(
                               tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
                               style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF079FE8),
+                                backgroundColor: scheme.primary,
                                 foregroundColor: Colors.white,
                                 shape: const CircleBorder(),
                                 minimumSize: const Size(48, 48),
@@ -9229,7 +9229,7 @@ class _ChatPageState extends State<ChatPage> {
                           else
                             IconButton(
                               style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF079FE8),
+                                backgroundColor: scheme.primary,
                                 foregroundColor: Colors.white,
                                 shape: const CircleBorder(),
                                 minimumSize: const Size(48, 48),
