@@ -92,6 +92,59 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> showAvatarPreview() async {
+    if (avatarImage == null) {
+      await changeAvatar();
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: .94),
+      builder: (ctx) => Dialog.fullscreen(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(ctx),
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 4,
+                  child: Image(image: avatarImage!, fit: BoxFit.contain),
+                ),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(ctx).padding.top + 8,
+              right: 12,
+              child: IconButton.filledTonal(
+                tooltip: 'بستن عکس',
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ),
+            Positioned(
+              bottom: MediaQuery.of(ctx).padding.bottom + 18,
+              left: 20,
+              right: 20,
+              child: Center(
+                child: FilledButton.tonalIcon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await changeAvatar();
+                  },
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('تغییر عکس پروفایل'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> changeAvatar() async {
     try {
       final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 88, maxWidth: 900, maxHeight: 900);
@@ -297,10 +350,42 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
           child: Column(children: [
             GestureDetector(
-              onTap: changeAvatar,
+              onTap: showAvatarPreview,
               child: Stack(clipBehavior: Clip.none, children: [
-                CircleAvatar(radius: 58, backgroundImage: avatarImage, child: avatarImage == null ? const Icon(Icons.person_rounded, size: 58) : null),
-                Positioned(right: -3, bottom: -3, child: CircleAvatar(radius: 19, backgroundColor: s.primary, child: const Icon(Icons.camera_alt_rounded, size: 19))),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [s.primary, s.tertiary, s.primary.withValues(alpha: .45)],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .22), blurRadius: 22, spreadRadius: 1)],
+                  ),
+                  child: CircleAvatar(
+                    radius: 58,
+                    backgroundColor: s.surfaceContainerHighest,
+                    backgroundImage: avatarImage,
+                    child: avatarImage == null ? const Icon(Icons.person_rounded, size: 58) : null,
+                  ),
+                ),
+                Positioned(
+                  right: -3,
+                  bottom: -3,
+                  child: Material(
+                    color: s.primary,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: changeAvatar,
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(Icons.camera_alt_rounded, size: 18, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
               ]),
             ),
             const SizedBox(height: 12),
