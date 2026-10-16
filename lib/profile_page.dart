@@ -368,6 +368,14 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
           const Divider(height: 1),
           ListTile(
+            leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.settings_rounded, color: s.primary)),
+            title: const Text('تنظیمات حساب کاربری', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('حریم خصوصی، اعلان‌ها، ظاهر و تنظیمات برنامه'),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfessionalSettingsPage())),
+          ),
+          const Divider(height: 1),
+          ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.palette_rounded, color: s.primary)),
             title: const Text('شخصی‌سازی چت', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: const Text('پس‌زمینه و ظاهر گفتگوها'),
