@@ -8851,7 +8851,7 @@ class _ChatPageState extends State<ChatPage> {
                   },
                 ),
               ),
-            if (replyMessage != null)
+            if (!recordingVoice && replyMessage != null)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: BackdropFilter(
@@ -8884,7 +8884,7 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
-            if (keyboardInset <= 0 && !_composerFocus.hasFocus)
+            if (!recordingVoice && keyboardInset <= 0 && !_composerFocus.hasFocus)
               SizedBox(
                 height: 44,
                 child: ListView(
@@ -8994,10 +8994,11 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(6, 2, 6, 4),
+            if (!recordingVoice)
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 2, 6, 4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: BackdropFilter(
