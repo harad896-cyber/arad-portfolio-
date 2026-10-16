@@ -3247,7 +3247,7 @@ class _HomePageState extends State<HomePage> {
   bool loading = true;
   int selectedFilter = 0;
   int navIndex = 0;
-  int personalSection = 0;
+  bool showContacts = false;
   String? selectedFolderId;
   List<Map<String, dynamic>> chatFolders = [];
   Map<String, Set<String>> folderAssignments = {};
@@ -4287,9 +4287,7 @@ class _HomePageState extends State<HomePage> {
     ));
   }
 
-  Widget settingsView() => const ProfessionalSettingsPage();
 
-  Widget personalView() {
     final scheme = Theme.of(context).colorScheme;
     if (personalSection == 1) {
       return Column(children: [
@@ -4348,8 +4346,21 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree(
-        key: ValueKey('$navIndex-$personalSection'),
-        child: navIndex == 0 ? chatsView() : navIndex == 1 ? personalView() : const ProfilePage(),
+        key: ValueKey('$navIndex-$showContacts'),
+        child: showContacts
+            ? Column(children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+                  child: Row(children: [
+                    IconButton(onPressed: () => setState(() => showContacts = false), icon: const Icon(Icons.arrow_back_rounded)),
+                    const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                  ]),
+                ),
+                Expanded(child: contactsView()),
+              ])
+            : navIndex == 0
+                ? chatsView()
+                : ProfilePage(onOpenContacts: () => setState(() => showContacts = true)),
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
       bottomNavigationBar: ClipRRect(
@@ -4369,12 +4380,11 @@ class _HomePageState extends State<HomePage> {
                 }
                 return;
               }
-              setState(() => navIndex = i);
+              setState(() { navIndex = i; showContacts = false; });
             },
             destinations: const [
               NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
-              NavigationDestination(icon: Icon(Icons.tune_rounded), selectedIcon: Icon(Icons.tune_rounded), label: 'شخصی'),
-              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'حساب'),
+              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'پروفایل'),
             ],
           ),
         ),
