@@ -436,34 +436,45 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ]),
             ),
-            const SizedBox(height: 18),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text('کنترل پروفایل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: s.onSurface)),
-            ),
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
                 onPressed: editProfile,
-                icon: const Icon(Icons.tune_rounded),
-                label: const Text('ویرایش اطلاعات'),
-              )),
-              const SizedBox(width: 8),
-              Expanded(child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                onPressed: showProfileQr,
-                icon: const Icon(Icons.qr_code_rounded),
-                label: const Text('QR پروفایل'),
-              )),
+                icon: const Icon(Icons.edit_rounded),
+                label: const Text('ویرایش پروفایل', style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+            ),
+            const SizedBox(height: 9),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: showProfileQr,
+                  icon: const Icon(Icons.qr_code_rounded, size: 19),
+                  label: const Text('QR پروفایل'),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: switchAccount,
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 19),
+                  label: const Text('تغییر حساب'),
+                ),
+              ),
             ]),
-            const SizedBox(height: 8),
-            SizedBox(width: double.infinity, child: FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-              onPressed: switchAccount,
-              icon: const Icon(Icons.swap_horiz_rounded),
-              label: const Text('مدیریت و تغییر حساب'),
-            )),
           ]),
         )),
         const SizedBox(height: 20),
