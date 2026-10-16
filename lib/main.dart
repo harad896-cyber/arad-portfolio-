@@ -9051,7 +9051,12 @@ class _ChatPageState extends State<ChatPage> {
                             child: TextField(
                               controller: text,
                               focusNode: _composerFocus,
-                              onChanged: _updateMentionSuggestions,
+                              onChanged: (value) {
+                                _updateMentionSuggestions(value);
+                                // Rebuild the composer immediately so the right-hand
+                                // action switches between microphone and send.
+                                if (mounted) setState(() {});
+                              },
                               // Send-button taps must not unfocus the composer or dismiss the keyboard.
                               onTapOutside: (_) {},
                               minLines: 1,
@@ -9086,40 +9091,50 @@ class _ChatPageState extends State<ChatPage> {
                             tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
                             icon: Icon(Icons.attach_file_rounded, color: dark ? const Color(0xFFCBD5E1) : const Color(0xFF667085), size: 29),
                           ),
-                          IconButton(
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFF079FE8),
-                              foregroundColor: Colors.white,
-                              shape: const CircleBorder(),
-                              minimumSize: const Size(54, 54),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.all(12),
-                            ),
-                            onPressed: _voiceStarting ? null : (recordingVoice ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording),
-                            tooltip: _voiceStarting ? 'در حال آماده‌سازی میکروفون' : (recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
-                            icon: _voiceStarting
-                                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary))
-                                : Icon(
-                                    recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
-                                    color: Colors.white,
-                                    size: 31,
-                                  ),
-                          ),
+                          // Telegram-style single action at the far right:
+                          // send replaces the microphone as soon as text is entered.
                           if (text.text.trim().isNotEmpty)
-                            IconButton.filled(
-                            tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
-                            style: IconButton.styleFrom(
-                              minimumSize: const Size(42, 42),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                              shape: const CircleBorder(),
+                            IconButton(
+                              tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
+                              style: IconButton.styleFrom(
+                                backgroundColor: const Color(0xFF079FE8),
+                                foregroundColor: Colors.white,
+                                shape: const CircleBorder(),
+                                minimumSize: const Size(48, 48),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.all(11),
+                              ),
+                              onPressed: sending ? null : sendText,
+                              icon: sending
+                                  ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.send_rounded, size: 24),
+                            )
+                          else
+                            IconButton(
+                              style: IconButton.styleFrom(
+                                backgroundColor: const Color(0xFF079FE8),
+                                foregroundColor: Colors.white,
+                                shape: const CircleBorder(),
+                                minimumSize: const Size(48, 48),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.all(11),
+                              ),
+                              onPressed: _voiceStarting
+                                  ? null
+                                  : (recordingVoice
+                                      ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording())
+                                      : toggleVoiceRecording),
+                              tooltip: _voiceStarting
+                                  ? 'در حال آماده‌سازی میکروفون'
+                                  : (recordingVoice
+                                      ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس')
+                                      : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
+                              icon: _voiceStarting
+                                  ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : Icon(recordingVoice ? Icons.send_rounded : Icons.mic_rounded, color: Colors.white, size: 27),
                             ),
-                            onPressed: sending ? null : sendText,
-                            icon: sending
-                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.arrow_upward_rounded),
-                          ),
                         ],
                       ),
                     ),
