@@ -9106,7 +9106,8 @@ class _ChatPageState extends State<ChatPage> {
                                     size: 31,
                                   ),
                           ),
-                          IconButton.filled(
+                          if (text.text.trim().isNotEmpty)
+                            IconButton.filled(
                             tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
                             style: IconButton.styleFrom(
                               minimumSize: const Size(42, 42),
