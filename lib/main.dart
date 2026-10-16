@@ -8419,11 +8419,11 @@ class _ChatPageState extends State<ChatPage> {
                         ],
                         if (mine) ...[
                           const SizedBox(width: 4),
-                          Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.primary : textColor.withValues(alpha: .7)),
+                          Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .7)),
                           const SizedBox(width: 2),
                           Text(
                             m['__pending'] == true ? 'در حال ارسال' : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? 'دیده‌شده ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
-                            style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.primary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
                       ],
