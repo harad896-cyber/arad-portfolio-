@@ -4289,30 +4289,6 @@ class _HomePageState extends State<HomePage> {
 
 
     final scheme = Theme.of(context).colorScheme;
-    if (personalSection == 1) {
-      return Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
-          child: Row(children: [
-            IconButton(onPressed: () => setState(() => personalSection = 0), icon: const Icon(Icons.arrow_back_rounded)),
-            const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
-          ]),
-        ),
-        Expanded(child: contactsView()),
-      ]);
-    }
-    if (personalSection == 2) {
-      return Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
-          child: Row(children: [
-            IconButton(onPressed: () => setState(() => personalSection = 0), icon: const Icon(Icons.arrow_back_rounded)),
-            const Expanded(child: Text('تنظیمات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
-          ]),
-        ),
-        const Expanded(child: ProfessionalSettingsPage()),
-      ]);
-    }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
