@@ -6278,12 +6278,36 @@ class _ChatPageState extends State<ChatPage> {
           .limit(80)
           .then<List<Map<String, dynamic>>>((value) => List<Map<String, dynamic>>.from(value as List))
           .catchError((_) => <Map<String, dynamic>>[]);
-      if (widget.targetMessageId != null && !loaded.any((m) => '${m['id']}' == widget.targetMessageId)) {
+      if (widget.targetMessageId != null &&
+          !loaded.any((m) => '${m['id']}' == widget.targetMessageId) &&
+          !_locallyHiddenMessageIds.contains(widget.targetMessageId)) {
         try {
           final target = await supabase.from('messages').select()
               .eq('id', widget.targetMessageId!).eq('conversation_id', widget.id)
               .isFilter('deleted_at', null).maybeSingle();
-          if (target != null) loaded.add(Map<String, dynamic>.from(target));
+          // A deep link must obey the same "delete for me" tombstones as the
+          // regular message page; otherwise opening an old link can resurrect
+          // a message that the current user already removed from their chat.
+          var hiddenForCurrentUser = false;
+          final currentUid = supabase.auth.currentUser?.id;
+          if (target != null && currentUid != null) {
+            try {
+              final deletion = await supabase.from('message_user_deletions')
+                  .select('message_id')
+                  .eq('message_id', widget.targetMessageId!)
+                  .eq('user_id', currentUid)
+                  .maybeSingle();
+              hiddenForCurrentUser = deletion != null;
+            } catch (_) {
+              // If deletion status cannot be verified, prefer not to resurrect
+              // the target from a deep link. Regular chat history remains usable.
+              hiddenForCurrentUser = true;
+            }
+          }
+          if (target != null && !hiddenForCurrentUser &&
+              !_locallyHiddenMessageIds.contains(widget.targetMessageId)) {
+            loaded.add(Map<String, dynamic>.from(target));
+          }
           loaded.sort((a, b) {
             final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
             final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
