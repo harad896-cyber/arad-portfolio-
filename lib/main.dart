@@ -8878,6 +8878,80 @@ class _ChatPageState extends State<ChatPage> {
                 ],
               ),
               ),
+            if (recordingVoice)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(12, 3, 12, 6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: scheme.surface.withValues(alpha: dark ? .94 : .98),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: scheme.primary.withValues(alpha: .28)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: .10),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.fiber_manual_record_rounded, color: scheme.error, size: 13),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${voiceSeconds ~/ 60}:${(voiceSeconds % 60).toString().padLeft(2, '0')}',
+                        style: TextStyle(fontFeatures: const [FontFeature.tabularFigures()], fontWeight: FontWeight.w800, color: scheme.onSurface),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          height: 26,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              for (final level in (voiceWaveform.isEmpty ? <double>[.08, .12, .08, .18, .1, .14, .08] : voiceWaveform))
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 1.2),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 100),
+                                    width: 3,
+                                    height: 5 + level.clamp(.06, 1.0) * 20,
+                                    decoration: BoxDecoration(
+                                      color: scheme.primary.withValues(alpha: .55 + level.clamp(.06, 1.0) * .45),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'لغو ضبط',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: sending ? null : () => _finishVoiceRecording(cancel: true),
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        color: scheme.error,
+                      ),
+                      IconButton(
+                        tooltip: voiceLocked ? 'باز کردن کنترل ضبط' : 'قفل ضبط',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => setState(() => voiceLocked = !voiceLocked),
+                        icon: Icon(voiceLocked ? Icons.lock_rounded : Icons.lock_open_rounded),
+                        color: voiceLocked ? scheme.primary : scheme.onSurfaceVariant,
+                      ),
+                      IconButton.filled(
+                        tooltip: 'پایان ضبط و ارسال ویس',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: sending ? null : () => _finishVoiceRecording(),
+                        icon: const Icon(Icons.send_rounded, size: 19),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             SafeArea(
               top: false,
               child: Padding(
@@ -8938,10 +9012,10 @@ class _ChatPageState extends State<ChatPage> {
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: toggleVoiceRecording,
-                            tooltip: recordingVoice ? ({'en':'Stop and send voice','ar':'إيقاف وإرسال الصوت'}[aradLanguageController.locale.languageCode] ?? 'توقف و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
+                            onPressed: recordingVoice ? (sending ? null : () => _finishVoiceRecording()) : toggleVoiceRecording,
+                            tooltip: recordingVoice ? 'پایان ضبط و ارسال ویس' : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
                             icon: Icon(
-                              recordingVoice ? Icons.stop_circle_rounded : Icons.mic_rounded,
+                              recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
                               color: recordingVoice ? scheme.error : scheme.primary,
                             ),
                           ),
