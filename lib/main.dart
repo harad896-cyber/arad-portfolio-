@@ -1301,33 +1301,132 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Container(
-              height: 168,
+              height: 286,
               decoration: BoxDecoration(
-                // Keep solid color only for photo wallpapers; use the gradient
-                // alone when no photo is selected.
                 color: hasImage ? Color(appTheme.backgroundSeed) : null,
                 image: hasImage ? DecorationImage(
                   image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)),
                   fit: BoxFit.cover,
                 ) : null,
                 gradient: hasImage ? null : LinearGradient(
-                  begin: Alignment.topRight, end: Alignment.bottomLeft,
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
                   colors: [Color(appTheme.seed), Color(appTheme.backgroundSeed)],
                 ),
               ),
-              child: Stack(children: [
-                Positioned(left: 14, right: 14, top: 14, child: Align(
-                  alignment: Alignment.centerRight,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: .48), borderRadius: BorderRadius.circular(18)),
-                    child: const Padding(padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9), child: Text('سلام! این پیش‌نمایش قالب چت است.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+              child: Column(
+                children: [
+                  // A distinct Telegram-like conversation header.
+                  Container(
+                    height: 58,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: .36),
+                      border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: .14))),
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 17,
+                          backgroundColor: Color(0xFFB8D8F8),
+                          child: Icon(Icons.person_rounded, color: Color(0xFF315B83), size: 20),
+                        ),
+                        const SizedBox(width: 9),
+                        const Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('گفتگوی نمونه', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                              Text('آنلاین', style: TextStyle(color: Color(0xFFD5F5DE), fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.call_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 15),
+                        const Icon(Icons.more_vert_rounded, color: Colors.white, size: 21),
+                      ],
+                    ),
                   ),
-                )),
-                Positioned(left: 14, bottom: 14, child: DecoratedBox(
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: .48), borderRadius: BorderRadius.circular(18)),
-                  child: const Padding(padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9), child: Text('پیام شما ✨', style: TextStyle(color: Colors.white))),
-                )),
-              ]),
+                  // The message area is kept separate from both header and composer.
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Align(
+                            alignment: Alignment.center,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(color: Colors.black.withValues(alpha: .35), borderRadius: BorderRadius.circular(12)),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                child: Text('امروز', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 9),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 210),
+                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                              decoration: BoxDecoration(color: const Color(0xFFF5F5F7).withValues(alpha: .94), borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14), bottomRight: Radius.circular(14))),
+                              child: const Text('سلام! قالب جدید چطوره؟', style: TextStyle(color: Color(0xFF252331), fontSize: 12)),
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 220),
+                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                              decoration: BoxDecoration(color: const Color(0xFFBDE8C8).withValues(alpha: .97), borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14), bottomLeft: Radius.circular(14))),
+                              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                                Flexible(child: Text('خیلی شیک و مرتب شده ✨', style: TextStyle(color: Color(0xFF193D2A), fontSize: 12))),
+                                SizedBox(width: 6),
+                                Icon(Icons.done_all_rounded, size: 14, color: Color(0xFF39885B)),
+                              ]),
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Fixed, visually independent bottom composer.
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: .28),
+                      border: Border(top: BorderSide(color: Colors.white.withValues(alpha: .14))),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.emoji_emotions_outlined, color: Colors.white, size: 22),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Container(
+                            height: 38,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 13),
+                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: .94), borderRadius: BorderRadius.circular(22)),
+                            child: const Text('پیام بنویسید…', style: TextStyle(color: Color(0xFF777783), fontSize: 11)),
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        const Icon(Icons.attach_file_rounded, color: Colors.white, size: 21),
+                        const SizedBox(width: 8),
+                        const CircleAvatar(
+                          radius: 19,
+                          backgroundColor: Color(0xFF229ED9),
+                          child: Icon(Icons.mic_rounded, color: Colors.white, size: 21),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 18),
