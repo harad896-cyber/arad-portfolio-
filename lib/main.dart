@@ -1296,6 +1296,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
 
   @override Widget build(BuildContext context) {
     final dark = appTheme.dark;
+    final scheme = Theme.of(context).colorScheme;
     final hasImage = appTheme.backgroundImageBase64 != null && appTheme.backgroundImageBase64!.isNotEmpty;
     return Scaffold(
       appBar: AppBar(title: const Text('قالب و پس‌زمینهٔ چت')),
@@ -1325,8 +1326,11 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                     height: 58,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: .36),
-                      border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: .14))),
+                      color: Color.alphaBlend(
+                        scheme.primary.withValues(alpha: .12),
+                        Colors.black.withValues(alpha: .56),
+                      ),
+                      border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: .18))),
                     ),
                     child: Row(
                       children: [
@@ -1375,8 +1379,15 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                             child: Container(
                               constraints: const BoxConstraints(maxWidth: 210),
                               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                              decoration: BoxDecoration(color: const Color(0xFFF5F5F7).withValues(alpha: .94), borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14), bottomRight: Radius.circular(14))),
-                              child: const Text('سلام! قالب جدید چطوره؟', style: TextStyle(color: Color(0xFF252331), fontSize: 12)),
+                              decoration: BoxDecoration(
+                                color: scheme.surfaceContainerHighest.withValues(alpha: .97),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(17), topRight: Radius.circular(17),
+                                  bottomRight: Radius.circular(17),
+                                ),
+                                border: Border.all(color: scheme.outline.withValues(alpha: .10)),
+                              ),
+                              child: Text('سلام! قالب جدید چطوره؟', style: TextStyle(color: scheme.onSurface, fontSize: 12)),
                             ),
                           ),
                           const SizedBox(height: 7),
@@ -1385,7 +1396,18 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                             child: Container(
                               constraints: const BoxConstraints(maxWidth: 220),
                               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                              decoration: BoxDecoration(color: Color(appTheme.seed).withValues(alpha: .96), borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14), bottomLeft: Radius.circular(14))),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                  colors: [scheme.primary, Color.lerp(scheme.primary, Colors.white, .12)!],
+                                ),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(17), topRight: Radius.circular(17),
+                                  bottomLeft: Radius.circular(17),
+                                ),
+                                border: Border.all(color: Colors.white.withValues(alpha: .22)),
+                                boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .20), blurRadius: 9, offset: const Offset(0, 3))],
+                              ),
                               child: const Row(mainAxisSize: MainAxisSize.min, children: [
                                 Flexible(child: Text('خیلی شیک و مرتب شده ✨', style: TextStyle(color: Colors.white, fontSize: 12))),
                                 SizedBox(width: 6),
@@ -8359,8 +8381,8 @@ class _ChatPageState extends State<ChatPage> {
             Flexible(
               child: Container(
                 constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * (isGroup ? .79 : .82)),
-                margin: const EdgeInsets.only(bottom: 5),
-                padding: const EdgeInsets.fromLTRB(12, 8, 10, 6),
+                margin: const EdgeInsets.only(bottom: 7),
+                padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -8376,10 +8398,10 @@ class _ChatPageState extends State<ChatPage> {
                           ],
                   ),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(19),
-                    topRight: const Radius.circular(19),
-                    bottomLeft: Radius.circular(mine ? 19 : 5),
-                    bottomRight: Radius.circular(mine ? 5 : 19),
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(mine ? 20 : 6),
+                    bottomRight: Radius.circular(mine ? 6 : 20),
                   ),
                   border: Border.all(
                     color: mine
@@ -8390,9 +8412,9 @@ class _ChatPageState extends State<ChatPage> {
                   boxShadow: [
                     BoxShadow(
                       color: (mine ? myBubble : Colors.black).withValues(alpha: dark ? .34 : .13),
-                      blurRadius: 12,
-                      spreadRadius: -3,
-                      offset: const Offset(0, 4),
+                      blurRadius: 10,
+                      spreadRadius: -4,
+                      offset: const Offset(0, 3),
                     ),
                     BoxShadow(
                       color: Colors.white.withValues(alpha: dark ? .025 : .70),
@@ -8694,17 +8716,29 @@ class _ChatPageState extends State<ChatPage> {
       resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: scheme.surface.withValues(alpha: .62),
+        backgroundColor: scheme.surface.withValues(alpha: .88),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 64,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: scheme.surface.withValues(alpha: .20),
-                border: Border(
-                  bottom: BorderSide(color: scheme.onSurface.withValues(alpha: .07)),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      scheme.surface.withValues(alpha: .90),
+                      scheme.surface.withValues(alpha: .78),
+                    ],
+                  ),
+                  border: Border(
+                    bottom: BorderSide(color: scheme.primary.withValues(alpha: .12)),
+                  ),
                 ),
-              ),
             ),
           ),
         ),
@@ -8795,8 +8829,9 @@ class _ChatPageState extends State<ChatPage> {
               clipBehavior: Clip.none,
               children: [
                 CircleAvatar(
-                  radius: 18,
+                  radius: 19,
                   backgroundColor: scheme.primaryContainer,
+                  foregroundColor: scheme.primary,
                   child: ClipOval(
                     child: (() {
                       final avatar = _chatType == 'direct'
