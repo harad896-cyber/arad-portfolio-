@@ -233,8 +233,12 @@ class _StoriesPageState extends State<StoriesPage> {
 
       // Sign only the selected story first. Signing dozens of private Storage
       // objects at once made the viewer appear blank on slower phones/connections.
-      unawaited(_ensureSignedUrl(stories[nextIndex], startTimerWhenReady: true));
-      if (selectedId != previousStoryId) _timer?.cancel();
+      final selectionChanged = selectedId != previousStoryId;
+      if (selectionChanged) _timer?.cancel();
+      unawaited(_ensureSignedUrl(
+        stories[nextIndex],
+        startTimerWhenReady: selectionChanged || _timer == null,
+      ));
       unawaited(_loadEngagement(ids, uid, generation));
     } catch (error) {
       if (mounted && generation == _loadGeneration) {
