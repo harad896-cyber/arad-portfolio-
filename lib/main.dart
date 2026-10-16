@@ -8911,7 +8911,7 @@ class _ChatPageState extends State<ChatPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              for (final level in (voiceWaveform.isEmpty ? <double>[.08, .12, .08, .18, .1, .14, .08] : voiceWaveform.take(12)))
+                              for (final level in (voiceWaveform.isEmpty ? <double>[.08, .12, .08, .18, .1, .14, .08] : voiceWaveform.skip(voiceWaveform.length > 12 ? voiceWaveform.length - 12 : 0)))
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 1.2),
                                   child: AnimatedContainer(
