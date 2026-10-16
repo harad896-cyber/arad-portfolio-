@@ -2908,7 +2908,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               borderRadius: BorderRadius.circular(30),
               onTap: () => setState(() { selectedCharacter = character; avatarImage = null; avatarBytes = null; existingAvatarUrl = 'emoji:$character'; }),
               child: Container(width: 44, height: 44, alignment: Alignment.center,
-                decoration: BoxDecoration(color: selectedCharacter == character ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(22), border: Border.all(color: selectedCharacter == character ? Theme.of(context).colorScheme.primary : Colors.transparent, width: 2)),
+                decoration: BoxDecoration(color: selectedCharacter == character ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(52), border: Border.all(color: selectedCharacter == character ? Theme.of(context).colorScheme.primary : Colors.transparent, width: 2)),
                 child: Text(character, style: const TextStyle(fontSize: 25))),
             )).toList()),
           ]))),
@@ -9038,8 +9038,8 @@ class _ChatPageState extends State<ChatPage> {
                         children: [
                           IconButton(
                             style: IconButton.styleFrom(
-                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
-                              foregroundColor: scheme.primary,
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: dark ? const Color(0xFFCBD5E1) : const Color(0xFF667085),
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
@@ -9060,9 +9060,9 @@ class _ChatPageState extends State<ChatPage> {
                               decoration: InputDecoration(
                                 hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
                                 filled: true,
-                                fillColor: scheme.surface.withValues(alpha: dark ? .24 : .32),
+                                fillColor: Colors.transparent,
                                 hintStyle: TextStyle(
-                                  color: (dark ? Colors.white : Colors.black).withValues(alpha: .62),
+                                  color: dark ? const Color(0xFF9AA9B8) : const Color(0xFF718096),
                                   fontWeight: FontWeight.w500,
                                 ),
                                 border: OutlineInputBorder(
@@ -9084,7 +9084,7 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                             onPressed: _showAttachmentPanel,
                             tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
-                            icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary, size: 27),
+                            icon: Icon(Icons.attach_file_rounded, color: dark ? const Color(0xFFCBD5E1) : const Color(0xFF667085), size: 29),
                           ),
                           IconButton(
                             style: IconButton.styleFrom(
