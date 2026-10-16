@@ -2300,6 +2300,21 @@ class AboutAppPage extends StatelessWidget {
 }
 const List<String> _profileCharacters = ['🐺','🦊','🐱','🦁','🐼','🐸','🐉','👾','🤖','👻','🦋','🦂','🕷️','⚡','🌙','🔥','🌌','♟️'];
 
+String _avatarImageUrl(Map<String, dynamic> profile) {
+  final raw = (profile['avatar_url'] ?? '').toString().trim();
+  if (raw.isEmpty || raw.startsWith('emoji:')) return raw;
+  final parsed = Uri.tryParse(raw);
+  if (parsed != null && (parsed.scheme == 'https' || parsed.scheme == 'http')) {
+    return raw;
+  }
+  // Some older profiles stored a Storage object path instead of a public URL.
+  var path = raw.replaceFirst(RegExp(r'^/?avatars/'), '');
+  const publicPrefix = 'storage/v1/object/public/avatars/';
+  final prefixIndex = path.indexOf(publicPrefix);
+  if (prefixIndex >= 0) path = path.substring(prefixIndex + publicPrefix.length);
+  return supabase.storage.from('avatars').getPublicUrl(path);
+}
+
 String _avatarFallbackUrl(Map<String, dynamic> profile, String currentUrl) {
   final id = (profile['id'] ?? '').toString().trim();
   if (id.isEmpty) return currentUrl;
@@ -2309,7 +2324,7 @@ String _avatarFallbackUrl(Map<String, dynamic> profile, String currentUrl) {
 }
 
 void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
-  final url = (profile['avatar_url'] ?? '').toString().trim();
+  final url = _avatarImageUrl(profile);
   final fallbackUrl = _avatarFallbackUrl(profile, url);
   final isCharacter = url.startsWith('emoji:');
   showDialog<void>(
@@ -2375,7 +2390,7 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
 }
 
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
-  final url = (profile['avatar_url'] ?? '').toString().trim();
+  final url = _avatarImageUrl(profile);
   final fallbackUrl = _avatarFallbackUrl(profile, url);
   final isCharacter = url.startsWith('emoji:');
   final fallback = Container(
@@ -3364,6 +3379,7 @@ class _HomePageState extends State<HomePage> {
   Set<String> pinnedChatIds = <String>{};
   final TextEditingController chatSearch = TextEditingController();
   String chatQuery = '';
+  Future<List<Map<String, dynamic>>>? _contactsFuture;
   RealtimeChannel? _homeChannel;
   Timer? _homeRefreshTimer;
   bool _homeLoadInProgress = false;
@@ -4280,6 +4296,11 @@ class _HomePageState extends State<HomePage> {
     ]);
   }
 
+  Future<void> _openContactSearch() async {
+    await showSearch(context: context, delegate: ContactSearchDelegate());
+    if (mounted) setState(() => _contactsFuture = null);
+  }
+
   Widget contactsView() {
     final scheme = Theme.of(context).colorScheme;
     return Column(children: [
@@ -4287,13 +4308,13 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.fromLTRB(16, 12, 14, 6),
         child: Row(children: [
           const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
-          IconButton.filledTonal(onPressed: () => showSearch(context: context, delegate: ContactSearchDelegate()), icon: const Icon(Icons.person_add_alt_1_rounded)),
+          IconButton.filledTonal(onPressed: () => _openContactSearch(), icon: const Icon(Icons.person_add_alt_1_rounded)),
         ]),
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(children: [
-          Expanded(child: _glassAction(Icons.person_add_rounded, 'افزودن مخاطب', () => showSearch(context: context, delegate: ContactSearchDelegate()))),
+          Expanded(child: _glassAction(Icons.person_add_rounded, 'افزودن مخاطب', () => _openContactSearch())),
           const SizedBox(width: 8),
           Expanded(child: _glassAction(Icons.groups_rounded, 'ایجاد گروه', createGroup)),
         ]),
@@ -4312,7 +4333,7 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendRequestsPage()))),
       ),
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
-        future: _loadContacts(),
+        future: _contactsFuture ??= _loadContacts(),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           final rows = snap.data ?? [];
@@ -4417,7 +4438,7 @@ class _HomePageState extends State<HomePage> {
               ])
             : navIndex == 0
                 ? chatsView()
-                : ProfilePage(onOpenContacts: () => setState(() => showContacts = true)),
+                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; })),
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
       bottomNavigationBar: ClipRRect(
