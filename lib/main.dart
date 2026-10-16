@@ -8213,8 +8213,10 @@ class _ChatPageState extends State<ChatPage> {
     final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final myBubble = dark ? const Color(0xFF7655A8).withValues(alpha: .78) : scheme.primary.withValues(alpha: .76);
-    final otherBubble = dark ? const Color(0xFF30363D).withValues(alpha: .72) : const Color(0xFFE8EAF0).withValues(alpha: .78);
+    // Use the active app accent in both light and dark modes so selecting a
+    // palette changes real message bubbles, not just the settings preview.
+    final myBubble = scheme.primary.withValues(alpha: dark ? .88 : .82);
+    final otherBubble = scheme.surfaceContainerHighest.withValues(alpha: dark ? .94 : .92);
     final textColor = mine
         ? Colors.white
         : (dark ? const Color(0xFFF4F5FA) : const Color(0xFF20242A));
