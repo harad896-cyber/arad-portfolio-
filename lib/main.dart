@@ -3247,6 +3247,7 @@ class _HomePageState extends State<HomePage> {
   bool loading = true;
   int selectedFilter = 0;
   int navIndex = 0;
+  int personalSection = 0;
   String? selectedFolderId;
   List<Map<String, dynamic>> chatFolders = [];
   Map<String, Set<String>> folderAssignments = {};
@@ -4288,12 +4289,68 @@ class _HomePageState extends State<HomePage> {
 
   Widget settingsView() => const ProfessionalSettingsPage();
 
+  Widget personalView() {
+    final scheme = Theme.of(context).colorScheme;
+    if (personalSection == 1) {
+      return Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+          child: Row(children: [
+            IconButton(onPressed: () => setState(() => personalSection = 0), icon: const Icon(Icons.arrow_back_rounded)),
+            const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+          ]),
+        ),
+        Expanded(child: contactsView()),
+      ]);
+    }
+    if (personalSection == 2) {
+      return Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+          child: Row(children: [
+            IconButton(onPressed: () => setState(() => personalSection = 0), icon: const Icon(Icons.arrow_back_rounded)),
+            const Expanded(child: Text('تنظیمات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+          ]),
+        ),
+        const Expanded(child: ProfessionalSettingsPage()),
+      ]);
+    }
+    Widget tile(IconData icon, String title, String subtitle, VoidCallback onTap) =>
+      Card(
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        color: scheme.surfaceContainer.withValues(alpha: .82),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          leading: Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: scheme.primary),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: Text(subtitle),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: onTap,
+        ),
+      );
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(8, 18, 8, 24),
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: Text('شخصی', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
+        ),
+        tile(Icons.people_alt_rounded, 'مخاطبین', 'جستجو و مدیریت مخاطبین', () => setState(() => personalSection = 1)),
+        tile(Icons.settings_rounded, 'تنظیمات', 'ظاهر و تنظیمات برنامه', () => setState(() => personalSection = 2)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree(
-        key: ValueKey(navIndex),
-        child: navIndex == 0 ? chatsView() : navIndex == 1 ? contactsView() : navIndex == 2 ? settingsView() : const ProfilePage(),
+        key: ValueKey('$navIndex-$personalSection'),
+        child: navIndex == 0 ? chatsView() : navIndex == 1 ? personalView() : const ProfilePage(),
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
       bottomNavigationBar: ClipRRect(
@@ -4316,10 +4373,9 @@ class _HomePageState extends State<HomePage> {
               setState(() => navIndex = i);
             },
             destinations: const [
-          NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
-          NavigationDestination(icon: Icon(Icons.people_outline_rounded), selectedIcon: Icon(Icons.people_rounded), label: 'مخاطبین'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'تنظیمات'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'حساب'),
+              NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
+              NavigationDestination(icon: Icon(Icons.tune_rounded), selectedIcon: Icon(Icons.tune_rounded), label: 'شخصی'),
+              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'حساب'),
             ],
           ),
         ),
