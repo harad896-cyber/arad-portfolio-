@@ -4298,7 +4298,10 @@ class _HomePageState extends State<HomePage> {
                   : (p['display_name'] ?? p['username'] ?? 'کاربر')).toString();
               return Card(
                 child: ListTile(
-                  leading: GestureDetector(\n                    onTap: () => _openAvatarPreview(context, p),\n                    child: avatar(p),\n                  ),
+                  leading: GestureDetector(
+                    onTap: () => _openAvatarPreview(context, p),
+                    child: avatar(p),
+                  ),
                   title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text((p['username'] == null || p['username'].toString().isEmpty) ? '' : '@' + p['username'].toString()),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: p))),
