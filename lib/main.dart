@@ -5849,6 +5849,7 @@ class _ChatPageState extends State<ChatPage> {
   final AudioRecorder _voiceRecorder = AudioRecorder();
   final AudioPlayer _voicePlayer = AudioPlayer();
   bool recordingVoice = false;
+  bool _voiceFinishing = false;
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
   String _chatType = 'direct';
@@ -6891,13 +6892,18 @@ class _ChatPageState extends State<ChatPage> {
     } catch(e) { if(mounted) showMsg(context,'شروع ضبط ویس ناموفق بود: $e'); }
   }
 
-  Future<void> _finishVoiceRecording({bool cancel=false}) async {
-    if (!recordingVoice) return;
+  Future<void> _finishVoiceRecording({bool cancel = false}) async {
+    if (!recordingVoice || _voiceFinishing) return;
+    _voiceFinishing = true;
     _voiceTimer?.cancel();
     _voiceTimer = null;
     await _voiceAmplitudeSub?.cancel();
     _voiceAmplitudeSub = null;
 
+    final startedAt = _voiceStartedAt;
+    final durationSeconds = startedAt == null
+        ? voiceSeconds
+        : DateTime.now().difference(startedAt).inSeconds;
     String? path;
     try {
       path = await _voiceRecorder.stop();
@@ -6911,18 +6917,20 @@ class _ChatPageState extends State<ChatPage> {
           voiceLocked = false;
           voiceCancelArmed = false;
           voiceAmplitude = .08;
+          voiceSeconds = durationSeconds;
         });
       }
     }
 
-    if (cancel || path == null || path.isEmpty) return;
+    if (cancel || path == null || path.isEmpty) {
+      _voiceFinishing = false;
+      return;
+    }
 
     try {
       final bytes = await XFile(path).readAsBytes();
       if (bytes.isEmpty) throw Exception('فایل ویس خالی است');
       if (mounted) setState(() => sending = true);
-      // Browser recorders commonly emit WebM/Opus; labeling those bytes as
-      // MP4 makes some browsers and media players refuse to play the voice note.
       final voiceMime = kIsWeb ? 'audio/webm' : 'audio/mp4';
       final voiceExtension = kIsWeb ? 'webm' : 'm4a';
       final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension';
@@ -6944,7 +6952,7 @@ class _ChatPageState extends State<ChatPage> {
         'file_name': storagePath.split('/').last,
         'mime_type': voiceMime,
         'file_size': bytes.length,
-        'duration_ms': voiceSeconds * 1000,
+        'duration_ms': durationSeconds * 1000,
       });
       if (mounted) setState(() => replyMessage = null);
       await load();
@@ -6952,6 +6960,7 @@ class _ChatPageState extends State<ChatPage> {
     } catch (e) {
       if (mounted) showMsg(context, 'ارسال ویس ناموفق بود: ${_friendlyError(e.toString())}');
     } finally {
+      _voiceFinishing = false;
       if (mounted) setState(() => sending = false);
     }
   }
@@ -8931,7 +8940,7 @@ class _ChatPageState extends State<ChatPage> {
                       IconButton(
                         tooltip: 'لغو ضبط',
                         visualDensity: VisualDensity.compact,
-                        onPressed: sending ? null : () => _finishVoiceRecording(cancel: true),
+                        onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(cancel: true),
                         icon: const Icon(Icons.delete_outline_rounded),
                         color: scheme.error,
                       ),
@@ -8945,7 +8954,7 @@ class _ChatPageState extends State<ChatPage> {
                       IconButton.filled(
                         tooltip: 'پایان ضبط و ارسال ویس',
                         visualDensity: VisualDensity.compact,
-                        onPressed: sending ? null : () => _finishVoiceRecording(),
+                        onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(),
                         icon: const Icon(Icons.send_rounded, size: 19),
                       ),
                     ],
@@ -9012,7 +9021,7 @@ class _ChatPageState extends State<ChatPage> {
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: recordingVoice ? (sending || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording,
+                            onPressed: recordingVoice ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording,
                             tooltip: recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
                             icon: Icon(
                               recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
