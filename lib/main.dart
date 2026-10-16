@@ -9149,8 +9149,30 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
     if (toDate != null) {
       request = request.lt('created_at', DateTime(toDate!.year, toDate!.month, toDate!.day + 1).toUtc().toIso8601String());
     }
-    final rows = await request.order('created_at', ascending: false).limit(100);
-    return List<Map<String,dynamic>>.from(rows);
+    final results = List<Map<String,dynamic>>.from(
+      await request.order('created_at', ascending: false).limit(100),
+    );
+    // Search must honor "delete for me" too; otherwise an old message can
+    // reappear when the user finds it through search after removing it.
+    final uid = supabase.auth.currentUser?.id;
+    if (uid != null && results.isNotEmpty) {
+      try {
+        final hiddenRows = await supabase
+            .from('message_user_deletions')
+            .select('message_id')
+            .eq('user_id', uid)
+            .inFilter('message_id', results.map((m) => '${m['id']}').toList())
+            .timeout(const Duration(seconds: 5));
+        final hiddenIds = {
+          for (final row in List<Map<String, dynamic>>.from(hiddenRows))
+            '${row['message_id']}'
+        };
+        results.removeWhere((m) => hiddenIds.contains('${m['id']}'));
+      } catch (_) {
+        // Keep search available if deletion metadata is temporarily offline.
+      }
+    }
+    return results;
   }
 
   Future<void> _openFilters(BuildContext context) async {
