@@ -418,15 +418,15 @@ class AradMessenger extends StatelessWidget {
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          shadowColor: Color(0x14536DFA),
+          shadowColor: Color(appTheme.seed).withValues(alpha: .10),
           backgroundColor: Color(0xFFFCFCFE),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF171320)),
-          iconTheme: IconThemeData(color: Color(0xFF6F6480)),
+          iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -436,14 +436,14 @@ class AradMessenger extends StatelessWidget {
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            side: BorderSide(color: Color(0xFFE9EAF1)),
+            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .13)), 
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           tileColor: const Color(0xFFFFFFFF),
-          selectedTileColor: const Color(0xFFEAF0FF),
+          selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
           iconColor: const Color(0xFF766A88),
           minVerticalPadding: 10,
         ),
@@ -461,7 +461,7 @@ class AradMessenger extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(appTheme.seed), width: 1.8),
+            borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
@@ -500,10 +500,10 @@ class AradMessenger extends StatelessWidget {
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           elevation: 0,
           scrolledUnderElevation: 0,
-          shadowColor: Color(0x227890FF),
+          shadowColor: Color(appTheme.seed).withValues(alpha: .16),
           backgroundColor: Color(0xFF141722),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
@@ -516,14 +516,14 @@ class AradMessenger extends StatelessWidget {
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            side: BorderSide(color: Color(0xFF292D3C)),
+            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .24)), 
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           tileColor: const Color(0xFF191F30),
-          selectedTileColor: const Color(0xFF283657),
+          selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
           iconColor: const Color(0xFFBDB1D0),
           minVerticalPadding: 10,
         ),
@@ -541,7 +541,7 @@ class AradMessenger extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFB99CFF), width: 1.8),
+            borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
