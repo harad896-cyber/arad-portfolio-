@@ -14,7 +14,8 @@ import 'polish_widgets.dart';
 const _profileSecureAccounts = FlutterSecureStorage();
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final VoidCallback? onOpenContacts;
+  const ProfilePage({super.key, this.onOpenContacts});
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -366,6 +367,14 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAdminPage())),
             ),
           ],
+          const Divider(height: 1),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.people_alt_rounded, color: s.primary)),
+            title: const Text('شخصی و مخاطبین', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('دسترسی به مخاطبین و مدیریت ارتباط‌ها'),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            onTap: widget.onOpenContacts,
+          ),
           const Divider(height: 1),
           ListTile(
             leading: CircleAvatar(backgroundColor: s.primaryContainer, child: Icon(Icons.settings_rounded, color: s.primary)),
