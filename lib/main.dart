@@ -1254,15 +1254,15 @@ class AppAppearancePage extends StatefulWidget {
 }
 class _AppAppearancePageState extends State<AppAppearancePage> {
   bool picking = false;
-  static const presets = <({String name, int color})>[
-    (name: 'شب آرام', color: 0xFF10131C),
-    (name: 'آبی اقیانوسی', color: 0xFF102B3A),
-    (name: 'بنفش مدرن', color: 0xFF25183D),
-    (name: 'سبز جنگلی', color: 0xFF142D26),
-    (name: 'ذغالی', color: 0xFF25272B),
-    (name: 'روشن مینیمال', color: 0xFFF2F3F7),
-    (name: 'صورتی ملایم', color: 0xFFF6EAF0),
-    (name: 'آبی یخی', color: 0xFFE8F2FA),
+  static const presets = <({String name, int color, int accent})>[
+    (name: 'شب آرام', color: 0xFF10131C, accent: 0xFF229ED9),
+    (name: 'آبی اقیانوسی', color: 0xFF102B3A, accent: 0xFF2A9D8F),
+    (name: 'بنفش مدرن', color: 0xFF25183D, accent: 0xFF8B5CF6),
+    (name: 'سبز جنگلی', color: 0xFF142D26, accent: 0xFF4CAF80),
+    (name: 'ذغالی', color: 0xFF25272B, accent: 0xFF5C9DED),
+    (name: 'روشن مینیمال', color: 0xFFF2F3F7, accent: 0xFF229ED9),
+    (name: 'صورتی ملایم', color: 0xFFF6EAF0, accent: 0xFFD85D91),
+    (name: 'آبی یخی', color: 0xFFE8F2FA, accent: 0xFF3689C9),
   ];
 
   Future<void> _pickWallpaper() async {
@@ -1457,6 +1457,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                 borderRadius: BorderRadius.circular(16),
                 onTap: () async {
                   await appTheme.setBackgroundImage(null);
+                  await appTheme.setSeed(p.accent);
                   await appTheme.setBackgroundSeed(p.color);
                   if (mounted) setState(() {});
                 },
@@ -1471,6 +1472,15 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                     Icon(selected ? Icons.check_circle : Icons.palette_outlined, color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white),
                     const SizedBox(width: 8),
                     Expanded(child: Text(p.name, style: TextStyle(color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white, fontWeight: FontWeight.w800))),
+                    Container(
+                      width: 11,
+                      height: 11,
+                      decoration: BoxDecoration(
+                        color: Color(p.accent),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: .8), width: 1.5),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                   ]),
                 ),
