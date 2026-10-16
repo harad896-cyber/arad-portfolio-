@@ -9139,7 +9139,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 
   Future<List<Map<String,dynamic>>> _search() async {
     final term = query.trim();
-    dynamic request = supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id', conversationId);
+    dynamic request = supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id', conversationId).isFilter('deleted_at', null);
     if (term.isNotEmpty) request = request.ilike('body', '%$term%');
     if (contentType != 'all') request = request.eq('message_type', contentType);
     if (senderId != null) request = request.eq('sender_id', senderId!);
