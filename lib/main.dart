@@ -8901,7 +8901,7 @@ class _ChatPageState extends State<ChatPage> {
                       const SizedBox(width: 6),
                       Text(
                         '${voiceSeconds ~/ 60}:${(voiceSeconds % 60).toString().padLeft(2, '0')}',
-                        style: TextStyle(fontFeatures: const [FontFeature.tabularFigures()], fontWeight: FontWeight.w800, color: scheme.onSurface),
+                        style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -8917,9 +8917,9 @@ class _ChatPageState extends State<ChatPage> {
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 100),
                                     width: 3,
-                                    height: 5 + level.clamp(.06, 1.0) * 20,
+                                    height: 5 + level.clamp(.06, 1.0).toDouble() * 20,
                                     decoration: BoxDecoration(
-                                      color: scheme.primary.withValues(alpha: .55 + level.clamp(.06, 1.0) * .45),
+                                      color: scheme.primary.withValues(alpha: .55 + level.clamp(.06, 1.0).toDouble() * .45),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
@@ -9012,8 +9012,8 @@ class _ChatPageState extends State<ChatPage> {
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: recordingVoice ? (sending ? null : () => _finishVoiceRecording()) : toggleVoiceRecording,
-                            tooltip: recordingVoice ? 'پایان ضبط و ارسال ویس' : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
+                            onPressed: recordingVoice ? (sending || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording,
+                            tooltip: recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
                             icon: Icon(
                               recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
                               color: recordingVoice ? scheme.error : scheme.primary,
