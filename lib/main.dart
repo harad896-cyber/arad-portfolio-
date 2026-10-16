@@ -1385,11 +1385,11 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                             child: Container(
                               constraints: const BoxConstraints(maxWidth: 220),
                               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                              decoration: BoxDecoration(color: const Color(0xFFBDE8C8).withValues(alpha: .97), borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14), bottomLeft: Radius.circular(14))),
+                              decoration: BoxDecoration(color: Color(appTheme.seed).withValues(alpha: .96), borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14), bottomLeft: Radius.circular(14))),
                               child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                                Flexible(child: Text('خیلی شیک و مرتب شده ✨', style: TextStyle(color: Color(0xFF193D2A), fontSize: 12))),
+                                Flexible(child: Text('خیلی شیک و مرتب شده ✨', style: TextStyle(color: Colors.white, fontSize: 12))),
                                 SizedBox(width: 6),
-                                Icon(Icons.done_all_rounded, size: 14, color: Color(0xFF39885B)),
+                                Icon(Icons.done_all_rounded, size: 14, color: Colors.white),
                               ]),
                             ),
                           ),
@@ -1421,10 +1421,10 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                         const SizedBox(width: 9),
                         const Icon(Icons.attach_file_rounded, color: Colors.white, size: 21),
                         const SizedBox(width: 8),
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 19,
-                          backgroundColor: Color(0xFF229ED9),
-                          child: Icon(Icons.mic_rounded, color: Colors.white, size: 21),
+                          backgroundColor: Color(appTheme.seed),
+                          child: const Icon(Icons.mic_rounded, color: Colors.white, size: 21),
                         ),
                       ],
                     ),
