@@ -258,13 +258,26 @@ class _StoriesPageState extends State<StoriesPage> {
     var path = story['media_path']?.toString().trim() ?? '';
     // Support older rows that saved a full Storage URL instead of an object key.
     if (path.startsWith('http://') || path.startsWith('https://')) {
+      // Older uploads may store a complete Supabase Storage URL. Normalize
+      // public, signed and authenticated object URLs back to the bucket key
+      // before requesting a fresh signed URL.
       try {
         final uri = Uri.parse(path);
-        final marker = '/stories/';
-        final at = uri.path.indexOf(marker);
-        if (at >= 0) path = Uri.decodeComponent(uri.path.substring(at + marker.length));
+        final segments = uri.pathSegments;
+        final objectAt = segments.indexOf('object');
+        if (objectAt >= 0 && objectAt + 2 < segments.length) {
+          final bucketAt = segments.indexOf('stories', objectAt + 1);
+          if (bucketAt >= 0 && bucketAt + 1 < segments.length) {
+            path = segments.skip(bucketAt + 1).map(Uri.decodeComponent).join('/');
+          }
+        } else {
+          final marker = '/stories/';
+          final at = uri.path.indexOf(marker);
+          if (at >= 0) path = Uri.decodeComponent(uri.path.substring(at + marker.length).split('?').first);
+        }
       } catch (_) {}
     }
+    path = path.replaceFirst(RegExp(r'^/+'), '');
     if (id.isEmpty || path.isEmpty) {
       if (mounted) setState(() => _urlFailedIds.add(id));
       return;
