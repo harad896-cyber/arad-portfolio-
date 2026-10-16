@@ -5323,28 +5323,56 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
           return const AppSkeletonList(count: 6);
         }
         if (snapshot.hasError) {
-          return AppEmptyState(
-            icon: Icons.cloud_off_rounded,
-            title: 'مخاطبین بارگذاری نشدند',
-            subtitle: _friendlyError('${snapshot.error}'),
-            actionLabel: 'تلاش دوباره',
-            onAction: _reload,
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppEmptyState(
+                    icon: Icons.cloud_off_rounded,
+                    title: 'مخاطبین بارگذاری نشدند',
+                    subtitle: _friendlyError('${snapshot.error}'),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _reload,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('تلاش دوباره'),
+                  ),
+                ],
+              ),
+            ),
           );
         }
         final contacts = snapshot.data ?? <Map<String, dynamic>>[];
         if (contacts.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.people_alt_outlined,
-            title: 'هنوز مخاطبی نداری',
-            subtitle: 'با جستجوی نام کاربری، افراد را به فهرست مخاطبین اضافه کن.',
-            actionLabel: 'افزودن مخاطب',
-            onAction: () async {
-              final selected = await showSearch<Map<String, dynamic>?>(
-                context: context,
-                delegate: ContactSearchDelegate(),
-              );
-              if (selected != null && mounted) _reload();
-            },
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppEmptyState(
+                    icon: Icons.people_alt_outlined,
+                    title: 'هنوز مخاطبی نداری',
+                    subtitle: 'با جستجوی نام کاربری، افراد را به فهرست مخاطبین اضافه کن.',
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      final selected = await showSearch<Map<String, dynamic>?>(
+                        context: context,
+                        delegate: ContactSearchDelegate(),
+                      );
+                      if (selected != null && mounted) _reload();
+                    },
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: const Text('افزودن مخاطب'),
+                  ),
+                ],
+              ),
+            ),
           );
         }
         return RefreshIndicator(
