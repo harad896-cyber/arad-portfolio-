@@ -4626,7 +4626,10 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
           Center(child: Column(children: [
-            avatar(profile, size: 104),
+            GestureDetector(
+              onTap: () => _openAvatarPreview(context, profile),
+              child: avatar(profile, size: 104),
+            ),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
