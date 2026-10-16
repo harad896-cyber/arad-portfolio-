@@ -6875,9 +6875,11 @@ class _ChatPageState extends State<ChatPage> {
       final voicePath = kIsWeb
           ? 'arad_voice_${DateTime.now().millisecondsSinceEpoch}.webm'
           : '${(await getTemporaryDirectory()).path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      // Browser MediaRecorder commonly emits Opus/WebM; requesting AAC here
+      // can create a file whose extension/MIME disagree with the actual codec.
       await _voiceRecorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
+        RecordConfig(
+          encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc,
           bitRate: 96000,
           sampleRate: 48000,
           numChannels: 1,
@@ -6931,9 +6933,10 @@ class _ChatPageState extends State<ChatPage> {
     _voiceAmplitudeSub = null;
 
     final startedAt = _voiceStartedAt;
-    final durationSeconds = startedAt == null
-        ? voiceSeconds
-        : DateTime.now().difference(startedAt).inSeconds;
+    final durationMilliseconds = startedAt == null
+        ? voiceSeconds * 1000
+        : DateTime.now().difference(startedAt).inMilliseconds;
+    final durationSeconds = (durationMilliseconds / 1000).ceil();
     String? path;
     try {
       path = await _voiceRecorder.stop();
@@ -6982,7 +6985,7 @@ class _ChatPageState extends State<ChatPage> {
         'file_name': storagePath.split('/').last,
         'mime_type': voiceMime,
         'file_size': bytes.length,
-        'duration_ms': durationSeconds * 1000,
+        'duration_ms': durationMilliseconds,
       });
       if (mounted) setState(() => replyMessage = null);
       await load();
