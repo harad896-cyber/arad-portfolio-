@@ -5849,6 +5849,7 @@ class _ChatPageState extends State<ChatPage> {
   final AudioRecorder _voiceRecorder = AudioRecorder();
   final AudioPlayer _voicePlayer = AudioPlayer();
   bool recordingVoice = false;
+  bool _voiceStarting = false;
   bool _voiceFinishing = false;
   bool voiceLocked = false;
   bool voiceCancelArmed = false;
@@ -6864,9 +6865,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _startVoiceRecording() async {
-    if (sending || recordingVoice) return;
+    if (sending || recordingVoice || _voiceStarting || _voiceFinishing) return;
+    _voiceStarting = true;
     try {
-      if (!await _voiceRecorder.hasPermission()) { if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.'); return; }
+      if (!await _voiceRecorder.hasPermission()) {
+        if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.');
+        return;
+      }
       final voicePath = kIsWeb
           ? 'arad_voice_${DateTime.now().millisecondsSinceEpoch}.webm'
           : '${(await getTemporaryDirectory()).path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
@@ -6881,15 +6886,40 @@ class _ChatPageState extends State<ChatPage> {
       );
       _voiceStartedAt = DateTime.now();
       _voiceTimer?.cancel();
-      _voiceTimer = Timer.periodic(const Duration(seconds: 1), (_) { if (mounted && recordingVoice) setState(() => voiceSeconds = DateTime.now().difference(_voiceStartedAt!).inSeconds); });
-      _voiceAmplitudeSub?.cancel();
+      _voiceTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted && recordingVoice && _voiceStartedAt != null) {
+          setState(() => voiceSeconds = DateTime.now().difference(_voiceStartedAt!).inSeconds);
+        }
+      });
+      await _voiceAmplitudeSub?.cancel();
       _voiceAmplitudeSub = _voiceRecorder.onAmplitudeChanged(const Duration(milliseconds: 120)).listen((a) {
         if (!mounted) return;
         final normalized = ((a.current + 60) / 60).clamp(0.06, 1.0).toDouble();
-        setState(() { voiceAmplitude = normalized; voiceWaveform.add(normalized); if (voiceWaveform.length > 34) voiceWaveform.removeAt(0); });
-      });
-      if (mounted) setState(() { recordingVoice=true; voiceLocked=false; voiceCancelArmed=false; voiceSeconds=0; voiceWaveform=[]; voiceAmplitude=.08; });
-    } catch(e) { if(mounted) showMsg(context,'شروع ضبط ویس ناموفق بود: $e'); }
+        setState(() {
+          voiceAmplitude = normalized;
+          voiceWaveform.add(normalized);
+          if (voiceWaveform.length > 34) voiceWaveform.removeAt(0);
+        });
+      }, onError: (_) {});
+      if (mounted) {
+        setState(() {
+          recordingVoice = true;
+          voiceLocked = false;
+          voiceCancelArmed = false;
+          voiceSeconds = 0;
+          voiceWaveform = [];
+          voiceAmplitude = .08;
+        });
+      }
+    } catch (e) {
+      _voiceTimer?.cancel();
+      _voiceTimer = null;
+      await _voiceAmplitudeSub?.cancel();
+      _voiceAmplitudeSub = null;
+      if (mounted) showMsg(context, 'شروع ضبط ویس ناموفق بود: $e');
+    } finally {
+      _voiceStarting = false;
+    }
   }
 
   Future<void> _finishVoiceRecording({bool cancel = false}) async {
@@ -9021,12 +9051,14 @@ class _ChatPageState extends State<ChatPage> {
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: recordingVoice ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording,
-                            tooltip: recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس'),
-                            icon: Icon(
-                              recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
-                              color: recordingVoice ? scheme.error : scheme.primary,
-                            ),
+                            onPressed: _voiceStarting ? null : (recordingVoice ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording()) : toggleVoiceRecording),
+                            tooltip: _voiceStarting ? 'در حال آماده‌سازی میکروفون' : (recordingVoice ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس') : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
+                            icon: _voiceStarting
+                                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary))
+                                : Icon(
+                                    recordingVoice ? Icons.send_rounded : Icons.mic_rounded,
+                                    color: recordingVoice ? scheme.error : scheme.primary,
+                                  ),
                           ),
                           IconButton(
                             style: IconButton.styleFrom(
