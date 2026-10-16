@@ -2301,13 +2301,39 @@ class AboutAppPage extends StatelessWidget {
 const List<String> _profileCharacters = ['🐺','🦊','🐱','🦁','🐼','🐸','🐉','👾','🤖','👻','🦋','🦂','🕷️','⚡','🌙','🔥','🌌','♟️'];
 
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
-  final url = profile['avatar_url']?.toString() ?? '';
+  final url = (profile['avatar_url'] ?? '').toString().trim();
   final isCharacter = url.startsWith('emoji:');
-  return CircleAvatar(
-    radius: size / 2,
-    backgroundColor: isCharacter ? const Color(0xFF292344) : null,
-    backgroundImage: url.isNotEmpty && !isCharacter ? NetworkImage(url) : null,
-    child: isCharacter ? Text(url.substring(6), style: TextStyle(fontSize: size * .58)) : url.isEmpty ? const Icon(Icons.person) : null,
+  final fallback = Container(
+    width: size,
+    height: size,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: const Color(0xFF292344),
+      border: Border.all(color: const Color(0xFF9B83FF).withValues(alpha: .55)),
+    ),
+    child: isCharacter
+        ? Text(url.substring(6), style: TextStyle(fontSize: size * .58))
+        : Icon(Icons.person_rounded, size: size * .52, color: Colors.white70),
+  );
+  if (url.isEmpty || isCharacter) return fallback;
+  return ClipOval(
+    child: SizedBox(
+      width: size,
+      height: size,
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return fallback;
+        },
+        errorBuilder: (context, error, stackTrace) => fallback,
+      ),
+    ),
   );
 }
 
