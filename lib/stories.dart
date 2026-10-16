@@ -585,22 +585,34 @@ class _StoriesPageState extends State<StoriesPage> {
             ),
           ),
           Positioned(
-            top: 24, left: 16, right: 16,
-            child: Row(children: [
-              Expanded(child: Text(
-                (s['audience'] ?? 'contacts') == 'everyone' ? 'عمومی' : (s['audience'] ?? 'contacts') == 'private' ? 'خصوصی' : 'مخاطبین',
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
-              )),
-              IconButton(tooltip: 'پسندیدن', onPressed: _toggleCurrentLike, icon: Icon(_likedIds.contains(s['id'].toString()) ? Icons.favorite : Icons.favorite_border, color: _likedIds.contains(s['id'].toString()) ? Colors.pinkAccent : Colors.white)),
-              Text('${_likeCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
-              if (mine) ...[
-                IconButton(tooltip: 'بازدیدکنندگان', onPressed: _showViewers, icon: const Icon(Icons.visibility_outlined, color: Colors.white)),
-                Text('${_viewCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
-              ],
-              IconButton(tooltip: 'نظرها', onPressed: _openComments, icon: const Icon(Icons.mode_comment_outlined, color: Colors.white)),
-              Text('${_commentCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
-              IconButton(tooltip: 'اشتراک‌گذاری', onPressed: _shareCurrent, icon: const Icon(Icons.share_outlined, color: Colors.white)),
-            ]),
+            left: 12, right: 12, bottom: (s['caption'] ?? '').toString().trim().isNotEmpty ? 94 : 18,
+            child: SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .58),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: Colors.white.withValues(alpha: .14)),
+                ),
+                child: Row(children: [
+                  Expanded(child: Text(
+                    (s['audience'] ?? 'contacts') == 'everyone' ? 'عمومی' : (s['audience'] ?? 'contacts') == 'private' ? 'خصوصی' : 'مخاطبین',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  )),
+                  IconButton(tooltip: 'پسندیدن', onPressed: _toggleCurrentLike, icon: Icon(_likedIds.contains(s['id'].toString()) ? Icons.favorite : Icons.favorite_border, color: _likedIds.contains(s['id'].toString()) ? Colors.pinkAccent : Colors.white)),
+                  Text('${_likeCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+                  if (mine) ...[
+                    IconButton(tooltip: 'بازدیدکنندگان', onPressed: _showViewers, icon: const Icon(Icons.visibility_outlined, color: Colors.white)),
+                    Text('${_viewCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+                  ],
+                  IconButton(tooltip: 'نظرها', onPressed: _openComments, icon: const Icon(Icons.mode_comment_outlined, color: Colors.white)),
+                  Text('${_commentCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
+                  IconButton(tooltip: 'اشتراک‌گذاری', onPressed: _shareCurrent, icon: const Icon(Icons.share_outlined, color: Colors.white)),
+                ]),
+              ),
+            ),
           ),
           if ((s['caption'] ?? '').toString().trim().isNotEmpty)
             Positioned(
