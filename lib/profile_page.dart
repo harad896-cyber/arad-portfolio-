@@ -310,19 +310,84 @@ class _ProfilePageState extends State<ProfilePage> {
             ]),
             if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
             IconButton(tooltip: 'کپی آیدی', icon: const Icon(Icons.copy_rounded, size: 18), onPressed: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); }),
-            const SizedBox(height: 8),
-            Text(b.isEmpty ? 'هنوز بیویی ثبت نشده است.' : b, textAlign: TextAlign.center, style: TextStyle(color: s.onSurfaceVariant, height: 1.4)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: s.primaryContainer.withValues(alpha: .42),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: s.primary.withValues(alpha: .18)),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(children: [
+                  Icon(Icons.auto_awesome_rounded, size: 19, color: s.primary),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('درباره من', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900))),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'ویرایش بیو',
+                    onPressed: editProfile,
+                    icon: Icon(Icons.edit_outlined, color: s.primary, size: 19),
+                  ),
+                ]),
+                const SizedBox(height: 3),
+                Text(
+                  b.isEmpty ? 'چند کلمه درباره خودت بنویس تا دیگران بهتر بشناسنت.' : b,
+                  textAlign: TextAlign.start,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(color: b.isEmpty ? s.onSurfaceVariant : s.onSurface, height: 1.65, fontSize: 14),
+                ),
+                if (b.isEmpty) ...[
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: editProfile,
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('نوشتن بیو'),
+                    ),
+                  ),
+                ],
+              ]),
+            ),
+            const SizedBox(height: 18),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text('کنترل پروفایل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: s.onSurface)),
+            ),
+            const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: FilledButton.icon(onPressed: editProfile, icon: const Icon(Icons.edit_rounded), label: const Text('ویرایش پروفایل'))),
+              Expanded(child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                onPressed: editProfile,
+                icon: const Icon(Icons.tune_rounded),
+                label: const Text('ویرایش اطلاعات'),
+              )),
               const SizedBox(width: 8),
-              Expanded(child: OutlinedButton.icon(onPressed: showProfileQr, icon: const Icon(Icons.qr_code_rounded), label: const Text('QR پروفایل'))),
+              Expanded(child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                onPressed: showProfileQr,
+                icon: const Icon(Icons.qr_code_rounded),
+                label: const Text('QR پروفایل'),
+              )),
             ]),
             const SizedBox(height: 8),
-            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: switchAccount, icon: const Icon(Icons.swap_horiz_rounded), label: const Text('تغییر حساب'))),
+            SizedBox(width: double.infinity, child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+              onPressed: switchAccount,
+              icon: const Icon(Icons.swap_horiz_rounded),
+              label: const Text('مدیریت و تغییر حساب'),
+            )),
           ]),
         )),
-        const SizedBox(height: 12),
+        const SizedBox(height: 20),
+        Row(children: [
+          Icon(Icons.manage_accounts_rounded, color: s.primary, size: 22),
+          const SizedBox(width: 8),
+          const Text('مدیریت حساب و دسترسی‌ها', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+        ]),
+        const SizedBox(height: 10),
         glass(Column(children: [
           if (email.isNotEmpty || phone.isNotEmpty)
             Padding(
