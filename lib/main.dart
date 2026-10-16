@@ -4042,7 +4042,7 @@ class _HomePageState extends State<HomePage> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(11, 5, 11, 96),
                     itemCount: filteredChats.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 4),
+                    separatorBuilder: (_, __) => const SizedBox(height: 7),
                     itemBuilder: (context, i) {
                       final c = filteredChats[i];
                       final id = c['id'].toString();
@@ -4060,15 +4060,21 @@ class _HomePageState extends State<HomePage> {
                       final archived = archivedChatIds.contains(id);
 
                       return Material(
-                        color: scheme.surface,
+                        color: unread
+                            ? Color.alphaBlend(scheme.primary.withValues(alpha: dark ? .13 : .07), scheme.surface)
+                            : (isPinned
+                                ? Color.alphaBlend(scheme.primary.withValues(alpha: dark ? .09 : .045), scheme.surface)
+                                : scheme.surface),
                         elevation: 0,
                         shadowColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(18),
                           side: BorderSide(
-                            color: scheme.outlineVariant.withValues(alpha: dark ? .38 : .48),
-                            width: .7,
+                            color: unread || isPinned
+                                ? scheme.primary.withValues(alpha: dark ? .65 : .42)
+                                : scheme.outlineVariant.withValues(alpha: dark ? .42 : .58),
+                            width: unread ? 1.35 : (isPinned ? 1.1 : .8),
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
@@ -4078,16 +4084,20 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.fromLTRB(10, 7, 5, 7),
                             child: Row(children: [
                               Stack(clipBehavior: Clip.none, children: [
-                                Material(
-                                  elevation: 0,
-                                  shadowColor: Colors.transparent,
-                                  shape: const CircleBorder(),
-                                  color: scheme.primaryContainer,
+                                Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: unread || isPinned ? scheme.primary : scheme.outlineVariant,
+                                      width: unread || isPinned ? 2 : 1,
+                                    ),
+                                  ),
                                   child: CircleAvatar(
                                     radius: 25,
                                     backgroundColor: scheme.primaryContainer,
                                     backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                                    child: avatarUrl.isEmpty ? Icon(icon, color: scheme.primary, size: 24) : null,
+                                    child: avatarUrl.isEmpty ? Icon(icon, color: scheme.primary, size: 25) : null,
                                   ),
                                 ),
                                 if (c['is_online'] == true)
@@ -4097,7 +4107,7 @@ class _HomePageState extends State<HomePage> {
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Row(children: [
                                   Expanded(child: Row(children: [
-                                    Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
+                                    Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: unread ? FontWeight.w900 : FontWeight.w800, fontSize: 15.5, color: unread ? scheme.primary : scheme.onSurface))),
                                     if (type == 'direct' && peer?['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: AnimatedVerifiedBadge(size: 16)),
                                   ])),
                                   if (lastAt != null) Text(_homeTime(lastAt), style: TextStyle(fontSize: 10.5, color: unread ? scheme.primary : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w800 : FontWeight.w500)),
