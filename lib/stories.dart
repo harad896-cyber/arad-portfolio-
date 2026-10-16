@@ -151,6 +151,8 @@ class _StoriesPageState extends State<StoriesPage> {
   final Map<String, int> _likeCounts = <String, int>{};
   final Map<String, int> _commentCounts = <String, int>{};
   final Map<String, int> _viewCounts = <String, int>{};
+  final Set<String> _urlLoadingIds = <String>{};
+  final Set<String> _urlFailedIds = <String>{};
   Timer? _timer;
   RealtimeChannel? _channel;
 
@@ -191,6 +193,8 @@ class _StoriesPageState extends State<StoriesPage> {
           _likeCounts.clear();
           _commentCounts.clear();
           _viewCounts.clear();
+          _urlLoadingIds.clear();
+          _urlFailedIds.clear();
         });
         _timer?.cancel();
         return;
@@ -198,26 +202,6 @@ class _StoriesPageState extends State<StoriesPage> {
 
       final ids = stories.map((s) => s['id'].toString()).toList();
       final uid = _storiesSupabase.auth.currentUser?.id;
-
-      // Sign media URLs immediately; engagement counters load in the background
-      // so slow likes/comments queries cannot leave the story viewer blank.
-      final signedUrls = await Future.wait<MapEntry<String, String>?>(stories.map((s) async {
-        try {
-          final signed = await _storiesSupabase.storage
-              .from('stories')
-              .createSignedUrl(s['media_path'].toString(), 3600);
-          return MapEntry(s['id'].toString(), signed);
-        } catch (_) {
-          return null;
-        }
-      }));
-      if (!mounted || generation != _loadGeneration) return;
-
-      final urls = <String, String>{};
-      for (final entry in signedUrls) {
-        if (entry != null) urls[entry.key] = entry.value;
-      }
-
       var nextIndex = 0;
       var foundSelection = false;
       for (final candidate in [previousStoryId, widget.initialStoryId]) {
@@ -238,18 +222,70 @@ class _StoriesPageState extends State<StoriesPage> {
         }
       }
       final selectedId = stories[nextIndex]['id']?.toString();
+      final validIds = ids.toSet();
       setState(() {
         _stories = stories;
-        _urls = urls;
+        _urls.removeWhere((id, _) => !validIds.contains(id));
+        _urlFailedIds.removeWhere((id) => !validIds.contains(id));
         _index = nextIndex;
         _loading = false;
       });
-      if (selectedId != previousStoryId || _timer == null) _startTimer();
+
+      // Sign only the selected story first. Signing dozens of private Storage
+      // objects at once made the viewer appear blank on slower phones/connections.
+      unawaited(_ensureSignedUrl(stories[nextIndex], startTimerWhenReady: true));
+      if (selectedId != previousStoryId) _timer?.cancel();
       unawaited(_loadEngagement(ids, uid, generation));
-    } catch (_) {
+    } catch (error) {
       if (mounted && generation == _loadGeneration) {
         setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('استوری‌ها بارگذاری نشدند: ${error.toString().replaceFirst('Exception: ', '')}', maxLines: 3)),
+        );
       }
+    }
+  }
+
+  Future<void> _ensureSignedUrl(
+    Map<String, dynamic> story, {
+    bool startTimerWhenReady = false,
+  }) async {
+    final id = story['id']?.toString() ?? '';
+    final path = story['media_path']?.toString() ?? '';
+    if (id.isEmpty || path.isEmpty) {
+      if (mounted) setState(() => _urlFailedIds.add(id));
+      return;
+    }
+    if ((_urls[id] ?? '').isNotEmpty) {
+      if (startTimerWhenReady && mounted && _stories.isNotEmpty &&
+          _stories[_index]['id']?.toString() == id) {
+        _startTimer();
+      }
+      return;
+    }
+    if (!_urlLoadingIds.add(id)) return;
+    if (mounted) setState(() => _urlFailedIds.remove(id));
+    try {
+      final signed = await _storiesSupabase.storage
+          .from('stories')
+          .createSignedUrl(path, 3600)
+          .timeout(const Duration(seconds: 15));
+      if (!mounted) return;
+      if (_stories.any((item) => item['id']?.toString() == id)) {
+        setState(() {
+          _urls[id] = signed;
+          _urlFailedIds.remove(id);
+        });
+        if (startTimerWhenReady && _stories.isNotEmpty &&
+            _stories[_index]['id']?.toString() == id) {
+          _startTimer();
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _urlFailedIds.add(id));
+    } finally {
+      _urlLoadingIds.remove(id);
+      if (mounted) setState(() {});
     }
   }
 
@@ -319,12 +355,16 @@ class _StoriesPageState extends State<StoriesPage> {
   void _next() {
     if (_stories.isEmpty) return;
     if (_index >= _stories.length - 1) { Navigator.pop(context); return; }
-    setState(() => _index++); _startTimer();
+    _timer?.cancel();
+    setState(() => _index++);
+    unawaited(_ensureSignedUrl(_stories[_index], startTimerWhenReady: true));
   }
 
   void _previous() {
     if (_stories.isEmpty || _index == 0) return;
-    setState(() => _index--); _startTimer();
+    _timer?.cancel();
+    setState(() => _index--);
+    unawaited(_ensureSignedUrl(_stories[_index], startTimerWhenReady: true));
   }
 
   Future<void> _toggleCurrentLike() async {
@@ -491,13 +531,24 @@ class _StoriesPageState extends State<StoriesPage> {
         child: Stack(fit: StackFit.expand, children: [
           if (url == null || url.isEmpty)
             Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(s['media_type'] == 'video' ? Icons.videocam_off_rounded : Icons.broken_image_rounded, color: Colors.white70, size: 48),
-                const SizedBox(height: 10),
-                const Text('رسانهٔ استوری بارگذاری نشد', style: TextStyle(color: Colors.white, fontSize: 14)),
-                const SizedBox(height: 6),
-                TextButton.icon(onPressed: _load, icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره'), style: TextButton.styleFrom(foregroundColor: Colors.white)),
-              ]),
+              child: _urlLoadingIds.contains(s['id'].toString())
+                  ? const Column(mainAxisSize: MainAxisSize.min, children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 12),
+                      Text('در حال بارگذاری استوری…', style: TextStyle(color: Colors.white)),
+                    ])
+                  : Column(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(s['media_type'] == 'video' ? Icons.videocam_off_rounded : Icons.broken_image_rounded, color: Colors.white70, size: 48),
+                      const SizedBox(height: 10),
+                      Text(_urlFailedIds.contains(s['id'].toString()) ? 'رسانهٔ استوری بارگذاری نشد' : 'آماده‌سازی استوری…', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: () => unawaited(_ensureSignedUrl(s, startTimerWhenReady: true)),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('تلاش دوباره'),
+                        style: TextButton.styleFrom(foregroundColor: Colors.white),
+                      ),
+                    ]),
             )
           else if (s['media_type'] == 'video')
             StoryVideo(key: ValueKey(s['id']), url: url)
