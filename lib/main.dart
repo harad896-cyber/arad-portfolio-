@@ -2419,18 +2419,46 @@ Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
         gaplessPlayback: true,
         loadingBuilder: (context, child, progress) =>
             progress == null ? child : fallback,
-        errorBuilder: (context, error, stackTrace) =>
-            fallbackUrl.isNotEmpty && fallbackUrl != url
-                ? Image.network(
-                    fallbackUrl,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, retryError, retryStack) => fallback,
-                  )
-                : fallback,
+        errorBuilder: (context, error, stackTrace) {
+          if (fallbackUrl.isNotEmpty && fallbackUrl != url) {
+            return Image.network(
+              fallbackUrl,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (context, retryError, retryStack) =>
+                  _signedAvatarFallback(profile, size, fallback),
+            );
+          }
+          return _signedAvatarFallback(profile, size, fallback);
+        },
       ),
     ),
+  );
+}
+
+Widget _signedAvatarFallback(
+  Map<String, dynamic> profile,
+  double size,
+  Widget fallback,
+) {
+  final id = (profile['id'] ?? '').toString().trim();
+  if (id.isEmpty) return fallback;
+  return FutureBuilder<String>(
+    future: supabase.storage.from('avatars').createSignedUrl('$id/avatar.jpg', 3600),
+    builder: (context, snapshot) {
+      final signedUrl = snapshot.data;
+      if (signedUrl == null || signedUrl.isEmpty) return fallback;
+      return Image.network(
+        signedUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    },
   );
 }
 
