@@ -8726,19 +8726,18 @@ class _ChatPageState extends State<ChatPage> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      scheme.surface.withValues(alpha: .90),
-                      scheme.surface.withValues(alpha: .78),
-                    ],
-                  ),
-                  border: Border(
-                    bottom: BorderSide(color: scheme.primary.withValues(alpha: .12)),
-                  ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    scheme.surface.withValues(alpha: .90),
+                    scheme.surface.withValues(alpha: .78),
+                  ],
                 ),
+                border: Border(
+                  bottom: BorderSide(color: scheme.primary.withValues(alpha: .12)),
+                ),
+              ),
             ),
           ),
         ),
