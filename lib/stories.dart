@@ -562,7 +562,7 @@ class _StoriesPageState extends State<StoriesPage> {
     final mine = s['user_id'].toString() == _storiesSupabase.auth.currentUser?.id;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white, title: Text('استوری'), actions: [if (mine) IconButton(onPressed: _deleteCurrent, icon: const Icon(Icons.delete_outline)), IconButton(onPressed: _createStory, icon: const Icon(Icons.add_circle_outline))]),
+      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white, title: const Text('استوری'), actions: const []),
       body: GestureDetector(
         onTapUp: (d) => d.localPosition.dx < MediaQuery.of(context).size.width / 2 ? _previous() : _next(),
         child: Stack(fit: StackFit.expand, children: [
@@ -623,7 +623,31 @@ class _StoriesPageState extends State<StoriesPage> {
             ),
           ),
           Positioned(
-            left: 12, right: 12, bottom: (s['caption'] ?? '').toString().trim().isNotEmpty ? 94 : 18,
+            left: 12, right: 12, bottom: 16,
+            child: SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _storyBottomButton(
+                    icon: Icons.add_circle_outline_rounded,
+                    label: 'استوری جدید',
+                    onTap: _createStory,
+                  ),
+                  if (mine) ...[
+                    const SizedBox(width: 10),
+                    _storyBottomButton(
+                      icon: Icons.delete_outline_rounded,
+                      label: 'حذف',
+                      onTap: _deleteCurrent,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12, right: 12, bottom: (s['caption'] ?? '').toString().trim().isNotEmpty ? 154 : 76,
             child: SafeArea(
               top: false,
               child: Container(
@@ -762,6 +786,31 @@ class _StoriesPageState extends State<StoriesPage> {
     }
   }
 }
+
+
+Widget _storyBottomButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  return Material(
+    color: Colors.black.withValues(alpha: .72),
+    borderRadius: BorderRadius.circular(24),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: .22)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: Colors.white, size: 19),
+          const SizedBox(width: 7),
+          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        ]),
+      ),
+    ),
+  );
+}
+
 
 class StoryVideo extends StatefulWidget {
   final String url;
