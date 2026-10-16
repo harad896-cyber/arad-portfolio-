@@ -2300,8 +2300,17 @@ class AboutAppPage extends StatelessWidget {
 }
 const List<String> _profileCharacters = ['🐺','🦊','🐱','🦁','🐼','🐸','🐉','👾','🤖','👻','🦋','🦂','🕷️','⚡','🌙','🔥','🌌','♟️'];
 
+String _avatarFallbackUrl(Map<String, dynamic> profile, String currentUrl) {
+  final id = (profile['id'] ?? '').toString().trim();
+  if (id.isEmpty) return currentUrl;
+  // Older profile rows can contain stale/cached URLs. Rebuild the canonical
+  // public object URL from the stable user id as a second attempt.
+  return supabase.storage.from('avatars').getPublicUrl('$id/avatar.jpg');
+}
+
 void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
   final url = (profile['avatar_url'] ?? '').toString().trim();
+  final fallbackUrl = _avatarFallbackUrl(profile, url);
   final isCharacter = url.startsWith('emoji:');
   showDialog<void>(
     context: context,
@@ -2319,11 +2328,22 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
                 ? Image.network(
                     url,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.broken_image_rounded,
-                      size: 84,
-                      color: Colors.white70,
-                    ),
+                    errorBuilder: (_, __, ___) =>
+                        fallbackUrl.isNotEmpty && fallbackUrl != url
+                            ? Image.network(
+                                fallbackUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.broken_image_rounded,
+                                  size: 84,
+                                  color: Colors.white70,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.broken_image_rounded,
+                                size: 84,
+                                color: Colors.white70,
+                              ),
                   )
                 : Container(
                     width: 220,
@@ -2356,6 +2376,7 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
 
 Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
   final url = (profile['avatar_url'] ?? '').toString().trim();
+  final fallbackUrl = _avatarFallbackUrl(profile, url);
   final isCharacter = url.startsWith('emoji:');
   final fallback = Container(
     width: size,
@@ -2383,7 +2404,16 @@ Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
         gaplessPlayback: true,
         loadingBuilder: (context, child, progress) =>
             progress == null ? child : fallback,
-        errorBuilder: (context, error, stackTrace) => fallback,
+        errorBuilder: (context, error, stackTrace) =>
+            fallbackUrl.isNotEmpty && fallbackUrl != url
+                ? Image.network(
+                    fallbackUrl,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, retryError, retryStack) => fallback,
+                  )
+                : fallback,
       ),
     ),
   );
