@@ -2316,24 +2316,94 @@ Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
         ? Text(url.substring(6), style: TextStyle(fontSize: size * .58))
         : Icon(Icons.person_rounded, size: size * .52, color: Colors.white70),
   );
-  if (url.isEmpty || isCharacter) return fallback;
-  return ClipOval(
-    child: SizedBox(
-      width: size,
-      height: size,
-      child: Image.network(
-        url,
+
+  Widget thumbnail;
+  if (url.isEmpty || isCharacter) {
+    thumbnail = fallback;
+  } else {
+    thumbnail = ClipOval(
+      child: SizedBox(
         width: size,
         height: size,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return fallback;
-        },
-        errorBuilder: (context, error, stackTrace) => fallback,
+        child: Image.network(
+          url,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          loadingBuilder: (context, child, progress) =>
+              progress == null ? child : fallback,
+          errorBuilder: (context, error, stackTrace) => fallback,
+        ),
       ),
-    ),
+    );
+  }
+
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () {
+      showDialog<void>(
+        context: context,
+        barrierColor: Colors.black87,
+        builder: (dialogContext) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(18),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4,
+                child: url.isNotEmpty && !isCharacter
+                    ? Image.network(
+                        url,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 220,
+                          height: 220,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF292344),
+                          ),
+                          child: const Icon(Icons.broken_image_rounded,
+                              size: 72, color: Colors.white70),
+                        ),
+                      )
+                    : Container(
+                        width: 220,
+                        height: 220,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF292344),
+                          border: Border.all(
+                            color: const Color(0xFF9B83FF),
+                            width: 2,
+                          ),
+                        ),
+                        child: isCharacter
+                            ? Text(url.substring(6),
+                                style: const TextStyle(fontSize: 112))
+                            : const Icon(Icons.person_rounded,
+                                size: 112, color: Colors.white70),
+                      ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton.filledTonal(
+                  tooltip: 'بستن عکس',
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+    child: thumbnail,
   );
 }
 
