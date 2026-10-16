@@ -255,7 +255,16 @@ class _StoriesPageState extends State<StoriesPage> {
     bool startTimerWhenReady = false,
   }) async {
     final id = story['id']?.toString() ?? '';
-    final path = story['media_path']?.toString() ?? '';
+    var path = story['media_path']?.toString().trim() ?? '';
+    // Support older rows that saved a full Storage URL instead of an object key.
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      try {
+        final uri = Uri.parse(path);
+        final marker = '/stories/';
+        final at = uri.path.indexOf(marker);
+        if (at >= 0) path = Uri.decodeComponent(uri.path.substring(at + marker.length));
+      } catch (_) {}
+    }
     if (id.isEmpty || path.isEmpty) {
       if (mounted) setState(() => _urlFailedIds.add(id));
       return;
@@ -291,6 +300,17 @@ class _StoriesPageState extends State<StoriesPage> {
       _urlLoadingIds.remove(id);
       if (mounted) setState(() {});
     }
+  }
+
+  Future<void> _retryCurrentMedia() async {
+    if (_stories.isEmpty) return;
+    final id = _stories[_index]['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    setState(() {
+      _urls.remove(id);
+      _urlFailedIds.remove(id);
+    });
+    await _ensureSignedUrl(_stories[_index], startTimerWhenReady: true);
   }
 
   Future<void> _loadEngagement(List<String> ids, String? uid, int generation) async {
@@ -547,7 +567,7 @@ class _StoriesPageState extends State<StoriesPage> {
                       Text(_urlFailedIds.contains(s['id'].toString()) ? 'رسانهٔ استوری بارگذاری نشد' : 'آماده‌سازی استوری…', style: const TextStyle(color: Colors.white, fontSize: 14)),
                       const SizedBox(height: 6),
                       TextButton.icon(
-                        onPressed: () => unawaited(_ensureSignedUrl(s, startTimerWhenReady: true)),
+                        onPressed: _retryCurrentMedia,
                         icon: const Icon(Icons.refresh_rounded),
                         label: const Text('تلاش دوباره'),
                         style: TextButton.styleFrom(foregroundColor: Colors.white),
@@ -563,7 +583,12 @@ class _StoriesPageState extends State<StoriesPage> {
                 key: ValueKey(s['id']),
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(color: Colors.white)),
-                errorBuilder: (_, __, ___) => const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.broken_image_rounded, color: Colors.white, size: 48), SizedBox(height: 8), Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white))])),
+                errorBuilder: (_, __, ___) => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.broken_image_rounded, color: Colors.white, size: 48),
+                  const SizedBox(height: 8),
+                  const Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)),
+                  TextButton.icon(onPressed: _retryCurrentMedia, icon: const Icon(Icons.refresh_rounded), label: const Text('بارگذاری دوباره'), style: TextButton.styleFrom(foregroundColor: Colors.white)),
+                ])),
               ),
             ),
           Positioned(
