@@ -4510,6 +4510,9 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
         actions: [
           if (!isSelf) PopupMenuButton<String>(
             tooltip: 'گزینه‌های مخاطب',
+            iconSize: 21,
+            padding: const EdgeInsets.all(7),
+            constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) async {
               if (value == 'rename') await _editLocalName();
@@ -8720,7 +8723,7 @@ class _ChatPageState extends State<ChatPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        toolbarHeight: 64,
+        toolbarHeight: 54,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -8748,7 +8751,10 @@ class _ChatPageState extends State<ChatPage> {
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                 conversationId: widget.id, title: widget.title, video: true,
               ))),
-              icon: Icon(Icons.videocam_rounded, color: scheme.primary),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              padding: const EdgeInsets.all(7),
+              icon: Icon(Icons.videocam_rounded, color: scheme.primary, size: 21),
             ),
           if (_chatType == 'direct')
             IconButton(
@@ -8756,7 +8762,10 @@ class _ChatPageState extends State<ChatPage> {
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                 conversationId: widget.id, title: widget.title, video: false,
               ))),
-              icon: Icon(Icons.call_rounded, color: scheme.primary),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              padding: const EdgeInsets.all(7),
+              icon: Icon(Icons.call_rounded, color: scheme.primary, size: 20),
             ),
           if (_chatType == 'group')
             FutureBuilder<bool>(
@@ -8767,7 +8776,10 @@ class _ChatPageState extends State<ChatPage> {
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                         conversationId: widget.id, title: widget.title, video: false,
                       ))),
-                      icon: Icon(Icons.groups_rounded, color: scheme.primary),
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                      padding: const EdgeInsets.all(7),
+                      icon: Icon(Icons.groups_rounded, color: scheme.primary, size: 21),
                     )
                   : const SizedBox.shrink(),
             ),
@@ -8817,7 +8829,7 @@ class _ChatPageState extends State<ChatPage> {
                 : const SizedBox.shrink(),
           ),
         ],
-        titleSpacing: 4,
+        titleSpacing: 2,
         title: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: _openChatProfile,
@@ -8828,7 +8840,7 @@ class _ChatPageState extends State<ChatPage> {
               clipBehavior: Clip.none,
               children: [
                 CircleAvatar(
-                  radius: 19,
+                  radius: 17,
                   backgroundColor: scheme.primaryContainer,
                   foregroundColor: scheme.primary,
                   child: ClipOval(
@@ -8837,12 +8849,12 @@ class _ChatPageState extends State<ChatPage> {
                           ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim()
                           : (_chatType == 'group' ? _groupAvatarUrl.trim() : '');
                       if (avatar.isEmpty) {
-                        return Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 20, color: scheme.primary);
+                        return Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 18, color: scheme.primary);
                       }
                       return Image.network(
                         avatar,
-                        width: 36,
-                        height: 36,
+                        width: 32,
+                        height: 32,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Icon(_chatType == 'group' ? Icons.groups_rounded : Icons.person_rounded, size: 20, color: scheme.primary),
                       );
@@ -8871,7 +8883,7 @@ class _ChatPageState extends State<ChatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: scheme.onSurface)),
+                  Text(_localChatTitle ?? widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, height: 1.1, fontWeight: FontWeight.w800, color: scheme.onSurface)),
                   Text(
                     _isSyncing
                         ? 'در حال اتصال…'
@@ -8881,7 +8893,8 @@ class _ChatPageState extends State<ChatPage> {
                                 ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
                                 : 'کانال')),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
+                      height: 1.1,
                       color: _isSyncing ? scheme.primary : scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
