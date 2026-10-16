@@ -5261,10 +5261,129 @@ class _ConversationToolsPageState extends State<ConversationToolsPage>{
   );
 }
 
-class ContactsToolsPage extends StatelessWidget {
+class ContactsToolsPage extends StatefulWidget {
   const ContactsToolsPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('مخاطبین')),body:ListView(padding:const EdgeInsets.all(16),children:[
-  ]));
+  @override State<ContactsToolsPage> createState() => _ContactsToolsPageState();
+}
+
+class _ContactsToolsPageState extends State<ContactsToolsPage> {
+  late Future<List<Map<String, dynamic>>> _future = _load();
+
+  Future<List<Map<String, dynamic>>> _load() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) throw Exception('برای دیدن مخاطبین ابتدا وارد حساب شوید.');
+    final rows = await supabase.from('contacts').select('contact_id').eq('user_id', uid);
+    final ids = (rows as List)
+        .map((row) => row['contact_id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty && id != uid)
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return <Map<String, dynamic>>[];
+    final result = await supabase
+        .from('profiles')
+        .select('id,display_name,username,avatar_url,bio')
+        .inFilter('id', ids);
+    final profiles = List<Map<String, dynamic>>.from(result);
+    profiles.sort((a, b) => (a['display_name'] ?? a['username'] ?? '')
+        .toString().toLowerCase().compareTo(
+          (b['display_name'] ?? b['username'] ?? '').toString().toLowerCase(),
+        ));
+    return profiles;
+  }
+
+  void _reload() => setState(() => _future = _load());
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('مخاطبین'),
+      actions: [
+        IconButton(
+          tooltip: 'تازه‌سازی',
+          onPressed: _reload,
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+        IconButton(
+          tooltip: 'افزودن مخاطب',
+          onPressed: () async {
+            final selected = await showSearch<Map<String, dynamic>?>(
+              context: context,
+              delegate: ContactSearchDelegate(),
+            );
+            if (selected != null && mounted) _reload();
+          },
+          icon: const Icon(Icons.person_add_alt_1_rounded),
+        ),
+      ],
+    ),
+    body: FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const AppSkeletonList(count: 6);
+        }
+        if (snapshot.hasError) {
+          return AppEmptyState(
+            icon: Icons.cloud_off_rounded,
+            title: 'مخاطبین بارگذاری نشدند',
+            subtitle: _friendlyError('${snapshot.error}'),
+            actionLabel: 'تلاش دوباره',
+            onAction: _reload,
+          );
+        }
+        final contacts = snapshot.data ?? <Map<String, dynamic>>[];
+        if (contacts.isEmpty) {
+          return AppEmptyState(
+            icon: Icons.people_alt_outlined,
+            title: 'هنوز مخاطبی نداری',
+            subtitle: 'با جستجوی نام کاربری، افراد را به فهرست مخاطبین اضافه کن.',
+            actionLabel: 'افزودن مخاطب',
+            onAction: () async {
+              final selected = await showSearch<Map<String, dynamic>?>(
+                context: context,
+                delegate: ContactSearchDelegate(),
+              );
+              if (selected != null && mounted) _reload();
+            },
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () async => _reload(),
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
+            itemCount: contacts.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 5),
+            itemBuilder: (context, index) {
+              final profile = contacts[index];
+              final name = (profile['display_name'] ?? profile['username'] ?? 'کاربر')
+                  .toString().trim();
+              return Card(
+                child: ListTile(
+                  leading: GestureDetector(
+                    onTap: () => _openAvatarPreview(context, profile),
+                    child: avatar(profile, size: 50),
+                  ),
+                  title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    (profile['username'] ?? '').toString().isEmpty
+                        ? 'نمایش پروفایل'
+                        : '@${profile['username']}',
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PublicUserProfilePage(profile: profile),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ),
+  );
 }
 
 class WalletPage extends StatelessWidget {
