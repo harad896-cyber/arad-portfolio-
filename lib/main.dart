@@ -6316,23 +6316,42 @@ class _ChatPageState extends State<ChatPage> {
         } catch (_) {}
       }
       final uid = supabase.auth.currentUser?.id;
-      if (uid != null && loaded.isNotEmpty) {
-        // Query only deletion markers for this page of messages, not every deletion ever made.
-        // This keeps chat reloads fast for accounts with a long message history.
-        final pageIds = loaded.map((m) => '${m['id']}').toList();
-        final deletedRows = await supabase
-            .from('message_user_deletions')
-            .select('message_id')
-            .eq('user_id', uid)
-            .inFilter('message_id', pageIds);
-        final hidden = {
-          for (final r in List<Map<String, dynamic>>.from(deletedRows))
-            '${r['message_id']}'
-        };
+      if (loaded.isNotEmpty) {
+        // Always apply local deletion tombstones first. They remain authoritative
+        // for this device even if the deletion-marker table is temporarily
+        // unreachable, misconfigured, or blocked by RLS.
         loaded.removeWhere((m) =>
-            hidden.contains('${m['id']}') ||
             _locallyHiddenMessageIds.contains('${m['id']}') ||
             m['deleted_at'] != null);
+        if (uid != null && loaded.isNotEmpty) {
+          // Fetch only markers for the current page to keep refreshes fast.
+          // A failed metadata lookup must not break the entire chat load.
+          final pageIds = loaded.map((m) => '${m['id']}').toList();
+          try {
+            final deletedRows = await supabase
+                .from('message_user_deletions')
+                .select('message_id')
+                .eq('user_id', uid)
+                .inFilter('message_id', pageIds)
+                .timeout(const Duration(seconds: 5));
+            final hidden = {
+              for (final r in List<Map<String, dynamic>>.from(deletedRows))
+                '${r['message_id']}'
+            };
+            loaded.removeWhere((m) => hidden.contains('${m['id']}'));
+            // Persist server-confirmed tombstones locally too, so brief outages
+            // cannot make the same messages flash back into the timeline.
+            if (hidden.isNotEmpty) {
+              _locallyHiddenMessageIds.addAll(hidden);
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setStringList(_hiddenMessageIdsKey, _locallyHiddenMessageIds.toList());
+              } catch (_) {}
+            }
+          } catch (_) {
+            // Continue with local tombstones and the remaining server messages.
+          }
+        }
       }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
       List<Map<String, dynamic>> groupMembers = [];
