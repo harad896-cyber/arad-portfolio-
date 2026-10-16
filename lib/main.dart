@@ -4340,7 +4340,6 @@ class _HomePageState extends State<HomePage> {
           child: Text('شخصی', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
         ),
         tile(Icons.people_alt_rounded, 'مخاطبین', 'جستجو و مدیریت مخاطبین', () => setState(() => personalSection = 1)),
-        tile(Icons.settings_rounded, 'تنظیمات', 'ظاهر و تنظیمات برنامه', () => setState(() => personalSection = 2)),
       ],
     );
   }
