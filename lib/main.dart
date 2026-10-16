@@ -8705,7 +8705,7 @@ class _ChatPageState extends State<ChatPage> {
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                 conversationId: widget.id, title: widget.title, video: true,
               ))),
-              icon: const Icon(Icons.videocam_rounded, color: Color(0xFF039BE5)),
+              icon: Icon(Icons.videocam_rounded, color: scheme.primary),
             ),
           if (_chatType == 'direct')
             IconButton(
@@ -8713,7 +8713,7 @@ class _ChatPageState extends State<ChatPage> {
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                 conversationId: widget.id, title: widget.title, video: false,
               ))),
-              icon: const Icon(Icons.call_rounded, color: Color(0xFF039BE5)),
+              icon: Icon(Icons.call_rounded, color: scheme.primary),
             ),
           if (_chatType == 'group')
             FutureBuilder<bool>(
@@ -8724,7 +8724,7 @@ class _ChatPageState extends State<ChatPage> {
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
                         conversationId: widget.id, title: widget.title, video: false,
                       ))),
-                      icon: const Icon(Icons.groups_rounded, color: Color(0xFF039BE5)),
+                      icon: Icon(Icons.groups_rounded, color: scheme.primary),
                     )
                   : const SizedBox.shrink(),
             ),
@@ -8827,7 +8827,7 @@ class _ChatPageState extends State<ChatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: dark ? const Color(0xFFF8F5FF) : const Color(0xFF211B2B))),
+                  Text(_localChatTitle ?? widget.title, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: scheme.onSurface)),
                   Text(
                     _isSyncing
                         ? 'در حال اتصال…'
