@@ -405,7 +405,7 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B5CF6),
+          seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
           surface: const Color(0xFFFCFCFE),
         ),
@@ -461,7 +461,7 @@ class AradMessenger extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF7C5CFF), width: 1.8),
+            borderSide: BorderSide(color: Color(appTheme.seed), width: 1.8),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
@@ -487,7 +487,7 @@ class AradMessenger extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF9B7BFF),
+          seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
           surface: const Color(0xFF141722),
         ),
@@ -1263,6 +1263,10 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
     (name: 'روشن مینیمال', color: 0xFFF2F3F7, accent: 0xFF229ED9),
     (name: 'صورتی ملایم', color: 0xFFF6EAF0, accent: 0xFFD85D91),
     (name: 'آبی یخی', color: 0xFFE8F2FA, accent: 0xFF3689C9),
+    (name: 'غروب بنفش', color: 0xFF2B1B3D, accent: 0xFFE879F9),
+    (name: 'فیروزه‌ای', color: 0xFF103A3A, accent: 0xFF2DD4BF),
+    (name: 'کهکشانی', color: 0xFF17162E, accent: 0xFF818CF8),
+    (name: 'طلوع گرم', color: 0xFF3A241E, accent: 0xFFFF9F68),
   ];
 
   Future<void> _pickWallpaper() async {
