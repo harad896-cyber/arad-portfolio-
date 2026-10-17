@@ -909,20 +909,50 @@ class _StoriesPageState extends State<StoriesPage> {
                   border: Border.all(color: Colors.white.withValues(alpha: .14)),
                 ),
                 child: Row(children: [
-                  Expanded(child: Text(
-                    (s['audience'] ?? 'contacts') == 'everyone' ? 'عمومی' : (s['audience'] ?? 'contacts') == 'private' ? 'خصوصی' : 'مخاطبین',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  )),
-                  IconButton(tooltip: 'پسندیدن', onPressed: _toggleCurrentLike, icon: Icon(_likedIds.contains(s['id'].toString()) ? Icons.favorite : Icons.favorite_border, color: _likedIds.contains(s['id'].toString()) ? Colors.pinkAccent : Colors.white)),
-                  Text('${_likeCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
-                  if (mine) ...[
-                    IconButton(tooltip: 'بازدیدکنندگان', onPressed: _showViewers, icon: const Icon(Icons.visibility_outlined, color: Colors.white)),
-                    Text('${_viewCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
-                  ],
-                  IconButton(tooltip: 'نظرها', onPressed: _openComments, icon: const Icon(Icons.mode_comment_outlined, color: Colors.white)),
-                  Text('${_commentCounts[s['id'].toString()] ?? 0}', style: const TextStyle(color: Colors.white)),
-                  IconButton(tooltip: 'اشتراک‌گذاری', onPressed: _shareCurrent, icon: const Icon(Icons.share_outlined, color: Colors.white)),
+                  Expanded(
+                    child: Text(
+                      (s['audience'] ?? 'contacts') == 'everyone'
+                          ? 'عمومی'
+                          : (s['audience'] ?? 'contacts') == 'private'
+                              ? 'خصوصی'
+                              : 'مخاطبین',
+                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // Only real, unique views are shown; no like button/count.
+                  if (mine)
+                    IconButton(
+                      tooltip: 'دیدن افرادی که استوری را دیده‌اند',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: _showViewers,
+                      icon: const Icon(Icons.visibility_outlined, color: Colors.white),
+                    )
+                  else
+                    const Icon(Icons.visibility_outlined, color: Colors.white70, size: 19),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 4),
+                    child: Text(
+                      '${_viewCounts[s['id'].toString()] ?? 0}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'نظر دادن',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _openComments,
+                    icon: const Icon(Icons.mode_comment_outlined, color: Colors.white),
+                  ),
+                  Text(
+                    '${_commentCounts[s['id'].toString()] ?? 0}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  IconButton(
+                    tooltip: 'اشتراک‌گذاری استوری',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _shareCurrent,
+                    icon: const Icon(Icons.share_outlined, color: Colors.white),
+                  ),
                 ]),
               ),
             ),
