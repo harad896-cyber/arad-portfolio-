@@ -29,8 +29,8 @@ class _StoriesTrayState extends State<StoriesTray> {
 
   Future<void> _load() async {
     try {
-      final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,audience,created_at,expires_at')
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video']).order('created_at', ascending: false).limit(40);
+      final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,text,background,audience,created_at,expires_at')
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video','text']).order('created_at', ascending: false).limit(40);
       final list = List<Map<String, dynamic>>.from(rows);
       final ids = list.map((e) => e['user_id'].toString()).toSet().toList();
       final profiles = <String, Map<String, dynamic>>{};
@@ -177,9 +177,9 @@ class _StoriesPageState extends State<StoriesPage> {
     try {
       final rows = await _storiesSupabase
           .from('stories')
-          .select('id,user_id,media_path,media_type,caption,created_at,expires_at')
+          .select('id,user_id,media_path,media_type,caption,text,background,audience,created_at,expires_at')
           .gt('expires_at', DateTime.now().toUtc().toIso8601String())
-          .inFilter('media_type', ['image', 'video'])
+          .inFilter('media_type', ['image', 'video', 'text'])
           .order('created_at', ascending: true)
           .limit(80);
       final stories = List<Map<String, dynamic>>.from(rows);
@@ -271,6 +271,7 @@ class _StoriesPageState extends State<StoriesPage> {
     bool startTimerWhenReady = false,
   }) async {
     final id = story['id']?.toString() ?? '';
+    if (story['media_type'] == 'text') { if (startTimerWhenReady && mounted) _startTimer(); return; }
     var path = story['media_path']?.toString().trim() ?? '';
     // Support older rows that saved a full Storage URL instead of an object key.
     if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -618,7 +619,9 @@ class _StoriesPageState extends State<StoriesPage> {
       body: GestureDetector(
         onTapUp: (d) => d.localPosition.dx < MediaQuery.of(context).size.width / 2 ? _previous() : _next(),
         child: Stack(fit: StackFit.expand, children: [
-          if ((url == null || url.isEmpty) && mediaBytes == null)
+          if (s['media_type'] == 'text')
+            _textStoryCanvas(s)
+          else if ((url == null || url.isEmpty) && mediaBytes == null)
             Center(
               child: _urlLoadingIds.contains(s['id'].toString())
                   ? const Column(mainAxisSize: MainAxisSize.min, children: [
@@ -764,13 +767,92 @@ class _StoriesPageState extends State<StoriesPage> {
     );
   }
 
+  Widget _textStoryCanvas(Map<String, dynamic> story) {
+    final background = (story['background'] ?? 'space').toString();
+    final colors = switch (background) {
+      'sunset' => const [Color(0xFFFF6B6B), Color(0xFF8B3D88), Color(0xFF32145D)],
+      'ocean' => const [Color(0xFF00B4D8), Color(0xFF246B9A), Color(0xFF172554)],
+      'neon' => const [Color(0xFF32145D), Color(0xFF6D28D9), Color(0xFFEC4899)],
+      'minimal' => const [Color(0xFF374151), Color(0xFF111827)],
+      _ => const [Color(0xFF0F172A), Color(0xFF312E81), Color(0xFF7C3AED)],
+    };
+    return Container(
+      decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors)),
+      child: Stack(children: [
+        Positioned(top: 90, right: -35, child: Container(width: 170, height: 170, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .07)))),
+        Positioned(bottom: 140, left: -55, child: Container(width: 210, height: 210, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .06)))),
+        Center(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 30), child: Text((story['text'] ?? story['caption'] ?? '').toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 30, height: 1.35, fontWeight: FontWeight.w900, shadows: [Shadow(color: Colors.black26, blurRadius: 16, offset: Offset(0, 3))])))),
+      ]),
+    );
+  }
+
+  Future<void> _createTextStory() async {
+    const templates = <String, String>{'فضایی بنفش': 'space', 'غروب گرم': 'sunset', 'اقیانوس': 'ocean', 'نئون صورتی': 'neon', 'مینیمال تیره': 'minimal'};
+    final template = await showModalBottomSheet<String>(context: context, showDragHandle: true, builder: (c) => SafeArea(child: Padding(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Align(alignment: Alignment.centerRight, child: Text('قالب استوری را انتخاب کن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+      const SizedBox(height: 12),
+      ...templates.entries.map((e) => ListTile(
+        leading: Container(width: 38, height: 38, decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: LinearGradient(colors: switch (e.value) {
+          'sunset' => const [Color(0xFFFF6B6B), Color(0xFF8B3D88)],
+          'ocean' => const [Color(0xFF00B4D8), Color(0xFF172554)],
+          'neon' => const [Color(0xFF6D28D9), Color(0xFFEC4899)],
+          'minimal' => const [Color(0xFF374151), Color(0xFF111827)],
+          _ => const [Color(0xFF312E81), Color(0xFF7C3AED)],
+        })), title: Text(e.key), onTap: () => Navigator.pop(c, e.value))),
+    ]))));
+    if (template == null || !mounted) return;
+    final textController = TextEditingController();
+    final body = await showDialog<String>(context: context, builder: (c) => AlertDialog(
+      title: const Text('متن استوری'),
+      content: TextField(controller: textController, autofocus: true, maxLines: 4, maxLength: 300, decoration: const InputDecoration(hintText: 'یک جمله بنویس…')),
+      actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(c, textController.text.trim()), child: const Text('ادامه'))],
+    ));
+    textController.dispose();
+    if (body == null || body.trim().isEmpty || !mounted) return;
+    final audience = await _chooseStoryAudience();
+    if (audience == null || !mounted) return;
+    final hours = await _chooseStoryDuration();
+    if (hours == null || !mounted) return;
+    final uid = _storiesSupabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_type': 'text', 'text': body.trim(), 'caption': body.trim(), 'background': template, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(Duration(hours: hours)).toIso8601String()});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.')));
+      await _load();
+      if (mounted && _stories.isNotEmpty) {
+        final index = _stories.lastIndexWhere((story) => story['user_id']?.toString() == uid && story['media_type'] == 'text' && story['text']?.toString() == body.trim());
+        if (index >= 0) setState(() => _index = index);
+        _startTimer();
+      }
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('استوری منتشر نشد: ' + error.toString().replaceFirst('Exception: ', ''), maxLines: 3)));
+    }
+  }
+
+  Future<String?> _chooseStoryAudience() => showModalBottomSheet<String>(context: context, builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+    const ListTile(title: Text('چه کسانی استوری را ببینند؟')),
+    ListTile(leading: const Icon(Icons.people_alt_outlined), title: const Text('مخاطبین'), onTap: () => Navigator.pop(c, 'contacts')),
+    ListTile(leading: const Icon(Icons.public_rounded), title: const Text('همه'), onTap: () => Navigator.pop(c, 'everyone')),
+    ListTile(leading: const Icon(Icons.lock_outline_rounded), title: const Text('فقط خودم'), onTap: () => Navigator.pop(c, 'private')),
+  ])));
+
+  Future<int?> _chooseStoryDuration() => showModalBottomSheet<int>(context: context, builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+    const ListTile(title: Text('مدت نمایش استوری')),
+    ListTile(title: const Text('۲ ساعت'), onTap: () => Navigator.pop(c, 2)),
+    ListTile(title: const Text('۳ ساعت'), onTap: () => Navigator.pop(c, 3)),
+    ListTile(title: const Text('۲۴ ساعت'), onTap: () => Navigator.pop(c, 24)),
+  ])));
+
   Future<void> _createStory() async {
     final picker = ImagePicker();
     final choice = await showModalBottomSheet<String>(context: context, builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
       ListTile(leading: const Icon(Icons.photo_camera_outlined), title: const Text('عکس'), onTap: () => Navigator.pop(c, 'image')),
-      ListTile(leading: const Icon(Icons.videocam_outlined), title: const Text('ویدئو'), onTap: () => Navigator.pop(c, 'video'))
+      ListTile(leading: const Icon(Icons.videocam_outlined), title: const Text('ویدئو'), onTap: () => Navigator.pop(c, 'video')),
+      ListTile(leading: const Icon(Icons.auto_awesome_rounded), title: const Text('قالب متنی آماده'), subtitle: const Text('فضایی، غروب، اقیانوس و نئون'), onTap: () => Navigator.pop(c, 'text'))
     ])));
     if (choice == null) return;
+    if (choice == 'text') { await _createTextStory(); return; }
     final file = choice == 'image' ? await picker.pickImage(source: ImageSource.gallery, imageQuality: 90) : await picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 1));
     if (file == null) return;
     final audience = await showModalBottomSheet<String>(
