@@ -594,7 +594,8 @@ class _StoriesPageState extends State<StoriesPage> {
     if (uid != s['user_id'].toString()) return;
     try {
       await _storiesSupabase.from('stories').delete().eq('id', s['id']);
-      await _storiesSupabase.storage.from('stories').remove([s['media_path'].toString()]);
+      final mediaPath = (s['media_path'] ?? '').toString().trim();
+      if (mediaPath.isNotEmpty) await _storiesSupabase.storage.from('stories').remove([mediaPath]);
       if (!mounted) return;
       if (_stories.length == 1) { Navigator.pop(context); return; }
       setState(() { _stories.removeAt(_index); _index = _index.clamp(0, _stories.length - 1).toInt(); }); _startTimer();
@@ -747,7 +748,7 @@ class _StoriesPageState extends State<StoriesPage> {
               ),
             ),
           ),
-          if ((s['caption'] ?? '').toString().trim().isNotEmpty)
+          if (s['media_type'] != 'text' && (s['caption'] ?? '').toString().trim().isNotEmpty)
             Positioned(
               bottom: 30, left: 18, right: 18,
               child: Container(
