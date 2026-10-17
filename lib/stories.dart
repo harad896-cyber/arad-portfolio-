@@ -925,52 +925,43 @@ class _StoriesPageState extends State<StoriesPage> {
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(color: Colors.white.withValues(alpha: .14)),
                 ),
-                child: Row(children: [
-                  Expanded(
-                    child: Text(
-                      (s['audience'] ?? 'contacts') == 'everyone'
-                          ? 'عمومی'
-                          : (s['audience'] ?? 'contacts') == 'private'
-                              ? 'خصوصی'
-                              : 'مخاطبین',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                      overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        (s['audience'] ?? 'contacts') == 'everyone'
+                            ? 'عمومی'
+                            : (s['audience'] ?? 'contacts') == 'private'
+                                ? 'خصوصی'
+                                : 'مخاطبین',
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  // Only real, unique views are shown; no like button/count.
-                  if (mine)
-                    IconButton(
-                      tooltip: 'دیدن افرادی که استوری را دیده‌اند',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: _showViewers,
-                      icon: const Icon(Icons.visibility_outlined, color: Colors.white),
-                    )
-                  else
-                    const Icon(Icons.visibility_outlined, color: Colors.white70, size: 19),
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 4),
-                    child: Text(
-                      '${_viewCounts[s['id'].toString()] ?? 0}',
-                      style: const TextStyle(color: Colors.white),
+                    // Views are unique records (story_id + viewer_id); only the
+                    // owner can open the viewer list. No like action is shown.
+                    _storyActionChip(
+                      icon: Icons.visibility_outlined,
+                      label: '${_viewCounts[s['id'].toString()] ?? 0}',
+                      tooltip: mine ? 'دیدن فهرست بازدیدکنندگان' : 'تعداد بازدیدها',
+                      onTap: mine ? _showViewers : null,
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'نظر دادن',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _openComments,
-                    icon: const Icon(Icons.mode_comment_outlined, color: Colors.white),
-                  ),
-                  Text(
-                    '${_commentCounts[s['id'].toString()] ?? 0}',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  IconButton(
-                    tooltip: 'اشتراک‌گذاری استوری',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _shareCurrent,
-                    icon: const Icon(Icons.share_outlined, color: Colors.white),
-                  ),
-                ]),
+                    const SizedBox(width: 5),
+                    _storyActionChip(
+                      icon: Icons.mode_comment_outlined,
+                      label: '${_commentCounts[s['id'].toString()] ?? 0}',
+                      tooltip: 'نظر دادن',
+                      onTap: _openComments,
+                    ),
+                    const SizedBox(width: 5),
+                    _storyActionChip(
+                      icon: Icons.share_outlined,
+                      label: 'اشتراک',
+                      tooltip: 'اشتراک‌گذاری استوری',
+                      onTap: _shareCurrent,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1224,6 +1215,33 @@ class _StoriesPageState extends State<StoriesPage> {
   }
 }
 
+
+Widget _storyActionChip({
+  required IconData icon,
+  required String label,
+  required String tooltip,
+  required VoidCallback? onTap,
+}) {
+  return Tooltip(
+    message: tooltip,
+    child: Material(
+      color: Colors.white.withValues(alpha: onTap == null ? .07 : .14),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 5),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    ),
+  );
+}
 
 Widget _storyBottomButton({required IconData icon, required String label, required VoidCallback onTap}) {
   return Material(
