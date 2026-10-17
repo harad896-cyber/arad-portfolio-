@@ -410,6 +410,33 @@ class _StoriesPageState extends State<StoriesPage> {
     }
   }
 
+  Future<String?> _refreshStoryUrl(String storyId) async {
+    try {
+      final story = _stories.firstWhere((item) => item['id']?.toString() == storyId);
+      final path = _normalizedMediaPath(story['media_path']);
+      if (path.isEmpty) return null;
+      final freshUrl = await _storiesSupabase.storage
+          .from('stories')
+          .createSignedUrl(path, 3600)
+          .timeout(const Duration(seconds: 10));
+      if (!mounted) return null;
+      setState(() {
+        _urls[storyId] = freshUrl;
+        _urlFailedIds.remove(storyId);
+        _urlErrors.remove(storyId);
+      });
+      return freshUrl;
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _urlFailedIds.add(storyId);
+          _urlErrors[storyId] = 'لینک پخش ویدیو تازه نشد: $error';
+        });
+      }
+      return null;
+    }
+  }
+
   Future<void> _retryCurrentMedia() async {
     if (_stories.isEmpty) return;
     final id = _stories[_index]['id']?.toString() ?? '';
@@ -702,7 +729,7 @@ class _StoriesPageState extends State<StoriesPage> {
                     ]),
             )
           else if (s['media_type'] == 'video')
-            StoryVideo(key: ValueKey(s['id']), url: url ?? '')
+            StoryVideo(key: ValueKey(s['id']), url: url ?? '', onRefresh: () => _refreshStoryUrl(storyId))
           else if (mediaBytes != null && s['media_type'] != 'video')
             Stack(
               fit: StackFit.expand,
@@ -1177,7 +1204,8 @@ Widget _storyBottomButton({required IconData icon, required String label, requir
 
 class StoryVideo extends StatefulWidget {
   final String url;
-  const StoryVideo({super.key, required this.url});
+  final Future<String?> Function() onRefresh;
+  const StoryVideo({super.key, required this.url, required this.onRefresh});
   @override
   State<StoryVideo> createState() => _StoryVideoState();
 }
@@ -1186,20 +1214,38 @@ class _StoryVideoState extends State<StoryVideo> {
   VideoPlayerController? _controller;
   bool _failed = false;
   bool _loading = true;
+  bool _refreshAttempted = false;
+  bool _showControls = true;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_init());
+    unawaited(_init(widget.url));
   }
 
-  Future<void> _init() async {
+  @override
+  void didUpdateWidget(covariant StoryVideo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _refreshAttempted = false;
+      unawaited(_init(widget.url));
+    }
+  }
+
+  Future<void> _init(String url, {bool allowRefresh = true}) async {
+    if (!mounted || url.isEmpty) {
+      if (mounted) setState(() { _loading = false; _failed = true; });
+      return;
+    }
+    final previous = _controller;
+    _controller = null;
+    try { await previous?.dispose(); } catch (_) {}
     if (!mounted) return;
     setState(() { _loading = true; _failed = false; });
-    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    final controller = VideoPlayerController.networkUrl(Uri.parse(url));
     _controller = controller;
     try {
-      await controller.initialize().timeout(const Duration(seconds: 20));
+      await controller.initialize().timeout(const Duration(seconds: 22));
       await controller.setLooping(true);
       await controller.play();
       if (mounted && identical(_controller, controller)) {
@@ -1208,6 +1254,17 @@ class _StoryVideoState extends State<StoryVideo> {
     } catch (_) {
       try { await controller.dispose(); } catch (_) {}
       if (identical(_controller, controller)) _controller = null;
+      if (!mounted) return;
+      // Refresh the signed link once. Expired or stale Storage URLs otherwise
+      // leave the viewer stuck on a black screen even though the story exists.
+      if (allowRefresh && !_refreshAttempted) {
+        _refreshAttempted = true;
+        final freshUrl = await widget.onRefresh();
+        if (freshUrl != null && freshUrl.isNotEmpty && mounted) {
+          await _init(freshUrl, allowRefresh: false);
+          return;
+        }
+      }
       if (mounted) setState(() { _loading = false; _failed = true; });
     }
   }
@@ -1221,26 +1278,106 @@ class _StoryVideoState extends State<StoryVideo> {
   @override
   Widget build(BuildContext context) {
     final c = _controller;
-    if (_loading) return const Center(child: CircularProgressIndicator(color: Colors.white));
+    if (_loading) {
+      return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        CircularProgressIndicator(color: Colors.white),
+        SizedBox(height: 12),
+        Text('در حال آماده‌سازی ویدیو…', style: TextStyle(color: Colors.white)),
+      ]));
+    }
     if (_failed || c == null || !c.value.isInitialized) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.videocam_off_rounded, color: Colors.white70, size: 48),
-            const SizedBox(height: 8),
-            const Text('پخش ویدئو ناموفق بود', style: TextStyle(color: Colors.white)),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: _init,
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xCC171923),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.video_file_outlined, color: Colors.white70, size: 48),
+            const SizedBox(height: 10),
+            const Text('این ویدیو پخش نشد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            const Text('اتصال را بررسی کن و دوباره تلاش کن.', textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: () async {
+                _refreshAttempted = false;
+                final freshUrl = await widget.onRefresh();
+                if (freshUrl != null && freshUrl.isNotEmpty) {
+                  await _init(freshUrl, allowRefresh: false);
+                } else {
+                  await _init(widget.url);
+                }
+              },
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('تلاش دوباره'),
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
             ),
-          ],
+          ]),
         ),
       );
     }
-    return Center(child: AspectRatio(aspectRatio: c.value.aspectRatio, child: VideoPlayer(c)));
+    return GestureDetector(
+      onTap: () => setState(() => _showControls = !_showControls),
+      child: Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.center,
+        children: [
+          Center(
+            child: AspectRatio(
+              aspectRatio: c.value.aspectRatio > 0 ? c.value.aspectRatio : 9 / 16,
+              child: VideoPlayer(c),
+            ),
+          ),
+          if (_showControls)
+            Positioned(
+              left: 18, right: 18, bottom: 24,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xC9000000),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Row(children: [
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    color: Colors.white,
+                    onPressed: () async {
+                      if (c.value.isPlaying) {
+                        await c.pause();
+                      } else {
+                        await c.play();
+                      }
+                      if (mounted) setState(() {});
+                    },
+                    icon: Icon(c.value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                  ),
+                  Expanded(child: VideoProgressIndicator(
+                    c,
+                    allowScrubbing: true,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    colors: const VideoProgressColors(
+                      playedColor: Color(0xFF8D7CFF),
+                      bufferedColor: Colors.white38,
+                      backgroundColor: Colors.white24,
+                    ),
+                  )),
+                  const SizedBox(width: 8),
+                  Text(
+                    c.value.duration.inSeconds > 0
+                        ? '${(c.value.position.inSeconds ~/ 60).toString().padLeft(2, '0')}:${(c.value.position.inSeconds % 60).toString().padLeft(2, '0')}'
+                        : '00:00',
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontFeatures: []),
+                  ),
+                ]),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
