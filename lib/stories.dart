@@ -660,7 +660,7 @@ class _StoriesPageState extends State<StoriesPage> {
                   const Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)),
                   TextButton.icon(onPressed: _retryCurrentMedia, icon: const Icon(Icons.refresh_rounded), label: const Text('بارگذاری دوباره'), style: TextButton.styleFrom(foregroundColor: Colors.white)),
                 ])),
-              )),
+              ))),
             ]),
           Positioned(
             top: 0, left: 0, right: 0,
