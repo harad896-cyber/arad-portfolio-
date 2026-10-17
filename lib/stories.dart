@@ -631,7 +631,7 @@ class _StoriesPageState extends State<StoriesPage> {
                     ]),
             )
           else if (s['media_type'] == 'video')
-            StoryVideo(key: ValueKey(s['id']), url: url)
+            StoryVideo(key: ValueKey(s['id']), url: url ?? '')
           else if (mediaBytes != null && s['media_type'] != 'video')
             InteractiveViewer(child: Image.memory(mediaBytes, key: ValueKey(s['id']), fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)))))
           else
