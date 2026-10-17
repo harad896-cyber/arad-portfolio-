@@ -310,6 +310,32 @@ class _StoriesPageState extends State<StoriesPage> {
     if (!_urlLoadingIds.add(id)) return;
     if (mounted) setState(() { _urlFailedIds.remove(id); _urlErrors.remove(id); });
     try {
+      // Prefer authenticated byte download for photos. This avoids the black
+      // viewer caused by signed-image URL failures on some Android networks.
+      // Video still uses a signed URL because the video player streams it.
+      if (story['media_type'] != 'video') {
+        try {
+          final bytes = await _storiesSupabase.storage
+              .from('stories')
+              .download(path)
+              .timeout(const Duration(seconds: 12));
+          if (!mounted) return;
+          if (_stories.any((item) => item['id']?.toString() == id)) {
+            setState(() {
+              _mediaBytes[id] = Uint8List.fromList(bytes);
+              _urlFailedIds.remove(id);
+              _urlErrors.remove(id);
+            });
+            if (startTimerWhenReady && _stories.isNotEmpty &&
+                _stories[_index]['id']?.toString() == id) {
+              _startTimer();
+            }
+            return;
+          }
+        } catch (_) {
+          // Continue with signed URL as a second supported loading path.
+        }
+      }
       final signed = await _storiesSupabase.storage
           .from('stories')
           .createSignedUrl(path, 3600)
@@ -714,7 +740,27 @@ class _StoriesPageState extends State<StoriesPage> {
           else if (s['media_type'] == 'video')
             StoryVideo(key: ValueKey(s['id']), url: url ?? '')
           else if (mediaBytes != null && s['media_type'] != 'video')
-            InteractiveViewer(child: Image.memory(mediaBytes, key: ValueKey(s['id']), fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)))))
+            Container(
+              color: const Color(0xFF08080D),
+              alignment: Alignment.center,
+              child: InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4,
+                child: Image.memory(
+                  mediaBytes,
+                  key: ValueKey(s['id']),
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                  gaplessPlayback: true,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('این تصویر قابل نمایش نیست؛ عکس را دوباره ارسال کن.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ),
+            )
           else
             Container(
               color: Colors.black,
