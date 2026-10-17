@@ -668,18 +668,21 @@ class _StoriesPageState extends State<StoriesPage> {
               padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
               decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xB8000000), Colors.transparent])),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Row(children: List.generate(
-                _stories.length,
-                (i) => Expanded(
-                  child: Container(
-                    height: 3,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: i <= _index ? Colors.white : Colors.white24,
-                      borderRadius: BorderRadius.circular(3),
+                Row(
+                  children: List.generate(
+                    _stories.length,
+                    (i) => Expanded(
+                      child: Container(
+                        height: 3,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          color: i <= _index ? Colors.white : Colors.white24,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
                     ),
                   ),
-                )),
+                ),
                 const SizedBox(height: 13),
                 Row(children: [
                   CircleAvatar(radius: 19, backgroundColor: Colors.white24, backgroundImage: ((s['profile']?['avatar_url'] ?? '').toString().trim().isNotEmpty) ? NetworkImage(s['profile']['avatar_url'].toString()) : null,
