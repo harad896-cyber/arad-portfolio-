@@ -155,6 +155,7 @@ class _StoriesPageState extends State<StoriesPage> {
   final Map<String, int> _viewCounts = <String, int>{};
   final Set<String> _urlLoadingIds = <String>{};
   final Set<String> _urlFailedIds = <String>{};
+  final Set<String> _imageRecoveryIds = <String>{};
   Timer? _timer;
   RealtimeChannel? _channel;
 
@@ -360,6 +361,59 @@ class _StoriesPageState extends State<StoriesPage> {
       }
     } finally {
       _urlLoadingIds.remove(id);
+      if (mounted) setState(() {});
+    }
+  }
+
+  String _normalizedMediaPath(dynamic rawPath) {
+    var path = rawPath?.toString().trim() ?? '';
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      try {
+        final uri = Uri.parse(path);
+        final segments = uri.pathSegments;
+        final objectAt = segments.indexOf('object');
+        if (objectAt >= 0) {
+          final bucketAt = segments.indexOf('stories', objectAt + 1);
+          if (bucketAt >= 0 && bucketAt + 1 < segments.length) {
+            path = segments.skip(bucketAt + 1).map(Uri.decodeComponent).join('/');
+          }
+        }
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          final marker = '/stories/';
+          final at = uri.path.indexOf(marker);
+          if (at >= 0) path = Uri.decodeComponent(uri.path.substring(at + marker.length).split('?').first);
+        }
+      } catch (_) {}
+    }
+    return path.replaceFirst(RegExp(r'^/+'), '');
+  }
+
+  Future<void> _recoverImageFromStorage(String id) async {
+    if (id.isEmpty || _mediaBytes.containsKey(id) || !_imageRecoveryIds.add(id)) return;
+    if (mounted) setState(() {});
+    try {
+      final story = _stories.firstWhere((item) => item['id']?.toString() == id);
+      final path = _normalizedMediaPath(story['media_path']);
+      if (path.isEmpty) throw StateError('مسیر فایل استوری خالی است');
+      final bytes = await _storiesSupabase.storage
+          .from('stories')
+          .download(path)
+          .timeout(const Duration(seconds: 20));
+      if (!mounted || !_stories.any((item) => item['id']?.toString() == id)) return;
+      setState(() {
+        _mediaBytes[id] = Uint8List.fromList(bytes);
+        _urlFailedIds.remove(id);
+        _urlErrors.remove(id);
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _urlFailedIds.add(id);
+          _urlErrors[id] = error.toString();
+        });
+      }
+    } finally {
+      _imageRecoveryIds.remove(id);
       if (mounted) setState(() {});
     }
   }
@@ -648,20 +702,65 @@ class _StoriesPageState extends State<StoriesPage> {
           else if (mediaBytes != null && s['media_type'] != 'video')
             InteractiveViewer(child: Image.memory(mediaBytes, key: ValueKey(s['id']), fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)))))
           else
-            Stack(fit: StackFit.expand, children: [
-              Image.network(url!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.expand()),
-              Container(color: Colors.black.withValues(alpha: .28)),
-              Center(child: InteractiveViewer(child: Image.network(
-                url!, key: ValueKey(s['id']), fit: BoxFit.contain,
-                loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(color: Colors.white)),
-                errorBuilder: (_, __, ___) => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.broken_image_rounded, color: Colors.white, size: 48),
-                  const SizedBox(height: 8),
-                  const Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)),
-                  TextButton.icon(onPressed: _retryCurrentMedia, icon: const Icon(Icons.refresh_rounded), label: const Text('بارگذاری دوباره'), style: TextButton.styleFrom(foregroundColor: Colors.white)),
-                ])),
-              ))),
-            ]),
+            Container(
+              color: Colors.black,
+              alignment: Alignment.center,
+              child: InteractiveViewer(
+                child: Image.network(
+                  url!,
+                  key: ValueKey(s['id']),
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                  gaplessPlayback: true,
+                  loadingBuilder: (context, child, progress) => progress == null
+                      ? child
+                      : const Center(child: CircularProgressIndicator(color: Colors.white)),
+                  errorBuilder: (_, __, ___) {
+                    if (!_imageRecoveryIds.contains(storyId) && !_urlFailedIds.contains(storyId)) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) unawaited(_recoverImageFromStorage(storyId));
+                      });
+                    }
+                    return Center(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(
+                          _imageRecoveryIds.contains(storyId) ? Icons.downloading_rounded : Icons.broken_image_rounded,
+                          color: Colors.white70,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _imageRecoveryIds.contains(storyId)
+                              ? 'در حال آماده‌سازی تصویر…'
+                              : _urlFailedIds.contains(storyId)
+                                  ? 'تصویر استوری دریافت نشد'
+                                  : 'در حال بازیابی تصویر…',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        if (_urlErrors[storyId] != null && !_imageRecoveryIds.contains(storyId))
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                            child: Text(
+                              _urlErrors[storyId]!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white54, fontSize: 10),
+                            ),
+                          ),
+                        TextButton.icon(
+                          onPressed: _retryCurrentMedia,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('تلاش دوباره'),
+                          style: TextButton.styleFrom(foregroundColor: Colors.white),
+                        ),
+                      ]),
+                    );
+                  },
+                ),
+              ),
+            ),
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
