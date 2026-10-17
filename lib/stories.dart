@@ -184,6 +184,15 @@ class _StoriesPageState extends State<StoriesPage> {
           .limit(80);
       final stories = List<Map<String, dynamic>>.from(rows);
       if (!mounted || generation != _loadGeneration) return;
+      final profileIds = stories.map((s) => s['user_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet().toList();
+      if (profileIds.isNotEmpty) {
+        try {
+          final profileRows = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', profileIds);
+          final byId = {for (final p in List<Map<String, dynamic>>.from(profileRows)) p['id'].toString(): p};
+          for (final story in stories) { story['profile'] = byId[story['user_id']?.toString()] ?? <String, dynamic>{}; }
+        } catch (_) {}
+      }
+      if (!mounted || generation != _loadGeneration) return;
 
       if (stories.isEmpty) {
         setState(() {
@@ -635,11 +644,11 @@ class _StoriesPageState extends State<StoriesPage> {
           else if (mediaBytes != null && s['media_type'] != 'video')
             InteractiveViewer(child: Image.memory(mediaBytes, key: ValueKey(s['id']), fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)))))
           else
-            InteractiveViewer(
-              child: Image.network(
-                url!,
-                key: ValueKey(s['id']),
-                fit: BoxFit.contain,
+            Stack(fit: StackFit.expand, children: [
+              Image.network(url!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.expand()),
+              Container(color: Colors.black.withValues(alpha: .28)),
+              Center(child: InteractiveViewer(child: Image.network(
+                url!, key: ValueKey(s['id']), fit: BoxFit.contain,
                 loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(color: Colors.white)),
                 errorBuilder: (_, __, ___) => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.broken_image_rounded, color: Colors.white, size: 48),
@@ -647,12 +656,15 @@ class _StoriesPageState extends State<StoriesPage> {
                   const Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)),
                   TextButton.icon(onPressed: _retryCurrentMedia, icon: const Icon(Icons.refresh_rounded), label: const Text('بارگذاری دوباره'), style: TextButton.styleFrom(foregroundColor: Colors.white)),
                 ])),
-              ),
-            ),
+              )),
+            ]),
           Positioned(
-            top: 10, left: 12, right: 12,
-            child: Row(
-              children: List.generate(
+            top: 0, left: 0, right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
+              decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xB8000000), Colors.transparent])),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Row(children: List.generate(
                 _stories.length,
                 (i) => Expanded(
                   child: Container(
@@ -663,8 +675,19 @@ class _StoriesPageState extends State<StoriesPage> {
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                ),
-              ),
+                )),
+                const SizedBox(height: 13),
+                Row(children: [
+                  CircleAvatar(radius: 19, backgroundColor: Colors.white24, backgroundImage: ((s['profile']?['avatar_url'] ?? '').toString().trim().isNotEmpty) ? NetworkImage(s['profile']['avatar_url'].toString()) : null,
+                    child: ((s['profile']?['avatar_url'] ?? '').toString().trim().isEmpty) ? const Icon(Icons.person_rounded, color: Colors.white) : null),
+                  const SizedBox(width: 10),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text((s['profile']?['display_name'] ?? s['profile']?['username'] ?? 'استوری').toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+                    const Text('استوری آراد مسنجر', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  ])),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white)),
+                ]),
+              ]),
             ),
           ),
           Positioned(
