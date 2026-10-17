@@ -787,27 +787,59 @@ class _StoriesPageState extends State<StoriesPage> {
     );
   }
 
+  Widget _templateSwatch(String key) {
+    final colors = switch (key) {
+      'sunset' => const [Color(0xFFFF6B6B), Color(0xFF8B3D88)],
+      'ocean' => const [Color(0xFF00B4D8), Color(0xFF172554)],
+      'neon' => const [Color(0xFF6D28D9), Color(0xFFEC4899)],
+      'minimal' => const [Color(0xFF374151), Color(0xFF111827)],
+      _ => const [Color(0xFF312E81), Color(0xFF7C3AED)],
+    };
+    return Container(width: 38, height: 38, decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: LinearGradient(colors: colors)));
+  }
+
   Future<void> _createTextStory() async {
-    const templates = <String, String>{'فضایی بنفش': 'space', 'غروب گرم': 'sunset', 'اقیانوس': 'ocean', 'نئون صورتی': 'neon', 'مینیمال تیره': 'minimal'};
-    final template = await showModalBottomSheet<String>(context: context, showDragHandle: true, builder: (c) => SafeArea(child: Padding(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Align(alignment: Alignment.centerRight, child: Text('قالب استوری را انتخاب کن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-      const SizedBox(height: 12),
-      ...templates.entries.map((e) => ListTile(
-        leading: Container(width: 38, height: 38, decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: LinearGradient(colors: switch (e.value) {
-          'sunset' => const [Color(0xFFFF6B6B), Color(0xFF8B3D88)],
-          'ocean' => const [Color(0xFF00B4D8), Color(0xFF172554)],
-          'neon' => const [Color(0xFF6D28D9), Color(0xFFEC4899)],
-          'minimal' => const [Color(0xFF374151), Color(0xFF111827)],
-          _ => const [Color(0xFF312E81), Color(0xFF7C3AED)],
-        })), title: Text(e.key), onTap: () => Navigator.pop(c, e.value))),
-    ]))));
+    const templates = <String, String>{
+      'فضایی بنفش': 'space',
+      'غروب گرم': 'sunset',
+      'اقیانوس': 'ocean',
+      'نئون صورتی': 'neon',
+      'مینیمال تیره': 'minimal',
+    };
+    final template = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Align(alignment: Alignment.centerRight, child: Text('قالب استوری را انتخاب کن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+              const SizedBox(height: 12),
+              ...templates.entries.map((e) => ListTile(
+                leading: _templateSwatch(e.value),
+                title: Text(e.key),
+                onTap: () => Navigator.pop(c, e.value),
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
     if (template == null || !mounted) return;
     final textController = TextEditingController();
-    final body = await showDialog<String>(context: context, builder: (c) => AlertDialog(
-      title: const Text('متن استوری'),
-      content: TextField(controller: textController, autofocus: true, maxLines: 4, maxLength: 300, decoration: const InputDecoration(hintText: 'یک جمله بنویس…')),
-      actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(c, textController.text.trim()), child: const Text('ادامه'))],
-    ));
+    final body = await showDialog<String>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('متن استوری'),
+        content: TextField(controller: textController, autofocus: true, maxLines: 4, maxLength: 300, decoration: const InputDecoration(hintText: 'یک جمله بنویس…')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('لغو')),
+          FilledButton(onPressed: () => Navigator.pop(c, textController.text.trim()), child: const Text('ادامه')),
+        ],
+      ),
+    );
     textController.dispose();
     if (body == null || body.trim().isEmpty || !mounted) return;
     final audience = await _chooseStoryAudience();
@@ -817,7 +849,15 @@ class _StoriesPageState extends State<StoriesPage> {
     final uid = _storiesSupabase.auth.currentUser?.id;
     if (uid == null) return;
     try {
-      await _storiesSupabase.from('stories').insert({'user_id': uid, 'media_type': 'text', 'text': body.trim(), 'caption': body.trim(), 'background': template, 'audience': audience, 'expires_at': DateTime.now().toUtc().add(Duration(hours: hours)).toIso8601String()});
+      await _storiesSupabase.from('stories').insert({
+        'user_id': uid,
+        'media_type': 'text',
+        'text': body.trim(),
+        'caption': body.trim(),
+        'background': template,
+        'audience': audience,
+        'expires_at': DateTime.now().toUtc().add(Duration(hours: hours)).toIso8601String(),
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استوری منتشر شد.')));
       await _load();
