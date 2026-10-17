@@ -272,35 +272,12 @@ class _StoriesPageState extends State<StoriesPage> {
     bool startTimerWhenReady = false,
   }) async {
     final id = story['id']?.toString() ?? '';
-    if (story['media_type'] == 'text') { if (startTimerWhenReady && mounted) _startTimer(); return; }
-    var path = story['media_path']?.toString().trim() ?? '';
-    // Support older rows that saved a full Storage URL instead of an object key.
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      // Older uploads may store a complete Supabase Storage URL. Normalize
-      // public, signed and authenticated object URLs back to the bucket key
-      // before requesting a fresh signed URL.
-      try {
-        final uri = Uri.parse(path);
-        final segments = uri.pathSegments;
-        final objectAt = segments.indexOf('object');
-        if (objectAt >= 0 && objectAt + 2 < segments.length) {
-          final bucketAt = segments.indexOf('stories', objectAt + 1);
-          if (bucketAt >= 0 && bucketAt + 1 < segments.length) {
-            path = segments.skip(bucketAt + 1).map(Uri.decodeComponent).join('/');
-          }
-        } else {
-          final marker = '/stories/';
-          final at = uri.path.indexOf(marker);
-          if (at >= 0) path = Uri.decodeComponent(uri.path.substring(at + marker.length).split('?').first);
-        }
-      } catch (_) {}
-    }
-    path = path.replaceFirst(RegExp(r'^/+'), '');
-    if (id.isEmpty || path.isEmpty) {
-      if (mounted) setState(() => _urlFailedIds.add(id));
+    if (story['media_type'] == 'text') {
+      if (startTimerWhenReady && mounted) _startTimer();
       return;
     }
-    if ((_urls[id] ?? '').isNotEmpty) {
+    if (id.isEmpty) return;
+    if ((_urls[id] ?? '').isNotEmpty || _mediaBytes.containsKey(id)) {
       if (startTimerWhenReady && mounted && _stories.isNotEmpty &&
           _stories[_index]['id']?.toString() == id) {
         _startTimer();
@@ -308,83 +285,69 @@ class _StoriesPageState extends State<StoriesPage> {
       return;
     }
     if (!_urlLoadingIds.add(id)) return;
-    if (mounted) setState(() { _urlFailedIds.remove(id); _urlErrors.remove(id); });
+    if (mounted) {
+      setState(() {
+        _urlFailedIds.remove(id);
+        _urlErrors.remove(id);
+      });
+    }
+
+    final path = _normalizedMediaPath(story['media_path']);
+    if (path.isEmpty) {
+      if (mounted) setState(() {
+        _urlFailedIds.add(id);
+        _urlErrors[id] = 'مسیر فایل استوری خالی است.';
+      });
+      _urlLoadingIds.remove(id);
+      return;
+    }
+
     try {
-      // Prefer authenticated byte download for photos. This avoids the black
-      // viewer caused by signed-image URL failures on some Android networks.
-      // Video still uses a signed URL because the video player streams it.
-      if (story['media_type'] != 'video') {
-        try {
-          final bytes = await _storiesSupabase.storage
-              .from('stories')
-              .download(path)
-              .timeout(const Duration(seconds: 12));
-          if (!mounted) return;
-          if (_stories.any((item) => item['id']?.toString() == id)) {
-            setState(() {
-              _mediaBytes[id] = Uint8List.fromList(bytes);
-              _urlFailedIds.remove(id);
-              _urlErrors.remove(id);
-            });
-            if (startTimerWhenReady && _stories.isNotEmpty &&
-                _stories[_index]['id']?.toString() == id) {
-              _startTimer();
-            }
-            return;
-          }
-        } catch (_) {
-          // Continue with signed URL as a second supported loading path.
-        }
-      }
+      // First request a short-lived URL. Creating it is fast and lets the
+      // image/video widget stream directly instead of waiting on a full download.
       final signed = await _storiesSupabase.storage
           .from('stories')
           .createSignedUrl(path, 3600)
-          .timeout(const Duration(seconds: 15));
-      if (!mounted) return;
-      if (_stories.any((item) => item['id']?.toString() == id)) {
-        setState(() {
-          _urls[id] = signed;
-          _urlFailedIds.remove(id);
-          _urlErrors.remove(id);
-        });
-        if (startTimerWhenReady && _stories.isNotEmpty &&
-            _stories[_index]['id']?.toString() == id) {
-          _startTimer();
-        }
+          .timeout(const Duration(seconds: 9));
+      if (!mounted || !_stories.any((item) => item['id']?.toString() == id)) return;
+      setState(() {
+        _urls[id] = signed;
+        _urlFailedIds.remove(id);
+        _urlErrors.remove(id);
+      });
+      if (startTimerWhenReady && _stories.isNotEmpty &&
+          _stories[_index]['id']?.toString() == id) {
+        _startTimer();
       }
-    } catch (error) {
-      // Some devices/storage configurations fail to issue a signed URL even
-      // though the authenticated user can still download the object directly.
-      // Fall back to bytes for images, and keep the actual error for diagnosis.
+    } catch (urlError) {
+      // If signed URLs are unavailable, retrieve image bytes through the
+      // authenticated Storage API. This is a fallback, not the slow first step.
       if (story['media_type'] != 'video') {
         try {
           final bytes = await _storiesSupabase.storage
               .from('stories')
               .download(path)
-              .timeout(const Duration(seconds: 20));
-          if (mounted && _stories.any((item) => item['id']?.toString() == id)) {
-            setState(() {
-              _mediaBytes[id] = Uint8List.fromList(bytes);
-              _urlFailedIds.remove(id);
-              _urlErrors.remove(id);
-            });
-            if (startTimerWhenReady && _stories.isNotEmpty && _stories[_index]['id']?.toString() == id) {
-              _startTimer();
-            }
-            return;
+              .timeout(const Duration(seconds: 10));
+          if (!mounted || !_stories.any((item) => item['id']?.toString() == id)) return;
+          setState(() {
+            _mediaBytes[id] = Uint8List.fromList(bytes);
+            _urlFailedIds.remove(id);
+            _urlErrors.remove(id);
+          });
+          if (startTimerWhenReady && _stories.isNotEmpty &&
+              _stories[_index]['id']?.toString() == id) {
+            _startTimer();
           }
         } catch (downloadError) {
           if (mounted) setState(() {
             _urlFailedIds.add(id);
-            // Keep both failures so the screen reports a useful cause instead
-            // of leaving the viewer as a plain black screen.
-            _urlErrors[id] = 'لینک رسانه: ${error.toString()} | دریافت فایل: ${downloadError.toString()}';
+            _urlErrors[id] = 'لینک رسانه: ${urlError.toString()}\nدریافت فایل: ${downloadError.toString()}';
           });
         }
       } else if (mounted) {
         setState(() {
           _urlFailedIds.add(id);
-          _urlErrors[id] = error.toString();
+          _urlErrors[id] = urlError.toString();
         });
       }
     } finally {
@@ -510,7 +473,7 @@ class _StoriesPageState extends State<StoriesPage> {
   void _startTimer() {
     _timer?.cancel();
     if (_stories.isEmpty) return;
-    _timer = Timer(Duration(seconds: _stories[_index]['media_type'] == 'video' ? 8 : 5), _next);
+    _timer = Timer(Duration(seconds: _stories[_index]['media_type'] == 'video' ? 12 : 8), _next);
     _markViewed();
   }
 
