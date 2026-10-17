@@ -350,7 +350,9 @@ class _StoriesPageState extends State<StoriesPage> {
         } catch (downloadError) {
           if (mounted) setState(() {
             _urlFailedIds.add(id);
-            _urlErrors[id] = downloadError.toString();
+            // Keep both failures so the screen reports a useful cause instead
+            // of leaving the viewer as a plain black screen.
+            _urlErrors[id] = 'لینک رسانه: ${error.toString()} | دریافت فایل: ${downloadError.toString()}';
           });
         }
       } else if (mounted) {
@@ -688,6 +690,18 @@ class _StoriesPageState extends State<StoriesPage> {
                       Icon(s['media_type'] == 'video' ? Icons.videocam_off_rounded : Icons.broken_image_rounded, color: Colors.white70, size: 48),
                       const SizedBox(height: 10),
                       Text(_urlFailedIds.contains(s['id'].toString()) ? 'رسانهٔ استوری بارگذاری نشد' : 'آماده‌سازی استوری…', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      if (_urlErrors[s['id'].toString()] != null) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 22),
+                          child: SelectableText(
+                            _urlErrors[s['id'].toString()]!,
+                            textAlign: TextAlign.center,
+                            maxLines: 4,
+                            style: const TextStyle(color: Colors.white60, fontSize: 10),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       TextButton.icon(
                         onPressed: _retryCurrentMedia,
