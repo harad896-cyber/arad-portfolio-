@@ -145,6 +145,8 @@ class StoriesPage extends StatefulWidget {
 class _StoriesPageState extends State<StoriesPage> {
   List<Map<String, dynamic>> _stories = [];
   Map<String, String> _urls = {};
+  final Map<String, Uint8List> _mediaBytes = <String, Uint8List>{};
+  final Map<String, String> _urlErrors = <String, String>{};
   int _index = 0;
   bool _loading = true;
   final Set<String> _likedIds = <String>{};
@@ -187,6 +189,8 @@ class _StoriesPageState extends State<StoriesPage> {
         setState(() {
           _stories = [];
           _urls = {};
+          _mediaBytes.clear();
+          _urlErrors.clear();
           _index = 0;
           _loading = false;
           _likedIds.clear();
@@ -202,7 +206,8 @@ class _StoriesPageState extends State<StoriesPage> {
 
       final ids = stories.map((s) => s['id'].toString()).toList();
       final uid = _storiesSupabase.auth.currentUser?.id;
-      var nextIndex = 0;
+      // Open the newest available story by default; older stories may reference removed media.
+      var nextIndex = stories.length - 1;
       var foundSelection = false;
       for (final candidate in [previousStoryId, widget.initialStoryId]) {
         if (candidate == null || candidate.isEmpty) continue;
@@ -226,6 +231,8 @@ class _StoriesPageState extends State<StoriesPage> {
       setState(() {
         _stories = stories;
         _urls.removeWhere((id, _) => !validIds.contains(id));
+        _mediaBytes.removeWhere((id, _) => !validIds.contains(id));
+        _urlErrors.removeWhere((id, _) => !validIds.contains(id));
         _urlFailedIds.removeWhere((id) => !validIds.contains(id));
         _index = nextIndex;
         _loading = false;
@@ -290,7 +297,7 @@ class _StoriesPageState extends State<StoriesPage> {
       return;
     }
     if (!_urlLoadingIds.add(id)) return;
-    if (mounted) setState(() => _urlFailedIds.remove(id));
+    if (mounted) setState(() { _urlFailedIds.remove(id); _urlErrors.remove(id); });
     try {
       final signed = await _storiesSupabase.storage
           .from('stories')
@@ -301,14 +308,46 @@ class _StoriesPageState extends State<StoriesPage> {
         setState(() {
           _urls[id] = signed;
           _urlFailedIds.remove(id);
+          _urlErrors.remove(id);
         });
         if (startTimerWhenReady && _stories.isNotEmpty &&
             _stories[_index]['id']?.toString() == id) {
           _startTimer();
         }
       }
-    } catch (_) {
-      if (mounted) setState(() => _urlFailedIds.add(id));
+    } catch (error) {
+      // Some devices/storage configurations fail to issue a signed URL even
+      // though the authenticated user can still download the object directly.
+      // Fall back to bytes for images, and keep the actual error for diagnosis.
+      if (story['media_type'] != 'video') {
+        try {
+          final bytes = await _storiesSupabase.storage
+              .from('stories')
+              .download(path)
+              .timeout(const Duration(seconds: 20));
+          if (mounted && _stories.any((item) => item['id']?.toString() == id)) {
+            setState(() {
+              _mediaBytes[id] = Uint8List.fromList(bytes);
+              _urlFailedIds.remove(id);
+              _urlErrors.remove(id);
+            });
+            if (startTimerWhenReady && _stories.isNotEmpty && _stories[_index]['id']?.toString() == id) {
+              _startTimer();
+            }
+            return;
+          }
+        } catch (downloadError) {
+          if (mounted) setState(() {
+            _urlFailedIds.add(id);
+            _urlErrors[id] = downloadError.toString();
+          });
+        }
+      } else if (mounted) {
+        setState(() {
+          _urlFailedIds.add(id);
+          _urlErrors[id] = error.toString();
+        });
+      }
     } finally {
       _urlLoadingIds.remove(id);
       if (mounted) setState(() {});
@@ -321,6 +360,8 @@ class _StoriesPageState extends State<StoriesPage> {
     if (id.isEmpty) return;
     setState(() {
       _urls.remove(id);
+      _mediaBytes.remove(id);
+      _urlErrors.remove(id);
       _urlFailedIds.remove(id);
     });
     await _ensureSignedUrl(_stories[_index], startTimerWhenReady: true);
@@ -558,7 +599,9 @@ class _StoriesPageState extends State<StoriesPage> {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_stories.isEmpty) return Scaffold(appBar: AppBar(title: const Text('استوری‌ها')), body: Center(child: FilledButton.icon(onPressed: _createStory, icon: const Icon(Icons.add), label: const Text('ساخت استوری'))));
     final s = _stories[_index];
-    final url = _urls[s['id'].toString()];
+    final storyId = s['id'].toString();
+    final url = _urls[storyId];
+    final mediaBytes = _mediaBytes[storyId];
     final mine = s['user_id'].toString() == _storiesSupabase.auth.currentUser?.id;
     return Scaffold(
       backgroundColor: Colors.black,
@@ -589,10 +632,12 @@ class _StoriesPageState extends State<StoriesPage> {
             )
           else if (s['media_type'] == 'video')
             StoryVideo(key: ValueKey(s['id']), url: url)
+          else if (mediaBytes != null && s['media_type'] != 'video')
+            InteractiveViewer(child: Image.memory(mediaBytes, key: ValueKey(s['id']), fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Center(child: Text('نمایش عکس ناموفق بود', style: TextStyle(color: Colors.white)))))
           else
             InteractiveViewer(
               child: Image.network(
-                url,
+                url!,
                 key: ValueKey(s['id']),
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(color: Colors.white)),
