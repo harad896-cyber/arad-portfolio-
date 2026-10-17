@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
@@ -1002,16 +1002,38 @@ class _StoriesPageState extends State<StoriesPage> {
   ])));
 
   Future<void> _createStory() async {
-    final picker = ImagePicker();
     final choice = await showModalBottomSheet<String>(context: context, builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      ListTile(leading: const Icon(Icons.photo_camera_outlined), title: const Text('عکس'), onTap: () => Navigator.pop(c, 'image')),
-      ListTile(leading: const Icon(Icons.videocam_outlined), title: const Text('ویدئو'), onTap: () => Navigator.pop(c, 'video')),
+      ListTile(leading: const Icon(Icons.photo_camera_outlined), title: const Text('عکس'), subtitle: const Text('JPG، PNG یا WebP'), onTap: () => Navigator.pop(c, 'image')),
+      ListTile(leading: const Icon(Icons.videocam_outlined), title: const Text('ویدئو'), subtitle: const Text('MP4، MOV یا WebM؛ حداکثر ۱ دقیقه'), onTap: () => Navigator.pop(c, 'video')),
       ListTile(leading: const Icon(Icons.auto_awesome_rounded), title: const Text('قالب متنی آماده'), subtitle: const Text('فضایی، غروب، اقیانوس و نئون'), onTap: () => Navigator.pop(c, 'text'))
     ])));
     if (choice == null) return;
     if (choice == 'text') { await _createTextStory(); return; }
-    final file = choice == 'image' ? await picker.pickImage(source: ImageSource.gallery, imageQuality: 90) : await picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 1));
-    if (file == null) return;
+
+    // Restrict uploads to formats reliably decoded by Flutter and mobile browsers.
+    // Some gallery pickers return HEIC bytes with a JPEG content type, which
+    // produces a black story even though Storage reports a successful upload.
+    final allowed = choice == 'image'
+        ? <String>['jpg', 'jpeg', 'png', 'webp']
+        : <String>['mp4', 'mov', 'webm', 'm4v'];
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: allowed,
+      allowMultiple: false,
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty) return;
+    final file = picked.files.single;
+    final bytes = file.bytes;
+    final ext = (file.extension ?? '').toLowerCase();
+    if (bytes == null || bytes.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خواندن فایل ناموفق بود؛ دوباره انتخاب کن.')));
+      return;
+    }
+    if (!allowed.contains(ext)) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فرمت .$ext پشتیبانی نمی‌شود. برای عکس JPG یا PNG انتخاب کن.')));
+      return;
+    }
     final audience = await showModalBottomSheet<String>(
       context: context,
       builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -1034,8 +1056,6 @@ class _StoriesPageState extends State<StoriesPage> {
     if (durationHours == null) return;
     final uid = _storiesSupabase.auth.currentUser?.id;
     if (uid == null) return;
-    final bytes = await file.readAsBytes();
-    final ext = file.name.contains('.') ? file.name.split('.').last.toLowerCase() : (choice == 'video' ? 'mp4' : 'jpg');
     final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.$ext';
     try {
       final contentType = switch (ext) {
