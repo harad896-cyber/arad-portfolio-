@@ -2327,6 +2327,7 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
   final url = _avatarImageUrl(profile);
   final fallbackUrl = _avatarFallbackUrl(profile, url);
   final isCharacter = url.startsWith('emoji:');
+  final previewUrl = url.isNotEmpty && !isCharacter ? url : fallbackUrl;
   showDialog<void>(
     context: context,
     barrierColor: Colors.black87,
@@ -2339,12 +2340,20 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
           InteractiveViewer(
             minScale: 0.8,
             maxScale: 4,
-            child: url.isNotEmpty && !isCharacter
+            child: previewUrl.isNotEmpty && !isCharacter
                 ? Image.network(
-                    url,
+                    previewUrl,
                     fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) =>
+                        progress == null
+                            ? child
+                            : const SizedBox(
+                                width: 72,
+                                height: 72,
+                                child: CircularProgressIndicator(color: Colors.white),
+                              ),
                     errorBuilder: (_, __, ___) =>
-                        fallbackUrl.isNotEmpty && fallbackUrl != url
+                        fallbackUrl.isNotEmpty && previewUrl != fallbackUrl
                             ? Image.network(
                                 fallbackUrl,
                                 fit: BoxFit.contain,
