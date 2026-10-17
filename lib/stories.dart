@@ -609,7 +609,7 @@ class _StoriesPageState extends State<StoriesPage> {
       body: GestureDetector(
         onTapUp: (d) => d.localPosition.dx < MediaQuery.of(context).size.width / 2 ? _previous() : _next(),
         child: Stack(fit: StackFit.expand, children: [
-          if (url == null || url.isEmpty)
+          if ((url == null || url.isEmpty) && mediaBytes == null)
             Center(
               child: _urlLoadingIds.contains(s['id'].toString())
                   ? const Column(mainAxisSize: MainAxisSize.min, children: [
