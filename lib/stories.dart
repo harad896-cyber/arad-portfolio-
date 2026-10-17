@@ -454,38 +454,23 @@ class _StoriesPageState extends State<StoriesPage> {
     if (ids.isEmpty) return;
     try {
       final analytics = await Future.wait<dynamic>([
-        _storiesSupabase.from('story_likes').select('story_id,user_id').inFilter('story_id', ids)
-            .then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
         _storiesSupabase.from('story_comments').select('story_id').inFilter('story_id', ids)
             .then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
         _storiesSupabase.from('story_views').select('story_id,viewer_id').inFilter('story_id', ids)
             .then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
       ]);
-      final liked = <String>{};
-      final likes = <String, int>{};
       final comments = <String, int>{};
       final views = <String, int>{};
       for (final row in List<Map<String, dynamic>>.from(analytics[0] as List)) {
         final id = row['story_id'].toString();
-        likes[id] = (likes[id] ?? 0) + 1;
-        if (row['user_id']?.toString() == uid) liked.add(id);
-      }
-      for (final row in List<Map<String, dynamic>>.from(analytics[1] as List)) {
-        final id = row['story_id'].toString();
         comments[id] = (comments[id] ?? 0) + 1;
       }
-      for (final row in List<Map<String, dynamic>>.from(analytics[2] as List)) {
+      for (final row in List<Map<String, dynamic>>.from(analytics[1] as List)) {
         final id = row['story_id'].toString();
         views[id] = (views[id] ?? 0) + 1;
       }
       if (!mounted || generation != _loadGeneration) return;
       setState(() {
-        _likedIds
-          ..clear()
-          ..addAll(liked);
-        _likeCounts
-          ..clear()
-          ..addAll(likes);
         _commentCounts
           ..clear()
           ..addAll(comments);
@@ -510,7 +495,15 @@ class _StoriesPageState extends State<StoriesPage> {
     final story = _stories[_index];
     final uid = _storiesSupabase.auth.currentUser?.id;
     if (uid == null || story['user_id']?.toString() == uid) return;
-    try { await _storiesSupabase.from('story_views').upsert({'story_id': story['id'], 'viewer_id': uid, 'viewed_at': DateTime.now().toUtc().toIso8601String()}); } catch (_) {}
+    try {
+      await _storiesSupabase.from('story_views').upsert(
+        {'story_id': story['id'], 'viewer_id': uid, 'viewed_at': DateTime.now().toUtc().toIso8601String()},
+        onConflict: 'story_id,viewer_id',
+      );
+      final rows = await _storiesSupabase.from('story_views').select('viewer_id').eq('story_id', story['id']);
+      if (mounted) setState(() => _viewCounts[story['id'].toString()] =
+          List<Map<String, dynamic>>.from(rows).length);
+    } catch (_) {}
   }
 
   void _next() {
@@ -609,8 +602,22 @@ class _StoriesPageState extends State<StoriesPage> {
     final controller = TextEditingController();
     List<Map<String,dynamic>> comments = [];
     try {
-      final rows = await _storiesSupabase.from('story_comments').select('id,user_id,body,created_at').eq('story_id', story['id']).order('created_at');
-      comments = List<Map<String,dynamic>>.from(rows);
+      final rows = await _storiesSupabase.from('story_comments')
+          .select('id,user_id,body,created_at').eq('story_id', story['id']).order('created_at');
+      comments = List<Map<String, dynamic>>.from(rows);
+      final commenterIds = comments.map((c) => c['user_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty).toSet().toList();
+      final commenterProfiles = <String, Map<String, dynamic>>{};
+      if (commenterIds.isNotEmpty) {
+        final profileRows = await _storiesSupabase.from('profiles')
+            .select('id,display_name,username,avatar_url').inFilter('id', commenterIds);
+        for (final profile in List<Map<String, dynamic>>.from(profileRows)) {
+          commenterProfiles[profile['id'].toString()] = profile;
+        }
+      }
+      for (final comment in comments) {
+        comment['_profile'] = commenterProfiles[comment['user_id']?.toString()] ?? <String, dynamic>{};
+      }
     } catch (_) {}
     if (!mounted) { controller.dispose(); return; }
     await showModalBottomSheet<void>(
@@ -623,12 +630,22 @@ class _StoriesPageState extends State<StoriesPage> {
             const SizedBox(height: 8),
             Expanded(child: comments.isEmpty
               ? const Center(child: Text('هنوز نظری ثبت نشده است.'))
-              : ListView.builder(itemCount: comments.length, itemBuilder: (_, i) => ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-                  title: Text(comments[i]['body']?.toString() ?? ''),
-                  subtitle: Text(comments[i]['user_id']?.toString() == uid ? 'شما' : 'مخاطب'),
-                  dense: true,
-                ))),
+              : ListView.builder(itemCount: comments.length, itemBuilder: (_, i) {
+                  final comment = comments[i];
+                  final profile = Map<String, dynamic>.from(comment['_profile'] ?? <String, dynamic>{});
+                  final avatarUrl = (profile['avatar_url'] ?? '').toString().trim();
+                  final name = (profile['display_name'] ?? profile['username'] ??
+                      (comment['user_id']?.toString() == uid ? 'شما' : 'کاربر')).toString();
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: avatarUrl.isEmpty ? null : NetworkImage(avatarUrl),
+                      child: avatarUrl.isEmpty ? const Icon(Icons.person_outline) : null,
+                    ),
+                    title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(comment['body']?.toString() ?? ''),
+                    dense: true,
+                  );
+                })),
             Row(children: [
               Expanded(child: TextField(controller: controller, maxLength: 500, decoration: const InputDecoration(hintText: 'نظر بنویس...', counterText: ''))),
               IconButton(icon: const Icon(Icons.send_rounded), onPressed: () async {
