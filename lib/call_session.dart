@@ -51,6 +51,10 @@ class _CallSessionPageState extends State<CallSessionPage> {
   bool _acceptedIncoming = false;
   bool _cameraEnabled = true;
   bool _frontCamera = true;
+  bool _echoCancellation = true;
+  bool _noiseSuppression = true;
+  bool _autoGainControl = true;
+  bool _audioFiltersBusy = false;
   String? _pendingOfferSdp;
   String _status = 'در حال آماده‌سازی تماس...';
 
@@ -321,9 +325,9 @@ class _CallSessionPageState extends State<CallSessionPage> {
 
     final localStream = await navigator.mediaDevices.getUserMedia({
       'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
+        'echoCancellation': _echoCancellation,
+        'noiseSuppression': _noiseSuppression,
+        'autoGainControl': _autoGainControl,
       },
       'video': widget.video ? {
         'width': {'ideal': 960, 'max': 960},
@@ -445,6 +449,140 @@ class _CallSessionPageState extends State<CallSessionPage> {
       }).eq('id', _callId!);
     }
     if (mounted) setState(() => _status = 'متصل');
+  }
+
+  Future<void> _showAudioFilters() async {
+    var echoCancellation = _echoCancellation;
+    var noiseSuppression = _noiseSuppression;
+    var autoGainControl = _autoGainControl;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('بهبود صدای تماس', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                Text('برای صدای واضح‌تر؛ پشتیبانی این گزینه‌ها به دستگاه و مرورگر بستگی دارد.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: noiseSuppression,
+                  title: const Text('کاهش صدای محیط'),
+                  subtitle: const Text('کم‌کردن صدای باد، فن و نویز پس‌زمینه'),
+                  onChanged: (value) => setSheetState(() => noiseSuppression = value),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: echoCancellation,
+                  title: const Text('حذف اکو'),
+                  subtitle: const Text('کاهش برگشت صدای طرف مقابل به میکروفون'),
+                  onChanged: (value) => setSheetState(() => echoCancellation = value),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: autoGainControl,
+                  title: const Text('تنظیم خودکار بلندی صدا'),
+                  subtitle: const Text('متعادل‌کردن بلندی صدای میکروفون'),
+                  onChanged: (value) => setSheetState(() => autoGainControl = value),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _audioFiltersBusy ? null : () async {
+                      Navigator.of(sheetContext).pop();
+                      await _applyAudioFilters(
+                        echoCancellation: echoCancellation,
+                        noiseSuppression: noiseSuppression,
+                        autoGainControl: autoGainControl,
+                      );
+                    },
+                    icon: _audioFiltersBusy
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.graphic_eq_rounded),
+                    label: Text(_audioFiltersBusy ? 'در حال اعمال...' : 'اعمال تنظیمات'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _applyAudioFilters({
+    required bool echoCancellation,
+    required bool noiseSuppression,
+    required bool autoGainControl,
+  }) async {
+    if (_ending || _audioFiltersBusy) return;
+    final currentStream = _localStream;
+    final peer = _peer;
+    if (currentStream == null || peer == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ابتدا تماس را برقرار کنید.')));
+      return;
+    }
+
+    setState(() => _audioFiltersBusy = true);
+    MediaStream? replacementStream;
+    try {
+      replacementStream = await navigator.mediaDevices.getUserMedia({
+        'audio': {
+          'echoCancellation': echoCancellation,
+          'noiseSuppression': noiseSuppression,
+          'autoGainControl': autoGainControl,
+        },
+        'video': false,
+      });
+      final replacementTrack = replacementStream.getAudioTracks().isNotEmpty
+          ? replacementStream.getAudioTracks().first
+          : null;
+      if (replacementTrack == null) throw Exception('میکروفون در دسترس نیست.');
+
+      final senders = await peer.getSenders();
+      RTCRtpSender? audioSender;
+      for (final sender in senders) {
+        if (sender.track?.kind == 'audio') {
+          audioSender = sender;
+          break;
+        }
+      }
+      if (audioSender == null) throw Exception('مسیر صدای تماس پیدا نشد.');
+      await audioSender.replaceTrack(replacementTrack);
+
+      for (final oldTrack in currentStream.getAudioTracks()) {
+        try { await currentStream.removeTrack(oldTrack); } catch (_) {}
+        try { await oldTrack.stop(); } catch (_) {}
+      }
+      await currentStream.addTrack(replacementTrack);
+      replacementStream = null; // The replacement track now belongs to the active call stream.
+      _echoCancellation = echoCancellation;
+      _noiseSuppression = noiseSuppression;
+      _autoGainControl = autoGainControl;
+      if (_muted) replacementTrack.enabled = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تنظیمات صدای تماس اعمال شد.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('اعمال فیلتر صدا ناموفق بود: ${e.toString().replaceFirst('Exception: ', '')}')));
+      }
+    } finally {
+      if (replacementStream != null) {
+        try { for (final track in replacementStream.getTracks()) { await track.stop(); } } catch (_) {}
+        try { await replacementStream.dispose(); } catch (_) {}
+      }
+      if (mounted) setState(() => _audioFiltersBusy = false);
+    }
   }
 
   Future<void> _toggleMute() async {
@@ -629,6 +767,13 @@ class _CallSessionPageState extends State<CallSessionPage> {
           title: Text(widget.video ? 'تماس تصویری' : 'تماس صوتی'),
           backgroundColor: Colors.transparent,
           elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: 'فیلتر و بهبود صدا',
+              onPressed: _audioFiltersBusy ? null : _showAudioFilters,
+              icon: const Icon(Icons.graphic_eq_rounded),
+            ),
+          ],
         ),
         body: Stack(
           fit: StackFit.expand,
