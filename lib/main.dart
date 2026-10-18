@@ -4138,6 +4138,7 @@ class _HomePageState extends State<HomePage> {
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
+              else if (value == 'folders') _openFolderManager();
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
               else if (value == 'notifications') Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage()));
               else if (value == 'group') createGroup();
@@ -4148,6 +4149,7 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('کنترل سریع برنامه'))),
               PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
+              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text('مدیریت پوشه‌های گفتگو'))),
               PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text('مرکز اعلان‌ها'))),
               PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text('بایگانی'))),
               PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text('ساخت گروه'))),
