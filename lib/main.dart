@@ -8462,33 +8462,96 @@ class _ChatPageState extends State<ChatPage> {
   void _showReactionBurst(String emoji) {
     final overlay = Overlay.of(context);
     late final OverlayEntry entry;
-    entry = OverlayEntry(builder: (context) => Positioned.fill(
-      child: IgnorePointer(child: Center(
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 850),
-          curve: Curves.easeOutCubic,
-          builder: (context, progress, child) => Opacity(
-            opacity: (1 - progress).clamp(0.0, 1.0),
-            child: Transform.scale(
-              scale: Curves.easeOutBack.transform(progress).clamp(.0, 1.08),
-              child: child,
+    final accent = _reactionAccent(emoji);
+    const sparks = <String>['✦', '✨', '✧', '•', '✦', '✨', '✧', '•'];
+    entry = OverlayEntry(builder: (overlayContext) => Positioned.fill(
+      child: IgnorePointer(
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 1050),
+            curve: Curves.easeOutCubic,
+            builder: (context, progress, child) => Opacity(
+              opacity: (1 - progress * progress).clamp(0.0, 1.0),
+              child: SizedBox(
+                width: 220,
+                height: 220,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Transform.scale(
+                      scale: .35 + progress * 1.1,
+                      child: Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(colors: [
+                            accent.withValues(alpha: .34 * (1 - progress)),
+                            accent.withValues(alpha: .10 * (1 - progress)),
+                            Colors.transparent,
+                          ]),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accent.withValues(alpha: .25 * (1 - progress)),
+                              blurRadius: 28,
+                              spreadRadius: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Small sparkles travel outward instead of showing a static glow.
+                    for (var i = 0; i < sparks.length; i++)
+                      Transform.translate(
+                        offset: Offset(
+                          (i.isEven ? 1.0 : -1.0) *
+                              (18 + (i % 3) * 12) * progress,
+                          (i < 4 ? -1.0 : 1.0) *
+                              (24 + (i % 4) * 9) * progress,
+                        ),
+                        child: Transform.rotate(
+                          angle: progress * (i.isEven ? 1.4 : -1.4),
+                          child: Opacity(
+                            opacity: (1 - progress).clamp(0.0, 1.0),
+                            child: Text(
+                              sparks[i],
+                              style: TextStyle(
+                                color: i.isEven ? accent : Colors.white,
+                                fontSize: 13 + (i % 3) * 5,
+                                fontWeight: FontWeight.w900,
+                                shadows: [Shadow(color: accent.withValues(alpha: .8), blurRadius: 10)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    Transform.scale(
+                      scale: progress < .22
+                          ? .72 + (progress / .22) * .48
+                          : 1.20 - ((progress - .22) / .78) * .20,
+                      child: Text(
+                        emoji,
+                        style: const TextStyle(
+                          fontSize: 62,
+                          shadows: [
+                            Shadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 5)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          child: Container(
-            width: 112, height: 112,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [_reactionAccent(emoji).withValues(alpha: .34), _reactionAccent(emoji).withValues(alpha: .02), Colors.transparent]),
-              boxShadow: [BoxShadow(color: _reactionAccent(emoji).withValues(alpha: .30), blurRadius: 32, spreadRadius: 5)],
-            ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 58, shadows: [Shadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))]))),
           ),
         ),
-      )),
+      ),
     ));
     overlay.insert(entry);
-    Future<void>.delayed(const Duration(milliseconds: 850), () => entry.remove());
+    Future<void>.delayed(const Duration(milliseconds: 1100), () {
+      if (entry.mounted) entry.remove();
+    });
   }
 
   Widget _imageAttachment(Map<String, dynamic> m) {
