@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -19,15 +20,27 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
   bool playing = false;
   bool loaded = false;
   double speed = 1.0;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<PlayerState>? _stateSubscription;
+  StreamSubscription<void>? _completeSubscription;
 
   @override
   void initState() {
     super.initState();
     duration = Duration(milliseconds: widget.initialDurationMs);
-    player.onPositionChanged.listen((v) { if (mounted) setState(() => position = v); });
-    player.onDurationChanged.listen((v) { if (mounted) setState(() => duration = v); });
-    player.onPlayerStateChanged.listen((v) { if (mounted) setState(() => playing = v == PlayerState.playing); });
-    player.onPlayerComplete.listen((_) { if (mounted) setState(() { playing = false; position = Duration.zero; }); });
+    _positionSubscription = player.onPositionChanged.listen((v) {
+      if (mounted) setState(() => position = v);
+    });
+    _durationSubscription = player.onDurationChanged.listen((v) {
+      if (mounted) setState(() => duration = v);
+    });
+    _stateSubscription = player.onPlayerStateChanged.listen((v) {
+      if (mounted) setState(() => playing = v == PlayerState.playing);
+    });
+    _completeSubscription = player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() { playing = false; position = Duration.zero; });
+    });
   }
 
   Future<void> ensureLoaded() async {
@@ -183,5 +196,14 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
   }
 
   @override
-  void dispose() { player.dispose(); super.dispose(); }
+  void dispose() {
+    // Explicitly cancel event listeners so off-screen voice bubbles do not
+    // retain this widget or schedule state updates after disposal.
+    unawaited(_positionSubscription?.cancel());
+    unawaited(_durationSubscription?.cancel());
+    unawaited(_stateSubscription?.cancel());
+    unawaited(_completeSubscription?.cancel());
+    unawaited(player.dispose());
+    super.dispose();
+  }
 }
