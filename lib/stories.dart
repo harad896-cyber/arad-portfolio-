@@ -388,7 +388,6 @@ class _StoriesPageState extends State<StoriesPage> {
         _urlFailedIds.add(id);
         _urlErrors[id] = 'رسانهٔ استوری دریافت نشد: $mediaError';
       });
-    }
     } finally {
       _urlLoadingIds.remove(id);
       if (mounted) setState(() {});
