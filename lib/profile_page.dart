@@ -44,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final user = supabase.auth.currentUser;
       if (user == null) return;
-      final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at').eq('id', user.id).maybeSingle();
       profile = row == null ? {} : Map<String, dynamic>.from(row);
       name.text = '${profile['display_name'] ?? user.userMetadata?['full_name'] ?? ''}';
       username.text = '${profile['username'] ?? ''}';
