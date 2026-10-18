@@ -10,6 +10,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
@@ -425,7 +426,7 @@ class AradMessenger extends StatelessWidget {
           backgroundColor: Color(0xFFFCFCFE),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF171320)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
           iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
@@ -470,7 +471,7 @@ class AradMessenger extends StatelessWidget {
             shadowColor: Colors.transparent,
             minimumSize: const Size.fromHeight(46),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+            textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -506,7 +507,7 @@ class AradMessenger extends StatelessWidget {
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
           backgroundColor: Color(0xFF141722),
           surfaceTintColor: Colors.transparent,
-          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: const Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -550,7 +551,7 @@ class AradMessenger extends StatelessWidget {
             shadowColor: Colors.transparent,
             minimumSize: const Size.fromHeight(46),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+            textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
