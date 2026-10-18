@@ -4713,19 +4713,50 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
-          Center(child: Column(children: [
-            GestureDetector(
-              onTap: () => _openAvatarPreview(context, profile),
-              child: avatar(profile, size: 104),
+          Container(
+            padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  s.primary.withValues(alpha: .13),
+                  s.tertiary.withValues(alpha: .07),
+                  s.surface.withValues(alpha: .82),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: s.primary.withValues(alpha: .14)),
+              boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .06), blurRadius: 22, offset: const Offset(0, 8))],
             ),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
-              if (verified) ...[const SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
+            child: Column(children: [
+              GestureDetector(
+                onTap: () => _openAvatarPreview(context, profile),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [s.primary, s.tertiary, s.primary.withValues(alpha: .45)]),
+                    boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .20), blurRadius: 20, spreadRadius: 1)],
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: s.surface),
+                    child: avatar(profile, size: 104),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+                if (verified) ...[const SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
+              ]),
+              if (username.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('@$username', style: TextStyle(color: s.primary, fontSize: 14, fontWeight: FontWeight.w800))),
+              const SizedBox(height: 4),
+              Text(isSelf ? 'پروفایل شما' : (isContact ? 'در فهرست مخاطبین شما' : 'پروفایل کاربر'), style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
             ]),
-            if (username.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text('@$username', style: TextStyle(color: s.onSurfaceVariant, fontSize: 15))),
-            const SizedBox(height: 18),
-          ])),
+          ),
+          const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام', busy ? null : _openChat)),
             const SizedBox(width: 8),
