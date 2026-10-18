@@ -2784,7 +2784,7 @@ class _LoginPageState extends State<LoginPage>{
       TextField(controller:email,keyboardType:TextInputType.emailAddress,onChanged:(v)=>setState(()=>emailError=validEmail(v)?null:'ایمیل معتبر نیست'),decoration:InputDecoration(labelText:'ایمیل',errorText:emailError,prefixIcon:const Icon(Icons.email_outlined))),
       if(!signup)...[TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:const Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),],
       if(!signup)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:busy?null:forgotPassword,child:const Text('رمز را فراموش کرده‌ام'))),
-      const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ارسال کد ورود'))),
+      const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود به حساب'))),
       const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
     ])))
   ]))))));}
