@@ -31,12 +31,12 @@ class _StoriesTrayState extends State<StoriesTray> {
   Future<void> _load() async {
     try {
       final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,text,background,audience,created_at,expires_at')
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video','text']).order('created_at', ascending: false).limit(40);
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video','text']).order('created_at', ascending: false).limit(40).timeout(const Duration(seconds: 10));
       final list = List<Map<String, dynamic>>.from(rows);
       final ids = list.map((e) => e['user_id'].toString()).toSet().toList();
       final profiles = <String, Map<String, dynamic>>{};
       if (ids.isNotEmpty) {
-        final p = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
+        final p = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids).timeout(const Duration(seconds: 6));
         for (final row in List<Map<String, dynamic>>.from(p)) profiles[row['id'].toString()] = row;
       }
       for (final row in list) row['profile'] = profiles[row['user_id'].toString()] ?? {};
@@ -183,13 +183,14 @@ class _StoriesPageState extends State<StoriesPage> {
           .gt('expires_at', DateTime.now().toUtc().toIso8601String())
           .inFilter('media_type', ['image', 'video', 'text'])
           .order('created_at', ascending: true)
-          .limit(80);
+          .limit(80)
+          .timeout(const Duration(seconds: 12));
       final stories = List<Map<String, dynamic>>.from(rows);
       if (!mounted || generation != _loadGeneration) return;
       final profileIds = stories.map((s) => s['user_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet().toList();
       if (profileIds.isNotEmpty) {
         try {
-          final profileRows = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', profileIds);
+          final profileRows = await _storiesSupabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', profileIds).timeout(const Duration(seconds: 6));
           final byId = {for (final p in List<Map<String, dynamic>>.from(profileRows)) p['id'].toString(): p};
           for (final story in stories) { story['profile'] = byId[story['user_id']?.toString()] ?? <String, dynamic>{}; }
         } catch (_) {}
@@ -1133,6 +1134,12 @@ class _StoriesPageState extends State<StoriesPage> {
     }
     if (!allowed.contains(ext)) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فرمت .$ext پشتیبانی نمی‌شود. برای عکس JPG یا PNG انتخاب کن.')));
+      return;
+    }
+    final maxBytes = choice == 'image' ? 15 * 1024 * 1024 : 50 * 1024 * 1024;
+    if (bytes.length > maxBytes) {
+      final limit = choice == 'image' ? '۱۵ مگابایت' : '۵۰ مگابایت';
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حجم فایل بیشتر از $limit است؛ فایل کوچک‌تری انتخاب کن.')));
       return;
     }
     final audience = await showModalBottomSheet<String>(
