@@ -189,6 +189,27 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
           if (appTheme.backgroundImageBase64 != null)
             TextButton.icon(onPressed: () { HapticFeedback.selectionClick(); _removeGalleryImage(); }, icon: const Icon(Icons.delete_outline), label: const Text('حذف عکس پس‌زمینه')),
           const SizedBox(height: 22),
+          const Text('قالب‌های آماده', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 6),
+          Text('با یک لمس، ظاهر گفتگوها را یکدست کن.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.75,
+            children: const [
+              _ChatPreset(label: 'بنفش فضایی', colors: [Color(0xFF302047), Color(0xFF11131A)], seed: 0xFF8B5CF6),
+              _ChatPreset(label: 'اقیانوس آبی', colors: [Color(0xFF10202D), Color(0xFF0B1220)], seed: 0xFF36B8FF),
+              _ChatPreset(label: 'سبز آرام', colors: [Color(0xFF173A45), Color(0xFF11131A)], seed: 0xFF39C6A5),
+              _ChatPreset(label: 'رز تیره', colors: [Color(0xFF3B2437), Color(0xFF17152B)], seed: 0xFFFF78B7),
+              _ChatPreset(label: 'یاسی روشن', colors: [Color(0xFFF1ECFF), Color(0xFFF6F7FB)], seed: 0xFF8B5CF6),
+              _ChatPreset(label: 'سفید مینیمال', colors: [Color(0xFFF5F5F7), Color(0xFFEAF4FF)], seed: 0xFF5264D8),
+            ],
+          ),
+          const SizedBox(height: 22),
           const Text('رنگ پس‌زمینه', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 12),
           Wrap(
@@ -231,6 +252,52 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
           const SizedBox(height: 18),
           Text('این انتخاب برای همین حساب روی دستگاه ذخیره می‌شود.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
+      ),
+    );
+  }
+}
+
+
+class _ChatPreset extends StatelessWidget {
+  final String label;
+  final List<Color> colors;
+  final int seed;
+  const _ChatPreset({required this.label, required this.colors, required this.seed});
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = appTheme.backgroundSeed == colors.first.value;
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () async {
+          HapticFeedback.selectionClick();
+          await appTheme.setBackgroundSeed(colors.first.value);
+          await appTheme.setSeed(seed);
+          await appTheme.setBackgroundEffects(true);
+          if (mounted) {}
+        },
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors, begin: Alignment.topRight, end: Alignment.bottomLeft),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: selected ? scheme.primary : scheme.outlineVariant, width: selected ? 2.5 : 1),
+            boxShadow: const [BoxShadow(color: Color(0x18000000), blurRadius: 12, offset: Offset(0, 4))],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(selected ? Icons.check_circle_rounded : Icons.palette_outlined, color: colors.first.computeLuminance() < .35 ? Colors.white : const Color(0xFF252238), size: 20),
+                Text(label, style: TextStyle(fontWeight: FontWeight.w900, color: colors.first.computeLuminance() < .35 ? Colors.white : const Color(0xFF252238))),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
