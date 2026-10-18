@@ -3637,12 +3637,11 @@ class _HomePageState extends State<HomePage> {
           }
         }
       }
-      final c = await supabase.from('conversations').insert({'type': 'direct', 'created_by': uid}).select().single();
-      await supabase.from('conversation_members').insert([
-        {'conversation_id': c['id'], 'user_id': uid},
-        {'conversation_id': c['id'], 'user_id': result['id']},
-      ]);
-      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: c['id'].toString(), title: (result['display_name'] ?? result['username'] ?? 'گفتگو').toString())));
+      final conversationId = await supabase.rpc(
+        'create_direct_conversation',
+        params: {'p_peer_id': result['id']},
+      );
+      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId.toString(), title: (result['display_name'] ?? result['username'] ?? 'گفتگو').toString())));
       load();
     } catch (e) { if (mounted) showMsg(context, 'ساخت گفتگو ناموفق بود: ' + e.toString()); }
   }
@@ -4525,12 +4524,11 @@ Future<String?> _ensureDirectConversationForUser(Map<String, dynamic> profile) a
     final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', conversationId);
     if ((members as List).length == 2 && members.any((m) => m['user_id']?.toString() == targetId)) return conversationId;
   }
-  final created = await supabase.from('conversations').insert({'type': 'direct', 'created_by': uid}).select().single();
-  await supabase.from('conversation_members').insert([
-    {'conversation_id': created['id'], 'user_id': uid},
-    {'conversation_id': created['id'], 'user_id': targetId},
-  ]);
-  return created['id']?.toString();
+  final conversationId = await supabase.rpc(
+    'create_direct_conversation',
+    params: {'p_peer_id': targetId},
+  );
+  return conversationId?.toString();
 }
 
 class PublicUserProfilePage extends StatefulWidget {
