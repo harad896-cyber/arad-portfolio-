@@ -3102,7 +3102,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   Future<void> load() async {
     try {
       final user = supabase.auth.currentUser!;
-      final row = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at').eq('id', user.id).maybeSingle();
       if (row != null) {
         existingAvatarUrl = '${row['avatar_url'] ?? ''}';
         if ((existingAvatarUrl ?? '').startsWith('emoji:')) selectedCharacter = existingAvatarUrl!.substring(6);
@@ -9107,7 +9107,7 @@ class _ChatPageState extends State<ChatPage> {
     final id = userId.trim();
     if (id.isEmpty) return;
     try {
-      final row = await supabase.from('profiles').select().eq('id', id).maybeSingle();
+      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at').eq('id', id).maybeSingle();
       if (row == null || !mounted) return;
       await Navigator.push(context, MaterialPageRoute(
         builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
@@ -9133,7 +9133,7 @@ class _ChatPageState extends State<ChatPage> {
           .map((m) => m['user_id']?.toString() ?? '')
           .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
       if (peerId.isEmpty) throw Exception('پروفایل مخاطب پیدا نشد.');
-      final row = await supabase.from('profiles').select()
+      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at')
           .eq('id', peerId).maybeSingle();
       if (row == null) throw Exception('پروفایل مخاطب در دسترس نیست.');
       if (!mounted) return;
