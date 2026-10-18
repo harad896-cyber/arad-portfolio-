@@ -7666,7 +7666,7 @@ class _ChatPageState extends State<ChatPage> {
           final shown = filter.isEmpty ? source : source.where((e) => e.contains(filter)).toList();
           return SafeArea(child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18), child: Container(
+            child: Container(
               height: MediaQuery.of(context).size.height * .72,
               decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .3)))),
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -7726,7 +7726,7 @@ class _ChatPageState extends State<ChatPage> {
                   icon: const Icon(Icons.done_rounded), label: Text(selected.isEmpty ? 'بستن' : 'افزودن ' + selected.length.toString() + ' مورد'),
                 )),
               ]),
-            )),
+            ),
           ));
         });
       },
@@ -7756,7 +7756,10 @@ class _ChatPageState extends State<ChatPage> {
           text: value.replaceRange(start, end, insertion),
           selection: TextSelection.collapsed(offset: start + insertion.length),
         );
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Wait until the bottom-sheet route is fully dismissed before
+        // reopening the platform keyboard; requesting focus during the pop
+        // animation is ignored on some Android IMEs.
+        Future<void>.delayed(const Duration(milliseconds: 220), () {
           if (!mounted) return;
           _composerFocus.requestFocus();
           SystemChannels.textInput.invokeMethod<void>('TextInput.show');
