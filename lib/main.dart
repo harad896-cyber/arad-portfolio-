@@ -841,31 +841,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       ]),
     );
   }
-  Widget _quickControl(String label, IconData icon, VoidCallback onTap) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: .62),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: () { HapticFeedback.selectionClick(); onTap(); },
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 92, minHeight: 76),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: .45)),
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: scheme.primary, size: 23),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
-          ]),
-        ),
-      ),
-    );
-  }
-
   IconData _iconForSetting(String s)=>switch(s){
     'حساب کاربری'=>Icons.manage_accounts_rounded,'حریم خصوصی'=>Icons.lock_outline_rounded,'امنیت'=>Icons.security_rounded,
     'اعلان‌ها'=>Icons.notifications_none_rounded,'مصرف داده'=>Icons.data_saver_on_rounded,'دسترسی‌پذیری'=>Icons.accessibility_new_rounded,'دسترسی‌های برنامه'=>Icons.admin_panel_settings_rounded,
@@ -5703,20 +5678,6 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
     );
   }
 }
-
-class PermissionScreensPage extends StatelessWidget {const PermissionScreensPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('دسترسی‌های برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
- const Card(child:ListTile(leading:Icon(Icons.contacts_rounded),title:Text('مخاطبین'),subtitle:Text('برای پیدا کردن دوستان لازم است.'))),
- const Card(child:ListTile(leading:Icon(Icons.notifications_rounded),title:Text('اعلان‌ها'),subtitle:Text('برای پیام‌ها و تماس‌های جدید لازم است.'))),
- const Card(child:ListTile(leading:Icon(Icons.camera_alt_rounded),title:Text('دوربین و میکروفون'),subtitle:Text('برای تماس، عکس و پیام صوتی لازم است.'))),
-]));}
-
-class AdvancedMessagingPage extends StatelessWidget {const AdvancedMessagingPage({super.key});@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پیام‌رسانی پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
- const Card(child:ListTile(leading:Icon(Icons.graphic_eq_rounded),title:Text('Waveform پیام صوتی'))),
- const Card(child:ListTile(leading:Icon(Icons.video_camera_front_rounded),title:Text('ویدیو-پیام دایره‌ای'))),
- const Card(child:ListTile(leading:Icon(Icons.translate_rounded),title:Text('ترجمه با یک ضربه'))),
- const Card(child:ListTile(leading:Icon(Icons.location_on_rounded),title:Text('موقعیت مکانی زنده'))),
-]));}
-
 
 class NotificationsPage extends StatelessWidget {
   final String id;
