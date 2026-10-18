@@ -7703,9 +7703,17 @@ class _ChatPageState extends State<ChatPage> {
                     final item = shown[i]; final isSelected = selected.contains(item);
                     final art = tab == 1 ? stickerArt[stickers.indexOf(item)] : item;
                     return Material(color: isSelected ? scheme.primaryContainer : scheme.surfaceContainerHighest.withValues(alpha: .55), borderRadius: BorderRadius.circular(13),
-                      child: InkWell(borderRadius: BorderRadius.circular(13), onTap: () => setSheetState(() {
-                        if (isSelected) { selected.remove(item); } else { selected.add(item); }
-                      }), child: Stack(alignment: Alignment.center, children: [
+                      child: InkWell(borderRadius: BorderRadius.circular(13), onTap: () {
+                        // Emoji taps insert immediately and return to the composer;
+                        // sticker tiles keep multi-select behavior.
+                        if (tab == 0) {
+                          Navigator.pop(sheetContext, <String>[item]);
+                        } else {
+                          setSheetState(() {
+                            if (isSelected) { selected.remove(item); } else { selected.add(item); }
+                          });
+                        }
+                      }, child: Stack(alignment: Alignment.center, children: [
                         Text(art, textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 34, shadows: tab == 1 ? const [Shadow(color: Color(0x667C3AED), blurRadius: 10, offset: Offset(0, 2))] : const [])),
                         if (isSelected) PositionedDirectional(top: 2, end: 2, child: Icon(Icons.check_circle, size: 13, color: scheme.primary)),
                       ])),
@@ -7748,7 +7756,11 @@ class _ChatPageState extends State<ChatPage> {
           text: value.replaceRange(start, end, insertion),
           selection: TextSelection.collapsed(offset: start + insertion.length),
         );
-        _composerFocus.requestFocus();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _composerFocus.requestFocus();
+          SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+        });
       }
     }
   }
