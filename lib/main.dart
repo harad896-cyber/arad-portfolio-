@@ -787,13 +787,11 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     setState((){theme=appTheme.dark?'تاریک':'روشن';language=AppStrings.names[aradLanguageController.locale.languageCode]??'فارسی';});
   }
   List<Map<String,String>> get items=>[
-    {'cat':'حساب کاربری','title':'حساب کاربری','desc':'نام، نام کاربری، ایمیل، بیو و عکس پروفایل'},
     {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل'},
     {'cat':'حریم خصوصی و امنیت','title':'امنیت','desc':'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی'},
     {'cat':'اعلان‌ها','title':'اعلان‌ها','desc':'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها'},
     {'cat':'کنترل برنامه','title':'مصرف داده','desc':'تنظیم حالت کم‌مصرف و دانلود خودکار'},
     {'cat':'کنترل برنامه','title':'دسترسی‌پذیری','desc':'تنظیم اندازه متن و کنتراست برای خوانایی بهتر'},
-    {'cat':'کنترل برنامه','title':'دسترسی‌های برنامه','desc':'راهنمای دوربین، میکروفون، مخاطبین و اعلان‌ها'},
     {'cat':'تماس‌ها','title':'تماس‌ها','desc':'تماس صوتی و تصویری و سابقه تماس'},
     {'cat':'ظاهر و شخصی‌سازی','title':'ظاهر','desc':'تم روشن/تاریک و رنگ رابط برنامه'},
     {'cat':'ظاهر و شخصی‌سازی','title':'پس‌زمینه چت','desc':'انتخاب عکس از گالری و رنگ پس‌زمینه گفتگو'},
@@ -821,24 +819,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
           subtitle:Text(supabase.auth.currentUser?.email??'حساب واردشده'),
           trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open('حساب کاربری'),
         )),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
-          child: Row(children: [
-            const Expanded(child: Text('کنترل سریع', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900))),
-            Text('دسترسی مستقیم', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          ]),
-        ),
-        Wrap(
-          spacing: 8, runSpacing: 8,
-          children: [
-            _quickControl('ظاهر', Icons.palette_outlined, () => _open('ظاهر')),
-            _quickControl('پس‌زمینه', Icons.wallpaper_rounded, () => _open('پس‌زمینه چت')),
-            _quickControl('اعلان‌ها', Icons.notifications_active_outlined, () => _open('اعلان‌ها')),
-            _quickControl('گفتگو', Icons.chat_bubble_outline_rounded, () => _open('تنظیمات گفتگو')),
-            _quickControl('مصرف داده', Icons.data_saver_on_rounded, () => _open('مصرف داده')),
-            _quickControl('خوانایی', Icons.text_fields_rounded, () => _open('دسترسی‌پذیری')),
-          ],
-        ),
         ...groups.entries.expand<Widget>((g)=><Widget>[
           Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w900))),
           ...g.value.map<Widget>((x)=>Card(margin:const EdgeInsets.only(bottom:6),child:ListTile(
@@ -901,7 +881,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'اعلان‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsCenterPage())); break;
       case 'مصرف داده': Navigator.push(context,MaterialPageRoute(builder:(_)=>const DataSettingsPage())); break;
       case 'دسترسی‌پذیری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccessibilityPage())); break;
-      case 'دسترسی‌های برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>const PermissionScreensPage())); break;
       case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage())); break;
       case 'ظاهر': _showThemeSheet(); break;
       case 'پس‌زمینه چت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())); break;
