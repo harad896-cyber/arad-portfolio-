@@ -143,9 +143,18 @@ class _StoryTile extends StatelessWidget {
       Container(width: 46, height: 46, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
       child: Stack(clipBehavior: Clip.none, children: [
         CircleAvatar(
-          backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null,
-          onBackgroundImageError: avatar != null && avatar.isNotEmpty ? (_, __) {} : null,
-          child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: avatar == null || avatar.isEmpty
+              ? const Icon(Icons.person_rounded)
+              : ClipOval(
+                  child: Image.network(
+                    avatar,
+                    width: 42,
+                    height: 42,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded),
+                  ),
+                ),
         ),
         Positioned(left: -2, bottom: -2, child: Container(
           constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
