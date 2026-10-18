@@ -7768,6 +7768,8 @@ class _ChatPageState extends State<ChatPage> {
         });
       },
     );
+  }
+
   Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
     final uid = supabase.auth.currentUser?.id;
     final messageId = message['id']?.toString();
