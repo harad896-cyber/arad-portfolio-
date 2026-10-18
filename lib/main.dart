@@ -8917,6 +8917,13 @@ class _ChatPageState extends State<ChatPage> {
         filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
         callback: (_) => _scheduleChatReload(),
       )
+      // Refresh immediately when another client physically deletes a message.
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete,
+        schema: 'public',
+        table: 'messages',
+        callback: (_) => _scheduleChatReload(),
+      )
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
         schema: 'public',
