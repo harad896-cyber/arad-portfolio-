@@ -334,6 +334,10 @@ class _StoriesPageState extends State<StoriesPage> {
         _urlErrors[id] = 'مسیر فایل استوری خالی است.';
       });
       _urlLoadingIds.remove(id);
+      if (startTimerWhenReady && mounted && _stories.isNotEmpty &&
+          _stories[_index]['id']?.toString() == id) {
+        _startTimer();
+      }
       return;
     }
 
@@ -388,6 +392,11 @@ class _StoriesPageState extends State<StoriesPage> {
         _urlFailedIds.add(id);
         _urlErrors[id] = 'رسانهٔ استوری دریافت نشد: $mediaError';
       });
+      // A failed/expired media object must not trap the viewer on a black screen.
+      if (startTimerWhenReady && mounted && _stories.isNotEmpty &&
+          _stories[_index]['id']?.toString() == id) {
+        _startTimer();
+      }
     } finally {
       _urlLoadingIds.remove(id);
       if (mounted) setState(() {});
