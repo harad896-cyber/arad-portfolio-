@@ -126,30 +126,37 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
                   : Icon(playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, size: 42, color: accent),
             ),
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onHorizontalDragStart: (d) => seekToFraction((d.localPosition.dx / 220).clamp(0.0, 1.0)),
-                onHorizontalDragUpdate: (d) => seekToFraction((d.localPosition.dx / 220).clamp(0.0, 1.0)),
-                onTapDown: (d) => seekToFraction((d.localPosition.dx / 220).clamp(0.0, 1.0)),
-                child: SizedBox(
-                  height: 48,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: List.generate(bars.length, (i) {
-                      final active = i / bars.length <= progress;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 100),
-                        width: 3,
-                        height: 8 + bars[i] * 27,
-                        decoration: BoxDecoration(
-                          color: active ? accent : inactive,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final waveformWidth = constraints.maxWidth;
+                  double fractionAt(double x) =>
+                      (x / (waveformWidth > 0 ? waveformWidth : 1)).clamp(0.0, 1.0);
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onHorizontalDragStart: (d) => seekToFraction(fractionAt(d.localPosition.dx)),
+                    onHorizontalDragUpdate: (d) => seekToFraction(fractionAt(d.localPosition.dx)),
+                    onTapDown: (d) => seekToFraction(fractionAt(d.localPosition.dx)),
+                    child: SizedBox(
+                      height: 48,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: List.generate(bars.length, (i) {
+                          final active = i / bars.length <= progress;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 100),
+                            width: 3,
+                            height: 8 + bars[i] * 27,
+                            decoration: BoxDecoration(
+                              color: active ? accent : inactive,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             IconButton(onPressed: () => seekBy(10), tooltip: '+۱۰ ثانیه', icon: Icon(Icons.forward_10_rounded, color: accent)),
