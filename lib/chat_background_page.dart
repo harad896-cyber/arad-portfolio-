@@ -277,7 +277,6 @@ class _ChatPreset extends StatelessWidget {
           await appTheme.setBackgroundSeed(colors.first.value);
           await appTheme.setSeed(seed);
           await appTheme.setBackgroundEffects(true);
-          if (mounted) {}
         },
         child: Ink(
           decoration: BoxDecoration(
