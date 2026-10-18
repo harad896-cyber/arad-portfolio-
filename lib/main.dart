@@ -7657,7 +7657,7 @@ class _ChatPageState extends State<ChatPage> {
     String filter = '';
     int tab = 0;
     final selected = <String>[];
-    final picked = await showModalBottomSheet<List<String>>(
+    await showModalBottomSheet<void>(
       context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
       builder: (sheetContext) {
         final scheme = Theme.of(sheetContext).colorScheme;
@@ -7717,7 +7717,48 @@ class _ChatPageState extends State<ChatPage> {
                 )),
                 const SizedBox(height: 8),
                 SizedBox(width: double.infinity, child: FilledButton.icon(
-                  onPressed: () => Navigator.pop(sheetContext, List<String>.from(selected)),
+                  onPressed: () async {
+                    if (selected.isEmpty) {
+                      Navigator.pop(sheetContext);
+                      return;
+                    }
+                    final chosen = List<String>.from(selected);
+                    final selectedTab = tab;
+                    if (selectedTab == 0) {
+                      // Insert the whole selection at the cursor and send it
+                      // through the regular composer path without dismissing the picker.
+                      final value = text.text;
+                      final selection = text.selection;
+                      final start = selection.start < 0 ? value.length : selection.start;
+                      final end = selection.end < 0 ? value.length : selection.end;
+                      final insertion = chosen.join();
+                      text.value = TextEditingValue(
+                        text: value.replaceRange(start, end, insertion),
+                        selection: TextSelection.collapsed(offset: start + insertion.length),
+                      );
+                      await sendText(keepKeyboardOpen: false);
+                    } else {
+                      // Deliver each selected sticker using the existing send path.
+                      for (final item in chosen) {
+                        if (!mounted) break;
+                        final index = stickers.indexOf(item);
+                        if (index < 0) continue;
+                        final art = stickerArt[index];
+                        final payload = '[[ARAD_STICKER]]$art|$item';
+                        text.value = TextEditingValue(
+                          text: payload,
+                          selection: TextSelection.collapsed(offset: payload.length),
+                        );
+                        await sendText(keepKeyboardOpen: false);
+                      }
+                    }
+                    if (sheetContext.mounted) {
+                      setSheetState(() {
+                        selected.clear();
+                        filter = '';
+                      });
+                    }
+                  },
                   icon: Icon(selected.isEmpty ? Icons.close_rounded : (tab == 0 ? Icons.send_rounded : Icons.auto_awesome_rounded)),
                   label: Text(selected.isEmpty ? 'بستن' : (tab == 0 ? 'ارسال ایموجی‌های انتخاب‌شده (' + selected.length.toString() + ')' : 'ارسال استیکرهای انتخاب‌شده (' + selected.length.toString() + ')')),
                 )),
@@ -7727,38 +7768,6 @@ class _ChatPageState extends State<ChatPage> {
         });
       },
     );
-    if (picked != null && picked.isNotEmpty && mounted) {
-      final value = text.text;
-      final selection = text.selection;
-      final start = selection.start < 0 ? value.length : selection.start;
-      final end = selection.end < 0 ? value.length : selection.end;
-      if (tab == 1) {
-        // Send every selected sticker, not just the last one. Reuse the normal
-        // optimistic send path so sticker delivery/error handling stays consistent.
-        for (final item in picked) {
-          if (!mounted) break;
-          final index = stickers.indexOf(item);
-          if (index < 0) continue;
-          final art = stickerArt[index];
-          text.value = TextEditingValue(
-            text: '[[ARAD_STICKER]]$art|$item',
-            selection: TextSelection.collapsed(offset: '[[ARAD_STICKER]]$art|$item'.length),
-          );
-          await sendText(keepKeyboardOpen: false);
-        }
-      } else {
-        final insertion = picked.join();
-        text.value = TextEditingValue(
-          text: value.replaceRange(start, end, insertion),
-          selection: TextSelection.collapsed(offset: start + insertion.length),
-        );
-        // Confirming the selected emoji uses the same message-send path
-        // as the composer button, preserving any existing draft text.
-        await sendText(keepKeyboardOpen: false);
-      }
-    }
-  }
-
   Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
     final uid = supabase.auth.currentUser?.id;
     final messageId = message['id']?.toString();
