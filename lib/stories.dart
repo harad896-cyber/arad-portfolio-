@@ -338,31 +338,15 @@ class _StoriesPageState extends State<StoriesPage> {
     }
 
     try {
-      // First request a short-lived URL. Creating it is fast and lets the
-      // image/video widget stream directly instead of waiting on a full download.
-      final signed = await _storiesSupabase.storage
-          .from('stories')
-          .createSignedUrl(path, 3600)
-          .timeout(const Duration(seconds: 9));
-      if (!mounted || !_stories.any((item) => item['id']?.toString() == id)) return;
-      setState(() {
-        _urls[id] = signed;
-        _urlFailedIds.remove(id);
-        _urlErrors.remove(id);
-      });
-      if (startTimerWhenReady && _stories.isNotEmpty &&
-          _stories[_index]['id']?.toString() == id) {
-        _startTimer();
-      }
-    } catch (urlError) {
-      // If signed URLs are unavailable, retrieve image bytes through the
-      // authenticated Storage API. This is a fallback, not the slow first step.
+      // Images are downloaded as authenticated bytes first. This avoids the
+      // Flutter Web Image.network/CORS failure that can leave the story viewer
+      // black even when the Storage object and signed URL exist.
       if (story['media_type'] != 'video') {
         try {
           final bytes = await _storiesSupabase.storage
               .from('stories')
               .download(path)
-              .timeout(const Duration(seconds: 10));
+              .timeout(const Duration(seconds: 15));
           if (!mounted || !_stories.any((item) => item['id']?.toString() == id)) return;
           setState(() {
             _mediaBytes[id] = Uint8List.fromList(bytes);
@@ -373,18 +357,38 @@ class _StoriesPageState extends State<StoriesPage> {
               _stories[_index]['id']?.toString() == id) {
             _startTimer();
           }
+          return;
         } catch (downloadError) {
-          if (mounted) setState(() {
-            _urlFailedIds.add(id);
-            _urlErrors[id] = 'لینک رسانه: ${urlError.toString()}\nدریافت فایل: ${downloadError.toString()}';
-          });
+          // Some deployments permit signed streaming URLs but restrict direct
+          // downloads. Fall back to the signed URL in that case.
+          if (mounted) {
+            setState(() {
+              _urlErrors[id] = 'دریافت مستقیم تصویر: $downloadError';
+            });
+          }
         }
-      } else if (mounted) {
-        setState(() {
-          _urlFailedIds.add(id);
-          _urlErrors[id] = urlError.toString();
-        });
       }
+
+      final signed = await _storiesSupabase.storage
+          .from('stories')
+          .createSignedUrl(path, 3600)
+          .timeout(const Duration(seconds: 12));
+      if (!mounted || !_stories.any((item) => item['id']?.toString() == id)) return;
+      setState(() {
+        _urls[id] = signed;
+        _urlFailedIds.remove(id);
+        _urlErrors.remove(id);
+      });
+      if (startTimerWhenReady && _stories.isNotEmpty &&
+          _stories[_index]['id']?.toString() == id) {
+        _startTimer();
+      }
+    } catch (mediaError) {
+      if (mounted) setState(() {
+        _urlFailedIds.add(id);
+        _urlErrors[id] = 'رسانهٔ استوری دریافت نشد: $mediaError';
+      });
+    }
     } finally {
       _urlLoadingIds.remove(id);
       if (mounted) setState(() {});
