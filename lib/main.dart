@@ -8130,7 +8130,23 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> forwardMessage(Map<String, dynamic> message) async {
-    final body = message['body']?.toString().trim() ?? '';
+    final rawBody = message['body']?.toString() ?? '';
+    String? sourceOriginalSenderId;
+    String? sourceOriginalSender;
+    var body = rawBody;
+    if (rawBody.startsWith('[[ARAD_FORWARD]]')) {
+      final lineEnd = rawBody.indexOf('\n');
+      if (lineEnd >= 0) {
+        final metadata = rawBody.substring(16, lineEnd);
+        final separator = metadata.indexOf('|');
+        if (separator >= 0) {
+          sourceOriginalSenderId = metadata.substring(0, separator).trim();
+          sourceOriginalSender = metadata.substring(separator + 1).trim();
+          body = rawBody.substring(lineEnd + 1);
+        }
+      }
+    }
+    body = body.trim();
     if (body.isEmpty || message['deleted_at'] != null) {
       if (mounted) showMsg(context, 'این پیام قابل فوروارد نیست.');
       return;
@@ -8215,9 +8231,11 @@ class _ChatPageState extends State<ChatPage> {
 
       // Preserve the original author and source conversation in the forwarded
       // message itself. This does not depend on a separate database column.
-      var originalAuthor = 'کاربر';
-      final originalSenderId = message['sender_id']?.toString() ?? '';
-      if (originalSenderId.isNotEmpty) {
+      var originalAuthor = sourceOriginalSender ?? '';
+      final originalSenderId = (sourceOriginalSenderId?.isNotEmpty == true)
+          ? sourceOriginalSenderId!
+          : message['sender_id']?.toString() ?? '';
+      if (originalAuthor.isEmpty && originalSenderId.isNotEmpty) {
         try {
           final originalProfile = await supabase
               .from('profiles')
@@ -8229,11 +8247,11 @@ class _ChatPageState extends State<ChatPage> {
                   'کاربر')
               .toString()
               .trim();
-          if (originalAuthor.isEmpty) originalAuthor = 'کاربر';
         } catch (_) {
-          // Attribution still includes the source chat if profile lookup is restricted.
+          // Fall back to the sender name already loaded for the original message.
         }
       }
+      if (originalAuthor.isEmpty) originalAuthor = _senderName(message);
       // Keep attribution separate from the visible message text.
       final safeAuthor = originalAuthor.replaceAll('|', ' ').replaceAll(RegExp(r'[\r\n]+'), ' ').trim();
       final attributionName = safeAuthor.isEmpty ? 'کاربر' : safeAuthor;
