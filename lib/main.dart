@@ -230,18 +230,95 @@ String? authRedirectUrl() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: supabaseUrl,
-    publishableKey: supabasePublishableKey,
-  );
+
+  // Never leave the web app as a blank page if backend initialization fails.
+  // Show a readable startup error so the failure can be diagnosed on-device.
+  try {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      publishableKey: supabasePublishableKey,
+    );
+  } catch (error, stack) {
+    debugPrint('Arad Messenger startup failed: $error');
+    debugPrintStack(stackTrace: stack);
+    runApp(StartupFailureApp(message: _friendlyError(error.toString())));
+    return;
+  }
 
   // Render the first frame as soon as the backend client is ready. Preferences
   // are local-only and must not delay startup or prevent the APK from showing
   // its UI if Android storage temporarily fails.
+  ErrorWidget.builder = (details) => Material(
+    color: const Color(0xFFF8F7FC),
+    child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'بخشی از صفحه درست بارگذاری نشد. صفحه را دوباره باز کنید.\n\n${_friendlyError(details.exceptionAsString())}',
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(color: Color(0xFF29243A), fontSize: 14),
+        ),
+      ),
+    ),
+  );
   runApp(const AradMessenger());
   unawaited(appTheme.load().catchError((_) {}));
   unawaited(aradLanguageController.load().catchError((_) {}));
   unawaited(appAccessibility.load().catchError((_) {}));
+}
+
+class StartupFailureApp extends StatelessWidget {
+  final String message;
+  const StartupFailureApp({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(0xFFF8F7FC),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_off_rounded, size: 56, color: Color(0xFF8B5CF6)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Arad Messenger',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'برنامه نتوانست راه‌اندازی شود.',
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF5B5568)),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () => main(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('تلاش دوباره'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _NetworkStatusBanner extends StatefulWidget {
