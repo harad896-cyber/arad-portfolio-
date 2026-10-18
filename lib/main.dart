@@ -4159,7 +4159,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(width: 6),
-          actionButton(icon: Icons.search_rounded, tooltip: 'جستجو', onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
+          actionButton(icon: Icons.search_rounded, tooltip: 'جستجوی سراسری پیام‌ها و کاربران', onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
           const SizedBox(width: 6),
           actionButton(icon: Icons.add_rounded, tooltip: 'گفتگوی جدید', onTap: createDirect),
         ]),
@@ -4175,7 +4175,7 @@ class _HomePageState extends State<HomePage> {
             textDirection: TextDirection.rtl,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'جستجوی نام، کاربر یا گفتگو',
+              hintText: 'جستجو در گفتگوهای فعلی',
               prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
               suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(tooltip: 'پاک کردن', onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); }, icon: const Icon(Icons.close_rounded, size: 19)),
               isDense: true,
