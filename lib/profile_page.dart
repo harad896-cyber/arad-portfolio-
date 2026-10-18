@@ -126,17 +126,33 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             Positioned(
               bottom: MediaQuery.of(ctx).padding.bottom + 18,
-              left: 20,
-              right: 20,
-              child: Center(
-                child: FilledButton.tonalIcon(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    await changeAvatar();
-                  },
-                  icon: const Icon(Icons.edit_rounded),
-                  label: const Text('تغییر عکس پروفایل'),
-                ),
+              left: 16,
+              right: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await changeAvatar();
+                      },
+                      icon: const Icon(Icons.edit_rounded),
+                      label: const Text('تغییر عکس'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await removeAvatar();
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      label: const Text('حذف عکس'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -158,6 +174,27 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) setState(() { profile['avatar_url'] = url; avatarImage = NetworkImage(url); });
     } catch (e) {
       if (mounted) showMsg(context, 'تغییر عکس ناموفق بود: $e');
+    }
+  }
+
+  Future<void> removeAvatar() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+    try {
+      await supabase.from('profiles').update({'avatar_url': null}).eq('id', user.id);
+      if (mounted) {
+        setState(() {
+          profile.remove('avatar_url');
+          avatarImage = null;
+        });
+      }
+      // The profile is cleared even if storage cleanup is blocked by bucket policy.
+      try {
+        await supabase.storage.from('avatars').remove(['${user.id}/avatar.jpg']);
+      } catch (_) {}
+      if (mounted) showMsg(context, 'عکس پروفایل حذف شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'حذف عکس ناموفق بود: $e');
     }
   }
 
