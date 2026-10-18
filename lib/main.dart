@@ -736,26 +736,6 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
   }
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text('ویرایش')),PopupMenuItem(value:'delete',child:Text('حذف'))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:const Text('پوشه جدید')));
 }
-class DataAndPermissionsPage extends StatefulWidget {
-  const DataAndPermissionsPage({super.key});
-  @override State<DataAndPermissionsPage> createState()=>_DataAndPermissionsPageState();
-}
-class _DataAndPermissionsPageState extends State<DataAndPermissionsPage> {
-  bool lowData=false,wifiOnly=false,highContrast=false; double fontScale=1;
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('داده و دسترسی‌پذیری')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:SwitchListTile(title:const Text('حالت کم‌مصرف'),value:lowData,onChanged:(v)=>setState(()=>lowData=v))),
-    Card(child:SwitchListTile(title:const Text('دانلود خودکار فقط با وای‌فای'),value:wifiOnly,onChanged:(v)=>setState(()=>wifiOnly=v))),
-    Card(child:SwitchListTile(title:const Text('کنتراست بالا'),value:highContrast,onChanged:(v)=>setState(()=>highContrast=v))),
-    Card(child:ListTile(title:const Text('اندازه فونت'),subtitle:Text('${(fontScale*100).round()}%'),trailing:SizedBox(width:170,child:Slider(value:fontScale,min:.8,max:1.4,onChanged:(v)=>setState(()=>fontScale=v))))),
-    const ListTile(title:Text('اعلان‌ها و لرزش'),subtitle:Text('پیام، تماس و گروه')),
-    const ListTile(title:Text('دستگاه‌های متصل'),subtitle:Text('مدیریت ورود هم‌زمان')),
-  ]));
-}
-class PermissionInfoPage extends StatelessWidget {
-  final String title,reason; final IconData icon;
-  const PermissionInfoPage({super.key,required this.title,required this.reason,required this.icon});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(title)),body:Padding(padding:const EdgeInsets.all(20),child:Card(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:52,color:Theme.of(context).colorScheme.primary),const SizedBox(height:16),Text(reason,textAlign:TextAlign.center),const SizedBox(height:20),FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('ادامه'))])))));
-}
 class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
   const PremiumEmptyState({super.key,required this.icon,required this.title,required this.subtitle});
@@ -1896,29 +1876,6 @@ class _GlobalSearchPageState extends State<GlobalSearchPage>{
 class _SearchSection extends StatelessWidget {
   final String title; const _SearchSection({required this.title});
   @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17))),const ListTile(leading:Icon(Icons.search_rounded),title:Text('نتیجه جستجو'))]);
-}
-class BackupPage extends StatefulWidget {
-  const BackupPage({super.key});
-  @override State<BackupPage> createState()=>_BackupPageState();
-}
-class _BackupPageState extends State<BackupPage>{
-  bool auto=true;
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('پشتیبان‌گیری و بازیابی')),
-    body:ListView(padding:const EdgeInsets.all(16),children:[
-      Card(child:SwitchListTile(
-        title:const Text('پشتیبان‌گیری خودکار'),
-        subtitle:const Text('تنظیم فعلی فقط روی همین دستگاه ذخیره می‌شود.'),
-        value:auto,
-        onChanged:(v)=>setState(()=>auto=v),
-      )),
-      const AppEmptyState(
-        icon:Icons.cloud_off_rounded,
-        title:'پشتیبان‌گیری ابری هنوز فعال نشده است',
-        subtitle:'تا زمانی که سرویس پشتیبان‌گیری واقعی متصل نشود، دکمه یا عملیات ساخت نسخهٔ جعلی نمایش داده نمی‌شود.',
-      ),
-    ]),
-  );
 }
 class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
@@ -5524,14 +5481,6 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
       },
     ),
   );
-}
-
-class WalletPage extends StatelessWidget {
-  const WalletPage({super.key});
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('کیف پول')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    const Card(child:ListTile(title:Text('موجودی'),subtitle:Text('۰'),leading:Icon(Icons.account_balance_wallet_rounded))),
-    const Card(child:ListTile(title:Text('تاریخچه تراکنش‌ها'),leading:Icon(Icons.receipt_long_rounded))),
-  ]));
 }
 
 class DataSettingsPage extends StatefulWidget {
