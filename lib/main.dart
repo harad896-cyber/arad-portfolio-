@@ -8960,6 +8960,13 @@ class _ChatPageState extends State<ChatPage> {
     }
     _reactionRefreshTimers.clear();
     _keyboardScrollTimer?.cancel();
+    // Stop voice UI timers/subscriptions before disposing the recorder. Without
+    // this, leaving a chat while recording can leave periodic callbacks alive.
+    _voiceTimer?.cancel();
+    _voiceTimer = null;
+    _voiceStartedAt = null;
+    unawaited(_voiceAmplitudeSub?.cancel());
+    _voiceAmplitudeSub = null;
     if (channel != null) supabase.removeChannel(channel!);
     _voiceRecorder.dispose();
     _voicePlayer.dispose();
