@@ -4540,6 +4540,8 @@ class PublicUserProfilePage extends StatefulWidget {
 class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
   bool busy = false;
   bool isContact = false;
+  bool isFriend = false;
+  bool friendRequestPending = false;
   String localName = '';
   Map<String, dynamic> get profile => widget.profile;
   String get displayName => localName.trim().isNotEmpty
@@ -4562,7 +4564,22 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
       final alias = prefs.getString('contact_alias_${uid}_${targetId}') ?? '';
       final row = await supabase.from('contacts').select('id')
           .eq('user_id', uid).eq('contact_id', targetId).maybeSingle();
-      if (mounted) setState(() { localName = alias; isContact = row != null; });
+      dynamic sentRequest;
+      dynamic receivedRequest;
+      try {
+        sentRequest = await supabase.from('friend_requests').select('id,status')
+            .eq('requester_id', uid).eq('recipient_id', targetId).maybeSingle();
+        receivedRequest = await supabase.from('friend_requests').select('id,status')
+            .eq('requester_id', targetId).eq('recipient_id', uid).maybeSingle();
+      } catch (_) {}
+      final accepted = sentRequest?['status'] == 'accepted' || receivedRequest?['status'] == 'accepted';
+      final pending = sentRequest?['status'] == 'pending' || receivedRequest?['status'] == 'pending';
+      if (mounted) setState(() {
+        localName = alias;
+        isContact = row != null;
+        isFriend = accepted;
+        friendRequestPending = !accepted && pending;
+      });
     } catch (_) {}
   }
 
@@ -4642,13 +4659,22 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
       await supabase.from('friend_requests').insert({
         'requester_id': uid, 'recipient_id': targetId, 'status': 'pending',
       });
-      if (mounted) showMsg(context, 'درخواست دوستی ارسال شد.');
+      if (mounted) {
+        setState(() => friendRequestPending = true);
+        showMsg(context, 'درخواست دوستی ارسال شد؛ پس از پذیرش، گفتگو و تماس فعال می‌شود.');
+      }
     } catch (e) {
       if (mounted) showMsg(context, 'ارسال درخواست دوستی ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
 
   Future<void> _openChat() async {
+    if (!isFriend) {
+      showMsg(context, friendRequestPending
+          ? 'درخواست دوستی هنوز پذیرفته نشده است.'
+          : 'برای پیام دادن، ابتدا درخواست دوستی ارسال کنید.');
+      return;
+    }
     if (busy) return;
     setState(() => busy = true);
     try {
@@ -4664,6 +4690,12 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
   }
 
   Future<void> _startCall({required bool video}) async {
+    if (!isFriend) {
+      showMsg(context, friendRequestPending
+          ? 'درخواست دوستی هنوز پذیرفته نشده است.'
+          : 'برای تماس، ابتدا درخواست دوستی ارسال کنید.');
+      return;
+    }
     if (busy) return;
     setState(() => busy = true);
     try {
@@ -4752,16 +4784,24 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
               ]),
               if (username.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('@$username', style: TextStyle(color: s.primary, fontSize: 14, fontWeight: FontWeight.w800))),
               const SizedBox(height: 4),
-              Text(isSelf ? 'پروفایل شما' : (isContact ? 'در فهرست مخاطبین شما' : 'پروفایل کاربر'), style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
+              Text(isSelf ? 'پروفایل شما' : (isFriend ? 'دوست شما' : (isContact ? 'در فهرست مخاطبین شما' : 'پروفایل کاربر')), style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
             ]),
           ),
           const SizedBox(height: 14),
-          Row(children: [
-            Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام', busy ? null : _openChat)),
-            const SizedBox(width: 8),
-            Expanded(child: _profileAction(context, Icons.call_rounded, 'تماس صوتی', busy ? null : () => _startCall(video: false))),
-            const SizedBox(width: 8),
-            Expanded(child: _profileAction(context, Icons.videocam_rounded, 'تماس تصویری', busy ? null : () => _startCall(video: true))),
+          if (!isSelf) Row(children: [
+            if (isFriend) ...[
+              Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام', busy ? null : _openChat)),
+              const SizedBox(width: 8),
+              Expanded(child: _profileAction(context, Icons.call_rounded, 'تماس صوتی', busy ? null : () => _startCall(video: false))),
+              const SizedBox(width: 8),
+              Expanded(child: _profileAction(context, Icons.videocam_rounded, 'تماس تصویری', busy ? null : () => _startCall(video: true))),
+            ] else
+              Expanded(child: _profileAction(
+                context,
+                Icons.person_add_alt_1_rounded,
+                friendRequestPending ? 'در انتظار پاسخ' : 'درخواست دوستی',
+                busy || friendRequestPending ? null : () => _sendFriendRequest(),
+              )),
           ]),
           const SizedBox(height: 18),
           Card(child: Column(children: [
