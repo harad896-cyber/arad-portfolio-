@@ -18,6 +18,9 @@ class StoriesTray extends StatefulWidget {
 class _StoriesTrayState extends State<StoriesTray> {
   List<Map<String, dynamic>> _stories = [];
   RealtimeChannel? _channel;
+  bool _loading = false;
+  bool _loadFailed = false;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -29,6 +32,8 @@ class _StoriesTrayState extends State<StoriesTray> {
   }
 
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
+    if (mounted) setState(() { _loading = true; _loadFailed = false; });
     try {
       final rows = await _storiesSupabase.from('stories').select('id,user_id,media_path,media_type,caption,text,background,audience,created_at,expires_at')
         .gt('expires_at', DateTime.now().toUtc().toIso8601String()).inFilter('media_type', ['image','video','text']).order('created_at', ascending: false).limit(40).timeout(const Duration(seconds: 10));
@@ -40,8 +45,13 @@ class _StoriesTrayState extends State<StoriesTray> {
         for (final row in List<Map<String, dynamic>>.from(p)) profiles[row['id'].toString()] = row;
       }
       for (final row in list) row['profile'] = profiles[row['user_id'].toString()] ?? {};
-      if (mounted) setState(() => _stories = list);
-    } catch (_) {}
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() { _stories = list; _loading = false; _loadFailed = false; });
+    } catch (_) {
+      if (mounted && generation == _loadGeneration) {
+        setState(() { _loading = false; _loadFailed = true; });
+      }
+    }
   }
 
   @override
@@ -72,7 +82,10 @@ class _StoriesTrayState extends State<StoriesTray> {
             child: people.isEmpty
                 ? Align(
                     alignment: Alignment.centerRight,
-                    child: Text('استوری جدیدی نیست', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                    child: Text(
+                      _loading ? 'در حال بارگذاری استوری‌ها…' : _loadFailed ? 'بارگذاری استوری ناموفق بود' : 'استوری جدیدی نیست',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                    ),
                   )
                 : ListView.separated(
                     scrollDirection: Axis.horizontal,
@@ -93,7 +106,14 @@ class _StoriesTrayState extends State<StoriesTray> {
                     },
                   ),
           ),
-          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'تازه‌سازی استوری‌ها',
+            onPressed: _loading ? null : _load,
+            icon: _loading
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : Icon(_loadFailed ? Icons.refresh_rounded : Icons.sync_rounded),
+          ),
+          const SizedBox(width: 2),
         ],
       ),
     );
@@ -122,7 +142,11 @@ class _StoryTile extends StatelessWidget {
     return GestureDetector(onTap: onTap, child: SizedBox(width: 64, child: Column(children: [
       Container(width: 46, height: 46, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
       child: Stack(clipBehavior: Clip.none, children: [
-        CircleAvatar(backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null),
+        CircleAvatar(
+          backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null,
+          onBackgroundImageError: avatar != null && avatar.isNotEmpty ? (_, __) {} : null,
+          child: avatar == null || avatar.isEmpty ? const Icon(Icons.person) : null,
+        ),
         Positioned(left: -2, bottom: -2, child: Container(
           constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
