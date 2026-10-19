@@ -62,10 +62,14 @@ jobs:
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test --no-pub
       - name: Build release APK with the pubspec version
+        env:
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
         run: |
           APP_VERSION="$(awk '/^version:/ {print $2; exit}' pubspec.yaml | tr -d "'\"")"
           test -n "$APP_VERSION"
-          flutter build apk --release --no-pub --dart-define="APP_VERSION=$APP_VERSION"
+          flutter build apk --release --no-pub \
+            --dart-define="APP_VERSION=$APP_VERSION" \
+            --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID"
       - name: Verify release APK
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
