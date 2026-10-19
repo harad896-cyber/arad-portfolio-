@@ -6122,14 +6122,54 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
       };
     }
     final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
-    final messagesFuture = supabase.from('messages').select('id,conversation_id,body,message_type,created_at,sender_id').inFilter('conversation_id', ids.toList()).ilike('body', '%$q%').order('created_at', ascending: false).limit(50).then((value) => value);
+    final messagesFuture = supabase.from('messages')
+        .select('id,conversation_id,body,message_type,created_at,sender_id')
+        .inFilter('conversation_id', ids.toList())
+        .isFilter('deleted_at', null)
+        .ilike('body', '%$q%')
+        .order('created_at', ascending: false)
+        .limit(50)
+        .then((value) => value);
     final results = await Future.wait<dynamic>([usersFuture, chatsFuture, messagesFuture, publicFuture]);
     final publicChats = List<Map<String,dynamic>>.from(results[3] as List)
         .where((c) => !ids.contains(c['id'].toString())).toList();
+
+    // Search must follow the same deletion rules as the chat timeline. Without
+    // this filter, messages removed "for me" could still appear in global search.
+    var searchMessages = List<Map<String,dynamic>>.from(results[2] as List);
+    final searchMessageIds = searchMessages.map((m) => '${m['id']}').toList();
+    if (searchMessageIds.isNotEmpty) {
+      final hiddenForUser = <String>{};
+      try {
+        final deletedRows = await supabase
+            .from('message_user_deletions')
+            .select('message_id')
+            .eq('user_id', uid)
+            .inFilter('message_id', searchMessageIds)
+            .timeout(const Duration(seconds: 4));
+        hiddenForUser.addAll(List<Map<String,dynamic>>.from(deletedRows)
+            .map((row) => '${row['message_id']}'));
+      } catch (_) {
+        // Keep search usable if deletion metadata is temporarily unavailable;
+        // server-deleted messages are already excluded by deleted_at above.
+      }
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        for (final message in searchMessages) {
+          final conversationId = message['conversation_id']?.toString() ?? '';
+          final hiddenIds = prefs.getStringList('arad_hidden_messages_v1_${uid}_${conversationId}') ?? const <String>[];
+          if (hiddenIds.contains('${message['id']}')) {
+            hiddenForUser.add('${message['id']}');
+          }
+        }
+      } catch (_) {}
+      searchMessages.removeWhere((message) => hiddenForUser.contains('${message['id']}'));
+    }
+
     return {
       'users': List<Map<String,dynamic>>.from(results[0] as List),
       'chats': List<Map<String,dynamic>>.from(results[1] as List),
-      'messages': List<Map<String,dynamic>>.from(results[2] as List),
+      'messages': searchMessages,
       'public_chats': publicChats,
     };
   }
