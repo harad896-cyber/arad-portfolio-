@@ -218,6 +218,11 @@ const supabasePublishableKey = 'sb_publishable_-wIHh9FKu-lmXSMHRWBbFw_t9u5KutA';
 const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '');
 const ownerEmail = String.fromEnvironment('OWNER_EMAIL', defaultValue: 'harad896@gmail.com');
 final googleSignIn = GoogleSignIn.instance;
+Future<void>? _googleSignInInitialization;
+Future<void> _ensureGoogleSignInInitialized() =>
+    _googleSignInInitialization ??= googleSignIn.initialize(
+      serverClientId: googleServerClientId.isEmpty ? null : googleServerClientId,
+    );
 
 final supabase = Supabase.instance.client;
 
@@ -2755,6 +2760,50 @@ class _LoginPageState extends State<LoginPage>{
       }finally{if(mounted)setState(()=>busy=false);}
     }
   }
+  Future<void> signInWithGoogle() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      if (kIsWeb) {
+        // Web OAuth returns to this site's origin after Google verifies the user.
+        await supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: authRedirectUrl(),
+        );
+        return;
+      }
+
+      // Native Android/iOS Google sign-in uses an ID token, then Supabase
+      // creates the app session. No email OTP is needed for this flow.
+      await _ensureGoogleSignInInitialized();
+      final account = await googleSignIn.authenticate();
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw const AuthException(
+          'Google ID token is missing. Configure the Web OAuth client ID in the build and Supabase Google provider.',
+        );
+      }
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+      await rememberCurrentSession();
+      await appTheme.loadForUser();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ProfileGate()),
+          (route) => false,
+        );
+      }
+    } on AuthException catch (e) {
+      if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: ${e.message}');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ورود با گوگل ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
   @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
     Container(
@@ -2799,6 +2848,30 @@ class _LoginPageState extends State<LoginPage>{
       if(!signup)...[TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:const Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),],
       if(!signup)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:busy?null:forgotPassword,child:const Text('رمز را فراموش کرده‌ام'))),
       const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود به حساب'))),
+      if (!signup) ...[
+        const SizedBox(height: 12),
+        Row(children: const [
+          Expanded(child: Divider()),
+          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('یا')),
+          Expanded(child: Divider()),
+        ]),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 50,
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: busy ? null : signInWithGoogle,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('G', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF4285F4))),
+                const SizedBox(width: 10),
+                const Text('ورود با گوگل'),
+              ],
+            ),
+          ),
+        ),
+      ],
       const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
     ])))
   ]))))));}
