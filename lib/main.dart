@@ -2773,19 +2773,35 @@ class _LoginPageState extends State<LoginPage>{
         return;
       }
 
-      // Native Android/iOS Google sign-in uses an ID token, then Supabase
-      // creates the app session. No email OTP is needed for this flow.
+      // Native Android/iOS Google sign-in needs the Web OAuth client ID.
+      // The APK workflow passes it through GOOGLE_SERVER_CLIENT_ID.
+      if (googleServerClientId.isEmpty) {
+        throw const AuthException(
+          'تنظیم ورود گوگل کامل نیست: شناسه Web Client در ساخت APK تنظیم نشده است.',
+        );
+      }
       await _ensureGoogleSignInInitialized();
       final account = await googleSignIn.authenticate();
       final idToken = account.authentication.idToken;
       if (idToken == null || idToken.isEmpty) {
         throw const AuthException(
-          'Google ID token is missing. Configure the Web OAuth client ID in the build and Supabase Google provider.',
+          'از گوگل ID token دریافت نشد. شناسه Web OAuth و تنظیمات OAuth اندروید را بررسی کنید.',
+        );
+      }
+      // Supabase Google native sign-in requires both ID and access tokens.
+      final authorization = await account.authorizationClient.authorizationForScopes(
+        const <String>[],
+      );
+      final accessToken = authorization?.accessToken;
+      if (accessToken == null || accessToken.isEmpty) {
+        throw const AuthException(
+          'از گوگل access token دریافت نشد. تنظیمات OAuth و مجوزهای حساب را بررسی کنید.',
         );
       }
       await supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
+        accessToken: accessToken,
       );
       await rememberCurrentSession();
       await appTheme.loadForUser();
