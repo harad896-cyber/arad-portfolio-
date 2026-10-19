@@ -230,7 +230,7 @@ String? authRedirectUrl() {
   if (!kIsWeb) return null;
   final uri = Uri.base;
   if (uri.scheme != 'http' && uri.scheme != 'https') return null;
-  return uri.origin;
+  return '${uri.origin}${uri.path}';
 }
 
 Future<void> main() async {
