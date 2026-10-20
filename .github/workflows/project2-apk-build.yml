@@ -66,10 +66,11 @@ jobs:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
         run: |
           APP_VERSION="$(awk '/^version:/ {print $2; exit}' pubspec.yaml | tr -d "'\"")"
+          GOOGLE_CLIENT_ID="${GOOGLE_SERVER_CLIENT_ID:-691342224287-db6amgqvjf5c0j53oel0s2mnqa9sh733.apps.googleusercontent.com}"
           test -n "$APP_VERSION"
           flutter build apk --release --no-pub \
             --dart-define="APP_VERSION=$APP_VERSION" \
-            --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID"
+            --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_CLIENT_ID"
       - name: Verify release APK
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
