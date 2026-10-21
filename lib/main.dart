@@ -215,7 +215,7 @@ class AppStrings {
 const supabaseUrl = 'https://bkbdcqequyvubjmrbpqo.supabase.co';
 const supabasePublishableKey = 'sb_publishable_-wIHh9FKu-lmXSMHRWBbFw_t9u5KutA';
 // Set this to the Google OAuth Web client ID from Google Cloud Console.
-const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '691342224287-db6amgqvjf5c0j53oel0s2mnqa9sh733.apps.googleusercontent.com');
+const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '691342224287-dmh8p55v2oenfjqffg1upfoho4g5klml.apps.googleusercontent.com');
 const ownerEmail = String.fromEnvironment('OWNER_EMAIL', defaultValue: 'harad896@gmail.com');
 final googleSignIn = GoogleSignIn.instance;
 Future<void>? _googleSignInInitialization;
