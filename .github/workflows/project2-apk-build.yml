@@ -61,6 +61,8 @@ jobs:
           PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test --no-pub
+      - name: Confirm Google Web client ID configuration
+        run: echo "Google Web client ID configured for this APK build"
       - name: Build release APK with the pubspec version
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
