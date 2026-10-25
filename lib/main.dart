@@ -2670,32 +2670,109 @@ class AppBannedPage extends StatelessWidget {
   }
 }
 
-class ProfileGate extends StatelessWidget {
+class ProfileGate extends StatefulWidget {
   const ProfileGate({super.key});
 
-  Future<bool> hasProfile() async {
+  @override
+  State<ProfileGate> createState() => _ProfileGateState();
+}
+
+class _ProfileGateState extends State<ProfileGate> {
+  late Future<bool> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _hasProfile();
+  }
+
+  Future<bool> _hasProfile() async {
     final user = supabase.auth.currentUser;
-    if (user == null) return false;
+    if (user == null) {
+      throw StateError('نشست ورود پیدا نشد. دوباره وارد حساب شوید.');
+    }
     final meta = user.appMetadata;
     final role = meta['role']?.toString().toLowerCase();
     final privileged = role == 'owner' || role == 'admin' ||
         meta['owner'] == true ||
         meta['owner']?.toString().toLowerCase() == 'true';
     if (user.emailConfirmedAt == null && !privileged) return false;
-    final uid = user.id;
-    final row = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle();
+    final row = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+        .timeout(const Duration(seconds: 12));
     return row != null;
+  }
+
+  void _retry() {
+    setState(() => _profileFuture = _hasProfile());
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: hasProfile(),
+      future: _profileFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 14),
+                  Text('در حال بررسی حساب…'),
+                ],
+              ),
+            ),
+          );
         }
-        return snapshot.data! ? const DeviceSessionGate(child: AppLockGate(child: HomePage())) : const ProfileSetupPage();
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.cloud_off_rounded, size: 46),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'بررسی حساب انجام نشد',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'اتصال یا دسترسی به اطلاعات پروفایل مشکل دارد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _retry,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('تلاش دوباره'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await supabase.auth.signOut();
+                          if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+                        },
+                        child: const Text('بازگشت به ورود'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        return snapshot.data == true
+            ? const DeviceSessionGate(child: AppLockGate(child: HomePage()))
+            : const ProfileSetupPage();
       },
     );
   }
