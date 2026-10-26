@@ -54,10 +54,20 @@ bool _isNetworkFailure(Object error) {
 }
 
 String _friendlyError(String message) {
-  final raw = message.replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+  final raw = message.replaceFirst(RegExp(r'^Exception:\\s*'), '').trim();
   final lower = raw.toLowerCase();
-  if (lower.contains('socketexception') || lower.contains('failed host lookup') || lower.contains('network is unreachable') || lower.contains('connection refused') || lower.contains('clientexception')) {
-    return 'اتصال اینترنت برقرار نیست. اتصال را بررسی کنید و دوباره تلاش کنید.';
+  if (lower.contains('socketexception') ||
+      lower.contains('failed host lookup') ||
+      lower.contains('network is unreachable') ||
+      lower.contains('connection refused') ||
+      lower.contains('clientexception') ||
+      lower.contains('failed to fetch') ||
+      lower.contains('network request failed') ||
+      lower.contains('xmlhttprequest error') ||
+      lower.contains('fetch failed') ||
+      lower.contains('timed out') ||
+      lower.contains('timeout')) {
+    return 'ارتباط با سرور برقرار نشد یا پاسخ سرور دیر رسید. چند لحظه بعد دوباره تلاش کنید.';
   }
   if (lower.contains('413') || lower.contains('payload too large') || lower.contains('file too large')) return 'این فایل خیلی بزرگ است.';
   if (lower.contains('permission denied') || lower.contains('not authorized') || lower.contains('unauthorized')) return 'دسترسی لازم برای انجام این کار را ندارید.';
@@ -2629,9 +2639,13 @@ class AppBanGate extends StatelessWidget {
     final user = supabase.auth.currentUser;
     if (user == null) return false;
     try {
-      final result = await supabase.rpc('is_current_user_app_banned');
+      final result = await supabase
+          .rpc('is_current_user_app_banned')
+          .timeout(const Duration(seconds: 5));
       return result == true;
-    } catch (_) {
+    } catch (error) {
+      // A ban-status RPC outage must not leave the signed-in user on a spinner.
+      debugPrint('Ban check unavailable; continuing with normal profile gate: $error');
       return false;
     }
   }
@@ -2731,13 +2745,21 @@ class _ProfileGateState extends State<ProfileGate> {
         meta['owner'] == true ||
         meta['owner']?.toString().toLowerCase() == 'true';
     if (user.emailConfirmedAt == null && !privileged) return false;
-    final row = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle()
-        .timeout(const Duration(seconds: 12));
-    return row != null;
+    try {
+      final row = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 8));
+      return row != null;
+    } catch (error) {
+      // The account has already authenticated. A temporary profile-table/RLS
+      // or network failure must not trap the user forever at "checking account".
+      // Continue to the app and let profile-dependent screens retry their own data.
+      debugPrint('Profile existence check failed after authentication: $error');
+      return true;
+    }
   }
 
   void _retry() {
@@ -2899,9 +2921,9 @@ class _LoginPageState extends State<LoginPage>{
         // Load user preferences in the background; they are non-critical to login.
         appTheme.loadForUser().timeout(const Duration(seconds: 5)).catchError((_) {});
       }on AuthException catch(e){
-        if(mounted)showMsg(context,'ورود ناموفق بود: ${e.message}');
+        if(mounted)showMsg(context,'ورود انجام نشد: ${e.message}');
       }catch(e){
-        if(mounted)showMsg(context,'ورود ناموفق بود: ${_friendlyError(e.toString())}');
+        if(mounted)showMsg(context,'ارتباط با سرور یا ورود مشکل داشت: ${_friendlyError(e.toString())}');
       }finally{if(mounted)setState(()=>busy=false);}
     }
   }
