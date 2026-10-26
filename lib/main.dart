@@ -4679,7 +4679,14 @@ class _HomePageState extends State<HomePage> {
                   ? p['_local_name']
                   : (p['display_name'] ?? p['username'] ?? 'کاربر')).toString();
               return Card(
+                elevation: 0,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                   leading: GestureDetector(
                     onTap: () => _openAvatarPreview(context, p),
                     child: avatar(p),
@@ -9209,8 +9216,8 @@ class _ChatPageState extends State<ChatPage> {
             Flexible(
               child: Container(
                 constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * (isGroup ? .79 : .82)),
-                margin: const EdgeInsets.only(bottom: 7),
-                padding: const EdgeInsets.fromLTRB(14, 10, 12, 8),
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.fromLTRB(15, 11, 13, 9),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -9240,9 +9247,9 @@ class _ChatPageState extends State<ChatPage> {
                   boxShadow: [
                     BoxShadow(
                       color: (mine ? myBubble : Colors.black).withValues(alpha: dark ? .34 : .13),
-                      blurRadius: 10,
-                      spreadRadius: -4,
-                      offset: const Offset(0, 3),
+                      blurRadius: 14,
+                      spreadRadius: -5,
+                      offset: const Offset(0, 4),
                     ),
                     BoxShadow(
                       color: Colors.white.withValues(alpha: dark ? .025 : .70),
