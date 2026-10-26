@@ -189,9 +189,9 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
           if (appTheme.backgroundImageBase64 != null)
             TextButton.icon(onPressed: () { HapticFeedback.selectionClick(); _removeGalleryImage(); }, icon: const Icon(Icons.delete_outline), label: const Text('حذف عکس پس‌زمینه')),
           const SizedBox(height: 22),
-          const Text('قالب‌های آماده', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          const Text('قالب‌های آمادهٔ گفتگو', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: -.2)),
           const SizedBox(height: 6),
-          Text('با یک لمس، ظاهر گفتگوها را یکدست کن.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text('قالب دلخواه را انتخاب کن؛ رنگ‌ها و ظاهر پیام‌ها هماهنگ می‌شوند.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.45)),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 2,
@@ -199,7 +199,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            childAspectRatio: 1.75,
+            childAspectRatio: 1.62,
             children: const [
               _ChatPreset(label: 'بنفش فضایی', colors: [Color(0xFF302047), Color(0xFF11131A)], seed: 0xFF8B5CF6),
               _ChatPreset(label: 'اقیانوس آبی', colors: [Color(0xFF10202D), Color(0xFF0B1220)], seed: 0xFF36B8FF),
