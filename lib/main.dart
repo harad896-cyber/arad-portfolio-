@@ -9173,7 +9173,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
     } else {
-      content = Text(body, style: TextStyle(fontSize: 15, height: 1.34, color: textColor));
+      content = Text(body, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 14.8, height: 1.48, letterSpacing: .05, color: textColor));
     }
 
     return Align(
@@ -9210,7 +9210,7 @@ class _ChatPageState extends State<ChatPage> {
               child: Container(
                 constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * (isGroup ? .79 : .82)),
                 margin: const EdgeInsets.only(bottom: 7),
-                padding: const EdgeInsets.fromLTRB(13, 9, 11, 7),
+                padding: const EdgeInsets.fromLTRB(14, 10, 12, 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -9226,10 +9226,10 @@ class _ChatPageState extends State<ChatPage> {
                           ],
                   ),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(mine ? 20 : 6),
-                    bottomRight: Radius.circular(mine ? 6 : 20),
+                    topLeft: const Radius.circular(22),
+                    topRight: const Radius.circular(22),
+                    bottomLeft: Radius.circular(mine ? 22 : 7),
+                    bottomRight: Radius.circular(mine ? 7 : 22),
                   ),
                   border: Border.all(
                     color: mine
