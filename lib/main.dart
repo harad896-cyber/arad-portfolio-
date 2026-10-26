@@ -2632,10 +2632,25 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-class AppBanGate extends StatelessWidget {
+class AppBanGate extends StatefulWidget {
   const AppBanGate({super.key});
 
-  Future<bool> isBanned() async {
+  @override
+  State<AppBanGate> createState() => _AppBanGateState();
+}
+
+class _AppBanGateState extends State<AppBanGate> {
+  late Future<bool> _banCheck;
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep one Future for this gate. Creating isBanned() inside build caused
+    // the request to restart on every rebuild and could leave the spinner up.
+    _banCheck = _isBanned();
+  }
+
+  Future<bool> _isBanned() async {
     final user = supabase.auth.currentUser;
     if (user == null) return false;
     try {
@@ -2644,7 +2659,6 @@ class AppBanGate extends StatelessWidget {
           .timeout(const Duration(seconds: 5));
       return result == true;
     } catch (error) {
-      // A ban-status RPC outage must not leave the signed-in user on a spinner.
       debugPrint('Ban check unavailable; continuing with normal profile gate: $error');
       return false;
     }
@@ -2653,10 +2667,21 @@ class AppBanGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: isBanned(),
+      future: _banCheck,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 12),
+                  Text('در حال بارگذاری حساب…'),
+                ],
+              ),
+            ),
+          );
         }
         if (snapshot.data == true) return const AppBannedPage();
         return const ProfileGate();
