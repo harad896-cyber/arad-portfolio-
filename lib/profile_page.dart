@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main.dart';
@@ -41,18 +43,47 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> loadProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => loading = false);
+      return;
+    }
+    final cacheKey = 'arad_profile_cache_${user.id}';
+    // Paint the last known profile immediately; refresh from Supabase in the background.
     try {
-      final user = supabase.auth.currentUser;
-      if (user == null) return;
-      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at').eq('id', user.id).maybeSingle();
-      profile = row == null ? {} : Map<String, dynamic>.from(row);
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString(cacheKey);
+      if (cached != null && cached.isNotEmpty) {
+        final decoded = jsonDecode(cached);
+        if (decoded is Map) {
+          profile = Map<String, dynamic>.from(decoded);
+          name.text = '${profile['display_name'] ?? user.userMetadata?['full_name'] ?? ''}';
+          username.text = '${profile['username'] ?? ''}';
+          bio.text = '${profile['bio'] ?? ''}';
+          final cachedUrl = '${profile['avatar_url'] ?? ''}'.trim();
+          if (cachedUrl.isNotEmpty) avatarImage = NetworkImage(cachedUrl);
+          if (mounted) setState(() => loading = false);
+        }
+      }
+    } catch (_) {}
+    try {
+      final row = await supabase.from('profiles')
+          .select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at')
+          .eq('id', user.id).maybeSingle()
+          .timeout(const Duration(seconds: 6));
+      final fresh = row == null ? <String, dynamic>{} : Map<String, dynamic>.from(row);
+      profile = fresh;
       name.text = '${profile['display_name'] ?? user.userMetadata?['full_name'] ?? ''}';
       username.text = '${profile['username'] ?? ''}';
       bio.text = '${profile['bio'] ?? ''}';
       final url = '${profile['avatar_url'] ?? ''}'.trim();
-      if (url.isNotEmpty) avatarImage = NetworkImage(url);
+      avatarImage = url.isNotEmpty ? NetworkImage(url) : null;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(cacheKey, jsonEncode(profile));
+      } catch (_) {}
     } catch (e) {
-      if (mounted) showMsg(context, 'پروفایل بارگذاری نشد: $e');
+      if (mounted && loading) showMsg(context, 'اتصال پروفایل کند است؛ اطلاعات ذخیره‌شده نمایش داده می‌شود.');
     } finally {
       if (mounted) setState(() => loading = false);
     }
