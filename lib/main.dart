@@ -1291,6 +1291,12 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
     (name: 'شن و ماسه', color: 0xFFF1E8D8, accent: 0xFFB77936),
     (name: 'سبز نعنایی', color: 0xFFE4F7EF, accent: 0xFF159D78),
     (name: 'مرجانی', color: 0xFF3A2024, accent: 0xFFFF7F6A),
+    (name: 'شفق قطبی', color: 0xFF10252D, accent: 0xFF6EE7B7),
+    (name: 'آبی سلطنتی', color: 0xFF101D43, accent: 0xFF60A5FA),
+    (name: 'طلایی لوکس', color: 0xFF292319, accent: 0xFFE8BD67),
+    (name: 'گرافیتی', color: 0xFF20242D, accent: 0xFFA3B3C7),
+    (name: 'بنفش نئونی', color: 0xFF211536, accent: 0xFFC084FC),
+    (name: 'جنگل مه‌آلود', color: 0xFF172B28, accent: 0xFF86B99B),
   ];
 
   Future<void> _pickWallpaper() async {
@@ -1513,9 +1519,19 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                 },
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: Color(p.color),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(p.color), Color.lerp(Color(p.color), Color(p.accent), .22)!],
+                    ),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor, width: selected ? 3 : 1),
+                    border: Border.all(
+                      color: selected ? Color(p.accent) : Colors.white.withValues(alpha: .14),
+                      width: selected ? 2.5 : 1,
+                    ),
+                    boxShadow: selected ? [
+                      BoxShadow(color: Color(p.accent).withValues(alpha: .24), blurRadius: 14, spreadRadius: 1),
+                    ] : const [],
                   ),
                   child: Row(children: [
                     const SizedBox(width: 12),
