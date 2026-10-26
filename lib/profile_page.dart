@@ -324,6 +324,15 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _profileFieldLabel(BuildContext context, String label, IconData icon) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(children: [
+      Icon(icon, size: 17, color: scheme.primary),
+      const SizedBox(width: 7),
+      Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+    ]);
+  }
+
   Future<void> editProfile() async {
     name.text = '${profile['display_name'] ?? ''}';
     username.text = '${profile['username'] ?? ''}';
@@ -347,16 +356,41 @@ class _ProfilePageState extends State<ProfilePage> {
                   shrinkWrap: true,
                   children: [
                     Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: Theme.of(sheet).colorScheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4)))),
-                    const SizedBox(height: 16),
-                    const Center(child: Text('ویرایش پروفایل', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900))),
-                    const SizedBox(height: 16),
-                    TextField(controller: name, textDirection: TextDirection.rtl, decoration: const InputDecoration(labelText: 'نام نمایشی', prefixIcon: Icon(Icons.person_outline_rounded))),
-                    const SizedBox(height: 10),
-                    TextField(controller: username, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'آیدی', prefixText: '@', prefixIcon: Icon(Icons.alternate_email_rounded))),
-                    const SizedBox(height: 10),
-                    TextField(controller: bio, textDirection: TextDirection.rtl, maxLines: 3, maxLength: 150, decoration: const InputDecoration(labelText: 'بیو / معرفی کوتاه', prefixIcon: Icon(Icons.info_outline_rounded))),
-                    const SizedBox(height: 8),
-                    FilledButton.icon(onPressed: saving ? null : saveProfile, icon: const Icon(Icons.check_rounded), label: Text(saving ? 'در حال ذخیره...' : 'ذخیره تغییرات')),
+                    const SizedBox(height: 18),
+                    const Text('ویرایش پروفایل', textAlign: TextAlign.center, style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.3)),
+                    const SizedBox(height: 5),
+                    Text('اطلاعاتت را مرتب و به‌روز نگه دار', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(sheet).colorScheme.onSurfaceVariant, fontSize: 13)),
+                    const SizedBox(height: 22),
+                    _profileFieldLabel(sheet, 'نام نمایشی', Icons.badge_outlined),
+                    const SizedBox(height: 7),
+                    TextField(controller: name, textDirection: TextDirection.rtl, textInputAction: TextInputAction.next, maxLength: 40, decoration: const InputDecoration(hintText: 'نامی که دیگران می‌بینند', counterText: '', prefixIcon: Icon(Icons.person_outline_rounded))),
+                    const SizedBox(height: 14),
+                    _profileFieldLabel(sheet, 'شناسه کاربری', Icons.alternate_email_rounded),
+                    const SizedBox(height: 7),
+                    TextField(controller: username, textDirection: TextDirection.ltr, textInputAction: TextInputAction.next, maxLength: 32, decoration: const InputDecoration(hintText: 'your_username', counterText: '', prefixText: '@', prefixIcon: Icon(Icons.alternate_email_rounded))),
+                    const SizedBox(height: 4),
+                    Text('فقط حروف انگلیسی، عدد و زیرخط؛ حداقل ۳ کاراکتر', textDirection: TextDirection.rtl, style: TextStyle(color: Theme.of(sheet).colorScheme.onSurfaceVariant, fontSize: 11.5)),
+                    const SizedBox(height: 14),
+                    _profileFieldLabel(sheet, 'بیوگرافی', Icons.notes_rounded),
+                    const SizedBox(height: 7),
+                    TextField(controller: bio, textDirection: TextDirection.rtl, textAlignVertical: TextAlignVertical.top, maxLines: 4, minLines: 3, maxLength: 150, decoration: const InputDecoration(hintText: 'چند کلمه درباره خودت بنویس…', alignLabelWithHint: true, prefixIcon: Icon(Icons.info_outline_rounded))),
+                    const SizedBox(height: 7),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Theme.of(sheet).colorScheme.primaryContainer.withValues(alpha: .42), borderRadius: BorderRadius.circular(14)),
+                      child: Row(children: [
+                        Icon(Icons.tips_and_updates_outlined, color: Theme.of(sheet).colorScheme.primary, size: 19),
+                        const SizedBox(width: 9),
+                        Expanded(child: Text('نام واضح، آیدی کوتاه و بیوی مختصر، پیدا کردن حسابت را آسان‌تر می‌کند.', style: TextStyle(fontSize: 12, height: 1.45, color: Theme.of(sheet).colorScheme.onSurfaceVariant))),
+                      ]),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(width: double.infinity, child: FilledButton.icon(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      onPressed: saving ? null : saveProfile,
+                      icon: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check_rounded),
+                      label: Text(saving ? 'در حال ذخیره…' : 'ذخیره تغییرات', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    )),
                   ],
                 ),
               ),
@@ -384,8 +418,21 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 110),
       children: [
         glass(Padding(
-          padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
+          padding: const EdgeInsets.fromLTRB(18, 24, 18, 20),
           child: Column(children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                decoration: BoxDecoration(color: s.primaryContainer.withValues(alpha: .72), borderRadius: BorderRadius.circular(30)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.account_circle_outlined, size: 15, color: s.primary),
+                  const SizedBox(width: 6),
+                  Text('حساب کاربری من', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: s.primary)),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 18),
             GestureDetector(
               onTap: showAvatarPreview,
               child: Stack(clipBehavior: Clip.none, children: [
@@ -430,8 +477,25 @@ class _ProfilePageState extends State<ProfilePage> {
               Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
               if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
             ]),
-            if (un.isNotEmpty) Text('@$un', style: TextStyle(color: s.primary, fontWeight: FontWeight.w800)),
-            IconButton(tooltip: 'کپی آیدی', icon: const Icon(Icons.copy_rounded, size: 18), onPressed: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); }),
+            if (un.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: s.surfaceContainerHighest.withValues(alpha: .65), borderRadius: BorderRadius.circular(30)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('@$un', textDirection: TextDirection.ltr, style: TextStyle(color: s.primary, fontWeight: FontWeight.w800, letterSpacing: .2)),
+                  const SizedBox(width: 7),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () { Clipboard.setData(ClipboardData(text: '@$un')); showMsg(context, 'آیدی کپی شد.'); },
+                    child: Padding(padding: const EdgeInsets.all(3), child: Icon(Icons.copy_rounded, size: 15, color: s.onSurfaceVariant)),
+                  ),
+                ]),
+              ),
+            ] else ...[
+              const SizedBox(height: 6),
+              Text('هنوز آیدی تنظیم نشده', style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
+            ],
             const SizedBox(height: 18),
             Container(
               width: double.infinity,
