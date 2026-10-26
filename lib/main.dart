@@ -2805,12 +2805,37 @@ class _LoginPageState extends State<LoginPage>{
     if(signup){
       if(first.text.trim().isEmpty||last.text.trim().isEmpty){showMsg(context,'نام و نام خانوادگی را وارد کنید.');return;}
       setState(()=>busy=true);
-      try{
-        await supabase.auth.signOut();
-        await supabase.auth.signInWithOtp(email:mail,shouldCreateUser:true,data:{'first_name':first.text.trim(),'last_name':last.text.trim(),'full_name':'${first.text.trim()} ${last.text.trim()}'});
-        if(mounted)Navigator.push(context,MaterialPageRoute(builder:(_)=>EmailVerificationPage(email:mail,verificationType:OtpType.email,allowCreateUser:true)));
-      }on AuthException catch(e){if(mounted)showMsg(context,'ثبت‌نام ناموفق بود: ${e.message}');}
-      finally{if(mounted)setState(()=>busy=false);}
+      try {
+        // Clear only the previous local session, then request a signup OTP.
+        await supabase.auth.signOut().timeout(const Duration(seconds: 8));
+        await supabase.auth.signInWithOtp(
+          email: mail,
+          shouldCreateUser: true,
+          data: {
+            'first_name': first.text.trim(),
+            'last_name': last.text.trim(),
+            'full_name': '${first.text.trim()} ${last.text.trim()}',
+          },
+        ).timeout(const Duration(seconds: 15));
+        if (mounted) {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => EmailVerificationPage(
+              email: mail,
+              verificationType: OtpType.email,
+              allowCreateUser: true,
+            ),
+          ));
+        }
+      } on AuthException catch (e) {
+        if (mounted) showMsg(context, 'ارسال کد ثبت‌نام ناموفق بود: ${e.message}');
+      } catch (e) {
+        if (mounted) showMsg(context,
+          e is TimeoutException
+            ? 'سرور در زمان تعیین‌شده پاسخ نداد. اینترنت را بررسی و دوباره تلاش کنید.'
+            : 'ارسال کد ثبت‌نام ناموفق بود. اتصال اینترنت را بررسی کنید.');
+      } finally {
+        if (mounted) setState(() => busy = false);
+      }
     }else{
       setState(()=>busy=true);
       try{
@@ -2906,7 +2931,29 @@ class _LoginPageState extends State<LoginPage>{
     }
   }
 
-  Future<void> forgotPassword()async{final mail=email.text.trim().toLowerCase();if(!validEmail(mail)){showMsg(context,'ابتدا ایمیل معتبر را وارد کنید.');return;}try{await supabase.auth.resetPasswordForEmail(mail);if(mounted)showMsg(context,'لینک بازیابی رمز به ایمیل ارسال شد.');}catch(e){if(mounted)showMsg(context,'ارسال لینک ناموفق بود: $e');}}
+  Future<void> forgotPassword() async {
+    final mail = email.text.trim().toLowerCase();
+    if (!validEmail(mail)) {
+      showMsg(context, 'ابتدا ایمیل معتبر را وارد کنید.');
+      return;
+    }
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await supabase.auth.resetPasswordForEmail(mail)
+          .timeout(const Duration(seconds: 15));
+      if (mounted) showMsg(context, 'اگر این ایمیل ثبت شده باشد، لینک بازیابی ارسال می‌شود. پوشه هرزنامه را هم بررسی کنید.');
+    } on AuthException catch (e) {
+      if (mounted) showMsg(context, 'درخواست بازیابی ناموفق بود: ${e.message}');
+    } catch (e) {
+      if (mounted) showMsg(context,
+        e is TimeoutException
+          ? 'پاسخی از سرور نرسید. اینترنت را بررسی و دوباره تلاش کنید.'
+          : 'درخواست بازیابی انجام نشد. اتصال اینترنت را بررسی کنید.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
   @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
     Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
