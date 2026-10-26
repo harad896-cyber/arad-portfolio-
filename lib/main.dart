@@ -3847,10 +3847,34 @@ class _HomePageState extends State<HomePage> {
       // Never keep the main screen covered while waiting for Supabase.
       // Cached conversations remain usable if this request fails offline.
       try {
-        final rpcRows = List<Map<String, dynamic>>.from(
+        var rpcRows = List<Map<String, dynamic>>.from(
           await supabase.rpc('get_home_conversations')
               .timeout(const Duration(seconds: 5)),
         );
+        // Recover memberships when an older RPC succeeds but returns no rows.
+        if (rpcRows.isEmpty) {
+          try {
+            final memberRows = await supabase.from('conversation_members')
+                .select('conversation_id').eq('user_id', uid)
+                .timeout(const Duration(seconds: 4));
+            final ids = (memberRows as List).map((row) => row['conversation_id'])
+                .where((id) => id != null).toList();
+            if (ids.isNotEmpty) {
+              final directRows = await supabase.from('conversations')
+                  .select('id,type,title,avatar_url,description,username,is_public,created_at')
+                  .inFilter('id', ids).timeout(const Duration(seconds: 4));
+              rpcRows = List<Map<String, dynamic>>.from(directRows).map((row) => <String, dynamic>{
+                'conversation_id': row['id'], 'type': row['type'],
+                'title': row['title'], 'avatar_url': row['avatar_url'],
+                'description': row['description'], 'username': row['username'],
+                'is_public': row['is_public'], 'created_at': row['created_at'],
+                'preview': 'گفتگو', 'unread_count': 0,
+              }).toList();
+            }
+          } catch (fallbackError) {
+            debugPrint('Empty home RPC membership fallback failed: $fallbackError');
+          }
+        }
         final enriched = rpcRows.map((r) {
           final last = r['last_message'] is Map
               ? Map<String, dynamic>.from(r['last_message']) : null;
