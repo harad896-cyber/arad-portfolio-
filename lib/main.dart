@@ -3772,21 +3772,50 @@ class _HomePageState extends State<HomePage> {
     }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap ? -1 : 1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
+  String get _homeCacheKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'arad_home_chats_cache_$uid';
+  }
+
   Future<void> load() async {
-    // Coalesce overlapping refreshes. Realtime bursts should trigger one
-    // follow-up fetch, not several competing requests that can overwrite newer state.
     if (_homeLoadInProgress) {
       _homeLoadQueued = true;
       return;
     }
     _homeLoadInProgress = true;
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = _homeCacheKey;
+
+    // Paint the last known conversation list immediately, including offline.
+    if (chats.isEmpty) {
+      try {
+        final raw = prefs.getString(cacheKey);
+        if (raw != null && raw.isNotEmpty) {
+          final cached = (jsonDecode(raw) as List)
+              .map((item) => Map<String, dynamic>.from(item as Map))
+              .toList();
+          if (mounted && cached.isNotEmpty) {
+            setState(() {
+              chats = cached;
+              loading = false;
+            });
+          }
+        }
+      } catch (error) {
+        debugPrint('Home cache could not be read: $error');
+      }
+    }
+
     try {
-      final uid = supabase.auth.currentUser!.id;
-      final rpcRows = List<Map<String,dynamic>>.from(await supabase.rpc('get_home_conversations'));
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final rpcRows = List<Map<String,dynamic>>.from(
+        await supabase.rpc('get_home_conversations').timeout(const Duration(seconds: 8)),
+      );
       final enriched = rpcRows.map((r) {
         final last = r['last_message'] is Map ? Map<String,dynamic>.from(r['last_message']) : null;
         final peer = r['peer'] is Map ? Map<String,dynamic>.from(r['peer']) : null;
-        return {
+        return <String, dynamic>{
           'id': r['conversation_id'],
           'type': r['type'],
           'title': r['title'],
@@ -3803,14 +3832,12 @@ class _HomePageState extends State<HomePage> {
         };
       }).toList();
 
-      // These per-user settings are independent; fetch them concurrently so
-      // the chat list does not pay the network latency of four serial requests.
       final auxiliaryRows = await Future.wait<dynamic>([
         supabase.from('chat_unread_marks').select('conversation_id').eq('user_id', uid),
         supabase.from('chat_pins').select('conversation_id').eq('user_id', uid),
         supabase.from('chat_archives').select('conversation_id').eq('user_id', uid),
         supabase.from('chat_folders').select('id,name,icon_name,sort_order').eq('user_id', uid).order('sort_order').order('created_at'),
-      ]);
+      ]).timeout(const Duration(seconds: 8));
       final manualUnread = (auxiliaryRows[0] as List).map((r) => r['conversation_id'].toString()).toSet();
       final pinned = (auxiliaryRows[1] as List).map((r) => r['conversation_id'].toString()).toSet();
       final archived = (auxiliaryRows[2] as List).map((r) => r['conversation_id'].toString()).toSet();
@@ -3821,13 +3848,16 @@ class _HomePageState extends State<HomePage> {
       }
       if (folderRows.isNotEmpty) {
         final itemRows = List<Map<String, dynamic>>.from(
-          await supabase.from('chat_folder_items').select('folder_id,conversation_id').inFilter('folder_id', folderRows.map((f) => f['id']).toList()),
+          await supabase.from('chat_folder_items').select('folder_id,conversation_id')
+            .inFilter('folder_id', folderRows.map((f) => f['id']).toList())
+            .timeout(const Duration(seconds: 6)),
         );
         for (final item in itemRows) {
           (assignmentMap[item['folder_id'].toString()] ??= <String>{}).add(item['conversation_id'].toString());
         }
       }
-      if (mounted) setState(() {
+      if (!mounted) return;
+      setState(() {
         chats = enriched;
         chatFolders = folderRows;
         folderAssignments = assignmentMap;
@@ -3836,8 +3866,24 @@ class _HomePageState extends State<HomePage> {
         pinnedChatIds = pinned;
         loading = false;
       });
+      // Cache display-safe data so a later offline launch can show chats.
+      try {
+        final serializable = enriched.map((c) => <String, dynamic>{
+          ...c,
+          '_peer': c['_peer'],
+          '_last': c['_last'],
+        }).toList();
+        await prefs.setString(cacheKey, jsonEncode(serializable));
+      } catch (error) {
+        debugPrint('Home cache could not be saved: $error');
+      }
     } catch (e) {
-      if (mounted) { setState(() => loading = false); showMsg(context, 'خطا در بارگذاری گفتگوها: ' + _friendlyError(e.toString())); }
+      debugPrint('Home refresh failed; retaining cached conversations: $e');
+      if (mounted) {
+        setState(() => loading = false);
+        // Do not cover the chat list with an error dialog/snackbar on transient
+        // connectivity loss. The list remains usable and retries in background.
+      }
     } finally {
       _homeLoadInProgress = false;
       if (_homeLoadQueued && mounted) {
