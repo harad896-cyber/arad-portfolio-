@@ -4956,24 +4956,34 @@ class _HomePageState extends State<HomePage> {
       for (final p in profiles) {
         p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
       }
-      final memberRows = await supabase.from('conversation_members')
-          .select('conversation_id,user_id')
-          .inFilter('user_id', [uid, ...ids]).timeout(const Duration(seconds: 5));
-      final grouped = <String, List<String>>{};
-      for (final row in List<Map<String, dynamic>>.from(memberRows)) {
-        grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
-            .add('${row['user_id']}');
-      }
-      final peerIds = ids.map((id) => id.toString()).toSet();
-      for (final entry in grouped.entries) {
-        if (entry.value.length != 2 || !entry.value.contains(uid)) continue;
-        final peer = entry.value.firstWhere((id) => id != uid, orElse: () => '');
-        if (peerIds.contains(peer)) {
-          final profile = profiles.where((p) => '${p['id']}' == peer);
-          if (profile.isNotEmpty) profile.first['_conversation_id'] = entry.key;
+      // Contact cards must not depend on the conversation-members table.
+      // If that optional lookup fails due to schema/RLS, contacts still appear.
+      try {
+        final memberRows = await supabase.from('conversation_members')
+            .select('conversation_id,user_id')
+            .inFilter('user_id', [uid, ...ids])
+            .timeout(const Duration(seconds: 3));
+        final grouped = <String, List<String>>{};
+        for (final row in List<Map<String, dynamic>>.from(memberRows)) {
+          grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
+              .add('${row['user_id']}');
         }
+        final peerIds = ids.map((id) => id.toString()).toSet();
+        for (final entry in grouped.entries) {
+          if (entry.value.length != 2 || !entry.value.contains(uid)) continue;
+          final peer = entry.value.firstWhere((id) => id != uid, orElse: () => '');
+          if (peerIds.contains(peer)) {
+            final profile = profiles.where((p) => '${p['id']}' == peer);
+            if (profile.isNotEmpty) profile.first['_conversation_id'] = entry.key;
+          }
+        }
+      } catch (error) {
+        debugPrint('Contact conversation enrichment skipped: $error');
       }
-      final result = profiles.where((p) => p['_conversation_id'] != null).toList();
+      final result = profiles.map((p) => <String, dynamic>{
+        ...p,
+        '_conversation_id': p['_conversation_id'] ?? '',
+      }).toList();
       await prefs.setString(cacheKey, jsonEncode(result));
       return result;
     } catch (error) {
