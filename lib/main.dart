@@ -242,6 +242,11 @@ Future<void> main() async {
     await Supabase.initialize(
       url: supabaseUrl,
       publishableKey: supabasePublishableKey,
+    ).timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => throw TimeoutException(
+        'اتصال به سرویس ورود بیش از ۲۰ ثانیه طول کشید. اینترنت یا دسترسی به سرویس را بررسی کنید و دوباره تلاش کنید.',
+      ),
     );
   } catch (error, stack) {
     debugPrint('Arad Messenger startup failed: $error');
