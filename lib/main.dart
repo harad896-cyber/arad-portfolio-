@@ -2671,20 +2671,9 @@ class _AppBanGateState extends State<AppBanGate> {
     return FutureBuilder<bool>(
       future: _banCheck,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 12),
-                  Text('در حال بارگذاری حساب…'),
-                ],
-              ),
-            ),
-          );
-        }
+        // Do not cover the app while the optional moderation request is pending.
+        // Show the authenticated home/profile flow immediately; if the server
+        // confirms a ban, switch to the ban screen when the result arrives.
         if (snapshot.data == true) return const AppBannedPage();
         return const ProfileGate();
       },
