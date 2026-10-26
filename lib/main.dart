@@ -3910,7 +3910,46 @@ class _HomePageState extends State<HomePage> {
           debugPrint('Optional chat settings unavailable: $error');
         }
       } catch (error) {
-        debugPrint('Home refresh failed; retaining cached conversations: $error');
+        debugPrint('Home RPC failed; trying direct conversation fallback: $error');
+        // Fallback avoids a blank chat list when the home RPC is unavailable,
+        // misconfigured, or temporarily blocked while the underlying tables work.
+        try {
+          final memberRows = await supabase
+              .from('conversation_members')
+              .select('conversation_id')
+              .eq('user_id', uid)
+              .timeout(const Duration(seconds: 4));
+          final ids = (memberRows as List)
+              .map((r) => r['conversation_id'])
+              .where((id) => id != null).toList();
+          if (ids.isNotEmpty) {
+            final conversationRows = await supabase
+                .from('conversations')
+                .select('id,type,title,avatar_url,description,username,is_public,created_at')
+                .inFilter('id', ids)
+                .timeout(const Duration(seconds: 4));
+            final fallbackChats = List<Map<String, dynamic>>.from(conversationRows)
+                .map((row) => <String, dynamic>{
+                  ...row,
+                  '_preview': 'گفتگو',
+                  'unread_count': 0,
+                }).toList();
+            if (mounted) {
+              setState(() {
+                chats = fallbackChats;
+                loading = false;
+              });
+            }
+            if (prefs != null) {
+              try {
+                await prefs.setString(cacheKey, jsonEncode(fallbackChats))
+                    .timeout(const Duration(seconds: 2));
+              } catch (_) {}
+            }
+          }
+        } catch (fallbackError) {
+          debugPrint('Direct conversation fallback failed: $fallbackError');
+        }
       }
     } catch (error) {
       debugPrint('Home startup failed safely: $error');
