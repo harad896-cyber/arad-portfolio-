@@ -3832,6 +3832,20 @@ class _HomePageState extends State<HomePage> {
         };
       }).toList();
 
+      // Do not make the main conversation list depend on optional settings
+      // tables (pins, folders, archives). Render and cache chats immediately.
+      if (mounted) {
+        setState(() {
+          chats = enriched;
+          loading = false;
+        });
+      }
+      try {
+        await prefs.setString(cacheKey, jsonEncode(enriched));
+      } catch (error) {
+        debugPrint('Conversation cache save failed: $error');
+      }
+
       final auxiliaryRows = await Future.wait<dynamic>([
         supabase.from('chat_unread_marks').select('conversation_id').eq('user_id', uid),
         supabase.from('chat_pins').select('conversation_id').eq('user_id', uid),
