@@ -2825,11 +2825,20 @@ class _LoginPageState extends State<LoginPage>{
         }
         final secret = password.text;
         if(secret.isEmpty){showMsg(context,'رمز عبور را وارد کنید.');return;}
-        await supabase.auth.signInWithPassword(email:mail,password:secret);
-        await rememberCurrentSession();
-        await appTheme.loadForUser();
-        if(mounted) Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder:(_)=>const ProfileGate()), (route)=>false);
+        await supabase.auth.signInWithPassword(email:mail,password:secret)
+            .timeout(const Duration(seconds: 15));
+        // Session persistence and theme loading must never block navigation
+        // after Supabase has authenticated the user successfully.
+        try {
+          await rememberCurrentSession().timeout(const Duration(seconds: 4));
+        } catch (_) {}
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ProfileGate()),
+          (route) => false,
+        );
+        // Load user preferences in the background; they are non-critical to login.
+        appTheme.loadForUser().timeout(const Duration(seconds: 5)).catchError((_) {});
       }on AuthException catch(e){
         if(mounted)showMsg(context,'ورود ناموفق بود: ${e.message}');
       }catch(e){
