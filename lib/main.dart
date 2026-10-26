@@ -4780,36 +4780,60 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<List<Map<String,dynamic>>> _loadContacts() async {
-    final uid = supabase.auth.currentUser!.id;
-    final rows = await supabase.from('contacts').select('contact_id').eq('user_id', uid);
-    final ids = (rows as List).map((x) => x['contact_id']).toList();
-    if (ids.isEmpty) return [];
-    final profiles = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return [];
     final prefs = await SharedPreferences.getInstance();
-    for (final p in profiles) {
-      p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
-    }
-    // Fetch membership rows in one request instead of issuing one query
-    // per conversation. This avoids the N+1 request pattern that made contacts slow.
-    final memberRows = await supabase
-        .from('conversation_members')
-        .select('conversation_id,user_id')
-        .inFilter('user_id', [uid, ...ids]);
-    final grouped = <String, List<String>>{};
-    for (final row in List<Map<String, dynamic>>.from(memberRows)) {
-      grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
-          .add('${row['user_id']}');
-    }
-    final peerIds = ids.map((id) => id.toString()).toSet();
-    for (final entry in grouped.entries) {
-      if (entry.value.length != 2 || !entry.value.contains(uid)) continue;
-      final peer = entry.value.firstWhere((id) => id != uid, orElse: () => '');
-      if (peerIds.contains(peer)) {
-        final profile = profiles.where((p) => '${p['id']}' == peer);
-        if (profile.isNotEmpty) profile.first['_conversation_id'] = entry.key;
+    final cacheKey = 'arad_contacts_cache_$uid';
+    try {
+      final rows = await supabase.from('contacts').select('contact_id')
+          .eq('user_id', uid).timeout(const Duration(seconds: 7));
+      final ids = (rows as List).map((x) => x['contact_id']).toList();
+      if (ids.isEmpty) {
+        await prefs.setString(cacheKey, '[]');
+        return [];
       }
+      final profiles = List<Map<String,dynamic>>.from(
+        await supabase.from('profiles')
+          .select('id,display_name,username,avatar_url')
+          .inFilter('id', ids).timeout(const Duration(seconds: 7)),
+      );
+      for (final p in profiles) {
+        p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
+      }
+      final memberRows = await supabase.from('conversation_members')
+          .select('conversation_id,user_id')
+          .inFilter('user_id', [uid, ...ids]).timeout(const Duration(seconds: 7));
+      final grouped = <String, List<String>>{};
+      for (final row in List<Map<String, dynamic>>.from(memberRows)) {
+        grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
+            .add('${row['user_id']}');
+      }
+      final peerIds = ids.map((id) => id.toString()).toSet();
+      for (final entry in grouped.entries) {
+        if (entry.value.length != 2 || !entry.value.contains(uid)) continue;
+        final peer = entry.value.firstWhere((id) => id != uid, orElse: () => '');
+        if (peerIds.contains(peer)) {
+          final profile = profiles.where((p) => '${p['id']}' == peer);
+          if (profile.isNotEmpty) profile.first['_conversation_id'] = entry.key;
+        }
+      }
+      final result = profiles.where((p) => p['_conversation_id'] != null).toList();
+      await prefs.setString(cacheKey, jsonEncode(result));
+      return result;
+    } catch (error) {
+      debugPrint('Contacts refresh failed; using cached contacts: $error');
+      try {
+        final raw = prefs.getString(cacheKey);
+        if (raw != null) {
+          return (jsonDecode(raw) as List)
+              .map((item) => Map<String, dynamic>.from(item as Map))
+              .toList();
+        }
+      } catch (cacheError) {
+        debugPrint('Contacts cache could not be read: $cacheError');
+      }
+      rethrow;
     }
-    return profiles.where((p) => p['_conversation_id'] != null).toList();
   }
 
   Widget _glassAction(IconData icon, String label, VoidCallback onTap) {
