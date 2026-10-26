@@ -246,6 +246,10 @@ String? authRedirectUrl() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Paint a real first frame immediately; do not leave users staring at white
+  // while Supabase restores the session or a slow connection times out.
+  runApp(const StartupLoadingApp());
+
   // Never leave the web app as a blank page if backend initialization fails.
   // Show a readable startup error so the failure can be diagnosed on-device.
   try {
@@ -253,9 +257,9 @@ Future<void> main() async {
       url: supabaseUrl,
       publishableKey: supabasePublishableKey,
     ).timeout(
-      const Duration(seconds: 20),
+      const Duration(seconds: 10),
       onTimeout: () => throw TimeoutException(
-        'اتصال به سرویس ورود بیش از ۲۰ ثانیه طول کشید. اینترنت یا دسترسی به سرویس را بررسی کنید و دوباره تلاش کنید.',
+        'اتصال به سرویس ورود بیش از ۱۰ ثانیه طول کشید. اینترنت یا دسترسی به سرویس را بررسی کنید و دوباره تلاش کنید.',
       ),
     );
   } catch (error, stack) {
@@ -286,6 +290,46 @@ Future<void> main() async {
   unawaited(appTheme.load().catchError((_) {}));
   unawaited(aradLanguageController.load().catchError((_) {}));
   unawaited(appAccessibility.load().catchError((_) {}));
+}
+
+class StartupLoadingApp extends StatelessWidget {
+  const StartupLoadingApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(0xFF071A2D),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 76, height: 76,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C2A8).withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Icon(Icons.forum_rounded, size: 42, color: Color(0xFF00C2A8)),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text('Arad Messenger', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 12),
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
+                  const SizedBox(height: 12),
+                  const Text('در حال آماده‌سازی برنامه…', style: TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class StartupFailureApp extends StatelessWidget {
