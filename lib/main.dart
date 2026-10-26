@@ -2760,6 +2760,9 @@ class _ProfileGateState extends State<ProfileGate> {
   }
 
   Future<bool> _hasProfile() async {
+    // A valid Supabase session is enough to enter the app. Never block the
+    // entire interface on a profiles table/network request: profile data is
+    // cached and refreshed by ProfilePage independently.
     final user = supabase.auth.currentUser;
     if (user == null) {
       throw StateError('نشست ورود پیدا نشد. دوباره وارد حساب شوید.');
@@ -2776,13 +2779,12 @@ class _ProfileGateState extends State<ProfileGate> {
           .select('id')
           .eq('id', user.id)
           .maybeSingle()
-          .timeout(const Duration(seconds: 8));
+          .timeout(const Duration(seconds: 3));
+      // If the server confirms no profile, show setup; if the network fails,
+      // let the authenticated user into the app rather than trapping them.
       return row != null;
     } catch (error) {
-      // The account has already authenticated. A temporary profile-table/RLS
-      // or network failure must not trap the user forever at "checking account".
-      // Continue to the app and let profile-dependent screens retry their own data.
-      debugPrint('Profile existence check failed after authentication: $error');
+      debugPrint('Profile check offline; opening app with cached data: $error');
       return true;
     }
   }
