@@ -111,6 +111,11 @@ class _ProfilePageState extends State<ProfilePage> {
       };
       await supabase.from('profiles').upsert(data);
       profile.addAll(data);
+      // Keep the local profile snapshot in sync so the next open is instant and not stale.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('arad_profile_cache_${user.id}', jsonEncode(profile));
+      } catch (_) {}
       if (mounted) {
         Navigator.pop(context);
         showMsg(context, 'پروفایل ذخیره شد.');
@@ -202,7 +207,12 @@ class _ProfilePageState extends State<ProfilePage> {
       await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
       final url = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
       await supabase.from('profiles').upsert({'id': uid, 'avatar_url': url});
-      if (mounted) setState(() { profile['avatar_url'] = url; avatarImage = NetworkImage(url); });
+      profile['avatar_url'] = url;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('arad_profile_cache_${uid}', jsonEncode(profile));
+      } catch (_) {}
+      if (mounted) setState(() { avatarImage = NetworkImage(url); });
     } catch (e) {
       if (mounted) showMsg(context, 'تغییر عکس ناموفق بود: $e');
     }
@@ -213,9 +223,13 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user == null) return;
     try {
       await supabase.from('profiles').update({'avatar_url': null}).eq('id', user.id);
+      profile.remove('avatar_url');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('arad_profile_cache_${user.id}', jsonEncode(profile));
+      } catch (_) {}
       if (mounted) {
         setState(() {
-          profile.remove('avatar_url');
           avatarImage = null;
         });
       }
