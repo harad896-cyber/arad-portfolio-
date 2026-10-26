@@ -4800,25 +4800,49 @@ class _HomePageState extends State<HomePage> {
     if (uid == null) return [];
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'arad_contacts_cache_$uid';
+
+    // Show previously loaded contacts immediately, even with no connection.
+    // Refresh is deliberately non-blocking; cached cards stay visible on error.
+    List<Map<String, dynamic>> cachedContacts = <Map<String, dynamic>>[];
+    try {
+      final raw = prefs.getString(cacheKey);
+      if (raw != null && raw.isNotEmpty) {
+        cachedContacts = (jsonDecode(raw) as List)
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
+      }
+    } catch (error) {
+      debugPrint('Cached contacts could not be decoded: $error');
+    }
+    if (cachedContacts.isNotEmpty) {
+      unawaited(_refreshContactsCache(uid, cacheKey, prefs));
+      return cachedContacts;
+    }
+    return _refreshContactsCache(uid, cacheKey, prefs);
+  }
+
+  Future<List<Map<String, dynamic>>> _refreshContactsCache(
+    String uid, String cacheKey, SharedPreferences prefs,
+  ) async {
     try {
       final rows = await supabase.from('contacts').select('contact_id')
-          .eq('user_id', uid).timeout(const Duration(seconds: 7));
+          .eq('user_id', uid).timeout(const Duration(seconds: 5));
       final ids = (rows as List).map((x) => x['contact_id']).toList();
       if (ids.isEmpty) {
         await prefs.setString(cacheKey, '[]');
-        return [];
+        return <Map<String, dynamic>>[];
       }
-      final profiles = List<Map<String,dynamic>>.from(
+      final profiles = List<Map<String, dynamic>>.from(
         await supabase.from('profiles')
           .select('id,display_name,username,avatar_url')
-          .inFilter('id', ids).timeout(const Duration(seconds: 7)),
+          .inFilter('id', ids).timeout(const Duration(seconds: 5)),
       );
       for (final p in profiles) {
         p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
       }
       final memberRows = await supabase.from('conversation_members')
           .select('conversation_id,user_id')
-          .inFilter('user_id', [uid, ...ids]).timeout(const Duration(seconds: 7));
+          .inFilter('user_id', [uid, ...ids]).timeout(const Duration(seconds: 5));
       final grouped = <String, List<String>>{};
       for (final row in List<Map<String, dynamic>>.from(memberRows)) {
         grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
@@ -4838,17 +4862,13 @@ class _HomePageState extends State<HomePage> {
       return result;
     } catch (error) {
       debugPrint('Contacts refresh failed; using cached contacts: $error');
-      try {
-        final raw = prefs.getString(cacheKey);
-        if (raw != null) {
-          return (jsonDecode(raw) as List)
-              .map((item) => Map<String, dynamic>.from(item as Map))
-              .toList();
-        }
-      } catch (cacheError) {
-        debugPrint('Contacts cache could not be read: $cacheError');
+      final raw = prefs.getString(cacheKey);
+      if (raw != null && raw.isNotEmpty) {
+        return (jsonDecode(raw) as List)
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
       }
-      rethrow;
+      return <Map<String, dynamic>>[];
     }
   }
 
