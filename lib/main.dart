@@ -1284,6 +1284,13 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
     (name: 'فیروزه‌ای', color: 0xFF103A3A, accent: 0xFF2DD4BF),
     (name: 'کهکشانی', color: 0xFF17162E, accent: 0xFF818CF8),
     (name: 'طلوع گرم', color: 0xFF3A241E, accent: 0xFFFF9F68),
+    (name: 'زمردی', color: 0xFF102A27, accent: 0xFF34D399),
+    (name: 'یاسی روشن', color: 0xFFF0EAFE, accent: 0xFF8B5CF6),
+    (name: 'رزگلد', color: 0xFF38212D, accent: 0xFFFB7185),
+    (name: 'آبی نیمه‌شب', color: 0xFF101D36, accent: 0xFF60A5FA),
+    (name: 'شن و ماسه', color: 0xFFF1E8D8, accent: 0xFFB77936),
+    (name: 'سبز نعنایی', color: 0xFFE4F7EF, accent: 0xFF159D78),
+    (name: 'مرجانی', color: 0xFF3A2024, accent: 0xFFFF7F6A),
   ];
 
   Future<void> _pickWallpaper() async {
@@ -2518,15 +2525,21 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
         showMsg(context,'نشست ذخیره‌شده برای این حساب در دسترس نیست؛ از «افزودن حساب» دوباره وارد شوید.');
         return;
       }
-      await supabase.auth.setSession(refresh);
-      await rememberCurrentSession();
-      await appTheme.loadForUser();
-      await appAccessibility.load();
+      await supabase.auth.setSession(refresh)
+          .timeout(const Duration(seconds: 15));
+      await rememberCurrentSession().timeout(const Duration(seconds: 5));
+      // Restore this account's own theme and accessibility preferences.
+      await appTheme.loadForUser().timeout(const Duration(seconds: 5));
+      await appAccessibility.load().timeout(const Duration(seconds: 5));
       if(!mounted)return;
       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(route)=>false);
-    }catch(e){
-      if(mounted)showMsg(context,'تغییر حساب ناموفق بود؛ دوباره وارد شوید. ${_friendlyError(e.toString())}');
-    }finally{if(mounted)setState(()=>busy=false);}
+    } on TimeoutException {
+      if (mounted) showMsg(context, 'تغییر حساب بیش از حد طول کشید. اینترنت را بررسی و دوباره تلاش کنید.');
+    } catch(e) {
+      if (mounted) showMsg(context, 'تغییر حساب ناموفق بود؛ ممکن است نشست ذخیره‌شده منقضی شده باشد. از «افزودن حساب» دوباره وارد شوید.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
   Future<void> _forget(String email)async{
     await _removeSavedAccount(email);
