@@ -86,12 +86,12 @@ class LanguageController extends ChangeNotifier {
 }
 
 class AppThemeController extends ChangeNotifier {
-  bool dark = false;
-  int seed = 0xFF7C5CFF;
-  int backgroundSeed = 0xFF11131A;
+  bool dark = true;
+  int seed = 0xFF8B5CF6;
+  int backgroundSeed = 0xFF080D1A;
   String? backgroundImageBase64;
   bool backgroundEffects = true;
-  static const int _themeRevision = 4;
+  static const int _themeRevision = 5;
 
   String get _scope {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -104,18 +104,18 @@ class AppThemeController extends ChangeNotifier {
     final key = _scope;
     final revision = p.getInt('theme_revision_$key') ?? 0;
     if (revision < _themeRevision) {
-      // One-time migration to the new high-contrast chat palette.
-      dark = false;
+      // One-time migration to the polished dark neon visual system.
+      dark = true;
       seed = 0xFF8B5CF6;
-      backgroundSeed = 0xFF11131A;
+      backgroundSeed = 0xFF080D1A;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
       await p.setInt('theme_revision_$key', _themeRevision);
     } else {
-      dark = p.getBool('dark_mode_$key') ?? false;
+      dark = p.getBool('dark_mode_$key') ?? true;
       seed = p.getInt('accent_seed_$key') ?? 0xFF8B5CF6;
-      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF11131A;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF080D1A;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
@@ -572,7 +572,7 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: const Color(0xFF141722),
+          surface: const Color(0xFF0B1020),
         ),
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
@@ -587,14 +587,14 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
-          backgroundColor: Color(0xFF141722),
+          backgroundColor: Color(0xFF0B1020),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: const Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFF1A1E2B),
+          color: Color(0xFF10182B),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -605,18 +605,18 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: const Color(0xFF191F30),
+          tileColor: const Color(0xFF10182B),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
           iconColor: const Color(0xFFBDB1D0),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFF191F30),
+          fillColor: const Color(0xFF0E1729),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF2A3349)),
+            borderSide: BorderSide(color: Color(0xFF263653))
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
