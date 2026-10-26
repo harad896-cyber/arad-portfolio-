@@ -2653,13 +2653,15 @@ class _AppBanGateState extends State<AppBanGate> {
   Future<bool> _isBanned() async {
     final user = supabase.auth.currentUser;
     if (user == null) return false;
+    // Do not hold the first screen behind a remote moderation RPC. The RPC
+    // can be unavailable on slow networks and leave the user staring at a
+    // blank/loading screen. Server-side RLS remains the data-access boundary.
     try {
-      final result = await supabase
+      return await supabase
           .rpc('is_current_user_app_banned')
-          .timeout(const Duration(seconds: 5));
-      return result == true;
+          .timeout(const Duration(seconds: 2)) == true;
     } catch (error) {
-      debugPrint('Ban check unavailable; continuing with normal profile gate: $error');
+      debugPrint('Ban check unavailable; allowing app UI to open: $error');
       return false;
     }
   }
@@ -2760,9 +2762,9 @@ class _ProfileGateState extends State<ProfileGate> {
   }
 
   Future<bool> _hasProfile() async {
-    // A valid Supabase session is enough to enter the app. Never block the
-    // entire interface on a profiles table/network request: profile data is
-    // cached and refreshed by ProfilePage independently.
+    // Authentication is already established by AuthGate. Avoid a mandatory
+    // profiles-table round trip here: a slow/unreachable backend must not
+    // prevent HomePage from rendering after login.
     final user = supabase.auth.currentUser;
     if (user == null) {
       throw StateError('نشست ورود پیدا نشد. دوباره وارد حساب شوید.');
@@ -2773,20 +2775,7 @@ class _ProfileGateState extends State<ProfileGate> {
         meta['owner'] == true ||
         meta['owner']?.toString().toLowerCase() == 'true';
     if (user.emailConfirmedAt == null && !privileged) return false;
-    try {
-      final row = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle()
-          .timeout(const Duration(seconds: 3));
-      // If the server confirms no profile, show setup; if the network fails,
-      // let the authenticated user into the app rather than trapping them.
-      return row != null;
-    } catch (error) {
-      debugPrint('Profile check offline; opening app with cached data: $error');
-      return true;
-    }
+    return true;
   }
 
   void _retry() {
