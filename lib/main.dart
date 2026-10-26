@@ -4784,9 +4784,19 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendRequestsPage()))),
       ),
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
-        future: _contactsFuture ??= _loadContacts(),
+        // A stalled local plugin or network request must never leave this tab spinning forever.
+        future: _contactsFuture ??= _loadContacts().timeout(
+          const Duration(seconds: 8),
+          onTimeout: () => <Map<String, dynamic>>[],
+        ),
         builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
+              SizedBox(height: 12),
+              Text('در حال بارگذاری مخاطبین…'),
+            ]));
+          }
           final rows = snap.data ?? [];
           if (rows.isEmpty) return const Center(child: Text('هنوز مخاطبی اضافه نکرده‌اید.'));
           return ListView.separated(
@@ -4831,7 +4841,20 @@ class _HomePageState extends State<HomePage> {
   Future<List<Map<String,dynamic>>> _loadContacts() async {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return [];
-    final prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs;
+    try {
+      prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
+    } catch (error) {
+      debugPrint('Contacts local cache unavailable: $error');
+      try {
+        return await _refreshContactsWithoutCache(uid).timeout(
+          const Duration(seconds: 8),
+          onTimeout: () => <Map<String, dynamic>>[],
+        );
+      } catch (_) {
+        return <Map<String, dynamic>>[];
+      }
+    }
     final cacheKey = 'arad_contacts_cache_$uid';
 
     // Show previously loaded contacts immediately, even with no connection.
@@ -4852,6 +4875,22 @@ class _HomePageState extends State<HomePage> {
       return cachedContacts;
     }
     return _refreshContactsCache(uid, cacheKey, prefs);
+  }
+
+  Future<List<Map<String, dynamic>>> _refreshContactsWithoutCache(String uid) async {
+    final rows = await supabase.from('contacts').select('contact_id')
+        .eq('user_id', uid).timeout(const Duration(seconds: 4));
+    final ids = (rows as List).map((x) => x['contact_id']).where((x) => x != null).toList();
+    if (ids.isEmpty) return <Map<String, dynamic>>[];
+    final profiles = List<Map<String, dynamic>>.from(
+      await supabase.from('profiles').select('id,display_name,username,avatar_url')
+          .inFilter('id', ids).timeout(const Duration(seconds: 4)),
+    );
+    for (final p in profiles) {
+      p['_local_name'] = '';
+      p['_conversation_id'] = '';
+    }
+    return profiles;
   }
 
   Future<List<Map<String, dynamic>>> _refreshContactsCache(
