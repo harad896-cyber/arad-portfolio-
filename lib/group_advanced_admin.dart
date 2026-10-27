@@ -31,11 +31,52 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
   }
   Future<void> review(String id,bool approve)async{if(!owner||busy)return;setState(()=>busy=true);try{await db.rpc('review_group_join_request',params:{'p_request_id':id,'p_approve':approve});toast(approve?'درخواست پذیرفته شد.':'درخواست رد شد.');await load();}catch(e){toast('عملیات ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
   Future<void> unban(String id)async{if(!owner||busy)return;setState(()=>busy=true);try{await db.rpc('unban_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id});toast('محرومیت برداشته شد.');await load();}catch(e){toast('رفع محرومیت ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
-  Future<void> restrict(String id)async{if(!owner||busy)return;
-    final form=await showDialog<Map<String,bool>>(context:context,builder:(d){bool msg=true,media=true,links=true;return StatefulBuilder(builder:(d,setD)=>AlertDialog(title:Text('محدودیت '+nameOf(id)),content:Column(mainAxisSize:MainAxisSize.min,children:[
-      SwitchListTile(title:const Text('ارسال پیام'),value:msg,onChanged:(v)=>setD(()=>msg=v)),SwitchListTile(title:const Text('ارسال رسانه'),value:media,onChanged:(v)=>setD(()=>media=v)),SwitchListTile(title:const Text('ارسال لینک'),value:links,onChanged:(v)=>setD(()=>links=v))]),
-      actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(d,{'msg':msg,'media':media,'links':links}),child:const Text('اعمال'))]));});
-    if(form==null)return;try{await db.rpc('restrict_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id,'p_can_send_messages':form['msg'] ?? true,'p_can_send_media':form['media'] ?? true,'p_can_send_links':form['links'] ?? true,'p_expires_at':null});toast('محدودیت اعمال شد.');}catch(e){toast('اعمال محدودیت ناموفق بود: $e');}
+  Future<void> restrict(String id)async{
+    if(!owner||busy)return;
+    final form=await showDialog<Map<String,dynamic>>(context:context,builder:(d){
+      bool msg=true,media=true,links=true;int duration=0;
+      return StatefulBuilder(builder:(d,setD)=>AlertDialog(
+        title:Text('محدودیت '+nameOf(id)),
+        content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('ارسال پیام'),value:msg,onChanged:(v)=>setD(()=>msg=v)),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('ارسال رسانه و فایل'),value:media,onChanged:(v)=>setD(()=>media=v)),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('ارسال لینک'),value:links,onChanged:(v)=>setD(()=>links=v)),
+          const SizedBox(height:8),
+          DropdownButtonFormField<int>(
+            value:duration,
+            decoration:const InputDecoration(labelText:'مدت محدودیت',border:OutlineInputBorder()),
+            items:const [
+              DropdownMenuItem(value:0,child:Text('دائمی تا لغو مدیر')),
+              DropdownMenuItem(value:3600,child:Text('۱ ساعت')),
+              DropdownMenuItem(value:86400,child:Text('۲۴ ساعت')),
+              DropdownMenuItem(value:604800,child:Text('۷ روز')),
+            ],
+            onChanged:(v)=>setD(()=>duration=v??0),
+          ),
+        ])),
+        actions:[
+          TextButton(onPressed:()=>Navigator.pop(d),child:const Text('لغو')),
+          FilledButton(onPressed:()=>Navigator.pop(d,{'msg':msg,'media':media,'links':links,'duration':duration}),child:const Text('اعمال محدودیت')),
+        ],
+      ));
+    });
+    if(form==null)return;
+    setState(()=>busy=true);
+    try{
+      final seconds=(form['duration'] as num?)?.toInt()??0;
+      final expires=seconds==0?null:DateTime.now().toUtc().add(Duration(seconds:seconds)).toIso8601String();
+      await db.rpc('restrict_group_member',params:{
+        'p_conversation_id':widget.conversationId,
+        'p_user_id':id,
+        'p_can_send_messages':form['msg']??true,
+        'p_can_send_media':form['media']??true,
+        'p_can_send_links':form['links']??true,
+        'p_expires_at':expires,
+      });
+      toast(seconds==0?'محدودیت دائمی اعمال شد.':'محدودیت موقت اعمال شد.');
+      await load();
+    }catch(e){toast('اعمال محدودیت ناموفق بود: $e');}
+    finally{if(mounted)setState(()=>busy=false);}
   }
   Future<void> pin(String id)async{if(!owner||busy)return;try{await db.rpc('pin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('پیام سنجاق شد.');await load();}catch(e){toast('سنجاق کردن ناموفق بود: $e');}}
   Future<void> unpin(String id)async{if(!owner||busy)return;try{await db.rpc('unpin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('سنجاق برداشته شد.');await load();}catch(e){toast('برداشتن سنجاق ناموفق بود: $e');}}
