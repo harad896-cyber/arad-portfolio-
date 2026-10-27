@@ -4562,28 +4562,31 @@ class _HomePageState extends State<HomePage> {
               .timeout(const Duration(seconds: 5)),
         );
         // Recover memberships when an older RPC succeeds but returns no rows.
-        if (rpcRows.isEmpty) {
-          try {
-            final memberRows = await supabase.from('conversation_members')
-                .select('conversation_id').eq('user_id', uid)
-                .timeout(const Duration(seconds: 4));
-            final ids = (memberRows as List).map((row) => row['conversation_id'])
-                .where((id) => id != null).toList();
-            if (ids.isNotEmpty) {
-              final directRows = await supabase.from('conversations')
-                  .select('id,type,title,avatar_url,description,username,is_public,created_at')
-                  .inFilter('id', ids).timeout(const Duration(seconds: 4));
-              rpcRows = List<Map<String, dynamic>>.from(directRows).map((row) => <String, dynamic>{
-                'conversation_id': row['id'], 'type': row['type'],
-                'title': row['title'], 'avatar_url': row['avatar_url'],
-                'description': row['description'], 'username': row['username'],
-                'is_public': row['is_public'], 'created_at': row['created_at'],
-                'preview': 'گفتگو', 'unread_count': 0,
-              }).toList();
-            }
-          } catch (fallbackError) {
-            debugPrint('Empty home RPC membership fallback failed: $fallbackError');
+        // Reconcile the RPC result against memberships on every refresh. The RPC
+        // can return a partial list during transient backend/schema issues, so
+        // only running this fallback when it returns zero rows misses groups.
+        try {
+          final memberRows = await supabase.from('conversation_members')
+              .select('conversation_id').eq('user_id', uid)
+              .timeout(const Duration(seconds: 4));
+          final ids = (memberRows as List).map((row) => row['conversation_id'])
+              .where((id) => id != null).toSet().toList();
+          final knownIds = rpcRows.map((row) => '${row['conversation_id']}').toSet();
+          final missingIds = ids.where((id) => !knownIds.contains('$id')).toList();
+          if (missingIds.isNotEmpty) {
+            final directRows = await supabase.from('conversations')
+                .select('id,type,title,avatar_url,description,username,is_public,created_at')
+                .inFilter('id', missingIds).timeout(const Duration(seconds: 4));
+            rpcRows.addAll(List<Map<String, dynamic>>.from(directRows).map((row) => <String, dynamic>{
+              'conversation_id': row['id'], 'type': row['type'],
+              'title': row['title'], 'avatar_url': row['avatar_url'],
+              'description': row['description'], 'username': row['username'],
+              'is_public': row['is_public'], 'created_at': row['created_at'],
+              'preview': 'گفتگو', 'unread_count': 0,
+            }));
           }
+        } catch (fallbackError) {
+          debugPrint('Home membership reconciliation failed; retaining RPC/cache results: $fallbackError');
         }
         final enriched = rpcRows.map((r) {
           final last = r['last_message'] is Map
