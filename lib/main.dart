@@ -483,6 +483,12 @@ class AradMessenger extends StatelessWidget {
     return AnimatedBuilder(animation: Listenable.merge([appTheme, aradLanguageController, appAccessibility]), builder: (context, _) => MaterialApp(
       locale: aradLanguageController.locale,
       supportedLocales: AppStrings.supported.map((x) => Locale(x)),
+      // Flutter's built-in Material widgets do not ship prs/ps delegates; use Persian
+      // for built-in date/dialog labels while the app keeps Dari/Pashto selection and RTL.
+      localeResolutionCallback: (locale, supportedLocales) {
+        if (locale?.languageCode == 'prs' || locale?.languageCode == 'ps') return const Locale('fa');
+        return locale;
+      },
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
