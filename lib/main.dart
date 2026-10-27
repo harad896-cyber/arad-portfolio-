@@ -11577,7 +11577,7 @@ class _ChatPageState extends State<ChatPage> {
                                   );
                                 }
                                 String transform(String value, String action) {
-                                  var result = value.trim().replaceAll(RegExp(r'\\s+'), ' ');
+                                  var result = value.trim().replaceAll(RegExp(r'\s+'), ' ');
                                   if (action == 'formal') {
                                     result = result
                                         .replaceAll('سلام', 'سلام و احترام')
@@ -11590,12 +11590,12 @@ class _ChatPageState extends State<ChatPage> {
                                       result = '$result 😊';
                                     }
                                   } else if (action == 'short') {
-                                    final parts = result.split(RegExp(r'(?<=[.!?،؛])\\s+|،\\s+'));
+                                    final parts = result.split(RegExp(r'(?<=[.!?،؛])\s+|،\s+'));
                                     if (parts.length > 1) result = parts.first.trim();
                                   } else {
                                     result = result
-                                        .replaceAll(RegExp(r'\\s+([،؛:!?.,])'), r'$1')
-                                        .replaceAll(RegExp(r'([،؛:!?.,])(?=\\S)'), r'$1 ')
+                                        .replaceAll(RegExp(r'\s+([،؛:!?.,])'), r'$1')
+                                        .replaceAll(RegExp(r'([،؛:!?.,])(?=\S)'), r'$1 ')
                                         .trim();
                                     if (aradLanguageController.locale.languageCode == 'en' && result.isNotEmpty) {
                                       result = result[0].toUpperCase() + result.substring(1);
