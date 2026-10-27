@@ -159,18 +159,6 @@ String trUi(String source) {
       'ورود':'ورود','ثبت‌نام':'ثبت‌نام','ایمیل':'ایمیل','رمز عبور':'رمز عبور','ادامه':'ادامه',
       'پروفایل شما':'پروفایل شما','جستجو':'جستجو','ارسال':'ارسال','لغو':'لغو','ذخیره':'ذخیره',
       'ویرایش':'ویرایش','حذف':'حذف','تأیید':'تأیید','بازگشت':'بازگشت',
-      'همه گفتگوها':'همه گفتگوها','گفتگوی جدید':'گفتگوی جدید','ساخت گروه':'ساخت گروپ',
-      'مدیریت گروه':'مدیریت گروپ','مدیریت اعضا':'مدیریت اعضا','مدیریت پیشرفته':'مدیریت پیشرفته',
-      'تنظیمات و اختیارات':'تنظیمات و صلاحیت‌ها','ویرایش نام و توضیحات':'ویرایش نام و توضیحات',
-      'اطلاعات گفتگو':'معلومات گفتگو','رسانه‌ها و فایل‌ها':'رسانه‌ها و فایل‌ها',
-      'جستجوی پیام‌ها':'جستجوی پیام‌ها','پروفایل و اطلاعات':'پروفایل و معلومات',
-      'باز کردن گفتگو':'باز کردن گفتگو','بایگانی':'آرشیف','مرکز اعلان‌ها':'مرکز آگاهی‌ها',
-      'همه فرستنده‌ها':'همه فرستنده‌ها','دستگاه‌های متصل':'دستگاه‌های وصل‌شده',
-      'مخاطبین مسدودشده':'مخاطبین مسدودشده','عکس و ویدیو':'عکس و ویدیو','فایل':'فایل',
-      'صدا':'صدا','خاموش':'خاموش','فعلی':'فعلی','معماری':'ساختار',
-      'گروه‌های مشترک':'گروپ‌های مشترک','نتیجه‌ای پیدا نشد.':'نتیجه‌ای پیدا نشد.',
-      'رسانه‌ای وجود ندارد':'رسانه‌ای وجود ندارد','فایلی وجود ندارد':'فایلی وجود ندارد',
-      'لینکی وجود ندارد':'لینکی وجود ندارد','صدایی وجود ندارد':'صدایی وجود ندارد',
     };
     return dari[source] ?? source;
   }
@@ -203,21 +191,6 @@ String trUi(String source) {
       'ابزارهای پیشرفته متصل به Backend':'له Backend سره تړلي پرمختللي وسایل',
       'نسخه، معماری و اطلاعات برنامه':'د نسخې، جوړښت او اپلېکېشن معلومات',
       'پیام خود را بنویسید…':'خپل پیغام ولیکئ…','پیوست‌ها':'ضمیمې','ارسال پیام':'پیغام لېږل','گالری':'ګالري','دوربین':'کمره','فایل‌ها':'فایلونه','ویدئو':'ویډیو','موسیقی / صدا':'غږ / موسیقي','ضبط ویس':'غږ ثبتول','افزودن به پیام':'پیغام ته زیاتول',
-      'ورود':'ننوتل','ثبت‌نام':'نوم‌لیکنه','ایمیل':'برېښنالیک','رمز عبور':'پټنوم','ادامه':'دوام',
-      'پروفایل شما':'ستاسو پېژندپاڼه','جستجو':'لټون','ارسال':'لېږل','لغو':'لغوه','ذخیره':'خوندي کول',
-      'ویرایش':'سمون','حذف':'ړنګول','تأیید':'تایید','بازگشت':'بېرته',
-      'همه گفتگوها':'ټولې خبرې','گفتگوی جدید':'نوې خبرې','ساخت گروه':'ګروپ جوړول',
-      'مدیریت گروه':'د ګروپ اداره','مدیریت اعضا':'د غړو اداره','مدیریت پیشرفته':'پرمختللې اداره',
-      'تنظیمات و اختیارات':'امستنې او واکونه','ویرایش نام و توضیحات':'نوم او تشریح سمول',
-      'اطلاعات گفتگو':'د خبرو معلومات','رسانه‌ها و فایل‌ها':'رسنۍ او فایلونه',
-      'جستجوی پیام‌ها':'د پیغامونو لټون','پروفایل و اطلاعات':'پېژندپاڼه او معلومات',
-      'باز کردن گفتگو':'خبرې پرانیستل','بایگانی':'آرشیف','مرکز اعلان‌ها':'د خبرتیاوو مرکز',
-      'همه فرستنده‌ها':'ټول لېږونکي','دستگاه‌های متصل':'نښلول شوې وسیلې',
-      'مخاطبین مسدودشده':'بلاک شوي اړیکې','عکس و ویدیو':'انځور او ویډیو','فایل':'فایل',
-      'صدا':'غږ','خاموش':'غلی','فعلی':'اوسنی','معماری':'جوړښت',
-      'گروه‌های مشترک':'ګډ ګروپونه','نتیجه‌ای پیدا نشد.':'پایله ونه موندل شوه.',
-      'رسانه‌ای وجود ندارد':'رسنۍ نشته','فایلی وجود ندارد':'فایل نشته',
-      'لینکی وجود ندارد':'لینک نشته','صدایی وجود ندارد':'غږ نشته',
     };
     return pashto[source] ?? source;
   }
@@ -964,7 +937,7 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
       Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:()async{try{await supabase.from('chat_folder_items').delete().eq('folder_id',fid);if(selected.isNotEmpty){await supabase.from('chat_folder_items').insert(selected.map((id)=>{'folder_id':fid,'conversation_id':id}).toList());}if(sheet.mounted)Navigator.pop(sheet);await _load();}catch(e){if(mounted)showMsg(context,'ذخیره گفتگوهای پوشه ناموفق بود: '+_friendlyError(e.toString()));}},child:const Text('ذخیره تغییرات'))),
     ])))));
   }
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:const Text('پوشه جدید')));
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text('ویرایش')),PopupMenuItem(value:'delete',child:Text('حذف'))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:const Text('پوشه جدید')));
 }
 class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
@@ -2106,7 +2079,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
 }
 class SharedMediaFilesPage extends StatelessWidget {
   const SharedMediaFilesPage({super.key});
-  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:const TabBarView(children:[Center(child:Text(trUi('رسانه‌ای وجود ندارد'))),Center(child:Text(trUi('فایلی وجود ندارد'))),Center(child:Text(trUi('لینکی وجود ندارد'))),Center(child:Text(trUi('صدایی وجود ندارد')))])));
+  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
 }
 class GlobalSearchPage extends StatefulWidget {
   const GlobalSearchPage({super.key});
@@ -2494,7 +2467,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
                             subtitle: Text('${current ? 'این دستگاه • ' : ''}${_lastSeen(row)}'),
                             trailing: current
-                                ? const Chip(label: Text(trUi('فعلی')))
+                                ? const Chip(label: Text('فعلی'))
                                 : revoked
                                     ? const Icon(Icons.block_rounded)
                                     : IconButton(
@@ -2535,7 +2508,7 @@ class AboutAppPage extends StatelessWidget {
     appBar:AppBar(title:const Text('درباره برنامه')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
       const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه $kAppVersion'))),
-      const Card(child:ListTile(title:Text(trUi('معماری')),subtitle:Text('Flutter + Supabase + GitHub Actions'))),
+      const Card(child:ListTile(title:Text('معماری'),subtitle:Text('Flutter + Supabase + GitHub Actions'))),
       const Card(child:ListTile(title:Text('اصل محصول'),subtitle:Text('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.'))),
     ]),
   );
@@ -4813,12 +4786,12 @@ class _HomePageState extends State<HomePage> {
             },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('کنترل سریع برنامه'))),
-              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
+              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
               PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text('مدیریت پوشه‌های گفتگو'))),
-              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text(trUi('مرکز اعلان‌ها')))),
-              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
-              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
-              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text(trUi('گفتگوی جدید')))),
+              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text('مرکز اعلان‌ها'))),
+              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text('بایگانی'))),
+              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text('ساخت گروه'))),
+              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text('گفتگوی جدید'))),
               PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text('پیوستن با لینک گروه'))),
               PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: Icon(Icons.auto_stories_outlined), title: Text('دیدن استوری‌ها'))),
             ],
@@ -4983,8 +4956,8 @@ class _HomePageState extends State<HomePage> {
                                   if (action == 'pin') _togglePin(c);
                                 },
                                 itemBuilder: (_) => [
-                                  const PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
-                                  const PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
+                                  const PopupMenuItem(value: 'open', child: Text('باز کردن گفتگو')),
+                                  const PopupMenuItem(value: 'info', child: Text('پروفایل و اطلاعات')),
                                   PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن')),
                                   PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
                                   PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
@@ -5584,10 +5557,10 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _loadMutualGroups(profile['id']?.toString() ?? ''),
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) return const Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک')), subtitle: Text('در حال بررسی…')));
+              if (snap.connectionState == ConnectionState.waiting) return const Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text('گروه‌های مشترک'), subtitle: Text('در حال بررسی…')));
               final groups = snap.data ?? [];
               return Card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک'))),
+                const ListTile(leading: Icon(Icons.groups_rounded), title: Text('گروه‌های مشترک')),
                 if (groups.isEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('هیچ گروه مشترکی ندارید.')),
                 ...groups.map((g) => ListTile(
                   leading: CircleAvatar(child: Icon((g['type'] ?? 'group') == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded)),
@@ -6436,7 +6409,7 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
   @override Widget build(BuildContext context){
     final filtered=rows.where(_matches).toList();
     return Scaffold(
-      appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:const [ButtonSegment(value:0,label:Text(trUi('عکس و ویدیو'))),ButtonSegment(value:1,label:Text(trUi('فایل'))),ButtonSegment(value:2,label:Text(trUi('صدا')))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
+      appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:const [ButtonSegment(value:0,label:Text('عکس و ویدیو')),ButtonSegment(value:1,label:Text('فایل')),ButtonSegment(value:2,label:Text('صدا'))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
       body:loading?const Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
         final m=filtered[i]; final a=attachments['${m['id']}']; final name=(a?['file_name']??m['body']??'رسانه').toString(); final type='${m['message_type']??''}';
         final icon=type=='image'?Icons.image_rounded:type=='video'?Icons.video_file_rounded:type=='file'?Icons.insert_drive_file_rounded:Icons.audiotrack_rounded;
@@ -6454,8 +6427,8 @@ class StickersPage extends StatelessWidget { const StickersPage({super.key}); @o
 class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
 class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:const Text('تأیید دومرحله‌ای'))),
- const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text(trUi('دستگاه‌های متصل')))),
- const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text(trUi('مخاطبین مسدودشده')))),
+ const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text('دستگاه‌های متصل'))),
+ const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text('مخاطبین مسدودشده'))),
  Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:const Text('پیام‌های خودتخریب‌شونده'))),
 ]));}
 
@@ -6683,7 +6656,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
           SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('واکنش‌های ایموجی'), value: reactions, onChanged: (v) => setDialog(() => reactions = v)),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(value: ttl, decoration: const InputDecoration(labelText: 'حذف خودکار پیام‌ها', border: OutlineInputBorder()),
-            items: const [DropdownMenuItem(value: 0, child: Text(trUi('خاموش'))), DropdownMenuItem(value: 86400, child: Text('پس از ۱ روز')), DropdownMenuItem(value: 604800, child: Text('پس از ۱ هفته')), DropdownMenuItem(value: 2592000, child: Text('پس از ۱ ماه'))],
+            items: const [DropdownMenuItem(value: 0, child: Text('خاموش')), DropdownMenuItem(value: 86400, child: Text('پس از ۱ روز')), DropdownMenuItem(value: 604800, child: Text('پس از ۱ هفته')), DropdownMenuItem(value: 2592000, child: Text('پس از ۱ ماه'))],
             onChanged: (v) => setDialog(() => ttl = v ?? 0)),
         ])),
         actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(dialog, {'public':publicGroup,'approval':approval,'post':adminsPost,'add':adminsAdd,'reactions':reactions,'ttl':ttl}), child: const Text('ذخیره همه تنظیمات'))],
@@ -6931,10 +6904,10 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
               }
             },
             itemBuilder:(_)=>[
-              if(canEditRules) const PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text(trUi('ویرایش نام و توضیحات'))])),
-              if(canEditRules) const PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text(trUi('تنظیمات و اختیارات'))])),
-              if(canManageMembers) const PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text(trUi('مدیریت اعضا'))])),
-              if(isCreator) const PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text(trUi('مدیریت پیشرفته'))])),
+              if(canEditRules) const PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text('ویرایش نام و توضیحات')])),
+              if(canEditRules) const PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text('تنظیمات و اختیارات')])),
+              if(canManageMembers) const PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text('مدیریت اعضا')])),
+              if(isCreator) const PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text('مدیریت پیشرفته')])),
             ],
             child:Container(
               padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
@@ -6943,7 +6916,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                 borderRadius:BorderRadius.circular(14),
               ),
               child:const Row(mainAxisSize:MainAxisSize.min,children:[
-                Icon(Icons.more_horiz_rounded,size:20),SizedBox(width:7),Text(trUi('مدیریت گروه')),
+                Icon(Icons.more_horiz_rounded,size:20),SizedBox(width:7),Text('مدیریت گروه'),
               ]),
             ),
           ),
@@ -7294,7 +7267,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
         final chats = List<Map<String,dynamic>>.from(data['chats'] ?? const []);
         final publicChats = List<Map<String,dynamic>>.from(data['public_chats'] ?? const []);
         final messages = List<Map<String,dynamic>>.from(data['messages'] ?? const []);
-        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
+        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
         return ListView(padding: const EdgeInsets.fromLTRB(8, 8, 8, 24), children: [
           if (users.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'کاربران', icon: Icons.people_alt_rounded),
@@ -10577,9 +10550,9 @@ class _ChatPageState extends State<ChatPage> {
               }
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text(trUi('جستجوی پیام‌ها')))),
-              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text(trUi('رسانه‌ها و فایل‌ها')))),
-              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text(trUi('اطلاعات گفتگو')))),
+              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text('جستجوی پیام‌ها'))),
+              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text('رسانه‌ها و فایل‌ها'))),
+              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text('اطلاعات گفتگو'))),
               PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('تنظیمات گفتگو'))),
               PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text('پیام‌های ذخیره‌شده'))),
             ],
@@ -11318,7 +11291,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
+                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
@@ -11380,7 +11353,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
       if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
       if (snapshot.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snapshot.error}')));
       final rows = snapshot.data ?? const <Map<String,dynamic>>[];
-      if (rows.isEmpty) return const Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
+      if (rows.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
       return ListView.builder(
         itemCount: rows.length,
         itemBuilder: (context, index) {
