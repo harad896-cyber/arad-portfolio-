@@ -123,6 +123,7 @@ String trUi(String source) {
       'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'پیام‌هایی که برای خودتان ذخیره کرده‌اید',
       'ابزارهای پیشرفته متصل به Backend':'ابزارهای پیشرفته متصل به Backend',
       'نسخه، معماری و اطلاعات برنامه':'نسخه، معماری و اطلاعات برنامه',
+      'پیام خود را بنویسید…':'پیام خود را بنویسید…','پیوست‌ها':'پیوست‌ها','ارسال پیام':'ارسال پیام','گالری':'گالری','دوربین':'دوربین','فایل‌ها':'فایل‌ها','ویدئو':'ویدئو','موسیقی / صدا':'موسیقی / صدا','ضبط ویس':'ضبط ویس','افزودن به پیام':'افزودن به پیام',
     };
     return dari[source] ?? source;
   }
@@ -154,6 +155,7 @@ String trUi(String source) {
       'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'هغه پیغامونه چې ځان ته مو خوندي کړي',
       'ابزارهای پیشرفته متصل به Backend':'له Backend سره تړلي پرمختللي وسایل',
       'نسخه، معماری و اطلاعات برنامه':'د نسخې، جوړښت او اپلېکېشن معلومات',
+      'پیام خود را بنویسید…':'خپل پیغام ولیکئ…','پیوست‌ها':'ضمیمې','ارسال پیام':'پیغام لېږل','گالری':'ګالري','دوربین':'کمره','فایل‌ها':'فایلونه','ویدئو':'ویډیو','موسیقی / صدا':'غږ / موسیقي','ضبط ویس':'غږ ثبتول','افزودن به پیام':'پیغام ته زیاتول',
     };
     return pashto[source] ?? source;
   }
@@ -8701,13 +8703,13 @@ class _ChatPageState extends State<ChatPage> {
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 18),
-              Row(children: [Expanded(child: Text({'en':'Add to message','ar':'إضافة إلى الرسالة'}[aradLanguageController.locale.languageCode] ?? 'افزودن به پیام', textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
+              Row(children: [Expanded(child: Text(trUi('افزودن به پیام'), textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
               GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
-                _attachmentItem(sheetContext, Icons.photo_library_rounded, {'en':'Gallery','ar':'المعرض'}[aradLanguageController.locale.languageCode] ?? 'گالری', () { Navigator.pop(sheetContext); sendImage(); }),
-                _attachmentItem(sheetContext, Icons.camera_alt_rounded, {'en':'Camera','ar':'الكاميرا'}[aradLanguageController.locale.languageCode] ?? 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
-                _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, {'en':'Files','ar':'الملفات'}[aradLanguageController.locale.languageCode] ?? 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
-                _attachmentItem(sheetContext, Icons.videocam_rounded, {'en':'Video','ar':'فيديو'}[aradLanguageController.locale.languageCode] ?? 'ویدئو', () { Navigator.pop(sheetContext); sendVideo(); }),
-                _attachmentItem(sheetContext, Icons.music_note_rounded, {'en':'Audio / Music','ar':'صوت / موسيقى'}[aradLanguageController.locale.languageCode] ?? 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.photo_library_rounded, trUi('گالری'), () { Navigator.pop(sheetContext); sendImage(); }),
+                _attachmentItem(sheetContext, Icons.camera_alt_rounded, trUi('دوربین'), () { Navigator.pop(sheetContext); sendCameraImage(); }),
+                _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, trUi('فایل‌ها'), () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.videocam_rounded, trUi('ویدئو'), () { Navigator.pop(sheetContext); sendVideo(); }),
+                _attachmentItem(sheetContext, Icons.music_note_rounded, trUi('موسیقی / صدا'), () { Navigator.pop(sheetContext); sendFile(); }),
                 _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
               ]),
             ]),
@@ -10934,7 +10936,7 @@ class _ChatPageState extends State<ChatPage> {
                               maxLines: 4,
                               textInputAction: TextInputAction.newline,
                               decoration: InputDecoration(
-                                hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
+                                hintText: trUi('پیام خود را بنویسید…'),
                                 filled: true,
                                 fillColor: Colors.transparent,
                                 hintStyle: TextStyle(
@@ -10959,14 +10961,14 @@ class _ChatPageState extends State<ChatPage> {
                               padding: const EdgeInsets.all(10),
                             ),
                             onPressed: _showAttachmentPanel,
-                            tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
+                            tooltip: trUi('پیوست‌ها'),
                             icon: Icon(Icons.attach_file_rounded, color: scheme.primary, size: 27),
                           ),
                           // Telegram-style single action at the far right:
                           // send replaces the microphone as soon as text is entered.
                           if (text.text.trim().isNotEmpty)
                             IconButton(
-                              tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
+                              tooltip: trUi('ارسال پیام'),
                               style: IconButton.styleFrom(
                                 backgroundColor: scheme.primary,
                                 foregroundColor: Colors.white,
@@ -11001,7 +11003,7 @@ class _ChatPageState extends State<ChatPage> {
                                   ? 'در حال آماده‌سازی میکروفون'
                                   : (recordingVoice
                                       ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس')
-                                      : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
+                                      : trUi('ضبط ویس')),
                               icon: _voiceStarting
                                   ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                   : Icon(recordingVoice ? Icons.send_rounded : Icons.mic_rounded, color: Colors.white, size: 27),
