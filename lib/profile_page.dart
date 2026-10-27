@@ -729,7 +729,7 @@ class _ProfilePageState extends State<ProfilePage> {
             title: const Text('تنظیمات حساب کاربری', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: const Text('حریم خصوصی، اعلان‌ها، ظاهر و تنظیمات برنامه'),
             trailing: const Icon(Icons.chevron_left_rounded),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfessionalSettingsPage())),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfessionalSettingsPage())),
           ),
           const Divider(height: 1),
           ListTile(
@@ -911,7 +911,7 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
   }
   Future<void> addAccount()async{
     if(emails.length>=3){showMsg(context,'حداکثر ۳ حساب مجاز است.');return;}
-    await Navigator.push(context,MaterialPageRoute(builder:(_)=>const LoginPage(addAccount:true)));
+    await Navigator.push(context,MaterialPageRoute(builder:(_)=>LoginPage(addAccount:true)));
     if(mounted)await load();
   }
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('تغییر حساب')),body:ListView(padding:const EdgeInsets.all(16),children:[
