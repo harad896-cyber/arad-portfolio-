@@ -214,6 +214,26 @@ String trUi(String source) {
       'نام کاربری در دسترس نیست':'این نام کاربری قابل استفاده نیست',
       'این بخش فعلاً در دسترس نیست':'این بخش فعلاً قابل دسترس نیست',
       'خطایی رخ داد':'یک خطا رخ داده است','دوباره تلاش کنید':'دوباره تلاش کنید',
+
+      'نو':'نو','شروع گفتگو':'آغاز گپ','تماس صوتی':'تماس صوتی','تماس تصویری':'تماس تصویری',
+      'ذخیره تغییرات':'ذخیره تغییرات','تغییرات ذخیره شد':'تغییرات ذخیره شد',
+      'نام گروه':'نام گروپ','توضیحات گروه':'شرح گروپ','اعضای گروه':'اعضای گروپ',
+      'ساخت کانال':'ساخت چنل','ساخت گروه جدید':'ساخت گروپ نو',
+      'پین کردن':'سنجاق کردن','بی‌صدا کردن':'خاموش‌کردن صدا','لغو بی‌صدا':'فعال‌کردن صدا',
+      'ارسال دوباره':'ارسال دوباره','فوروارد پیام':'ارسال دوباره پیام',
+      'پاسخ دادن':'جواب دادن','پیام حذف شد':'پیام پاک شد','ویرایش پیام':'ویرایش پیام',
+      'تغییر عکس':'تغییر تصویر','انتخاب عکس':'انتخاب تصویر','حذف عکس':'پاک کردن تصویر',
+      'اعلان‌ها و صداها':'آگاهی‌ها و صداها','مدیریت اعضا':'مدیریت اعضا',
+      'درخواست عضویت':'درخواست عضویت','پیام‌های سنجاق‌شده':'پیام‌های سنجاق‌شده',
+      'اعضای مسدودشده':'اعضای بلاک‌شده','محدود کردن کاربر':'محدود ساختن کاربر',
+      'رفع محدودیت':'برداشتن محدودیت','رد کردن':'رد کردن',
+      'به اشتراک‌گذاری':'شریک‌ساختن','کپی لینک':'کاپی لینک','لینک دعوت':'لینک دعوت',
+      'استیکرها':'استیکرها','استیکر':'استیکر','ایموجی':'ایموجی',
+      'انتخاب استیکر':'انتخاب استیکر','استیکرهای من':'استیکرهای من',
+      'افزودن استیکر':'افزودن استیکر','بسته استیکر':'بسته استیکر',
+      'تغییر زبان':'تغییر زبان','بارگذاری تصویر':'بارگذاری تصویر','بارگذاری فایل':'بارگذاری فایل',
+      'این بخش فعلاً در دسترس نیست':'این بخش فعلاً قابل دسترس نیست',
+      'خطایی رخ داد':'یک خطا رخ داده است','دوباره تلاش کنید':'دوباره تلاش کنید',
     };
     return dari[source] ?? source;
   }
@@ -272,6 +292,26 @@ String trUi(String source) {
       'محدود کردن کاربر':'کارن محدودول','رفع محدودیت':'محدودیت لرې کول',
       'رد کردن':'ردول','عضو شوید':'غړی شئ',
       'ارسال پیام':'پیغام لېږل','پیام خود را بنویسید':'خپل پیغام ولیکئ',
+      'به اشتراک‌گذاری':'شریکول','کپی لینک':'لینک کاپي کول','لینک دعوت':'د بلنې لینک',
+      'استیکرها':'سټیکرونه','استیکر':'سټیکر','ایموجی':'ایموجي',
+      'انتخاب استیکر':'سټیکر ټاکل','استیکرهای من':'زما سټیکرونه',
+      'افزودن استیکر':'سټیکر زیاتول','بسته استیکر':'د سټیکرونو بسته',
+      'تغییر زبان':'ژبه بدلول','بارگذاری تصویر':'انځور پورته کول','بارگذاری فایل':'فایل پورته کول',
+      'این بخش فعلاً در دسترس نیست':'دا برخه اوس د لاسرسي وړ نه ده',
+      'خطایی رخ داد':'یوه تېروتنه رامنځته شوه','دوباره تلاش کنید':'بیا هڅه وکړئ',
+
+      'نو':'نوی','شروع گفتگو':'خبرې پیلول','تماس صوتی':'غږیزه اړیکه','تماس تصویری':'ویډیويي اړیکه',
+      'ذخیره تغییرات':'بدلونونه خوندي کول','تغییرات ذخیره شد':'بدلونونه خوندي شول',
+      'نام گروه':'د ګروپ نوم','توضیحات گروه':'د ګروپ تشریح','اعضای گروه':'د ګروپ غړي',
+      'ساخت کانال':'چینل جوړول','ساخت گروه جدید':'نوی ګروپ جوړول',
+      'پین کردن':'پین کول','بی‌صدا کردن':'غلی کول','لغو بی‌صدا':'غږ فعالول',
+      'ارسال دوباره':'بیا لېږل','فوروارد پیام':'پیغام بل ته لېږل',
+      'پاسخ دادن':'ځواب ورکول','پیام حذف شد':'پیغام ړنګ شو','ویرایش پیام':'پیغام سمول',
+      'تغییر عکس':'انځور بدلول','انتخاب عکس':'انځور ټاکل','حذف عکس':'انځور ړنګول',
+      'اعلان‌ها و صداها':'خبرتیاوې او غږونه','مدیریت اعضا':'د غړو اداره',
+      'درخواست عضویت':'د غړیتوب غوښتنې','پیام‌های سنجاق‌شده':'پین شوي پیغامونه',
+      'اعضای مسدودشده':'بلاک شوي غړي','محدود کردن کاربر':'کارن محدودول',
+      'رفع محدودیت':'محدودیت لرې کول','رد کردن':'ردول',
       'به اشتراک‌گذاری':'شریکول','کپی لینک':'لینک کاپي کول','لینک دعوت':'د بلنې لینک',
       'استیکرها':'سټیکرونه','استیکر':'سټیکر','ایموجی':'ایموجي',
       'انتخاب استیکر':'سټیکر ټاکل','استیکرهای من':'زما سټیکرونه',
@@ -1021,11 +1061,11 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
     final fid=folder['id']?.toString();if(fid==null)return; final selected=Set<String>.from(membersByFolder[fid]??const <String>{});
     await showModalBottomSheet(context:context,isScrollControlled:true,showDragHandle:true,builder:(sheet)=>StatefulBuilder(builder:(sheet,setSheet)=>SafeArea(child:SizedBox(height:MediaQuery.of(sheet).size.height*.82,child:Column(children:[
       Padding(padding:const EdgeInsets.fromLTRB(20,8,20,12),child:Row(children:[const Expanded(child:Text('انتخاب گفتگوها',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),Text(selected.length.toString(),style:TextStyle(color:Theme.of(sheet).colorScheme.primary,fontWeight:FontWeight.w800))])),
-      Expanded(child:conversations.isEmpty?const Center(child:Text(trUi('گفتگویی برای افزودن وجود ندارد.'))):ListView.builder(itemCount:conversations.length,itemBuilder:(_,i){final c=conversations[i],id=c['id'].toString();final rawTitle=c['title']?.toString().trim()??'';final rawUsername=c['username']?.toString()??'';final title=rawTitle.isNotEmpty?rawTitle:(rawUsername.isNotEmpty?'@'+rawUsername:'گفتگو');final checked=selected.contains(id);return CheckboxListTile(value:checked,title:Text(title),subtitle:Text(c['type']?.toString()??'direct'),secondary:const CircleAvatar(child:Icon(Icons.chat_bubble_outline_rounded,size:19)),onChanged:(v)=>setSheet((){if(v==true)selected.add(id);else selected.remove(id);}));})),
+      Expanded(child:conversations.isEmpty?const Center(child:Text('گفتگویی برای افزودن وجود ندارد.')):ListView.builder(itemCount:conversations.length,itemBuilder:(_,i){final c=conversations[i],id=c['id'].toString();final rawTitle=c['title']?.toString().trim()??'';final rawUsername=c['username']?.toString()??'';final title=rawTitle.isNotEmpty?rawTitle:(rawUsername.isNotEmpty?'@'+rawUsername:'گفتگو');final checked=selected.contains(id);return CheckboxListTile(value:checked,title:Text(title),subtitle:Text(c['type']?.toString()??'direct'),secondary:const CircleAvatar(child:Icon(Icons.chat_bubble_outline_rounded,size:19)),onChanged:(v)=>setSheet((){if(v==true)selected.add(id);else selected.remove(id);}));})),
       Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:()async{try{await supabase.from('chat_folder_items').delete().eq('folder_id',fid);if(selected.isNotEmpty){await supabase.from('chat_folder_items').insert(selected.map((id)=>{'folder_id':fid,'conversation_id':id}).toList());}if(sheet.mounted)Navigator.pop(sheet);await _load();}catch(e){if(mounted)showMsg(context,'ذخیره گفتگوهای پوشه ناموفق بود: '+_friendlyError(e.toString()));}},child:const Text('ذخیره تغییرات'))),
     ])))));
   }
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:const Text('پوشه جدید')));
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('پوشه‌های گفتگو')),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text('ویرایش')),PopupMenuItem(value:'delete',child:Text('حذف'))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:const Text('پوشه جدید')));
 }
 class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
@@ -1079,7 +1119,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     final groups=<String,List<Map<String,String>>>{};
     for(final x in filtered){final cat=x['cat']!;(groups[cat]??=<Map<String,String>>[]).add(x);}
     return Scaffold(
-      appBar:AppBar(title:Text(trUi('تنظیمات')),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
+      appBar:AppBar(title:Text('تنظیمات'),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
         padding:const EdgeInsets.fromLTRB(16,4,14,10),
         child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:const Icon(Icons.search_rounded))),
       ))),
@@ -1100,14 +1140,14 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
         Card(child:ListTile(
           leading:const Icon(Icons.switch_account_rounded),
           title:Text(trUi('افزودن یا تغییر حساب'),style:const TextStyle(fontWeight:FontWeight.w800)),
-          subtitle:Text(trUi('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر')),
+          subtitle:Text('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر'),
           trailing:const Icon(Icons.chevron_left_rounded),
           onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccountSwitcherPage())),
         )),
         Card(child:ListTile(
           leading:Icon(Icons.logout_rounded,color:Theme.of(context).colorScheme.error),
           title:Text(trUi('خروج از حساب'),style:const TextStyle(fontWeight:FontWeight.w800)),
-          subtitle:Text(trUi('خروج امن از این دستگاه')),onTap:_signOut,
+          subtitle:Text('خروج امن از این دستگاه'),onTap:_signOut,
         )),
       ]),
     );
@@ -1599,11 +1639,11 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
       final bytes = await file.readAsBytes();
       await appTheme.setBackgroundImage(base64Encode(bytes));
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(trUi('پس‌زمینهٔ چت ذخیره شد.'))),
+        const SnackBar(content: Text('پس‌زمینهٔ چت ذخیره شد.')),
       );
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(trUi('انتخاب تصویر ناموفق بود: $e'))),
+        SnackBar(content: Text('انتخاب تصویر ناموفق بود: $e')),
       );
     } finally {
       if (mounted) setState(() => picking = false);
@@ -2121,9 +2161,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                         SizedBox(height: 150),
                         Icon(Icons.notifications_none_rounded, size: 62),
                         SizedBox(height: 14),
-                        Center(child: Text(trUi('پیام خوانده‌نشده‌ای ندارید'))),
+                        Center(child: Text('پیام خوانده‌نشده‌ای ندارید')),
                         SizedBox(height: 8),
-                        Center(child: Text(trUi('پیام‌های جدید در این بخش ظاهر می‌شوند.'))),
+                        Center(child: Text('پیام‌های جدید در این بخش ظاهر می‌شوند.')),
                       ]),
                     )
                   : RefreshIndicator(
@@ -2167,7 +2207,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
 }
 class SharedMediaFilesPage extends StatelessWidget {
   const SharedMediaFilesPage({super.key});
-  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:const TabBarView(children:[Center(child:Text(trUi('رسانه‌ای وجود ندارد'))),Center(child:Text(trUi('فایلی وجود ندارد'))),Center(child:Text(trUi('لینکی وجود ندارد'))),Center(child:Text(trUi('صدایی وجود ندارد')))])));
+  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:const TabBarView(children:[Center(child:Text('رسانه‌ای وجود ندارد')),Center(child:Text('فایلی وجود ندارد')),Center(child:Text('لینکی وجود ندارد')),Center(child:Text('صدایی وجود ندارد'))])));
 }
 class GlobalSearchPage extends StatefulWidget {
   const GlobalSearchPage({super.key});
@@ -2189,7 +2229,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage>{
 }
 class _SearchSection extends StatelessWidget {
   final String title; const _SearchSection({required this.title});
-  @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17))),const ListTile(leading:Icon(Icons.search_rounded),title:Text(trUi('نتیجه جستجو')))]);
+  @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17))),const ListTile(leading:Icon(Icons.search_rounded),title:Text('نتیجه جستجو'))]);
 }
 class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
@@ -2534,7 +2574,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                       if (devices.isEmpty)
                         const Card(child: Padding(
                           padding: EdgeInsets.all(18),
-                          child: Text(trUi('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.')),
+                          child: Text('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.'),
                         )),
                       ...devices.map((row) {
                         final id = row['device_id']?.toString() ?? '';
@@ -2555,7 +2595,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
                             subtitle: Text('${current ? 'این دستگاه • ' : ''}${_lastSeen(row)}'),
                             trailing: current
-                                ? const Chip(label: Text(trUi('فعلی')))
+                                ? const Chip(label: Text('فعلی'))
                                 : revoked
                                     ? const Icon(Icons.block_rounded)
                                     : IconButton(
@@ -2595,9 +2635,9 @@ class AboutAppPage extends StatelessWidget {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('درباره برنامه')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      const Card(child:ListTile(title:Text(trUi('Arad Messenger')),subtitle:Text(trUi('نسخه $kAppVersion')))),
-      const Card(child:ListTile(title:Text(trUi('معماری')),subtitle:Text(trUi('Flutter + Supabase + GitHub Actions')))),
-      const Card(child:ListTile(title:Text(trUi('اصل محصول')),subtitle:Text(trUi('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.')))),
+      const Card(child:ListTile(title:Text('Arad Messenger'),subtitle:Text('نسخه $kAppVersion'))),
+      const Card(child:ListTile(title:Text('معماری'),subtitle:Text('Flutter + Supabase + GitHub Actions'))),
+      const Card(child:ListTile(title:Text('اصل محصول'),subtitle:Text('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.'))),
     ]),
   );
 }
@@ -2855,13 +2895,13 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
       :ListView(padding:const EdgeInsets.all(16),children:[
         Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.verified_user_rounded)),title:const Text('حساب فعلی'),subtitle:Text(current),trailing:const Icon(Icons.check_circle_rounded))),
         const SizedBox(height:8),
-        const Card(child: Padding(padding: EdgeInsets.all(14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.privacy_tip_outlined), SizedBox(width: 10), Expanded(child: Text(trUi('حساب‌ها فقط در فهرست همین دستگاه ذخیره می‌شوند. هیچ حساب دیگری این فهرست را از دستگاه خودش نمی‌بیند؛ پیام‌ها و دستگاه‌های فعال هر حساب جداگانه‌اند.')))]))),
+        const Card(child: Padding(padding: EdgeInsets.all(14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.privacy_tip_outlined), SizedBox(width: 10), Expanded(child: Text('حساب‌ها فقط در فهرست همین دستگاه ذخیره می‌شوند. هیچ حساب دیگری این فهرست را از دستگاه خودش نمی‌بیند؛ پیام‌ها و دستگاه‌های فعال هر حساب جداگانه‌اند.'))]))),
         if(accounts.isEmpty) const Padding(padding:EdgeInsets.symmetric(vertical:20),child:Text('حساب دیگری برای تغییر سریع روی این دستگاه ذخیره نشده است. برای افزودن حساب جدید، دکمه زیر را بزنید.',textAlign:TextAlign.center)),
         ...accounts.map((email)=>Card(child:ListTile(
           leading:const CircleAvatar(child:Icon(Icons.person_outline_rounded)),title:Text(email),subtitle:const Text('حساب ذخیره‌شده'),
           trailing:PopupMenuButton<String>(onSelected:(v){if(v=='switch')_switch(email);if(v=='forget')_forget(email);},itemBuilder:(_)=>const [
-            PopupMenuItem(value:'switch',child:Text(trUi('تغییر به این حساب'))),
-            PopupMenuItem(value:'forget',child:Text(trUi('حذف از فهرست'))),
+            PopupMenuItem(value:'switch',child:Text('تغییر به این حساب')),
+            PopupMenuItem(value:'forget',child:Text('حذف از فهرست')),
           ]),
           onTap:busy?null:()=>_switch(email),
         ))),
@@ -3055,7 +3095,7 @@ class _ProfileGateState extends State<ProfileGate> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 14),
-                  Text(trUi('در حال بررسی حساب…')),
+                  Text('در حال بررسی حساب…'),
                 ],
               ),
             ),
@@ -3333,7 +3373,7 @@ class _LoginPageState extends State<LoginPage>{
         const SizedBox(height: 12),
         Row(children: const [
           Expanded(child: Divider()),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text(trUi('یا'))),
+          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('یا')),
           Expanded(child: Divider()),
         ]),
         const SizedBox(height: 12),
@@ -4714,7 +4754,7 @@ class _HomePageState extends State<HomePage> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: Text(row['call_type']?.toString() == 'video' ? 'تماس تصویری ورودی' : 'تماس صوتی ورودی'),
-        content: Text(trUi('$title با شما تماس می‌گیرد.')),
+        content: Text('$title با شما تماس می‌گیرد.'),
         actions: [
           TextButton(
             onPressed: () async {
@@ -4873,15 +4913,15 @@ class _HomePageState extends State<HomePage> {
               else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage()));
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: const Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
-              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: const Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
-              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: const Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
-              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: const Icon(Icons.notifications_none_rounded), title: Text(trUi('مرکز اعلان‌ها')))),
-              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: const Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
-              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: const Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
-              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: const Icon(Icons.edit_outlined), title: Text(trUi('گفتگوی جدید')))),
-              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: const Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
-              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: const Icon(Icons.auto_stories_outlined), title: Text(trUi('دیدن استوری‌ها')))),
+              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: const Icon(Icons.tune_rounded), title: Text('کنترل سریع برنامه'))),
+              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: const Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
+              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: const Icon(Icons.folder_open_rounded), title: Text('مدیریت پوشه‌های گفتگو'))),
+              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: const Icon(Icons.notifications_none_rounded), title: Text('مرکز اعلان‌ها'))),
+              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: const Icon(Icons.archive_outlined), title: Text('بایگانی'))),
+              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: const Icon(Icons.group_add_outlined), title: Text('ساخت گروه'))),
+              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: const Icon(Icons.edit_outlined), title: Text('گفتگوی جدید'))),
+              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: const Icon(Icons.link_rounded), title: Text('پیوستن با لینک گروه'))),
+              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: const Icon(Icons.auto_stories_outlined), title: Text('دیدن استوری‌ها'))),
             ],
           ),
           const SizedBox(width: 6),
@@ -5044,8 +5084,8 @@ class _HomePageState extends State<HomePage> {
                                   if (action == 'pin') _togglePin(c);
                                 },
                                 itemBuilder: (_) => [
-                                  const PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
-                                  const PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
+                                  const PopupMenuItem(value: 'open', child: Text('باز کردن گفتگو')),
+                                  const PopupMenuItem(value: 'info', child: Text('پروفایل و اطلاعات')),
                                   PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن')),
                                   PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
                                   PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
@@ -5108,11 +5148,11 @@ class _HomePageState extends State<HomePage> {
             return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
               SizedBox(height: 12),
-              Text(trUi('در حال بارگذاری مخاطبین…')),
+              Text('در حال بارگذاری مخاطبین…'),
             ]));
           }
           final rows = snap.data ?? [];
-          if (rows.isEmpty) return const Center(child: Text(trUi('هنوز مخاطبی اضافه نکرده‌اید.')));
+          if (rows.isEmpty) return const Center(child: Text('هنوز مخاطبی اضافه نکرده‌اید.'));
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 90),
             itemCount: rows.length,
@@ -5562,7 +5602,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
               if (value == 'contact') await _toggleContact();
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text(trUi('نام‌گذاری مخاطب')))),
+              const PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text('نام‌گذاری مخاطب'))),
               PopupMenuItem(value: 'friend', child: ListTile(dense: true, leading: const Icon(Icons.person_add_alt_rounded), title: const Text('درخواست دوستی'))),
               PopupMenuItem(value: 'contact', child: ListTile(dense: true, leading: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded), title: Text(isContact ? 'حذف از مخاطبین' : 'افزودن به مخاطبین'))),
             ],
@@ -5637,19 +5677,19 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
               leading: Icon(Icons.format_quote_rounded, color: s.primary),
               title: Text(bio, textAlign: TextAlign.start, style: const TextStyle(height: 1.5)),
               subtitle: const Text('بیوگرافی'),
-            ) else const ListTile(leading: Icon(Icons.format_quote_rounded), title: Text(trUi('بیوگرافی ثبت نشده است'))),
+            ) else const ListTile(leading: Icon(Icons.format_quote_rounded), title: Text('بیوگرافی ثبت نشده است')),
             if (username.isNotEmpty) const Divider(height: 1),
-            if (username.isNotEmpty) ListTile(leading: const Icon(Icons.alternate_email_rounded), title: Text(trUi('@$username')), subtitle: const Text('نام کاربری')),
+            if (username.isNotEmpty) ListTile(leading: const Icon(Icons.alternate_email_rounded), title: Text('@$username'), subtitle: const Text('نام کاربری')),
           ])),
           const SizedBox(height: 12),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _loadMutualGroups(profile['id']?.toString() ?? ''),
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) return const Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک')), subtitle: Text(trUi('در حال بررسی…'))));
+              if (snap.connectionState == ConnectionState.waiting) return const Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text('گروه‌های مشترک'), subtitle: Text('در حال بررسی…')));
               final groups = snap.data ?? [];
               return Card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک'))),
-                if (groups.isEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text(trUi('هیچ گروه مشترکی ندارید.'))),
+                const ListTile(leading: Icon(Icons.groups_rounded), title: Text('گروه‌های مشترک')),
+                if (groups.isEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('هیچ گروه مشترکی ندارید.')),
                 ...groups.map((g) => ListTile(
                   leading: CircleAvatar(child: Icon((g['type'] ?? 'group') == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded)),
                   title: Text('${g['title'] ?? 'گروه'}'),
@@ -5778,7 +5818,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : requests.isEmpty
-              ? const Center(child: Text(trUi('درخواست دوستی جدیدی ندارید.')))
+              ? const Center(child: Text('درخواست دوستی جدیدی ندارید.'))
               : ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: requests.length,
@@ -5836,7 +5876,7 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
 
   Widget resultsWidget() {
     final q = query.trim();
-    if (q.isEmpty) return const Center(child: Text(trUi('نام یا نام کاربری را جستجو کنید')));
+    if (q.isEmpty) return const Center(child: Text('نام یا نام کاربری را جستجو کنید'));
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: supabase.rpc('search_profiles', params: {'search_text': q}).then((v) => List<Map<String, dynamic>>.from(v)),
       builder: (context, snapshot) {
@@ -6025,7 +6065,7 @@ class ContactSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   Widget _build(BuildContext context) => FutureBuilder(
     future: query.trim().isEmpty ? Future.value([]) : supabase.rpc('search_profiles', params: {'search_text': query.trim()}),
     builder: (context, snap) {
-      if (query.trim().isEmpty) return const Center(child: Text(trUi('نام یا آیدی کاربر را جستجو کنید.')));
+      if (query.trim().isEmpty) return const Center(child: Text('نام یا آیدی کاربر را جستجو کنید.'));
       if (!snap.hasData) return const Center(child: CircularProgressIndicator());
       final users = List<Map<String,dynamic>>.from(snap.data as List);
       return ListView(children: users.map((p) => ListTile(
@@ -6373,7 +6413,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
         )),
         const Padding(
           padding: EdgeInsets.all(8),
-          child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.')),
+          child: Text('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.'),
         ),
       ],
     ),
@@ -6497,7 +6537,7 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
   @override Widget build(BuildContext context){
     final filtered=rows.where(_matches).toList();
     return Scaffold(
-      appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:const [ButtonSegment(value:0,label:Text(trUi('عکس و ویدیو'))),ButtonSegment(value:1,label:Text(trUi('فایل'))),ButtonSegment(value:2,label:Text(trUi('صدا')))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
+      appBar:AppBar(title:const Text('رسانه‌ها و فایل‌های مشترک'),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:const [ButtonSegment(value:0,label:Text('عکس و ویدیو')),ButtonSegment(value:1,label:Text('فایل')),ButtonSegment(value:2,label:Text('صدا'))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
       body:loading?const Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
         final m=filtered[i]; final a=attachments['${m['id']}']; final name=(a?['file_name']??m['body']??'رسانه').toString(); final type='${m['message_type']??''}';
         final icon=type=='image'?Icons.image_rounded:type=='video'?Icons.video_file_rounded:type=='file'?Icons.insert_drive_file_rounded:Icons.audiotrack_rounded;
@@ -6515,8 +6555,8 @@ class StickersPage extends StatelessWidget { const StickersPage({super.key}); @o
 class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
 class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('امنیت پیشرفته')),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:const Text('تأیید دومرحله‌ای'))),
- const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text(trUi('دستگاه‌های متصل')))),
- const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text(trUi('مخاطبین مسدودشده')))),
+ const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text('دستگاه‌های متصل'))),
+ const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text('مخاطبین مسدودشده'))),
  Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:const Text('پیام‌های خودتخریب‌شونده'))),
 ]));}
 
@@ -6620,7 +6660,7 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('پیام‌های ذخیره‌شده')),
     body: loading ? const Center(child: CircularProgressIndicator()) : items.isEmpty
-      ? const Center(child: Text(trUi('هنوز پیامی ذخیره نکرده‌اید.')))
+      ? const Center(child: Text('هنوز پیامی ذخیره نکرده‌اید.'))
       : ListView.separated(padding: const EdgeInsets.all(12), itemCount: items.length, separatorBuilder: (_, __) => const SizedBox(height: 8), itemBuilder: (context, i) {
           final m = items[i];
           final type = '${m['message_type'] ?? 'text'}';
@@ -6744,7 +6784,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
           SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('واکنش‌های ایموجی'), value: reactions, onChanged: (v) => setDialog(() => reactions = v)),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(value: ttl, decoration: const InputDecoration(labelText: 'حذف خودکار پیام‌ها', border: OutlineInputBorder()),
-            items: const [DropdownMenuItem(value: 0, child: Text(trUi('خاموش'))), DropdownMenuItem(value: 86400, child: Text(trUi('پس از ۱ روز'))), DropdownMenuItem(value: 604800, child: Text(trUi('پس از ۱ هفته'))), DropdownMenuItem(value: 2592000, child: Text(trUi('پس از ۱ ماه')))],
+            items: const [DropdownMenuItem(value: 0, child: Text('خاموش')), DropdownMenuItem(value: 86400, child: Text('پس از ۱ روز')), DropdownMenuItem(value: 604800, child: Text('پس از ۱ هفته')), DropdownMenuItem(value: 2592000, child: Text('پس از ۱ ماه'))],
             onChanged: (v) => setDialog(() => ttl = v ?? 0)),
         ])),
         actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(dialog, {'public':publicGroup,'approval':approval,'post':adminsPost,'add':adminsAdd,'reactions':reactions,'ttl':ttl}), child: const Text('ذخیره همه تنظیمات'))],
@@ -6876,7 +6916,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       title: Text(action == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
       content: action == 'ban'
         ? TextField(controller: reasonController, maxLines: 3, maxLength: 300, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)', border: OutlineInputBorder()))
-        : Text(trUi('$name از گروه حذف شود؟ در حالت اخراج می‌تواند دوباره درخواست عضویت بدهد.')),
+        : Text('$name از گروه حذف شود؟ در حالت اخراج می‌تواند دوباره درخواست عضویت بدهد.'),
       actions: [
         TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
         FilledButton(style: action == 'ban' ? FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError) : null, onPressed: () => Navigator.pop(d, true), child: Text(action == 'ban' ? 'محروم و اخراج' : 'اخراج')),
@@ -6927,14 +6967,14 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         const SizedBox(height:8),
         Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:peopleFuture,builder:(ctx,snap){
           if(snap.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator());
-          if(snap.hasError)return const Center(child:Text(trUi('فهرست کاربران بارگذاری نشد')));
+          if(snap.hasError)return const Center(child:Text('فهرست کاربران بارگذاری نشد'));
           final q=query.text.trim().toLowerCase();
           final people=(snap.data??[]).where((p)=>!existing.contains(p['id'].toString()) && ('${p['display_name']??''} ${p['username']??''}').toLowerCase().contains(q)).toList();
           if(people.isEmpty)return Center(child:Text(q.isEmpty ? 'مخاطب جدیدی در فهرست مخاطبان شما نیست.' : 'مخاطبی با این نام پیدا نشد.'));
           return ListView.builder(itemCount:people.length,itemBuilder:(ctx,i){final p=people[i];final id=p['id'].toString();return CheckboxListTile(value:selected.contains(id),onChanged:(v)=>setDialog(()=>v==true?selected.add(id):selected.remove(id)),secondary:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'':'@${p['username']}'));});
         })),
       ])),
-      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:selected.isEmpty?null:()=>Navigator.pop(ctx,selected.toList()),child:Text(trUi('دعوت (${selected.length})')))],
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:selected.isEmpty?null:()=>Navigator.pop(ctx,selected.toList()),child:Text('دعوت (${selected.length})'))],
     )));
     query.dispose();
     if(ids==null || ids.isEmpty)return;
@@ -6992,10 +7032,10 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
               }
             },
             itemBuilder:(_)=>[
-              if(canEditRules) const PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text(trUi('ویرایش نام و توضیحات'))])),
-              if(canEditRules) const PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text(trUi('تنظیمات و اختیارات'))])),
-              if(canManageMembers) const PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text(trUi('مدیریت اعضا'))])),
-              if(isCreator) const PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text(trUi('مدیریت پیشرفته'))])),
+              if(canEditRules) const PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text('ویرایش نام و توضیحات')])),
+              if(canEditRules) const PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text('تنظیمات و اختیارات')])),
+              if(canManageMembers) const PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text('مدیریت اعضا')])),
+              if(isCreator) const PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text('مدیریت پیشرفته')])),
             ],
             child:Container(
               padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
@@ -7004,7 +7044,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                 borderRadius:BorderRadius.circular(14),
               ),
               child:const Row(mainAxisSize:MainAxisSize.min,children:[
-                Icon(Icons.more_horiz_rounded,size:20),SizedBox(width:7),Text(trUi('مدیریت گروه')),
+                Icon(Icons.more_horiz_rounded,size:20),SizedBox(width:7),Text('مدیریت گروه'),
               ]),
             ),
           ),
@@ -7012,7 +7052,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       ])),
       const SizedBox(height:20),
       Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[const Icon(Icons.info_outline_rounded),const SizedBox(width:8),const Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)const Chip(label:Text(trUi('مدیر قابل ویرایش')))]),
+        Row(children:[const Icon(Icons.info_outline_rounded),const SizedBox(width:8),const Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)const Chip(label:Text('مدیر قابل ویرایش'))]),
         const SizedBox(height:8),Text(description.isEmpty?'هنوز توضیح یا قانونی برای این گروه ثبت نشده است.':description,style:TextStyle(height:1.5,color:scheme.onSurfaceVariant)),
       ]))),
       const SizedBox(height:14),
@@ -7065,7 +7105,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                             children: [
                               Icon(Icons.shield_outlined),
                               SizedBox(width: 8),
-                              Text(trUi('مدیریت / اخراج / محرومیت')),
+                              Text('مدیریت / اخراج / محرومیت'),
                             ],
                           ),
                         ),
@@ -7326,14 +7366,14 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           .select('user_id').eq('conversation_id', id).eq('user_id', uid).maybeSingle();
       if (membership == null) {
         close(context, null);
-        messenger.showSnackBar(const SnackBar(content: Text(trUi('درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.'))));
+        messenger.showSnackBar(const SnackBar(content: Text('درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.')));
         return;
       }
       final title = (row['title'] ?? row['username'] ?? 'گروه عمومی').toString();
       close(context, null);
       await navigator.push(MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title)));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(trUi('باز کردن گروه عمومی ناموفق بود: ${_friendlyError(e.toString())}'))));
+      messenger.showSnackBar(SnackBar(content: Text('باز کردن گروه عمومی ناموفق بود: ${_friendlyError(e.toString())}')));
     }
   }
 
@@ -7344,7 +7384,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 
   Widget _results(BuildContext context) {
     final q = query.trim();
-    if (q.isEmpty) return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.search_rounded, size: 54), SizedBox(height: 12), Text('جستجوی سراسری آراد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text(trUi('کاربر، گفتگو و پیام را یکجا پیدا کنید.')) ]));
+    if (q.isEmpty) return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.search_rounded, size: 54), SizedBox(height: 12), Text('جستجوی سراسری آراد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text('کاربر، گفتگو و پیام را یکجا پیدا کنید.') ]));
     return FutureBuilder<Map<String,dynamic>>(
       future: _search(q),
       builder: (context, snap) {
@@ -7355,7 +7395,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
         final chats = List<Map<String,dynamic>>.from(data['chats'] ?? const []);
         final publicChats = List<Map<String,dynamic>>.from(data['public_chats'] ?? const []);
         final messages = List<Map<String,dynamic>>.from(data['messages'] ?? const []);
-        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
+        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
         return ListView(padding: const EdgeInsets.fromLTRB(8, 8, 8, 24), children: [
           if (users.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'کاربران', icon: Icons.people_alt_rounded),
@@ -7707,7 +7747,7 @@ class _ChatPageState extends State<ChatPage> {
     final durationMs = (a?['duration_ms'] as num?)?.toInt() ?? 0;
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) {
-      return const SizedBox(width: 250, child: Text(trUi('فایل صوتی در دسترس نیست.')));
+      return const SizedBox(width: 250, child: Text('فایل صوتی در دسترس نیست.'));
     }
     return VoiceMessagePlayer(
       initialDurationMs: durationMs,
@@ -8925,7 +8965,7 @@ class _ChatPageState extends State<ChatPage> {
                 )),
                 const SizedBox(height: 10),
                 SegmentedButton<int>(
-                  segments: const [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text(trUi('ایموجی'))), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text(trUi('استیکرهای متنی')))],
+                  segments: const [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text('ایموجی')), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text('استیکرهای متنی'))],
                   selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }), showSelectedIcon: false,
                 ),
                 const SizedBox(height: 10),
@@ -10446,7 +10486,7 @@ class _ChatPageState extends State<ChatPage> {
       final reasonController = TextEditingController();
       final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
         title: Text(choice == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
-        content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)')) : Text(trUi('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.')),
+        content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)')) : Text('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
           FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(choice == 'ban' ? 'محروم و اخراج' : 'اخراج')),
@@ -10638,11 +10678,11 @@ class _ChatPageState extends State<ChatPage> {
               }
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text(trUi('جستجوی پیام‌ها')))),
-              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text(trUi('رسانه‌ها و فایل‌ها')))),
-              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text(trUi('اطلاعات گفتگو')))),
-              PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('تنظیمات گفتگو')))),
-              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text(trUi('پیام‌های ذخیره‌شده')))),
+              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text('جستجوی پیام‌ها'))),
+              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text('رسانه‌ها و فایل‌ها'))),
+              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text('اطلاعات گفتگو'))),
+              PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('تنظیمات گفتگو'))),
+              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text('پیام‌های ذخیره‌شده'))),
             ],
           ),
           FutureBuilder<bool>(
@@ -10783,7 +10823,7 @@ class _ChatPageState extends State<ChatPage> {
                 child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : messages.isEmpty
-                      ? const Center(child: Text(trUi('هنوز پیامی یا سابقه تماسی وجود ندارد.')))
+                      ? const Center(child: Text('هنوز پیامی یا سابقه تماسی وجود ندارد.'))
                       : ListView.builder(
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
@@ -11379,7 +11419,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
+                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
@@ -11441,7 +11481,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
       if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
       if (snapshot.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snapshot.error}')));
       final rows = snapshot.data ?? const <Map<String,dynamic>>[];
-      if (rows.isEmpty) return const Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
+      if (rows.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
       return ListView.builder(
         itemCount: rows.length,
         itemBuilder: (context, index) {
