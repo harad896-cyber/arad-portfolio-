@@ -6830,13 +6830,18 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                 memberId != group['created_by']?.toString() &&
                 role != 'owner';
             return ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              minVerticalPadding: 4,
               leading: avatar(p),
-              title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}'),
+              title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(p['username'] == null ? '' : '@${p['username']}'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Chip(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     avatar: Icon(
                       role == 'owner'
                           ? Icons.workspace_premium_rounded
