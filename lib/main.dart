@@ -6598,6 +6598,59 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     } finally { if (mounted) setState(() => saving = false); }
   }
 
+  Future<void> _manageMember(Map<String, dynamic> member) async {
+    if (!canManageMembers || saving) return;
+    final targetId = (member['user_id'] ?? '').toString();
+    final targetRole = (member['role'] ?? 'member').toString();
+    final uid = supabase.auth.currentUser?.id;
+    if (targetId.isEmpty || targetId == uid || targetId == group['created_by']?.toString() || targetRole == 'owner') {
+      showMsg(context, 'حساب خودت یا مالک اصلی گروه قابل اخراج نیست.');
+      return;
+    }
+    final profile = (member['_profile'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+    final name = (profile['display_name'] ?? profile['username'] ?? 'این عضو').toString();
+    final action = await showModalBottomSheet<String>(
+      context: context, showDragHandle: true,
+      builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(leading: avatar(profile), title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${profile['username'] ?? ''}')),
+        ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+        ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
+        ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
+      ])),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'profile') {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: {...profile, 'id': targetId})));
+      return;
+    }
+    final reasonController = TextEditingController();
+    final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
+      title: Text(action == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
+      content: action == 'ban'
+        ? TextField(controller: reasonController, maxLines: 3, maxLength: 300, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)', border: OutlineInputBorder()))
+        : Text('$name از گروه حذف شود؟ در حالت اخراج می‌تواند دوباره درخواست عضویت بدهد.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+        FilledButton(style: action == 'ban' ? FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError) : null, onPressed: () => Navigator.pop(d, true), child: Text(action == 'ban' ? 'محروم و اخراج' : 'اخراج')),
+      ],
+    )) ?? false;
+    final reason = reasonController.text.trim();
+    reasonController.dispose();
+    if (!confirmed) return;
+    setState(() => saving = true);
+    try {
+      if (action == 'ban') {
+        await supabase.rpc('ban_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': targetId, 'p_reason': reason.isEmpty ? null : reason});
+      } else {
+        await supabase.rpc('remove_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': targetId});
+      }
+      await _load();
+      if (mounted) showMsg(context, action == 'ban' ? '$name محروم شد و دیگر نمی‌تواند به گروه بپیوندد.' : '$name از گروه اخراج شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'عملیات انجام نشد: ${_friendlyError(e.toString())}');
+    } finally { if (mounted) setState(() => saving = false); }
+  }
+
   Future<void> _addMembers() async {
     final uid=supabase.auth.currentUser!.id;
     final existing=members.map((m)=>m['user_id'].toString()).toSet();
@@ -6673,7 +6726,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       const SizedBox(height:14),
       Row(children:[const Icon(Icons.people_alt_rounded),const SizedBox(width:8),Text('اعضا  •  ${members.length}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
       const SizedBox(height:8),
-      Card(clipBehavior:Clip.antiAlias,child:Column(children:members.map((m){final p=(m['_profile'] as Map?)?.cast<String,dynamic>()??{};final role='${m['role']??'member'}';final roleLabel=role=='owner'?'مالک':role=='admin'?'مدیر':'عضو';return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Row(mainAxisSize:MainAxisSize.min,children:[Chip(label:Text(roleLabel)),const SizedBox(width:4),const Icon(Icons.chevron_left_rounded)]),onTap:p['id']==null?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfilePage(profile:{...p,'id':m['user_id']}))));}).toList())),
+          return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Row(mainAxisSize:MainAxisSize.min,children:[Chip(avatar:Icon(role=='owner'?Icons.workspace_premium_rounded:role=='admin'?Icons.admin_panel_settings_rounded:Icons.person_rounded,size:15),label:Text(roleLabel)),if(canManageMembers && m['user_id']?.toString()!=supabase.auth.currentUser?.id && m['user_id']?.toString()!=group['created_by']?.toString() && role!='owner') PopupMenuButton<String>(tooltip:'اقدامات عضو',onSelected:(_)=>_manageMember(m),itemBuilder:(_)=>const [PopupMenuItem(value:'manage',child:Row(children:[Icon(Icons.shield_outlined),SizedBox(width:8),Text('مدیریت / اخراج / محرومیت')]))],icon:const Icon(Icons.more_vert_rounded)) else const Icon(Icons.chevron_left_rounded)]),onTap:p['id']==null?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfilePage(profile:{...p,'id':m['user_id']})));
       if(!canEditRules) Padding(padding:const EdgeInsets.only(top:10),child:Text('ویرایش قوانین فقط در اختیار مالک یا مدیر گروه است.',style:TextStyle(color:scheme.onSurfaceVariant))),
     ]));
   }
