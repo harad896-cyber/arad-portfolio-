@@ -6439,7 +6439,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Map<String,dynamic> group = {};
   List<Map<String,dynamic>> members = [];
   String myRole = 'member';
-  bool canEditRules = false, canManageMembers = false, canAddMembers = false;
+  bool canEditRules = false, canManageMembers = false, canAddMembers = false, canRemoveMembers = false;
   bool get isCreator => group['created_by']?.toString() == supabase.auth.currentUser?.id;
 
   @override void initState() { super.initState(); _load(); }
@@ -6474,7 +6474,8 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       setState(() {
         group=Map<String,dynamic>.from(c); members=enriched; myRole=resolvedRole;
         canAddMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_add_members']==true;
-        canManageMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_add_members']==true || adminPermissions['can_remove_members']==true;
+        canRemoveMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_remove_members']==true;
+        canManageMembers=canAddMembers || canRemoveMembers;
         canEditRules=creatorNow || resolvedRole=='owner' || adminPermissions['can_edit_group']==true;
         loading=false;
       });
@@ -6615,7 +6616,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   }
 
   Future<void> _manageMember(Map<String, dynamic> member) async {
-    if (!canManageMembers || saving) return;
+    if (!canRemoveMembers || saving) return;
     final targetId = (member['user_id'] ?? '').toString();
     final targetRole = (member['role'] ?? 'member').toString();
     final uid = supabase.auth.currentUser?.id;
@@ -6742,7 +6743,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       const SizedBox(height:14),
       Row(children:[const Icon(Icons.people_alt_rounded),const SizedBox(width:8),Text('اعضا  •  ${members.length}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
       const SizedBox(height:8),
-          return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Row(mainAxisSize:MainAxisSize.min,children:[Chip(avatar:Icon(role=='owner'?Icons.workspace_premium_rounded:role=='admin'?Icons.admin_panel_settings_rounded:Icons.person_rounded,size:15),label:Text(roleLabel)),if(canManageMembers && m['user_id']?.toString()!=supabase.auth.currentUser?.id && m['user_id']?.toString()!=group['created_by']?.toString() && role!='owner') PopupMenuButton<String>(tooltip:'اقدامات عضو',onSelected:(_)=>_manageMember(m),itemBuilder:(_)=>const [PopupMenuItem(value:'manage',child:Row(children:[Icon(Icons.shield_outlined),SizedBox(width:8),Text('مدیریت / اخراج / محرومیت')]))],icon:const Icon(Icons.more_vert_rounded)) else const Icon(Icons.chevron_left_rounded)]),onTap:p['id']==null?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfilePage(profile:{...p,'id':m['user_id']})));
+          return ListTile(leading:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'': '@${p['username']}'),trailing:Row(mainAxisSize:MainAxisSize.min,children:[Chip(avatar:Icon(role=='owner'?Icons.workspace_premium_rounded:role=='admin'?Icons.admin_panel_settings_rounded:Icons.person_rounded,size:15),label:Text(roleLabel)),if(canRemoveMembers && m['user_id']?.toString()!=supabase.auth.currentUser?.id && m['user_id']?.toString()!=group['created_by']?.toString() && role!='owner') PopupMenuButton<String>(tooltip:'اقدامات عضو',onSelected:(_)=>_manageMember(m),itemBuilder:(_)=>const [PopupMenuItem(value:'manage',child:Row(children:[Icon(Icons.shield_outlined),SizedBox(width:8),Text('مدیریت / اخراج / محرومیت')]))],icon:const Icon(Icons.more_vert_rounded)) else const Icon(Icons.chevron_left_rounded)]),onTap:p['id']==null?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfilePage(profile:{...p,'id':m['user_id']})));
       if(!canEditRules) Padding(padding:const EdgeInsets.only(top:10),child:Text('ویرایش قوانین فقط در اختیار مالک یا مدیر گروه است.',style:TextStyle(color:scheme.onSurfaceVariant))),
     ]));
   }
