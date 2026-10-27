@@ -159,6 +159,19 @@ String trUi(String source) {
       'ورود':'ورود','ثبت‌نام':'ثبت‌نام','ایمیل':'ایمیل','رمز عبور':'رمز عبور','ادامه':'ادامه',
       'پروفایل شما':'پروفایل شما','جستجو':'جستجو','ارسال':'ارسال','لغو':'لغو','ذخیره':'ذخیره',
       'ویرایش':'ویرایش','حذف':'حذف','تأیید':'تأیید','بازگشت':'بازگشت',
+
+      'همه':'همه','همه گفتگوها':'تمام گفتگوها','گفتگوی جدید':'گفتگوی نو','ساخت گروه':'ساخت گروپ',
+      'مدیریت پوشه‌های گفتگو':'مدیریت فولدرهای گفتگو','مرکز اعلان‌ها':'مرکز آگاهی‌ها','بایگانی':'آرشیف',
+      'پیوستن با لینک گروه':'پیوستن از طریق لینک گروپ','دیدن استوری‌ها':'دیدن استوری‌ها',
+      'کنترل سریع برنامه':'کنترول سریع برنامه','منوی اصلی':'منوی اصلی','جستجوی سراسری پیام‌ها و کاربران':'جستجوی عمومی پیام‌ها و کاربران',
+      'جستجو در گفتگوهای فعلی':'جستجو در گفتگوهای فعلی','پاک کردن':'پاک کردن','کانال‌ها':'چنل‌ها',
+      'خوانده‌نشده':'خوانده‌نشده','آرشیو':'آرشیف','نتیجه‌ای پیدا نشد':'نتیجه‌ای پیدا نشد',
+      'هنوز گفتگویی ندارید':'هنوز گفتگویی ندارید','نام یا عبارت دیگری را جستجو کنید.':'نام یا عبارت دیگری را جستجو کنید.',
+      'یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.':'یک گفتگوی نو آغاز کنید یا از مخاطبین انتخاب نمایید.',
+      'پروفایل':'پروفایل','گفتگوها':'گفتگوها','مخاطبین':'مخاطبین','گروه‌ها':'گروپ‌ها',
+      'افزودن به پیام':'افزودن به پیام','گالری':'گالری','دوربین':'کمره','فایل‌ها':'فایل‌ها',
+      'ویدئو':'ویدیو','موسیقی / صدا':'موسیقی / صدا','ضبط ویس':'ضبط پیام صوتی',
+      'پیام خود را بنویسید…':'پیام خود را بنویسید…','پیوست‌ها':'ضمیمه‌ها','ارسال پیام':'ارسال پیام',
     };
     return dari[source] ?? source;
   }
@@ -191,6 +204,19 @@ String trUi(String source) {
       'ابزارهای پیشرفته متصل به Backend':'له Backend سره تړلي پرمختللي وسایل',
       'نسخه، معماری و اطلاعات برنامه':'د نسخې، جوړښت او اپلېکېشن معلومات',
       'پیام خود را بنویسید…':'خپل پیغام ولیکئ…','پیوست‌ها':'ضمیمې','ارسال پیام':'پیغام لېږل','گالری':'ګالري','دوربین':'کمره','فایل‌ها':'فایلونه','ویدئو':'ویډیو','موسیقی / صدا':'غږ / موسیقي','ضبط ویس':'غږ ثبتول','افزودن به پیام':'پیغام ته زیاتول',
+
+      'همه':'ټول','همه گفتگوها':'ټولې خبرې','گفتگوی جدید':'نوې خبرې','ساخت گروه':'ګروپ جوړول',
+      'مدیریت پوشه‌های گفتگو':'د خبرو فولډرونو اداره','مرکز اعلان‌ها':'د خبرتیاوو مرکز','بایگانی':'آرشیف',
+      'پیوستن با لینک گروه':'د ګروپ لینک له لارې یوځای کېدل','دیدن استوری‌ها':'سټورۍ کتل',
+      'کنترل سریع برنامه':'د اپلېکېشن چټک کنټرول','منوی اصلی':'اصلي مېنو','جستجوی سراسری پیام‌ها و کاربران':'د پیغامونو او کاروونکو عمومي لټون',
+      'جستجو در گفتگوهای فعلی':'په اوسنیو خبرو کې لټون','پاک کردن':'پاکول','کانال‌ها':'چینلونه',
+      'خوانده‌نشده':'نه لوستل شوي','آرشیو':'آرشیف','نتیجه‌ای پیدا نشد':'پایله ونه موندل شوه',
+      'هنوز گفتگویی ندارید':'تراوسه خبرې نه لرئ','نام یا عبارت دیگری را جستجو کنید.':'بل نوم یا عبارت ولټوئ.',
+      'یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.':'نوې خبرې پیل کړئ یا له اړیکو څخه یو څوک وټاکئ.',
+      'پروفایل':'پېژندپاڼه','گفتگوها':'خبرې','مخاطبین':'اړیکې','گروه‌ها':'ګروپونه',
+      'افزودن به پیام':'پیغام ته زیاتول','گالری':'ګالري','دوربین':'کمره','فایل‌ها':'فایلونه',
+      'ویدئو':'ویډیو','موسیقی / صدا':'غږ / موسیقي','ضبط ویس':'غږ ثبتول',
+      'پیام خود را بنویسید…':'خپل پیغام ولیکئ…','پیوست‌ها':'ضمیمې','ارسال پیام':'پیغام لېږل',
     };
     return pashto[source] ?? source;
   }
@@ -4771,7 +4797,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           PopupMenuButton<String>(
-            tooltip: 'منوی اصلی',
+            tooltip: trUi('منوی اصلی'),
             icon: const Icon(Icons.menu_rounded),
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickControlsPage()));
@@ -4784,22 +4810,22 @@ class _HomePageState extends State<HomePage> {
               else if (value == 'join') _joinGroupByInviteCode();
               else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage()));
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('کنترل سریع برنامه'))),
-              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text('همه گفتگوها'))),
-              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text('مدیریت پوشه‌های گفتگو'))),
-              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text('مرکز اعلان‌ها'))),
-              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text('بایگانی'))),
-              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text('ساخت گروه'))),
-              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text('گفتگوی جدید'))),
-              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text('پیوستن با لینک گروه'))),
-              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: Icon(Icons.auto_stories_outlined), title: Text('دیدن استوری‌ها'))),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: const Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه'))),
+              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: const Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها'))),
+              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: const Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو'))),
+              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: const Icon(Icons.notifications_none_rounded), title: Text(trUi('مرکز اعلان‌ها'))),
+              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: const Icon(Icons.archive_outlined), title: Text(trUi('بایگانی'))),
+              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: const Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه'))),
+              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: const Icon(Icons.edit_outlined), title: Text(trUi('گفتگوی جدید'))),
+              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: const Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه'))),
+              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: const Icon(Icons.auto_stories_outlined), title: Text(trUi('دیدن استوری‌ها'))),
             ],
           ),
           const SizedBox(width: 6),
-          actionButton(icon: Icons.search_rounded, tooltip: 'جستجوی سراسری پیام‌ها و کاربران', onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
+          actionButton(icon: Icons.search_rounded, tooltip: trUi('جستجوی سراسری پیام‌ها و کاربران'), onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
           const SizedBox(width: 6),
-          actionButton(icon: Icons.add_rounded, tooltip: 'گفتگوی جدید', onTap: createDirect),
+          actionButton(icon: Icons.add_rounded, tooltip: trUi('گفتگوی جدید'), onTap: createDirect),
         ]),
       ),
       Padding(
@@ -4813,9 +4839,9 @@ class _HomePageState extends State<HomePage> {
             textDirection: TextDirection.rtl,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'جستجو در گفتگوهای فعلی',
+              hintText: trUi('جستجو در گفتگوهای فعلی'),
               prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
-              suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(tooltip: 'پاک کردن', onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); }, icon: const Icon(Icons.close_rounded, size: 19)),
+              suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(tooltip: trUi('پاک کردن'), onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); }, icon: const Icon(Icons.close_rounded, size: 19)),
               isDense: true,
               filled: true,
               fillColor: Colors.transparent,
@@ -4834,12 +4860,12 @@ class _HomePageState extends State<HomePage> {
           reverse: true,
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 5),
           children: [
-            filterChip(label: 'همه', icon: Icons.forum_rounded, selected: selectedFilter == 0 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 0; })),
+            filterChip(label: trUi('همه'), icon: Icons.forum_rounded, selected: selectedFilter == 0 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 0; })),
             filterChip(label: trUi('مخاطبین'), icon: Icons.person_rounded, selected: selectedFilter == 1 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 1; })),
             filterChip(label: trUi('گروه‌ها'), icon: Icons.groups_rounded, selected: selectedFilter == 2 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 2; })),
-            filterChip(label: 'کانال‌ها', icon: Icons.campaign_rounded, selected: selectedFilter == 3 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 3; })),
-            filterChip(label: 'خوانده‌نشده', icon: Icons.mark_email_unread_rounded, selected: selectedFilter == 4 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 4; })),
-            filterChip(label: 'آرشیو', icon: Icons.archive_rounded, selected: selectedFilter == 5 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 5; })),
+            filterChip(label: trUi('کانال‌ها'), icon: Icons.campaign_rounded, selected: selectedFilter == 3 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 3; })),
+            filterChip(label: trUi('خوانده‌نشده'), icon: Icons.mark_email_unread_rounded, selected: selectedFilter == 4 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 4; })),
+            filterChip(label: trUi('آرشیو'), icon: Icons.archive_rounded, selected: selectedFilter == 5 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 5; })),
             ...chatFolders.map((folder) => filterChip(label: folder['name'].toString(), icon: Icons.folder_rounded, selected: selectedFolderId == folder['id'].toString(), onTap: () => setState(() { selectedFolderId = folder['id'].toString(); selectedFilter = 0; }))),
           ],
         ),
@@ -4854,9 +4880,9 @@ class _HomePageState extends State<HomePage> {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Container(width: 76, height: 76, decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle), child: Icon(Icons.forum_rounded, size: 34, color: scheme.primary)),
                       const SizedBox(height: 17),
-                      Text(chatQuery.trim().isNotEmpty ? 'نتیجه‌ای پیدا نشد' : 'هنوز گفتگویی ندارید', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      Text(chatQuery.trim().isNotEmpty ? trUi('نتیجه‌ای پیدا نشد') : trUi('هنوز گفتگویی ندارید'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 7),
-                      Text(chatQuery.trim().isNotEmpty ? 'نام یا عبارت دیگری را جستجو کنید.' : 'یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
+                      Text(chatQuery.trim().isNotEmpty ? trUi('نام یا عبارت دیگری را جستجو کنید.') : trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
                       if (chatQuery.trim().isEmpty) ...[
                         const SizedBox(height: 17),
                         FilledButton.icon(onPressed: createDirect, icon: const Icon(Icons.add_comment_rounded), label: const Text('گفتگوی جدید')),
@@ -5242,7 +5268,7 @@ class _HomePageState extends State<HomePage> {
             },
             destinations: [
               NavigationDestination(icon: const Icon(Icons.forum_outlined), selectedIcon: const Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
-              NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: trUi('پروفایل')),
+              NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: trUi('پروفایل')), 
             ],
           ),
         ),
