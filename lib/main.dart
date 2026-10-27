@@ -10171,11 +10171,43 @@ class _ChatPageState extends State<ChatPage> {
         context: context, showDragHandle: true,
         builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+          if (isOwner && target['role'] != 'owner')
+            ListTile(
+              leading: Icon(target['role'] == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded),
+              title: Text(target['role'] == 'admin' ? 'عزل از مدیریت' : 'مدیر کردن عضو'),
+              onTap: () => Navigator.pop(sheet, 'role'),
+            ),
           if (canModerate) ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
           if (canModerate) ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
         ])),
       );
-      if (choice == 'profile') await _openGroupMemberProfile(targetId);
+      if (choice == 'profile') {
+        await _openGroupMemberProfile(targetId);
+        return;
+      }
+      if (choice == 'role') {
+        final nextRole = target['role'] == 'admin' ? 'member' : 'admin';
+        final promote = nextRole == 'admin';
+        final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
+          title: Text(promote ? 'مدیر کردن عضو' : 'عزل از مدیریت'),
+          content: Text(promote
+              ? 'این عضو مدیر گروه می‌شود. اختیارات او را می‌توانی از صفحه مدیریت پیشرفته تنظیم کنی.'
+              : 'این کاربر به عضو عادی تبدیل می‌شود.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')),
+            FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(promote ? 'مدیر کردن' : 'عزل مدیریت')),
+          ],
+        )) ?? false;
+        if (!confirmed) return;
+        await supabase.rpc('set_group_member_role', params: {
+          'p_conversation_id': widget.id,
+          'p_user_id': targetId,
+          'p_role': nextRole,
+        });
+        if (mounted) showMsg(context, promote ? 'عضو به مدیر گروه ارتقا یافت.' : 'مدیریت عضو لغو شد.');
+        await load();
+        return;
+      }
       if (choice != 'remove' && choice != 'ban') return;
       final profile = await supabase.from('profiles').select('display_name,username').eq('id', targetId).maybeSingle();
       final name = (profile?['display_name'] ?? profile?['username'] ?? 'این کاربر').toString();
@@ -14854,11 +14886,43 @@ class _ChatPageState extends State<ChatPage> {
         context: context, showDragHandle: true,
         builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+          if (isOwner && target['role'] != 'owner')
+            ListTile(
+              leading: Icon(target['role'] == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded),
+              title: Text(target['role'] == 'admin' ? 'عزل از مدیریت' : 'مدیر کردن عضو'),
+              onTap: () => Navigator.pop(sheet, 'role'),
+            ),
           if (canModerate) ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
           if (canModerate) ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
         ])),
       );
-      if (choice == 'profile') await _openGroupMemberProfile(targetId);
+      if (choice == 'profile') {
+        await _openGroupMemberProfile(targetId);
+        return;
+      }
+      if (choice == 'role') {
+        final nextRole = target['role'] == 'admin' ? 'member' : 'admin';
+        final promote = nextRole == 'admin';
+        final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
+          title: Text(promote ? 'مدیر کردن عضو' : 'عزل از مدیریت'),
+          content: Text(promote
+              ? 'این عضو مدیر گروه می‌شود. اختیارات او را می‌توانی از صفحه مدیریت پیشرفته تنظیم کنی.'
+              : 'این کاربر به عضو عادی تبدیل می‌شود.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('لغو')),
+            FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(promote ? 'مدیر کردن' : 'عزل مدیریت')),
+          ],
+        )) ?? false;
+        if (!confirmed) return;
+        await supabase.rpc('set_group_member_role', params: {
+          'p_conversation_id': widget.id,
+          'p_user_id': targetId,
+          'p_role': nextRole,
+        });
+        if (mounted) showMsg(context, promote ? 'عضو به مدیر گروه ارتقا یافت.' : 'مدیریت عضو لغو شد.');
+        await load();
+        return;
+      }
       if (choice != 'remove' && choice != 'ban') return;
       final profile = await supabase.from('profiles').select('display_name,username').eq('id', targetId).maybeSingle();
       final name = (profile?['display_name'] ?? profile?['username'] ?? 'این کاربر').toString();
