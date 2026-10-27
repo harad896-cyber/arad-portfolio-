@@ -8,7 +8,7 @@ class GroupAdvancedAdminPage extends StatefulWidget {
   @override State<GroupAdvancedAdminPage> createState()=>_GroupAdvancedAdminPageState();
 }
 class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
-  final db=Supabase.instance.client; bool loading=true,busy=false;
+  final db=Supabase.instance.client; bool loading=true,busy=false,owner=false;
   List<Map<String,dynamic>> requests=[],banned=[],pinned=[],messages=[],admins=[];
   Map<String,Map<String,dynamic>> profiles={};
   String nameOf(String id)=>(profiles[id]?['display_name']??profiles[id]?['username']??'کاربر').toString();
@@ -16,6 +16,9 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
   void toast(String s){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));}
   Future<void> load()async{
     try{
+      final group=Map<String,dynamic>.from(await db.from('conversations').select('created_by,type').eq('id',widget.conversationId).single());
+      final isOwner=db.auth.currentUser?.id!=null && group['created_by']?.toString()==db.auth.currentUser!.id && group['type']=='group';
+      if(!isOwner){if(mounted)setState(()=>{owner=false,loading=false});return;}
       final rs=List<Map<String,dynamic>>.from(await db.from('group_join_requests').select('id,user_id,created_at,status').eq('conversation_id',widget.conversationId).eq('status','pending').order('created_at',ascending:false));
       final adminRows=List<Map<String,dynamic>>.from(await db.from('conversation_members').select('user_id,role').eq('conversation_id',widget.conversationId).eq('role','admin').order('joined_at'));
       final bs=List<Map<String,dynamic>>.from(await db.from('group_banned_members').select('user_id,reason,created_at').eq('conversation_id',widget.conversationId).order('created_at',ascending:false));
@@ -23,31 +26,50 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
       final ms=List<Map<String,dynamic>>.from(await db.from('messages').select('id,sender_id,body,message_type,created_at').eq('conversation_id',widget.conversationId).order('created_at',ascending:false).limit(60));
       final ids=<String>{...rs.map((x)=>x['user_id'].toString()),...adminRows.map((x)=>x['user_id'].toString()),...bs.map((x)=>x['user_id'].toString()),...ms.map((x)=>x['sender_id'].toString())};
       final prof=ids.isEmpty?<Map<String,dynamic>>[]:List<Map<String,dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id',ids.toList()));
-      if(!mounted)return; setState(() { requests=rs; admins=adminRows; banned=bs; pinned=ps; messages=ms; profiles={for(final p in prof)p['id'].toString():p}; loading=false; });
+      if(!mounted)return; setState(() { owner=true; requests=rs; admins=adminRows; banned=bs; pinned=ps; messages=ms; profiles={for(final p in prof)p['id'].toString():p}; loading=false; });
     }catch(e){if(mounted){setState(()=>loading=false);toast('مدیریت پیشرفته بارگذاری نشد: $e');}}
   }
-  Future<void> review(String id,bool approve)async{if(busy)return;setState(()=>busy=true);try{await db.rpc('review_group_join_request',params:{'p_request_id':id,'p_approve':approve});toast(approve?'درخواست پذیرفته شد.':'درخواست رد شد.');await load();}catch(e){toast('عملیات ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
-  Future<void> unban(String id)async{if(busy)return;setState(()=>busy=true);try{await db.rpc('unban_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id});toast('محرومیت برداشته شد.');await load();}catch(e){toast('رفع محرومیت ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
-  Future<void> restrict(String id)async{
+  Future<void> review(String id,bool approve)async{if(!owner||busy)return;setState(()=>busy=true);try{await db.rpc('review_group_join_request',params:{'p_request_id':id,'p_approve':approve});toast(approve?'درخواست پذیرفته شد.':'درخواست رد شد.');await load();}catch(e){toast('عملیات ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
+  Future<void> unban(String id)async{if(!owner||busy)return;setState(()=>busy=true);try{await db.rpc('unban_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id});toast('محرومیت برداشته شد.');await load();}catch(e){toast('رفع محرومیت ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
+  Future<void> restrict(String id)async{if(!owner||busy)return;
     final form=await showDialog<Map<String,bool>>(context:context,builder:(d){bool msg=true,media=true,links=true;return StatefulBuilder(builder:(d,setD)=>AlertDialog(title:Text('محدودیت '+nameOf(id)),content:Column(mainAxisSize:MainAxisSize.min,children:[
       SwitchListTile(title:const Text('ارسال پیام'),value:msg,onChanged:(v)=>setD(()=>msg=v)),SwitchListTile(title:const Text('ارسال رسانه'),value:media,onChanged:(v)=>setD(()=>media=v)),SwitchListTile(title:const Text('ارسال لینک'),value:links,onChanged:(v)=>setD(()=>links=v))]),
       actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(d,{'msg':msg,'media':media,'links':links}),child:const Text('اعمال'))]));});
     if(form==null)return;try{await db.rpc('restrict_group_member',params:{'p_conversation_id':widget.conversationId,'p_user_id':id,'p_can_send_messages':form['msg'] ?? true,'p_can_send_media':form['media'] ?? true,'p_can_send_links':form['links'] ?? true,'p_expires_at':null});toast('محدودیت اعمال شد.');}catch(e){toast('اعمال محدودیت ناموفق بود: $e');}
   }
-  Future<void> pin(String id)async{try{await db.rpc('pin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('پیام سنجاق شد.');await load();}catch(e){toast('سنجاق کردن ناموفق بود: $e');}}
-  Future<void> unpin(String id)async{try{await db.rpc('unpin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('سنجاق برداشته شد.');await load();}catch(e){toast('برداشتن سنجاق ناموفق بود: $e');}}
+  Future<void> pin(String id)async{if(!owner||busy)return;try{await db.rpc('pin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('پیام سنجاق شد.');await load();}catch(e){toast('سنجاق کردن ناموفق بود: $e');}}
+  Future<void> unpin(String id)async{if(!owner||busy)return;try{await db.rpc('unpin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('سنجاق برداشته شد.');await load();}catch(e){toast('برداشتن سنجاق ناموفق بود: $e');}}
   Future<void> permissions(String id)async{
-    final raw=await db.from('group_admin_permissions').select().eq('conversation_id',widget.conversationId).eq('user_id',id).maybeSingle();
-    final current=Map<String,dynamic>.from(raw??{});bool add=current['can_add_members']??true,remove=current['can_remove_members']??false,del=current['can_delete_messages']??false,edit=current['can_edit_group']??false,pinx=current['can_pin_messages']??false;
-    final ok=await showDialog<bool>(context:context,builder:(d)=>StatefulBuilder(builder:(d,setD)=>AlertDialog(title:Text('اختیارات '+nameOf(id)),content:Column(mainAxisSize:MainAxisSize.min,children:[
-      SwitchListTile(title:const Text('افزودن عضو'),value:add,onChanged:(v)=>setD(()=>add=v)),SwitchListTile(title:const Text('حذف عضو'),value:remove,onChanged:(v)=>setD(()=>remove=v)),SwitchListTile(title:const Text('حذف پیام‌ها'),value:del,onChanged:(v)=>setD(()=>del=v)),SwitchListTile(title:const Text('ویرایش گروه'),value:edit,onChanged:(v)=>setD(()=>edit=v)),SwitchListTile(title:const Text('سنجاق پیام'),value:pinx,onChanged:(v)=>setD(()=>pinx=v))]),actions:[TextButton(onPressed:()=>Navigator.pop(d,false),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(d,true),child:const Text('ذخیره'))])));
-    if(ok!=true)return;try{await db.rpc('set_group_admin_permissions',params:{'p_conversation_id':widget.conversationId,'p_user_id':id,'p_can_add_members':add,'p_can_remove_members':remove,'p_can_delete_messages':del,'p_can_edit_group':edit,'p_can_pin_messages':pinx});toast('اختیارات مدیر ذخیره شد.');}catch(e){toast('ذخیره اختیارات ناموفق بود: $e');}
+    if(!owner||busy)return;
+    try {
+      final raw=await db.from('group_admin_permissions').select().eq('conversation_id',widget.conversationId).eq('user_id',id).maybeSingle();
+      final current=Map<String,dynamic>.from(raw??{});
+      bool add=current['can_add_members']??true,remove=current['can_remove_members']??false,del=current['can_delete_messages']??false,edit=current['can_edit_group']??false,pinx=current['can_pin_messages']??false;
+      final ok=await showDialog<bool>(context:context,builder:(d)=>StatefulBuilder(builder:(d,setD)=>AlertDialog(
+        title:Text('اختیارات '+nameOf(id)),
+        content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          const Text('فقط دسترسی‌های لازم را فعال کنید. مالک گروه همیشه اختیار کامل دارد.'),
+          const SizedBox(height:8),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('افزودن عضو'),subtitle:const Text('دعوت یا افزودن کاربران به گروه'),value:add,onChanged:(v)=>setD(()=>add=v)),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('حذف عضو'),subtitle:const Text('اخراج اعضا از گروه'),value:remove,onChanged:(v)=>setD(()=>remove=v)),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('حذف پیام‌ها'),subtitle:const Text('مدیریت و حذف پیام‌های گروه'),value:del,onChanged:(v)=>setD(()=>del=v)),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('ویرایش گروه'),subtitle:const Text('تغییر نام، توضیحات، عکس و تنظیمات'),value:edit,onChanged:(v)=>setD(()=>edit=v)),
+          SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('سنجاق پیام'),subtitle:const Text('سنجاق یا برداشتن سنجاق پیام‌ها'),value:pinx,onChanged:(v)=>setD(()=>pinx=v)),
+        ])),
+        actions:[TextButton(onPressed:()=>Navigator.pop(d,false),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(d,true),child:const Text('ذخیره اختیارات'))])));
+      if(ok!=true)return;
+      setState(()=>busy=true);
+      await db.rpc('set_group_admin_permissions',params:{'p_conversation_id':widget.conversationId,'p_user_id':id,'p_can_add_members':add,'p_can_remove_members':remove,'p_can_delete_messages':del,'p_can_edit_group':edit,'p_can_pin_messages':pinx});
+      toast('اختیارات مدیر ذخیره شد.');
+    }catch(e){toast('خواندن یا ذخیره اختیارات ناموفق بود: $e');}
+    finally{if(mounted)setState(()=>busy=false);}
   }
   @override void initState(){super.initState();load();}
   @override Widget build(BuildContext context){
     if(loading)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:const AppSkeletonList(count: 6));
+    if(!owner)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.lock_outline_rounded,size:48),const SizedBox(height:12),const Text('این بخش فقط برای مالک گروه قابل دسترسی است.',textAlign:TextAlign.center),const SizedBox(height:12),OutlinedButton.icon(onPressed:load,icon:const Icon(Icons.refresh_rounded),label:const Text('بررسی دوباره'))]))));
     final pinnedIds=pinned.map((p)=>p['message_id'].toString()).toSet();
-    return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:ListView(padding:const EdgeInsets.all(12),children:[
+    return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته'),actions:[IconButton(tooltip:'تازه‌سازی',onPressed:busy?null:load,icon:const Icon(Icons.refresh_rounded))]),body:ListView(padding:const EdgeInsets.all(12),children:[
       Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         const Text('مدیران و اختیارات',style:TextStyle(fontSize:17,fontWeight:FontWeight.w900)),
         const SizedBox(height:4),
