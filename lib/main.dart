@@ -6468,16 +6468,100 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     }
   }
 
+  Future<void> _changeGroupPhoto() async {
+    if (!canEditRules || saving) return;
+    final source = await showModalBottomSheet<ImageSource>(context: context, showDragHandle: true,
+      builder: (sheet) => SafeArea(child: Wrap(children: [
+        ListTile(leading: const Icon(Icons.photo_library_rounded), title: const Text('انتخاب عکس از گالری'), onTap: () => Navigator.pop(sheet, ImageSource.gallery)),
+        ListTile(leading: const Icon(Icons.camera_alt_rounded), title: const Text('گرفتن عکس با دوربین'), onTap: () => Navigator.pop(sheet, ImageSource.camera)),
+      ])));
+    if (source == null) return;
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85, maxWidth: 1200);
+    if (picked == null) return;
+    setState(() => saving = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final path = 'groups/${widget.conversationId}/avatar-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await supabase.storage.from('avatars').uploadBinary(path, bytes,
+        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+      final url = supabase.storage.from('avatars').getPublicUrl(path);
+      await supabase.rpc('update_group_settings', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_title': group['title'],
+        'p_description': group['description'],
+        'p_avatar_url': url,
+        'p_is_public': group['is_public'] ?? false,
+        'p_username': group['username'],
+        'p_join_approval': group['join_approval'] ?? false,
+        'p_only_admins_can_post': group['only_admins_can_post'] ?? false,
+        'p_only_admins_can_add': group['only_admins_can_add'] ?? false,
+        'p_auto_delete_seconds': group['auto_delete_seconds'] ?? 0,
+        'p_allow_reactions': group['allow_reactions'] ?? true,
+      });
+      await _load();
+      if (mounted) showMsg(context, 'عکس گروه تغییر کرد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر عکس گروه ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally { if (mounted) setState(() => saving = false); }
+  }
+
+  Future<void> _openGroupSettings() async {
+    if (!canEditRules || saving) return;
+    var publicGroup = group['is_public'] == true;
+    var approval = group['join_approval'] == true;
+    var adminsPost = group['only_admins_can_post'] == true;
+    var adminsAdd = group['only_admins_can_add'] == true;
+    var reactions = group['allow_reactions'] != false;
+    var ttl = (group['auto_delete_seconds'] as num?)?.toInt() ?? 0;
+    final result = await showDialog<Map<String, dynamic>>(context: context, builder: (dialog) =>
+      StatefulBuilder(builder: (dialog, setDialog) => AlertDialog(
+        title: const Text('تنظیمات کامل گروه'),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('گروه عمومی'), subtitle: const Text('امکان پیدا کردن گروه با نام کاربری'), value: publicGroup, onChanged: (v) => setDialog(() => publicGroup = v)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('تأیید درخواست عضویت'), value: approval, onChanged: (v) => setDialog(() => approval = v)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('فقط مدیران پیام بفرستند'), value: adminsPost, onChanged: (v) => setDialog(() => adminsPost = v)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('فقط مدیران عضو اضافه کنند'), value: adminsAdd, onChanged: (v) => setDialog(() => adminsAdd = v)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('واکنش‌های ایموجی'), value: reactions, onChanged: (v) => setDialog(() => reactions = v)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(value: ttl, decoration: const InputDecoration(labelText: 'حذف خودکار پیام‌ها', border: OutlineInputBorder()),
+            items: const [DropdownMenuItem(value: 0, child: Text('خاموش')), DropdownMenuItem(value: 86400, child: Text('پس از ۱ روز')), DropdownMenuItem(value: 604800, child: Text('پس از ۱ هفته')), DropdownMenuItem(value: 2592000, child: Text('پس از ۱ ماه'))],
+            onChanged: (v) => setDialog(() => ttl = v ?? 0)),
+        ])),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(dialog, {'public':publicGroup,'approval':approval,'post':adminsPost,'add':adminsAdd,'reactions':reactions,'ttl':ttl}), child: const Text('ذخیره همه تنظیمات'))],
+      )));
+    if (result == null) return;
+    setState(() => saving = true);
+    try {
+      await supabase.rpc('update_group_settings', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_title': group['title'],
+        'p_description': group['description'],
+        'p_avatar_url': group['avatar_url'],
+        'p_is_public': result['public'],
+        'p_username': group['username'],
+        'p_join_approval': result['approval'],
+        'p_only_admins_can_post': result['post'],
+        'p_only_admins_can_add': result['add'],
+        'p_auto_delete_seconds': result['ttl'],
+        'p_allow_reactions': result['reactions'],
+      });
+      await _load();
+      if (mounted) showMsg(context, 'تنظیمات گروه ذخیره شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره تنظیمات ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally { if (mounted) setState(() => saving = false); }
+  }
+
   Future<void> _editRules() async {
     final controller=TextEditingController(text:'${group['description'] ?? ''}');
     final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
-      title:const Text('معرفی و قوانین گروه'),
-      content:TextField(controller:controller,maxLines:6,maxLength:1500,decoration:const InputDecoration(hintText:'قوانین، موضوع و توضیحات گروه',border:OutlineInputBorder())),
+      title:const Text('ویرایش نام و بیو گروه'),
+      content:SizedBox(width:420,child:Column(mainAxisSize:MainAxisSize.min,children:[TextField(controller:TextEditingController(text:'${group['title'] ?? widget.title}'),readOnly:true,decoration:const InputDecoration(labelText:'نام گروه (برای ویرایش از تنظیمات مدیریت استفاده کنید)')),TextField(controller:controller,maxLines:5,maxLength:1500,decoration:const InputDecoration(labelText:'بیو، معرفی و قوانین گروه',hintText:'موضوع، قوانین و توضیحات گروه',border:OutlineInputBorder()))])),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:()=>Navigator.pop(ctx,controller.text.trim()),child:const Text('ذخیره'))],
     ));
     if(value==null)return;
     setState(()=>saving=true);
-    try { await supabase.from('conversations').update({'description':value}).eq('id',widget.conversationId); if(!mounted)return; setState(()=>group={...group,'description':value}); showMsg(context,'توضیحات گروه ذخیره شد'); }
+    try { await supabase.rpc('update_group_settings',params:{'p_conversation_id':widget.conversationId,'p_title':group['title'],'p_description':value,'p_avatar_url':group['avatar_url'],'p_is_public':group['is_public']??false,'p_username':group['username'],'p_join_approval':group['join_approval']??false,'p_only_admins_can_post':group['only_admins_can_post']??false,'p_only_admins_can_add':group['only_admins_can_add']??false,'p_auto_delete_seconds':group['auto_delete_seconds']??0,'p_allow_reactions':group['allow_reactions']??true}); if(!mounted)return; setState(()=>group={...group,'description':value}); showMsg(context,'بیو و قوانین گروه ذخیره شد'); }
     catch(e){if(mounted)showMsg(context,'ذخیره قوانین ناموفق بود: '+_friendlyError(e.toString()));}
     finally{if(mounted)setState(()=>saving=false);}
   }
@@ -6541,12 +6625,12 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final description='${group['description']??''}'.trim();
     return Scaffold(appBar:AppBar(title:const Text('پروفایل گروه')),body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
       Center(child:Column(children:[
-        CircleAvatar(radius:48,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),
+        GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:const BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:const Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
         const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
         const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
         const SizedBox(height:14),Wrap(alignment:WrapAlignment.center,spacing:10,runSpacing:8,children:[
           if(canManageMembers) FilledButton.icon(onPressed:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
-          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('ویرایش قوانین')),
+          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('ویرایش نام و بیو')), if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_openGroupSettings,icon:const Icon(Icons.tune_rounded),label:const Text('تنظیمات گروه')), if(canManageMembers) OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.conversationId,title:title))),icon:const Icon(Icons.admin_panel_settings_rounded),label:const Text('مدیریت اعضا')),
         ]),
       ])),
       const SizedBox(height:20),
