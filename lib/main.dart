@@ -253,7 +253,7 @@ String trUi(String source) {
       'خوانده‌شده توسط:':'خوانده‌شده توسط:',
       'خوانده شده توسط':'خوانده شده توسط',
       'نفر':'نفر',
-      'ارسال شده؛ هنوز رسید خواندن ثبت نشده':'ارسال شده؛ هنوز رسید خواندن ثبت نشده',
+      trUi('ارسال شده؛ هنوز رسید خواندن ثبت نشده'):'ارسال شده؛ هنوز رسید خواندن ثبت نشده',
       'دریافت شده':'دریافت شده',
       'زمان خواندن: ':'زمان خواندن: ',
       'شناسه پیام: ':'شناسه پیام: ',
@@ -268,6 +268,13 @@ String trUi(String source) {
       'دلیل محرومیت (اختیاری)':'دلیل محرومیت (اختیاری)',
       'محروم و اخراج':'محروم و اخراج',
       'اخراج':'اخراج',
+    
+      'متن پیام کپی شد.':'متن پیام کپی شد.',
+      'واکنش ثبت نشد: ':'واکنش ثبت نشد: ',
+      'باز کردن پروفایل ناموفق بود: ':'باز کردن پروفایل ناموفق بود: ',
+      'حداقل یک نفر':'حداقل یک نفر',
+      'وضعیت: ویرایش شده':'وضعیت: ویرایش شده',
+      'محروم کردن':'محروم کردن',
     };
     return persian[source] ?? source;
   }
@@ -398,6 +405,13 @@ String trUi(String source) {
       'دلیل محرومیت (اختیاری)':'دلیل محرومیت (اختیاری)',
       'محروم و اخراج':'محروم و بیرون کردن',
       'اخراج':'بیرون کردن',
+    
+      'متن پیام کپی شد.':'متن پیام کاپی شد.',
+      'واکنش ثبت نشد: ':'ثبت واکنش ناموفق بود: ',
+      'باز کردن پروفایل ناموفق بود: ':'باز کردن پروفایل ناموفق بود: ',
+      'حداقل یک نفر':'حداقل یک نفر',
+      'وضعیت: ویرایش شده':'حالت: ویرایش شده',
+      'محروم کردن':'محروم ساختن',
     };
     return dari[source] ?? _dariUiExtra[source] ?? _dariFallback(source);
   }
@@ -562,6 +576,13 @@ String trUi(String source) {
       'دلیل محرومیت (اختیاری)':'Reason for ban (optional)',
       'محروم و اخراج':'Ban and remove',
       'اخراج':'Remove',
+    
+      'متن پیام کپی شد.':'Message text copied.',
+      'واکنش ثبت نشد: ':'Could not save reaction: ',
+      'باز کردن پروفایل ناموفق بود: ':'Could not open profile: ',
+      'حداقل یک نفر':'at least one person',
+      'وضعیت: ویرایش شده':'Status: edited',
+      'محروم کردن':'Ban',
     };
     return english[source] ?? source;
   }
@@ -682,6 +703,13 @@ String trUi(String source) {
       'دلیل محرومیت (اختیاری)':'د بندیز دلیل (اختیاري)',
       'محروم و اخراج':'بند او وباسئ',
       'اخراج':'ایستل',
+    
+      'متن پیام کپی شد.':'د پیغام متن کاپي شو.',
+      'واکنش ثبت نشد: ':'غبرګون ثبت نه شو: ',
+      'باز کردن پروفایل ناموفق بود: ':'پېژندپاڼه پرانیستل نه شوه: ',
+      'حداقل یک نفر':'لږ تر لږه یو کس',
+      'وضعیت: ویرایش شده':'حالت: سم شوی',
+      'محروم کردن':'بندول',
     };
     return pashto[source] ?? source;
   }
@@ -10039,7 +10067,7 @@ class _ChatPageState extends State<ChatPage> {
     final readerIds = receipts.map((r) => r['reader_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
     final readerNames = readerIds.map((id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر')).join('، ');
     final isMine = message['sender_id'] == supabase.auth.currentUser?.id;
-    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: Text(trUi('جزئیات پیام')), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(trUi('فرستنده: ') + _senderName(message)), const SizedBox(height: 8), Text(trUi('نوع پیام: ') + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text(trUi('زمان ارسال: ') + stamp(sentAt)), const SizedBox(height: 8), Text(trUi('وضعیت: ') + (pending ? trUi('در حال ارسال') : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), Text(trUi('خوانده‌شده توسط:')), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text(trUi('زمان خواندن: ') + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), Text(trUi('وضعیت: ویرایش شده'))], const SizedBox(height: 8), SelectableText(trUi('شناسه پیام: ') + (message['id']?.toString() ?? trUi('نامشخص')), style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(trUi('بستن')))]));
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: Text(trUi('جزئیات پیام')), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(trUi('فرستنده: ') + _senderName(message)), const SizedBox(height: 8), Text(trUi('نوع پیام: ') + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text(trUi('زمان ارسال: ') + stamp(sentAt)), const SizedBox(height: 8), Text(trUi('وضعیت: ') + (pending ? trUi('در حال ارسال') : readerIds.isNotEmpty || message['read_at'] != null ? '${trUi('خوانده شده توسط')} ${readerIds.isNotEmpty ? readerIds.length : trUi('حداقل یک نفر')} ${trUi('نفر')}' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : trUi('دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), Text(trUi('خوانده‌شده توسط:')), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text(trUi('زمان خواندن: ') + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), Text(trUi('وضعیت: ویرایش شده'))], const SizedBox(height: 8), SelectableText(trUi('شناسه پیام: ') + (message['id']?.toString() ?? trUi('نامشخص')), style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(trUi('بستن')))]));
   }
   Widget _actionTile(
     BuildContext sheetContext,
@@ -10873,7 +10901,7 @@ class _ChatPageState extends State<ChatPage> {
       final reasonController = TextEditingController();
       final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
         title: Text(choice == 'ban' ? '${trUi('محروم کردن از گروه')} $name' : '${trUi('اخراج')} $name'),
-        content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: const InputDecoration(labelText: trUi('دلیل محرومیت (اختیاری)'))) : Text('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.'),
+        content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: InputDecoration(labelText: trUi('دلیل محرومیت (اختیاری)'))) : Text('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(d, false), child: Text(trUi('انصراف'))),
           FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(choice == 'ban' ? trUi('محروم و اخراج') : trUi('اخراج'))),
