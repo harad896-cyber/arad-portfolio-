@@ -91,6 +91,37 @@ String t(String key, String locale) {
   return data[locale]?[key] ?? data['en']![key] ?? key;
 }
 
+// Additional high-frequency labels used across chat, profile, stickers and dialogs.
+// Keep these exact-string translations separate so older keys remain backward compatible.
+const Map<String, String> _dariUiExtra = <String, String>{
+  'گفتگو':'گپ', 'گفتگوها':'گپ‌ها', 'گفتگوی جدید':'گپ نو', 'مخاطبین':'مخاطبان',
+  'مخاطب':'مخاطب', 'گروه':'گروپ', 'گروه‌ها':'گروپ‌ها', 'مدیریت گروه':'مدیریت گروپ',
+  'ساخت گروه':'ساخت گروپ', 'نام گروه':'نام گروپ', 'توضیحات گروه':'شرح گروپ',
+  'پیام جدید':'پیام نو', 'پیام':'پیام', 'پیام‌ها':'پیام‌ها', 'ارسال':'فرستادن',
+  'ارسال پیام':'فرستادن پیام', 'فرستادن':'فرستادن', 'جستجو':'جستجو',
+  'جستجو در پیام‌ها':'جستجو در پیام‌ها', 'جستجو در تنظیمات':'جستجو در تنظیمات',
+  'تنظیمات':'تنظیمات', 'حساب کاربری':'حساب کاربری', 'پروفایل':'پروفایل',
+  'ویرایش پروفایل':'ویرایش پروفایل', 'ویرایش':'ویرایش', 'ذخیره':'ذخیره',
+  'ذخیره تغییرات':'ذخیره تغییرات', 'لغو':'لغو', 'بستن':'بستن', 'بازگشت':'برگشت',
+  'تأیید':'تأیید', 'حذف':'پاک کردن', 'حذف برای من':'پاک کردن برای من',
+  'حذف برای همه':'پاک کردن برای همه', 'پاسخ':'جواب', 'پاسخ دادن':'جواب دادن',
+  'آنلاین':'آنلاین', 'آخرین بازدید':'آخرین بازدید', 'تایپ می‌کند…':'در حال نوشتن…',
+  'در حال بارگذاری…':'در حال بارگذاری…', 'خطا':'خطا', 'تلاش دوباره':'دوباره تلاش کنید',
+  'عکس':'تصویر', 'عکس‌ها':'تصویرها', 'انتخاب عکس':'انتخاب تصویر', 'تغییر عکس':'تغییر تصویر',
+  'دوربین':'کمره', 'ویدئو':'ویدیو', 'فایل‌ها':'فایل‌ها', 'استیکر و ایموجی':'استیکر و ایموجی',
+  'استیکرها':'استیکرها', 'ایموجی':'ایموجی', 'پک‌های تصویری آراد':'بسته‌های تصویری آراد',
+  'فضایی':'فضایی', 'احساسات':'احساسات', 'حال‌و‌هوا':'حال‌و‌هوا',
+  'استیکرهای تصویری آماده‌اند':'استیکرهای تصویری آماده‌اند',
+  'برای ارسال، داخل گفتگو روی 😀 بزنید و بخش استیکرها را باز کنید.':'برای فرستادن، در گپ روی 😀 بزنید و بخش استیکرها را باز کنید.',
+  'جستجوی GIF':'جستجوی GIF', 'جست‌وجوی GIF آنلاین هنوز به سرویس مستقل متصل نیست.':'جستجوی GIF آنلاین هنوز به یک سرویس جداگانه وصل نشده است.',
+  'پیوست‌ها':'ضمیمه‌ها', 'گالری':'گالری', 'ضبط ویس':'ضبط پیام صوتی',
+  'مرکز اعلان‌ها':'مرکز آگاهی‌ها', 'حریم خصوصی':'محرمیت', 'مصرف داده':'مصرف اینترنت',
+  'اعلان‌ها':'آگاهی‌ها', 'کنترل':'کنترول', 'کنترل برنامه':'کنترول برنامه',
+  'شماره تلفن':'شماره تیلفون', 'تلفن':'تیلفون', 'کپی':'کاپی', 'کپی لینک':'کاپی لینک',
+  'اشتراک‌گذاری':'شریک‌ساختن', 'به اشتراک‌گذاری':'شریک‌ساختن', 'آرشیو':'آرشیف',
+  'بایگانی':'آرشیف', 'کانال‌ها':'چنل‌ها', 'گفتگوی گروهی':'گپ گروهی',
+};
+
 // UI labels translated at render time. Internal setting IDs remain Persian
 // so existing navigation handlers and backend values are not changed.
 String trUi(String source) {
@@ -209,7 +240,7 @@ String trUi(String source) {
       'این بخش فعلاً در دسترس نیست':'این بخش فعلاً قابل دسترس نیست',
       'خطایی رخ داد':'یک خطا رخ داده است','دوباره تلاش کنید':'دوباره تلاش کنید',
     };
-    return dari[source] ?? source;
+    return dari[source] ?? _dariUiExtra[source] ?? source;
   }
   if (code == 'ps') {
     final pashto = <String, String>{
@@ -2186,31 +2217,55 @@ class StickersGifsPage extends StatelessWidget {
   @override Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DefaultTabController(length: 3, child: Scaffold(
-      appBar: AppBar(title: const Text('استیکر و ایموجی'), bottom: const TabBar(tabs: [
-        Tab(text: 'استیکرها'), Tab(text: 'GIF'), Tab(text: 'ایموجی'),
+      appBar: AppBar(title: Text(trUi('استیکر و ایموجی')), bottom: TabBar(tabs: [
+        Tab(text: trUi('استیکرها')), const Tab(text: 'GIF'), Tab(text: trUi('ایموجی')),
       ])),
       body: TabBarView(children: [
-        ListView(padding: const EdgeInsets.all(14), children: [
-          const Text('پک‌های تصویری آراد', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 24), children: [
+          Text(trUi('پک‌های تصویری آراد'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
           const SizedBox(height: 10),
           for (final pack in const [
-            ('🌌', 'فضایی', '🚀✨  🪐🌟  👾💜  🛸👽  🌌💫'),
-            ('💜', 'احساسات', '🥹🫶  😭💔  😍🌹  💌✨  🫶✨'),
-            ('🎮', 'حال‌و‌هوا', '😎🕶️  😂⚡  🎧🎵  🏆🔥  😴🌙'),
+            ('🌌', 'فضایی', '🚀✨   🪐🌟   👾💜   🛸👽   🌌💫'),
+            ('💜', 'احساسات', '🥹🫶   😭💔   😍🌹   💌✨   🫶✨'),
+            ('🎮', 'حال‌و‌هوا', '😎🕶️   😂⚡   🎧🎵   🏆🔥   😴🌙'),
           ])
-            Card(child: ListTile(
-              leading: CircleAvatar(backgroundColor: scheme.primaryContainer, child: Text(pack.$1, style: const TextStyle(fontSize: 23))),
-              title: Text(pack.$2, style: const TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(pack.$3),
-              trailing: const Icon(Icons.check_circle_rounded, color: Colors.green),
-            )),
+            Card(
+              elevation: 0,
+              color: scheme.surfaceContainerLow,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                child: ListTile(
+                  leading: Container(
+                    width: 52, height: 52,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(colors: [scheme.primaryContainer, scheme.secondaryContainer]),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(pack.$1, style: const TextStyle(fontSize: 27)),
+                  ),
+                  title: Text(trUi(pack.$2), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 7),
+                    child: Text(pack.$3, style: const TextStyle(fontSize: 17, height: 1.7)),
+                  ),
+                  trailing: Icon(Icons.auto_awesome_rounded, color: scheme.primary),
+                  isThreeLine: true,
+                ),
+              ),
+            ),
           const SizedBox(height: 8),
-          const AppEmptyState(icon: Icons.auto_awesome_rounded, title: 'استیکرهای تصویری آماده‌اند',
-            subtitle: 'برای ارسال، داخل گفتگو روی 😀 بزنید و بخش استیکرها را باز کنید.'),
+          AppEmptyState(icon: Icons.auto_awesome_rounded, title: trUi('استیکرهای تصویری آماده‌اند'),
+            subtitle: trUi('برای ارسال، داخل گفتگو روی 😀 بزنید و بخش استیکرها را باز کنید.')),
         ]),
         Center(child: Padding(padding: const EdgeInsets.all(18), child: TextField(
-          decoration: const InputDecoration(hintText: 'جستجوی GIF', prefixIcon: Icon(Icons.search_rounded)),
-          onSubmitted: (value) { if (value.trim().isNotEmpty) showMsg(context, 'جست‌وجوی GIF آنلاین هنوز به سرویس مستقل متصل نیست.'); },
+          decoration: InputDecoration(hintText: trUi('جستجوی GIF'), prefixIcon: const Icon(Icons.search_rounded)),
+          onSubmitted: (value) { if (value.trim().isNotEmpty) showMsg(context, trUi('جست‌وجوی GIF آنلاین هنوز به سرویس مستقل متصل نیست.')); },
         ))),
         GridView.count(crossAxisCount: 6, children: List.generate(24, (i) => Center(
           child: Text(['😀','❤️','👍','😂','🔥','🎉'][i % 6], style: const TextStyle(fontSize: 25)),
@@ -5102,7 +5157,7 @@ class _HomePageState extends State<HomePage> {
             ]));
           }
           final rows = snap.data ?? [];
-          if (rows.isEmpty) return const Center(child: Text('هنوز مخاطبی اضافه نکرده‌اید.'));
+          if (rows.isEmpty) return Center(child: Text(trUi('هنوز مخاطبی اضافه نکرده‌اید.')));
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 90),
             itemCount: rows.length,
@@ -5286,7 +5341,7 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
                   child: Row(children: [
                     IconButton(onPressed: () => setState(() => showContacts = false), icon: const Icon(Icons.arrow_back_rounded)),
-                    const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                    Expanded(child: Text(trUi('مخاطبین'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
                   ]),
                 ),
                 Expanded(child: contactsView()),
