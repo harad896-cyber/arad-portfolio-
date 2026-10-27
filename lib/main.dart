@@ -28,6 +28,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'group_management.dart';
+import 'group_advanced_admin.dart';
 import 'channel_management.dart';
 import 'invite.dart';
 import 'profile_page.dart';
