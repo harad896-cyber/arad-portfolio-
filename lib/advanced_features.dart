@@ -449,106 +449,156 @@ class AppLockSettingsPage extends StatefulWidget {
 class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
   final _secure = const FlutterSecureStorage();
   final _auth = LocalAuthentication();
-  bool enabled = false, biometric = false, saving = false;
+  bool enabled = false;
+  bool biometric = false;
   bool biometricAvailable = false;
 
-  @override void initState() { super.initState(); _load(); }
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
-    final can = await _auth.canCheckBiometrics;
+    var canCheck = false;
+    try {
+      canCheck = await _auth.canCheckBiometrics;
+    } catch (_) {}
     if (!mounted) return;
     setState(() {
       enabled = p.getBool('app_lock_enabled') ?? false;
       biometric = p.getBool('app_lock_biometric') ?? false;
-      biometricAvailable = can;
+      biometricAvailable = canCheck;
     });
   }
 
   Future<void> _setPin() async {
-    final c1=TextEditingController(), c2=TextEditingController();
-    final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
-      title:const Text('تعیین PIN'), content:Column(mainAxisSize:MainAxisSize.min,children:[
-        TextField(controller:c1,keyboardType:TextInputType.number,maxLength:6,obscureText:true,decoration:const InputDecoration(labelText:'PIN چهار تا شش رقمی')),
-        TextField(controller:c2,keyboardType:TextInputType.number,maxLength:6,obscureText:true,decoration:const InputDecoration(labelText:'تکرار PIN')),
-      ]),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('لغو')),FilledButton(onPressed:(){
-        final first = _normalizeSettingsPinDigits(c1.text.trim());
-        final second = _normalizeSettingsPinDigits(c2.text.trim());
-        Navigator.pop(ctx, first.length >= 4 && first.length <= 6 &&
-          RegExp(r'^[0-9]+
-    c1.dispose(); c2.dispose();
-    if(ok!=true)return;
-    final p=await SharedPreferences.getInstance();
-    await _secure.write(key:'app_lock_pin',value:_normalizeSettingsPinDigits(c1.text.trim()));
-    await p.setBool('app_lock_enabled',true);
-    if(mounted)setState(()=>enabled=true);
+    final c1 = TextEditingController();
+    final c2 = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تعیین PIN'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: c1, keyboardType: TextInputType.number,
+            maxLength: 6, obscureText: true,
+            decoration: const InputDecoration(labelText: 'PIN چهار تا شش رقمی')),
+          TextField(controller: c2, keyboardType: TextInputType.number,
+            maxLength: 6, obscureText: true,
+            decoration: const InputDecoration(labelText: 'تکرار PIN')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لغو')),
+          FilledButton(
+            onPressed: () {
+              final first = _normalizeSettingsPinDigits(c1.text.trim());
+              final second = _normalizeSettingsPinDigits(c2.text.trim());
+              Navigator.pop(ctx, first.length >= 4 && first.length <= 6 &&
+                RegExp(r'^[0-9]+$').hasMatch(first) && first == second);
+            },
+            child: const Text('ذخیره'),
+          ),
+        ],
+      ),
+    );
+    final pin = _normalizeSettingsPinDigits(c1.text.trim());
+    c1.dispose();
+    c2.dispose();
+    if (ok != true) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PINها یکسان نیستند یا باید ۴ تا ۶ رقم باشند.')),
+      );
+      return;
+    }
+    const storage = FlutterSecureStorage();
+    await storage.write(key: 'app_lock_pin', value: pin);
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('app_lock_enabled', true);
+    if (mounted) setState(() => enabled = true);
   }
 
-  Future<void> _toggleBiometric(bool v) async {
-    if(v) {
+  Future<void> _toggleBiometric(bool value) async {
+    if (value) {
       try {
-        final ok=await _auth.authenticate(localizedReason:'برای فعال‌سازی قفل برنامه احراز هویت کنید',options:const AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
-        if(!ok)return;
-      } catch(_) { if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('احراز هویت بیومتریک در این دستگاه در دسترس نیست.'))); return; }
+        final authenticated = await _auth.authenticate(
+          localizedReason: 'برای فعال‌سازی قفل برنامه احراز هویت کنید',
+          options: const AuthenticationOptions(
+            biometricOnly: true, useErrorDialogs: true, stickyAuth: true,
+          ),
+        );
+        if (!authenticated) return;
+      } catch (_) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('احراز هویت بیومتریک در این دستگاه در دسترس نیست.')),
+        );
+        return;
+      }
     }
-    final p=await SharedPreferences.getInstance(); await p.setBool('app_lock_biometric',v);
-    if(mounted)setState(()=>biometric=v);
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('app_lock_biometric', value);
+    if (mounted) setState(() => biometric = value);
   }
 
   Future<void> _disable() async {
-    final pin=await _secure.read(key:'app_lock_pin');
-    if(pin!=null) {
-      final c=TextEditingController();
-      final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('غیرفعال‌سازی قفل'),content:TextField(controller:c,keyboardType:TextInputType.number,obscureText:true,decoration:const InputDecoration(labelText:'PIN')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(ctx,_normalizeSettingsPinDigits(c.text.trim())==_normalizeSettingsPinDigits(pin)),child:const Text('تأیید'))]));
-      c.dispose(); if(ok!=true)return;
+    final pin = await _secure.read(key: 'app_lock_pin');
+    if (pin != null) {
+      final controller = TextEditingController();
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('غیرفعال‌سازی قفل'),
+          content: TextField(controller: controller, keyboardType: TextInputType.number,
+            obscureText: true, decoration: const InputDecoration(labelText: 'PIN')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لغو')),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx,
+                _normalizeSettingsPinDigits(controller.text.trim()) ==
+                _normalizeSettingsPinDigits(pin)),
+              child: const Text('تأیید'),
+            ),
+          ],
+        ),
+      );
+      controller.dispose();
+      if (ok != true) return;
     }
-    final p=await SharedPreferences.getInstance(); await p.setBool('app_lock_enabled',false); await p.setBool('app_lock_biometric',false); await _secure.delete(key:'app_lock_pin');
-    if(mounted)setState(() { enabled=false; biometric=false; });
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('app_lock_enabled', false);
+    await p.setBool('app_lock_biometric', false);
+    await _secure.delete(key: 'app_lock_pin');
+    if (mounted) setState(() { enabled = false; biometric = false; });
   }
 
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('قفل برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:ListTile(leading:const Icon(Icons.password_rounded),title:const Text('قفل با PIN'),subtitle:Text(enabled?'فعال':'غیرفعال'),trailing:FilledButton.tonal(onPressed:_setPin,child:Text(enabled?'تغییر PIN':'تعیین PIN')))),
-    Card(child:SwitchListTile(title:const Text('باز کردن با اثر انگشت / Face ID'),subtitle:Text(biometricAvailable?'در صورت پشتیبانی دستگاه':'این دستگاه بیومتریک قابل استفاده را گزارش نکرده است'),value:biometric&&enabled,onChanged:enabled&&biometricAvailable?_toggleBiometric:null)),
-    if(enabled) Card(child:ListTile(leading:const Icon(Icons.lock_open_rounded),title:const Text('غیرفعال کردن قفل'),onTap:_disable)),
-    const SizedBox(height:12),const Text('PIN در حافظه امن دستگاه نگهداری می‌شود و در Supabase ذخیره نمی‌شود.')
-  ]));
-}
-).hasMatch(first) && first == second);
-      },child:const Text('ذخیره'))]));
-    c1.dispose(); c2.dispose();
-    if(ok!=true)return;
-    final p=await SharedPreferences.getInstance();
-    await _secure.write(key:'app_lock_pin',value:c1.text);
-    await p.setBool('app_lock_enabled',true);
-    if(mounted)setState(()=>enabled=true);
-  }
-
-  Future<void> _toggleBiometric(bool v) async {
-    if(v) {
-      try {
-        final ok=await _auth.authenticate(localizedReason:'برای فعال‌سازی قفل برنامه احراز هویت کنید',options:const AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
-        if(!ok)return;
-      } catch(_) { if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('احراز هویت بیومتریک در این دستگاه در دسترس نیست.'))); return; }
-    }
-    final p=await SharedPreferences.getInstance(); await p.setBool('app_lock_biometric',v);
-    if(mounted)setState(()=>biometric=v);
-  }
-
-  Future<void> _disable() async {
-    final pin=await _secure.read(key:'app_lock_pin');
-    if(pin!=null) {
-      final c=TextEditingController();
-      final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('غیرفعال‌سازی قفل'),content:TextField(controller:c,keyboardType:TextInputType.number,obscureText:true,decoration:const InputDecoration(labelText:'PIN')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('لغو')),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text==pin),child:const Text('تأیید'))]));
-      c.dispose(); if(ok!=true)return;
-    }
-    final p=await SharedPreferences.getInstance(); await p.setBool('app_lock_enabled',false); await p.setBool('app_lock_biometric',false); await _secure.delete(key:'app_lock_pin');
-    if(mounted)setState(() { enabled=false; biometric=false; });
-  }
-
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('قفل برنامه')),body:ListView(padding:const EdgeInsets.all(16),children:[
-    Card(child:ListTile(leading:const Icon(Icons.password_rounded),title:const Text('قفل با PIN'),subtitle:Text(enabled?'فعال':'غیرفعال'),trailing:FilledButton.tonal(onPressed:_setPin,child:Text(enabled?'تغییر PIN':'تعیین PIN')))),
-    Card(child:SwitchListTile(title:const Text('باز کردن با اثر انگشت / Face ID'),subtitle:Text(biometricAvailable?'در صورت پشتیبانی دستگاه':'این دستگاه بیومتریک قابل استفاده را گزارش نکرده است'),value:biometric&&enabled,onChanged:enabled&&biometricAvailable?_toggleBiometric:null)),
-    if(enabled) Card(child:ListTile(leading:const Icon(Icons.lock_open_rounded),title:const Text('غیرفعال کردن قفل'),onTap:_disable)),
-    const SizedBox(height:12),const Text('PIN در حافظه امن دستگاه نگهداری می‌شود و در Supabase ذخیره نمی‌شود.')
-  ]));
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('قفل برنامه')),
+    body: ListView(padding: const EdgeInsets.all(16), children: [
+      Card(child: ListTile(
+        leading: const Icon(Icons.password_rounded),
+        title: const Text('قفل با PIN'),
+        subtitle: Text(enabled ? 'فعال' : 'غیرفعال'),
+        trailing: FilledButton.tonal(
+          onPressed: _setPin,
+          child: Text(enabled ? 'تغییر PIN' : 'تعیین PIN'),
+        ),
+      )),
+      Card(child: SwitchListTile(
+        title: const Text('باز کردن با اثر انگشت / Face ID'),
+        subtitle: Text(biometricAvailable
+          ? 'در صورت پشتیبانی دستگاه'
+          : 'این دستگاه بیومتریک قابل استفاده را گزارش نکرده است'),
+        value: biometric && enabled,
+        onChanged: enabled && biometricAvailable ? _toggleBiometric : null,
+      )),
+      if (enabled) Card(child: ListTile(
+        leading: const Icon(Icons.lock_open_rounded),
+        title: const Text('غیرفعال کردن قفل'),
+        onTap: _disable,
+      )),
+      const SizedBox(height: 12),
+      const Text('PIN در حافظه امن دستگاه نگهداری می‌شود و در Supabase ذخیره نمی‌شود.'),
+    ]),
+  );
 }
