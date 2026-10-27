@@ -18,7 +18,7 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
     try{
       final group=Map<String,dynamic>.from(await db.from('conversations').select('created_by,type').eq('id',widget.conversationId).single());
       final isOwner=db.auth.currentUser?.id!=null && group['created_by']?.toString()==db.auth.currentUser!.id && group['type']=='group';
-      if(!isOwner){if(mounted)setState(()=>{owner=false,loading=false});return;}
+      if(!isOwner){if(mounted)setState(() { owner=false; loading=false; });return;}
       final rs=List<Map<String,dynamic>>.from(await db.from('group_join_requests').select('id,user_id,created_at,status').eq('conversation_id',widget.conversationId).eq('status','pending').order('created_at',ascending:false));
       final adminRows=List<Map<String,dynamic>>.from(await db.from('conversation_members').select('user_id,role').eq('conversation_id',widget.conversationId).eq('role','admin').order('joined_at'));
       final bs=List<Map<String,dynamic>>.from(await db.from('group_banned_members').select('user_id,reason,created_at').eq('conversation_id',widget.conversationId).order('created_at',ascending:false));
