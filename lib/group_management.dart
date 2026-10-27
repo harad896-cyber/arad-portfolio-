@@ -596,13 +596,39 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         ),
       ),
       const SizedBox(height: 8),
+      if (members.where((m) {
+        if (memberQuery.isEmpty) return true;
+        final id = m['user_id'].toString();
+        final name = nameOf(id).toLowerCase();
+        final username = (profiles[id]?['username'] ?? '').toString().toLowerCase();
+        final role = (m['role'] ?? 'member').toString().toLowerCase();
+        final roleLabel = role == 'owner' || group!['created_by']?.toString() == id
+            ? 'مالک owner'
+            : role == 'admin' ? 'مدیر admin' : 'عضو member';
+        return name.contains(memberQuery) || username.contains(memberQuery) ||
+          role.contains(memberQuery) || roleLabel.contains(memberQuery);
+      }).isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+          child: Column(children: [
+            Icon(Icons.person_search_rounded, size: 38, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(height: 8),
+            Text(memberQuery.isEmpty ? 'هنوز عضوی در گروه نیست.' : 'عضوی با این نام، آیدی یا نقش پیدا نشد.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ]),
+        ),
       ...members.where((m) {
         if (memberQuery.isEmpty) return true;
         final id = m['user_id'].toString();
         final name = nameOf(id).toLowerCase();
         final username = (profiles[id]?['username'] ?? '').toString().toLowerCase();
+        final role = (m['role'] ?? 'member').toString().toLowerCase();
+        final roleLabel = role == 'owner' || group!['created_by']?.toString() == id
+            ? 'مالک owner'
+            : role == 'admin' ? 'مدیر admin' : 'عضو member';
         return name.contains(memberQuery) || username.contains(memberQuery) ||
-          (m['role'] ?? 'member').toString().toLowerCase().contains(memberQuery);
+          role.contains(memberQuery) || roleLabel.contains(memberQuery);
       }).map((m) {
         final id = m['user_id'].toString(); final isGroupOwner = group!['created_by']?.toString() == id; final role = (m['role'] ?? 'member').toString(); final a = avatarOf(id);
         return Card(margin: const EdgeInsets.symmetric(vertical: 4), child: ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(isGroupOwner ? '👑 مالک' : role), trailing: isGroupOwner ? const Icon(Icons.lock_rounded) : ((canRemoveMembers || owner) ? PopupMenuButton<String>(onSelected: (v) { if (v == 'remove') removeMember(id); else if (v == 'ban') banMember(id); else if (v == 'admin') setRole(id, 'admin'); else if (v == 'member') setRole(id, 'member'); }, itemBuilder: (_) => <PopupMenuEntry<String>>[const PopupMenuItem(value: 'remove', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_remove_rounded), title: Text('حذف از گروه'))), const PopupMenuItem(value: 'ban', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.block_rounded), title: Text('محروم کردن'))), if (owner) const PopupMenuItem(value: 'admin', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.admin_panel_settings_rounded), title: Text('مدیر کردن'))), if (owner) const PopupMenuItem(value: 'member', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_rounded), title: Text('برداشتن مدیریت')))]) : null)));
