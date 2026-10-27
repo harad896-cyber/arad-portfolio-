@@ -6553,17 +6553,49 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   }
 
   Future<void> _editRules() async {
-    final controller=TextEditingController(text:'${group['description'] ?? ''}');
-    final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
-      title:const Text('ویرایش نام و بیو گروه'),
-      content:SizedBox(width:420,child:Column(mainAxisSize:MainAxisSize.min,children:[TextField(controller:TextEditingController(text:'${group['title'] ?? widget.title}'),readOnly:true,decoration:const InputDecoration(labelText:'نام گروه (برای ویرایش از تنظیمات مدیریت استفاده کنید)')),TextField(controller:controller,maxLines:5,maxLength:1500,decoration:const InputDecoration(labelText:'بیو، معرفی و قوانین گروه',hintText:'موضوع، قوانین و توضیحات گروه',border:OutlineInputBorder()))])),
-      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:()=>Navigator.pop(ctx,controller.text.trim()),child:const Text('ذخیره'))],
+    if (!canEditRules || saving) return;
+    final titleController = TextEditingController(text: (group['title'] ?? widget.title).toString());
+    final descriptionController = TextEditingController(text: (group['description'] ?? '').toString());
+    final value = await showDialog<Map<String, String>>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('ویرایش نام و بیو گروه'),
+      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(controller: titleController, maxLength: 80, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder())),
+        const SizedBox(height: 12),
+        TextField(controller: descriptionController, maxLines: 5, maxLength: 1500, decoration: const InputDecoration(labelText: 'بیو، معرفی و قوانین گروه', hintText: 'موضوع و قوانین گروه', border: OutlineInputBorder())),
+      ])),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')),
+        FilledButton(onPressed: () {
+          final title = titleController.text.trim();
+          if (title.isEmpty) { showMsg(ctx, 'نام گروه نمی‌تواند خالی باشد.'); return; }
+          Navigator.pop(ctx, {'title': title, 'description': descriptionController.text.trim()});
+        }, child: const Text('ذخیره')),
+      ],
     ));
-    if(value==null)return;
-    setState(()=>saving=true);
-    try { await supabase.rpc('update_group_settings',params:{'p_conversation_id':widget.conversationId,'p_title':group['title'],'p_description':value,'p_avatar_url':group['avatar_url'],'p_is_public':group['is_public']??false,'p_username':group['username'],'p_join_approval':group['join_approval']??false,'p_only_admins_can_post':group['only_admins_can_post']??false,'p_only_admins_can_add':group['only_admins_can_add']??false,'p_auto_delete_seconds':group['auto_delete_seconds']??0,'p_allow_reactions':group['allow_reactions']??true}); if(!mounted)return; setState(()=>group={...group,'description':value}); showMsg(context,'بیو و قوانین گروه ذخیره شد'); }
-    catch(e){if(mounted)showMsg(context,'ذخیره قوانین ناموفق بود: '+_friendlyError(e.toString()));}
-    finally{if(mounted)setState(()=>saving=false);}
+    final newTitle = titleController.text.trim();
+    titleController.dispose();
+    descriptionController.dispose();
+    if (value == null) return;
+    setState(() => saving = true);
+    try {
+      await supabase.rpc('update_group_settings', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_title': value['title'] ?? newTitle,
+        'p_description': value['description'] ?? '',
+        'p_avatar_url': group['avatar_url'],
+        'p_is_public': group['is_public'] ?? false,
+        'p_username': group['username'],
+        'p_join_approval': group['join_approval'] ?? false,
+        'p_only_admins_can_post': group['only_admins_can_post'] ?? false,
+        'p_only_admins_can_add': group['only_admins_can_add'] ?? false,
+        'p_auto_delete_seconds': group['auto_delete_seconds'] ?? 0,
+        'p_allow_reactions': group['allow_reactions'] ?? true,
+      });
+      await _load();
+      if (mounted) showMsg(context, 'نام و بیو گروه ذخیره شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره نام یا بیو ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally { if (mounted) setState(() => saving = false); }
   }
 
   Future<void> _addMembers() async {
