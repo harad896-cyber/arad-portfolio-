@@ -614,7 +614,47 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     await updateSettings(publicGroup: true, username: username.toLowerCase());
   }
 
-  Future<void> updateSettings({String? title, String? description, String? username, bool? publicGroup, bool? approval, bool? adminsPost, bool? adminsAdd, bool? reactions}) async {
+  String autoDeleteLabel(int seconds) {
+    if (seconds <= 0) return 'خاموش';
+    if (seconds < 86400) return 'پس از ${seconds ~/ 3600} ساعت';
+    if (seconds < 604800) return 'پس از ${seconds ~/ 86400} روز';
+    if (seconds < 2592000) return 'پس از ${seconds ~/ 604800} هفته';
+    return 'پس از ${seconds ~/ 2592000} ماه';
+  }
+
+  Future<void> chooseAutoDelete() async {
+    if (!canEditGroup || busy || group == null) return;
+    final current = (group!['auto_delete_seconds'] as num?)?.toInt() ?? 0;
+    const options = <int>[0, 3600, 86400, 604800, 2592000];
+    final chosen = await showDialog<int>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('حذف خودکار پیام‌ها'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('زمان نگهداری پیام‌های گروه را انتخاب کنید. خاموش یعنی پیام‌ها طبق این تنظیم حذف خودکار نمی‌شوند.'),
+              const SizedBox(height: 8),
+              ...options.map((seconds) => RadioListTile<int>(
+                value: seconds,
+                groupValue: current,
+                title: Text(autoDeleteLabel(seconds)),
+                onChanged: (value) => Navigator.pop(dialog, value),
+                contentPadding: EdgeInsets.zero,
+              )),
+            ],
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('انصراف'))],
+      ),
+    );
+    if (chosen != null && chosen != current) {
+      await updateSettings(autoDeleteSeconds: chosen);
+    }
+  }
+
+  Future<void> updateSettings({String? title, String? description, String? username, bool? publicGroup, bool? approval, bool? adminsPost, bool? adminsAdd, bool? reactions, int? autoDeleteSeconds}) async {
     if (!canEditGroup || group == null || busy) return;
     final g = group!;
     setState(() => busy = true);
@@ -629,10 +669,11 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         'p_join_approval': approval ?? g['join_approval'] ?? false,
         'p_only_admins_can_post': adminsPost ?? g['only_admins_can_post'] ?? false,
         'p_only_admins_can_add': adminsAdd ?? g['only_admins_can_add'] ?? false,
-        'p_auto_delete_seconds': g['auto_delete_seconds'] ?? 0,
+        'p_auto_delete_seconds': autoDeleteSeconds ?? g['auto_delete_seconds'] ?? 0,
         'p_allow_reactions': reactions ?? g['allow_reactions'] ?? true,
       });
       await load();
+      toast('تنظیمات گروه ذخیره شد.');
     } catch (e) { toast('تنظیمات ذخیره نشد: $e'); }
     finally { if (mounted) setState(() => busy = false); }
   }
@@ -747,8 +788,28 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         SwitchListTile(title: const Text('گروه عمومی'), subtitle: Text((group!['username'] ?? '').toString().isEmpty ? 'برای فعال‌سازی، نام کاربری یکتا تعیین کنید.' : '@${group!['username']}'), value: group!['is_public'] == true, onChanged: canEditGroup ? changePublicVisibility : null),
         SwitchListTile(title: const Text('تأیید درخواست عضویت'), value: group!['join_approval'] == true, onChanged: canEditGroup ? (v) => updateSettings(approval: v) : null),
         SwitchListTile(title: const Text('فقط مدیران پیام بفرستند'), value: group!['only_admins_can_post'] == true, onChanged: canEditGroup ? (v) => updateSettings(adminsPost: v) : null),
-        SwitchListTile(title: const Text('فقط مدیران عضو اضافه کنند'), value: group!['only_admins_can_add'] == true, onChanged: canEditGroup ? (v) => updateSettings(adminsAdd: v) : null),
-        SwitchListTile(title: const Text('واکنش به پیام‌ها'), value: group!['allow_reactions'] != false, onChanged: canEditGroup ? (v) => updateSettings(reactions: v) : null),
+        SwitchListTile(
+          secondary: const Icon(Icons.group_add_rounded),
+          title: const Text('فقط مدیران عضو اضافه کنند'),
+          subtitle: const Text('در حالت خاموش، اعضا هم می‌توانند افراد را اضافه کنند.'),
+          value: group!['only_admins_can_add'] == true,
+          onChanged: canEditGroup ? (v) => updateSettings(adminsAdd: v) : null,
+        ),
+        ListTile(
+          leading: const Icon(Icons.auto_delete_rounded),
+          title: const Text('حذف خودکار پیام‌ها'),
+          subtitle: Text(autoDeleteLabel((group!['auto_delete_seconds'] as num?)?.toInt() ?? 0)),
+          trailing: const Icon(Icons.chevron_left_rounded),
+          enabled: canEditGroup && !busy,
+          onTap: canEditGroup && !busy ? chooseAutoDelete : null,
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.emoji_emotions_outlined),
+          title: const Text('واکنش به پیام‌ها'),
+          subtitle: const Text('فعال یا غیرفعال کردن واکنش‌های ایموجی در گروه.'),
+          value: group!['allow_reactions'] != false,
+          onChanged: canEditGroup ? (v) => updateSettings(reactions: v) : null,
+        ),
       ])),
       if (canRemoveMembers || canDeleteMessages || owner) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست‌های عضویت، محروم‌ها، محدودیت‌ها، سنجاق پیام و اختیارات مدیران'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: widget.title))))),
