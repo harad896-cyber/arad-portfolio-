@@ -5205,9 +5205,9 @@ class _HomePageState extends State<HomePage> {
               }
               setState(() { navIndex = i; showContacts = false; });
             },
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
-              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+            destinations: [
+              NavigationDestination(icon: const Icon(Icons.forum_outlined), selectedIcon: const Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
+              NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: trUi('پروفایل')),
             ],
           ),
         ),
