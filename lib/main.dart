@@ -80,6 +80,8 @@ String _friendlyError(String message) {
 String t(String key, String locale) {
   const data = {
     'fa': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ورود با حساب Google','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
+    'prs': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ادامه با حساب Google','profile':'نمایه شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
+    'ps': {'login':'ننوتل','signup':'نوم‌لیکنه','email':'برېښنالیک','password':'پټ نوم','google':'د Google له لارې دوام','profile':'ستاسو پېژندپاڼه','continue':'دوام','settings':'امستنې','language':'ژبه'},
     'en': {'login':'Login','signup':'Sign up','email':'Email','password':'Password','google':'Continue with Google','profile':'Your profile','continue':'Continue','settings':'Settings','language':'Language'},
     'ar': {'login':'تسجيل الدخول','signup':'إنشاء حساب','email':'البريد الإلكتروني','password':'كلمة المرور','google':'المتابعة باستخدام Google','profile':'ملفك الشخصي','continue':'متابعة','settings':'الإعدادات','language':'اللغة'},
     'tr': {'login':'Giriş','signup':'Kayıt ol','email':'E-posta','password':'Şifre','google':'Google ile devam et','profile':'Profiliniz','continue':'Devam','settings':'Ayarlar','language':'Dil'},
@@ -218,8 +220,9 @@ class AppAccessibilityController extends ChangeNotifier {
 final appAccessibility = AppAccessibilityController();
 
 class AppStrings {
-  static const supported = ['fa', 'en', 'ar', 'tr', 'fr', 'de'];
-  static const names = {'fa':'فارسی','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
+  // prs = Dari (Afghanistan), ps = Pashto. Both choices are saved locally and restored on next launch.
+  static const supported = ['fa', 'prs', 'ps', 'en', 'ar', 'tr', 'fr', 'de'];
+  static const names = {'fa':'فارسی','prs':'دری افغانستان','ps':'پښتو (افغانستان)','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
 }
 
 
@@ -512,7 +515,7 @@ class AradMessenger extends StatelessWidget {
                   ),
                 ),
                 Directionality(
-                  textDirection: ['fa', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+                  textDirection: ['fa', 'prs', 'ps', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
                   child: MediaQuery(
                     data: MediaQuery.of(context).copyWith(
                       textScaler: TextScaler.linear(appAccessibility.textScale),
