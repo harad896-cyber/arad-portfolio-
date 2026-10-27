@@ -216,44 +216,6 @@ const Map<String, String> _hazaragiUi = <String, String>{
   'تماس‌ها':'تماس‌ها', 'روشن':'روشن', 'تاریک':'تاریک',
   'در حال ارسال':'د حال فرستادن', 'دریافت شده':'رسیده', 'ارسال شد':'فرستاده شد',
   'زبان':'زبان', 'هزارگی (افغانستان)':'هزارگی', 'فارسی':'فارسی', 'دری افغانستان':'دری افغانستان',
-  'تنظیمات':'تنظیمات', 'جستجو در تنظیمات':'تنظیمات ره جستجو کو',
-  'حساب شما':'حساب شُما', 'حساب واردشده':'حسابی که داخل شُدین',
-  'افزودن یا تغییر حساب':'حساب نو اضافه کو یا حساب ره تبدیل کو',
-  'مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر':'حساب‌های ذخیره‌شده ره اداره کو',
-  'خروج از حساب':'از حساب برآیه', 'خروج امن از این دستگاه':'از ای دستگاه به‌طور امن برآیه',
-  'حریم خصوصی':'محرمیت', 'امنیت':'امنیت', 'اعلان‌ها':'خبرتیاها', 'مصرف داده':'مصرف اینترنت',
-  'دسترسی‌پذیری':'آسانی دسترسی', 'تماس‌ها':'تماس‌ها', 'ظاهر':'نما', 'پس‌زمینه چت':'پس‌زمینه گپ',
-  'زبان رابط کاربری':'زبان برنامه', 'گفتگوها':'گپ‌ها', 'گفتگو':'گپ', 'گفتگوی جدید':'گپ نو',
-  'مخاطبین':'مخاطب‌ها', 'مخاطب':'مخاطب', 'گروه‌ها':'گروپ‌ها', 'گروه':'گروپ',
-  'ساخت گروه':'گروپ جور کو', 'نام گروه':'نام گروپ', 'توضیحات گروه':'شرح گروپ',
-  'مدیریت گروه':'مدیریت گروپ', 'کانال‌ها':'کانال‌ها', 'کانال':'کانال',
-  'پروفایل':'پروفایل', 'ویرایش پروفایل':'پروفایل ره جور کو', 'ویرایش':'جور کردن',
-  'ذخیره':'ذخیره کو', 'ذخیره تغییرات':'تغییرات ره ذخیره کو', 'لغو':'لغو کو',
-  'بازگشت':'پس برو', 'بستن':'بسته کو', 'تأیید':'تأیید کو',
-  'پیام':'پیغام', 'پیام‌ها':'پیغام‌ها', 'پیام جدید':'پیغام نو',
-  'پیام خود را بنویسید…':'پیغام خود ره بنویسین…', 'ارسال پیام':'پیغام ره بفرست',
-  'ارسال':'فرستادن', 'فرستادن':'فرستادن', 'پاسخ':'جواب', 'پاسخ دادن':'جواب بتین',
-  'حذف پیام':'پیغام ره پاک کو', 'حذف برای من':'برای مه پاک کو', 'حذف برای همه':'برای همه پاک کو',
-  'جستجو':'جستجو کو', 'جستجوی پیام‌ها':'پیغام‌ها ره جستجو کو',
-  'هنوز گفتگویی ندارید':'تاهنوز گپی ندارین', 'یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.':'یک گپ نو شروع کو یا از مخاطب‌ها انتخاب کو.',
-  'نتیجه‌ای پیدا نشد':'چیزی پیدا نشد', 'نام یا عبارت دیگری را جستجو کنید.':'نام یا کلمهٔ دیگه ره جستجو کو.',
-  'آنلاین':'آنلاین', 'آخرین بازدید':'آخرین دیدار', 'تایپ می‌کند…':'د حال نوشتن است…',
-  'در حال بارگذاری…':'د حال بارگذاری…', 'تلاش دوباره':'دوباره کوشش کو',
-  'دوربین':'کمره', 'عکس':'عکس', 'عکس‌ها':'عکس‌ها', 'انتخاب عکس':'عکس انتخاب کو',
-  'تغییر عکس':'عکس ره تبدیل کو', 'گالری':'گالری', 'فایل‌ها':'فایل‌ها', 'ویدئو':'ویدیو',
-  'موسیقی / صدا':'موسیقی / صدا', 'پیوست‌ها':'ضمیمه‌ها', 'افزودن به پیام':'به پیغام اضافه کو',
-  'استیکرها':'استیکرها', 'ایموجی':'ایموجی', 'ایموجی و استیکر':'ایموجی و استیکر',
-  'جست‌وجوی ایموجی':'ایموجی جستجو کو', 'واکنش‌ها':'واکنش‌ها', 'واکنش به پیام':'به پیغام واکنش',
-  'خوانده‌نشده':'خوانده‌نشده', 'همه':'همه', 'آرشیو':'آرشیف', 'بایگانی':'آرشیف',
-  'مرکز اعلان‌ها':'مرکز خبرتیاها', 'پیام‌های ذخیره‌شده':'پیغام‌های ذخیره‌شده',
-  'تنظیمات گفتگو':'تنظیمات گپ', 'پوشه‌های گفتگو':'فولدرهای گپ',
-  'روشن':'روشن', 'تاریک':'تاریک', 'شروع گفتگو':'گپ شروع کو',
-  'تماس صوتی':'تماس صوتی', 'تماس تصویری':'تماس تصویری',
-  'در حال ارسال':'د حال فرستادن', 'دریافت شده':'رسیده', 'ارسال شد':'فرستاده شد',
-  'خطا':'خطا', 'عملیات انجام نشد. لطفاً دوباره تلاش کنید.':'کار جور نشد؛ دوباره کوشش کو.',
-  'افزودن مخاطب':'مخاطب اضافه کو', 'ایجاد گروه':'گروپ جور کو', 'ایجاد کانال':'کانال جور کو',
-  'درخواست‌های دوستی':'درخواست‌های دوستی', 'پیوستن با لینک گروه':'با لینک به گروپ بپیوند',
-  'دیدن استوری‌ها':'استوری‌ها ره ببین', 'منوی اصلی':'منوی اصلی',
 };
 
 String _hazaragiFallback(String source) {
@@ -1082,7 +1044,7 @@ Future<void> main() async {
           'بخشی از صفحه درست بارگذاری نشد. صفحه را دوباره باز کنید.\n\n${_friendlyError(details.exceptionAsString())}',
           textAlign: TextAlign.center,
           textDirection: TextDirection.rtl,
-          style: const TextStyle(color: Color(0xFF29243A), fontSize: 14),
+          style: TextStyle(color: Color(0xFF29243A), fontSize: 14),
         ),
       ),
     ),
@@ -1115,14 +1077,14 @@ class StartupLoadingApp extends StatelessWidget {
                       color: const Color(0xFF00C2A8).withValues(alpha: .14),
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: const Icon(Icons.forum_rounded, size: 42, color: Color(0xFF00C2A8)),
+                    child: Icon(Icons.forum_rounded, size: 42, color: Color(0xFF00C2A8)),
                   ),
-                  const SizedBox(height: 18),
-                  const Text('Arad Messenger', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 12),
-                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
-                  const SizedBox(height: 12),
-                  const Text('در حال آماده‌سازی برنامه…', style: TextStyle(color: Colors.white70)),
+                  SizedBox(height: 18),
+                  Text('Arad Messenger', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  SizedBox(height: 12),
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
+                  SizedBox(height: 12),
+                  Text('در حال آماده‌سازی برنامه…', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
@@ -1150,30 +1112,30 @@ class StartupFailureApp extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.cloud_off_rounded, size: 56, color: Color(0xFF8B5CF6)),
-                  const SizedBox(height: 16),
-                  const Text(
+                  Icon(Icons.cloud_off_rounded, size: 56, color: Color(0xFF8B5CF6)),
+                  SizedBox(height: 16),
+                  Text(
                     'Arad Messenger',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
+                  SizedBox(height: 12),
+                  Text(
                     'برنامه نتوانست راه‌اندازی شود.',
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
                     style: TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     message,
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF5B5568)),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF5B5568)),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () => main(),
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: Icon(Icons.refresh_rounded),
                     label: Text(trUi('تلاش دوباره')),
                   ),
                 ],
@@ -1257,12 +1219,12 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.cloud_off_rounded, size: 17, color: scheme.error),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text('آفلاین • پیام‌های ذخیره‌شده در دسترس‌اند', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
                           ],
                         ),
                       )
-                    : const SizedBox(key: ValueKey('online')),
+                    : SizedBox(key: ValueKey('online')),
               ),
             ),
           ),
@@ -1400,11 +1362,11 @@ class AradMessenger extends StatelessWidget {
           filled: true,
           fillColor: const Color(0xFFF0F2F8),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: const TextStyle(color: const Color(0xFF6C7180), fontSize: 14),
-          labelStyle: const TextStyle(color: const Color(0xFF171320), fontSize: 14),
+          hintStyle: TextStyle(color: const Color(0xFF6C7180), fontSize: 14),
+          labelStyle: TextStyle(color: const Color(0xFF171320), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: const TextStyle(color: const Color(0xFF6C7180), fontSize: 12),
-          errorStyle: const TextStyle(color: Color(0xFFB42318), fontSize: 12),
+          helperStyle: TextStyle(color: const Color(0xFF6C7180), fontSize: 12),
+          errorStyle: TextStyle(color: Color(0xFFB42318), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
           suffixIconColor: const Color(0xFF6C7180),
           border: OutlineInputBorder(
@@ -1492,11 +1454,11 @@ class AradMessenger extends StatelessWidget {
           filled: true,
           fillColor: const Color(0xFF0B2032),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: const TextStyle(color: const Color(0xFF9DAFC0), fontSize: 14),
-          labelStyle: const TextStyle(color: const Color(0xFFE8EDF5), fontSize: 14),
+          hintStyle: TextStyle(color: const Color(0xFF9DAFC0), fontSize: 14),
+          labelStyle: TextStyle(color: const Color(0xFFE8EDF5), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: const TextStyle(color: const Color(0xFF9DAFC0), fontSize: 12),
-          errorStyle: const TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
+          helperStyle: TextStyle(color: const Color(0xFF9DAFC0), fontSize: 12),
+          errorStyle: TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
           suffixIconColor: const Color(0xFF9DAFC0),
           border: OutlineInputBorder(
@@ -1610,34 +1572,34 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
   }
   Future<void> _createFolder() async {
     final c=TextEditingController();
-    final name=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(title:Text(trUi('پوشه جدید')),content:TextField(controller:c,autofocus:true,decoration:const InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(trUi('لغو'))),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text.trim().isEmpty?null:c.text.trim()),child:Text(trUi('افزودن')))]));
+    final name=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(title:Text(trUi('پوشه جدید')),content:TextField(controller:c,autofocus:true,decoration:InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(trUi('لغو'))),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text.trim().isEmpty?null:c.text.trim()),child:Text(trUi('افزودن')))]));
     c.dispose(); final uid=supabase.auth.currentUser?.id; if(uid==null||name==null||name.isEmpty)return;
     try{await supabase.from('chat_folders').insert({'user_id':uid,'name':name,'icon_name':'folder','sort_order':folders.length});await _load();}catch(e){if(mounted)showMsg(context,'ساخت پوشه ناموفق بود: '+_friendlyError(e.toString()));}
   }
   Future<void> _deleteFolder(Map<String,dynamic> folder) async {final id=folder['id']?.toString();if(id==null)return;try{await supabase.from('chat_folder_items').delete().eq('folder_id',id);await supabase.from('chat_folders').delete().eq('id',id);await _load();}catch(e){if(mounted)showMsg(context,'حذف پوشه ناموفق بود: '+_friendlyError(e.toString()));}}
   Future<void> _editFolder(Map<String,dynamic> folder) async {
     final c=TextEditingController(text:folder['name']?.toString()??'');
-    final name=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(title:Text(trUi('ویرایش پوشه')),content:TextField(controller:c,autofocus:true,decoration:const InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(trUi('لغو'))),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text.trim().isEmpty?null:c.text.trim()),child:Text(trUi('ذخیره')))]));
+    final name=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(title:Text(trUi('ویرایش پوشه')),content:TextField(controller:c,autofocus:true,decoration:InputDecoration(labelText:'نام پوشه')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(trUi('لغو'))),FilledButton(onPressed:()=>Navigator.pop(ctx,c.text.trim().isEmpty?null:c.text.trim()),child:Text(trUi('ذخیره')))]));
     c.dispose(); final id=folder['id']?.toString(); if(id==null||name==null||name.isEmpty)return;
     try{await supabase.from('chat_folders').update({'name':name}).eq('id',id);await _load();}catch(e){if(mounted)showMsg(context,'ویرایش پوشه ناموفق بود: '+_friendlyError(e.toString()));}
   }
   Future<void> _manageChats(Map<String,dynamic> folder) async {
     final fid=folder['id']?.toString();if(fid==null)return; final selected=Set<String>.from(membersByFolder[fid]??const <String>{});
     await showModalBottomSheet(context:context,isScrollControlled:true,showDragHandle:true,builder:(sheet)=>StatefulBuilder(builder:(sheet,setSheet)=>SafeArea(child:SizedBox(height:MediaQuery.of(sheet).size.height*.82,child:Column(children:[
-      Padding(padding:const EdgeInsets.fromLTRB(20,8,20,12),child:Row(children:[const Expanded(child:Text('انتخاب گفتگوها',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),Text(selected.length.toString(),style:TextStyle(color:Theme.of(sheet).colorScheme.primary,fontWeight:FontWeight.w800))])),
-      Expanded(child:conversations.isEmpty?const Center(child:Text(trUi('گفتگویی برای افزودن وجود ندارد.'))):ListView.builder(itemCount:conversations.length,itemBuilder:(_,i){final c=conversations[i],id=c['id'].toString();final rawTitle=c['title']?.toString().trim()??'';final rawUsername=c['username']?.toString()??'';final title=rawTitle.isNotEmpty?rawTitle:(rawUsername.isNotEmpty?'@'+rawUsername:'گفتگو');final checked=selected.contains(id);return CheckboxListTile(value:checked,title:Text(title),subtitle:Text(c['type']?.toString()??'direct'),secondary:const CircleAvatar(child:Icon(Icons.chat_bubble_outline_rounded,size:19)),onChanged:(v)=>setSheet((){if(v==true)selected.add(id);else selected.remove(id);}));})),
+      Padding(padding:const EdgeInsets.fromLTRB(20,8,20,12),child:Row(children:[Expanded(child:Text('انتخاب گفتگوها',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),Text(selected.length.toString(),style:TextStyle(color:Theme.of(sheet).colorScheme.primary,fontWeight:FontWeight.w800))])),
+      Expanded(child:conversations.isEmpty?Center(child:Text(trUi('گفتگویی برای افزودن وجود ندارد.'))):ListView.builder(itemCount:conversations.length,itemBuilder:(_,i){final c=conversations[i],id=c['id'].toString();final rawTitle=c['title']?.toString().trim()??'';final rawUsername=c['username']?.toString()??'';final title=rawTitle.isNotEmpty?rawTitle:(rawUsername.isNotEmpty?'@'+rawUsername:'گفتگو');final checked=selected.contains(id);return CheckboxListTile(value:checked,title:Text(title),subtitle:Text(c['type']?.toString()??'direct'),secondary:CircleAvatar(child:Icon(Icons.chat_bubble_outline_rounded,size:19)),onChanged:(v)=>setSheet((){if(v==true)selected.add(id);else selected.remove(id);}));})),
       Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:()async{try{await supabase.from('chat_folder_items').delete().eq('folder_id',fid);if(selected.isNotEmpty){await supabase.from('chat_folder_items').insert(selected.map((id)=>{'folder_id':fid,'conversation_id':id}).toList());}if(sheet.mounted)Navigator.pop(sheet);await _load();}catch(e){if(mounted)showMsg(context,'ذخیره گفتگوهای پوشه ناموفق بود: '+_friendlyError(e.toString()));}},child:Text(trUi('ذخیره تغییرات')))),
     ])))));
   }
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('پوشه‌های گفتگو'))),body:loading?const Center(child:CircularProgressIndicator()):folders.isEmpty?const PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>const [PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:const Icon(Icons.add_rounded),label:Text(trUi('پوشه جدید'))));
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('پوشه‌های گفتگو'))),body:loading?Center(child:CircularProgressIndicator()):folders.isEmpty?PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>[PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:Icon(Icons.add_rounded),label:Text(trUi('پوشه جدید'))));
 }
 class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
-  const PremiumEmptyState({super.key,required this.icon,required this.title,required this.subtitle});
+  PremiumEmptyState({super.key,required this.icon,required this.title,required this.subtitle});
   @override Widget build(BuildContext context)=>Center(child:Padding(padding:const EdgeInsets.all(32),child:Column(mainAxisSize:MainAxisSize.min,children:[
     Container(width:86,height:86,decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(kAppRadius)),child:Icon(icon,size:40)),
-    const SizedBox(height:20),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
-    const SizedBox(height:8),Text(subtitle,textAlign:TextAlign.center)
+    SizedBox(height:20),Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+    SizedBox(height:8),Text(subtitle,textAlign:TextAlign.center)
   ])));
 }
 class PremiumPageRoute<T> extends PageRouteBuilder<T> {
@@ -1685,32 +1647,32 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     return Scaffold(
       appBar:AppBar(title:Text(trUi('تنظیمات')),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
         padding:const EdgeInsets.fromLTRB(16,4,14,10),
-        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:const Icon(Icons.search_rounded))),
+        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:Icon(Icons.search_rounded))),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
         Card(child:ListTile(
           leading:CircleAvatar(backgroundColor:Theme.of(context).colorScheme.primaryContainer,child:Icon(Icons.person_rounded,color:Theme.of(context).colorScheme.primary)),
-          title:Text(trUi('حساب شما'),style:const TextStyle(fontWeight:FontWeight.w900)),
+          title:Text(trUi('حساب شما'),style:TextStyle(fontWeight:FontWeight.w900)),
           subtitle:Text(supabase.auth.currentUser?.email??trUi('حساب واردشده')),
-          trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open('حساب کاربری'),
+          trailing:Icon(Icons.chevron_left_rounded),onTap:()=>_open('حساب کاربری'),
         )),
         ...groups.entries.expand<Widget>((g)=><Widget>[
-          Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(trUi(g.key),style:const TextStyle(fontSize:14,fontWeight:FontWeight.w900))),
+          Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(trUi(g.key),style:TextStyle(fontSize:14,fontWeight:FontWeight.w900))),
           ...g.value.map<Widget>((x)=>Card(margin:const EdgeInsets.only(bottom:6),child:ListTile(
-            leading:Icon(_iconForSetting(x['title']!)),title:Text(trUi(x['title']!),style:const TextStyle(fontWeight:FontWeight.w700)),
-            subtitle:Text(trUi(x['desc']!)),trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open(x['title']!),
+            leading:Icon(_iconForSetting(x['title']!)),title:Text(trUi(x['title']!),style:TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text(trUi(x['desc']!)),trailing:Icon(Icons.chevron_left_rounded),onTap:()=>_open(x['title']!),
           ))),
         ]),
         Card(child:ListTile(
-          leading:const Icon(Icons.switch_account_rounded),
-          title:Text(trUi('افزودن یا تغییر حساب'),style:const TextStyle(fontWeight:FontWeight.w800)),
+          leading:Icon(Icons.switch_account_rounded),
+          title:Text(trUi('افزودن یا تغییر حساب'),style:TextStyle(fontWeight:FontWeight.w800)),
           subtitle:Text(trUi('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر')),
-          trailing:const Icon(Icons.chevron_left_rounded),
+          trailing:Icon(Icons.chevron_left_rounded),
           onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccountSwitcherPage())),
         )),
         Card(child:ListTile(
           leading:Icon(Icons.logout_rounded,color:Theme.of(context).colorScheme.error),
-          title:Text(trUi('خروج از حساب'),style:const TextStyle(fontWeight:FontWeight.w800)),
+          title:Text(trUi('خروج از حساب'),style:TextStyle(fontWeight:FontWeight.w800)),
           subtitle:Text(trUi('خروج امن از این دستگاه')),onTap:_signOut,
         )),
       ]),
@@ -1743,12 +1705,12 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     }
   }
   void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    const Padding(padding:EdgeInsets.all(18),child:Text('ظاهر برنامه',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+    Padding(padding:EdgeInsets.all(18),child:Text('ظاهر برنامه',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
     RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);await saveUserSettings({'theme_mode':'dark'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('تاریک'))),
     RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('روشن'))),
   ])));
   void _showLanguageSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Padding(padding:const EdgeInsets.all(18),child:Text(trUi('زبان'),style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+    Padding(padding:const EdgeInsets.all(18),child:Text(trUi('زبان'),style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
     ...AppStrings.supported.map((code)=>RadioListTile<String>(value:code,groupValue:aradLanguageController.locale.languageCode,title:Text(AppStrings.names[code]??code),onChanged:(v)async{if(v==null)return;await aradLanguageController.setLocale(v);await saveUserSettings({'language_code':v});if(mounted){setState(()=>language=AppStrings.names[v]??v);Navigator.pop(context);}})),
   ])));
   Future<void> _signOut()async{
@@ -1862,7 +1824,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 child: Row(
                   children: [
-                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),                    const SizedBox(width: 10),                    Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),                  ],
+                    Icon(Icons.shield_outlined, color: Theme.of(sheetContext).colorScheme.primary),                    SizedBox(width: 10),                    Expanded(child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),                  ],
                 ),
               ),
               ..._visibilityOptions.entries.map(
@@ -1919,7 +1881,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
           foregroundColor: scheme.primary,
           child: Icon(icon, size: 21),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 3),
           child: Text(subtitle),
@@ -1928,8 +1890,8 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(_label(value), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
-            const SizedBox(width: 4),
-            const Icon(Icons.chevron_left_rounded),
+            SizedBox(width: 4),
+            Icon(Icons.chevron_left_rounded),
           ],
         ),
         onTap: () => _chooseVisibility(
@@ -1948,8 +1910,8 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 3),
+          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          SizedBox(height: 3),
           Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
@@ -1961,7 +1923,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
     return Scaffold(
       appBar: AppBar(title: Text(trUi('حریم خصوصی'))),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 28),
               children: [
@@ -1979,7 +1941,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                 ),
                 Card(
                   child: SwitchListTile.adaptive(
-                    secondary: const Icon(Icons.contact_phone_outlined),
+                    secondary: Icon(Icons.contact_phone_outlined),
                     title: Text(trUi('پیدا کردن من با شماره تلفن')),
                     subtitle: Text(trUi('اجازه می‌دهد کاربران با شماره ذخیره‌شده شما، حسابتان را پیدا کنند.')),
                     value: discoverByPhone,
@@ -2079,7 +2041,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                   onChanged: (v) => setState(() => p2pVisibility = v),
                 ),
 
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -2087,7 +2049,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'همه این انتخاب‌ها برای همین حساب در Supabase ذخیره می‌شوند و بین دستگاه‌های واردشده قابل همگام‌سازی هستند. اعمال نهایی هر محدودیت باید در لایهٔ نمایش و مجوزهای سرور نیز رعایت شود.',
@@ -2140,7 +2102,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage>{
   }
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(trUi('تنظیمات گفتگو'))),
-    body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
+    body:loading?Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
       Card(child:SwitchListTile(title:Text(trUi('رسید خواندن')),subtitle:Text(trUi('وضعیت خوانده‌شدن پیام‌ها')),value:receipts,onChanged:(v)=>_change('read_receipts',v,receipts,(n)=>receipts=n))),
       Card(child:SwitchListTile(title:Text(trUi('پیش‌نمایش لینک')),value:preview,onChanged:(v)=>_change('link_previews',v,preview,(n)=>preview=n))),
       Card(child:SwitchListTile(title:Text(trUi('ارسال با Enter')),value:enterSend,onChanged:(v)=>_change('enter_to_send',v,enterSend,(n)=>enterSend=n))),
@@ -2153,7 +2115,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage>{
 class _ChoiceSheet extends StatelessWidget{
   final String title,value; final List<String> options; final ValueChanged<String> onChanged;
   const _ChoiceSheet({required this.title,required this.options,required this.value,required this.onChanged});
-  @override Widget build(BuildContext context)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[Padding(padding:const EdgeInsets.all(18),child:Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w800))),...options.map((o)=>RadioListTile(value:o,groupValue:value,onChanged:(v)=>onChanged(v!),title:Text(o)))]));
+  @override Widget build(BuildContext context)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[Padding(padding:const EdgeInsets.all(18),child:Text(title,style:TextStyle(fontSize:19,fontWeight:FontWeight.w800))),...options.map((o)=>RadioListTile(value:o,groupValue:value,onChanged:(v)=>onChanged(v!),title:Text(o)))]));
 }
 class AppAppearancePage extends StatefulWidget {
   const AppAppearancePage({super.key});
@@ -2203,7 +2165,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
       final bytes = await file.readAsBytes();
       await appTheme.setBackgroundImage(base64Encode(bytes));
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(trUi('پس‌زمینهٔ چت ذخیره شد.'))),
+        SnackBar(content: Text(trUi('پس‌زمینهٔ چت ذخیره شد.'))),
       );
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -2254,13 +2216,13 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                     ),
                     child: Row(
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 17,
                           backgroundColor: Color(0xFFB8D8F8),
                           child: Icon(Icons.person_rounded, color: Color(0xFF315B83), size: 20),
                         ),
-                        const SizedBox(width: 9),
-                        const Expanded(
+                        SizedBox(width: 9),
+                        Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2270,9 +2232,9 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                             ],
                           ),
                         ),
-                        const Icon(Icons.call_rounded, color: Colors.white, size: 20),
-                        const SizedBox(width: 15),
-                        const Icon(Icons.more_vert_rounded, color: Colors.white, size: 21),
+                        Icon(Icons.call_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 15),
+                        Icon(Icons.more_vert_rounded, color: Colors.white, size: 21),
                       ],
                     ),
                   ),
@@ -2287,13 +2249,13 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                             alignment: Alignment.center,
                             child: DecoratedBox(
                               decoration: BoxDecoration(color: Colors.black.withValues(alpha: .35), borderRadius: BorderRadius.circular(12)),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 child: Text('امروز', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 9),
+                          SizedBox(height: 9),
                           Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: Container(
@@ -2310,7 +2272,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                               child: Text('سلام! قالب جدید چطوره؟', style: TextStyle(color: scheme.onSurface, fontSize: 12)),
                             ),
                           ),
-                          const SizedBox(height: 7),
+                          SizedBox(height: 7),
                           Align(
                             alignment: AlignmentDirectional.centerEnd,
                             child: Container(
@@ -2328,7 +2290,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                                 border: Border.all(color: Colors.white.withValues(alpha: .22)),
                                 boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .20), blurRadius: 9, offset: const Offset(0, 3))],
                               ),
-                              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
                                 Flexible(child: Text('خیلی شیک و مرتب شده ✨', style: TextStyle(color: Colors.white, fontSize: 12))),
                                 SizedBox(width: 6),
                                 Icon(Icons.done_all_rounded, size: 14, color: Colors.white),
@@ -2349,24 +2311,24 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.emoji_emotions_outlined, color: Colors.white, size: 22),
-                        const SizedBox(width: 9),
+                        Icon(Icons.emoji_emotions_outlined, color: Colors.white, size: 22),
+                        SizedBox(width: 9),
                         Expanded(
                           child: Container(
                             height: 38,
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.symmetric(horizontal: 13),
                             decoration: BoxDecoration(color: Colors.white.withValues(alpha: .94), borderRadius: BorderRadius.circular(22)),
-                            child: const Text('پیام بنویسید…', style: TextStyle(color: Color(0xFF777783), fontSize: 11)),
+                            child: Text('پیام بنویسید…', style: TextStyle(color: Color(0xFF777783), fontSize: 11)),
                           ),
                         ),
-                        const SizedBox(width: 9),
-                        const Icon(Icons.attach_file_rounded, color: Colors.white, size: 21),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 9),
+                        Icon(Icons.attach_file_rounded, color: Colors.white, size: 21),
+                        SizedBox(width: 8),
                         CircleAvatar(
                           radius: 19,
                           backgroundColor: Color(appTheme.seed),
-                          child: const Icon(Icons.mic_rounded, color: Colors.white, size: 21),
+                          child: Icon(Icons.mic_rounded, color: Colors.white, size: 21),
                         ),
                       ],
                     ),
@@ -2375,22 +2337,22 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
               ),
             ),
           ),
-          const SizedBox(height: 18),
-          const Text('حالت نمایش', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 8),
+          SizedBox(height: 18),
+          Text('حالت نمایش', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          SizedBox(height: 8),
           Card(child: RadioListTile<bool>(
             value: false, groupValue: dark,
             onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
-            title: Text(trUi('روشن')), secondary: const Icon(Icons.light_mode_rounded),
+            title: Text(trUi('روشن')), secondary: Icon(Icons.light_mode_rounded),
           )),
           Card(child: RadioListTile<bool>(
             value: true, groupValue: dark,
             onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
-            title: Text(trUi('تاریک')), secondary: const Icon(Icons.dark_mode_rounded),
+            title: Text(trUi('تاریک')), secondary: Icon(Icons.dark_mode_rounded),
           )),
-          const SizedBox(height: 18),
-          const Text('قالب‌های آمادهٔ پس‌زمینه', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
+          SizedBox(height: 18),
+          Text('قالب‌های آمادهٔ پس‌زمینه', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -2424,9 +2386,9 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                     ] : const [],
                   ),
                   child: Row(children: [
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Icon(selected ? Icons.check_circle : Icons.palette_outlined, color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(child: Text(p.name, style: TextStyle(color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white, fontWeight: FontWeight.w800))),
                     Container(
                       width: 11,
@@ -2437,25 +2399,25 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                         border: Border.all(color: Colors.white.withValues(alpha: .8), width: 1.5),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                   ]),
                 ),
               );
             },
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           FilledButton.icon(
             onPressed: picking ? null : _pickWallpaper,
-            icon: picking ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wallpaper_rounded),
+            icon: picking ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.wallpaper_rounded),
             label: Text(picking ? 'در حال انتخاب تصویر…' : 'انتخاب عکس از گالری'),
           ),
           if (hasImage) OutlinedButton.icon(
             onPressed: () async { await appTheme.setBackgroundImage(null); if (mounted) setState(() {}); },
-            icon: const Icon(Icons.image_not_supported_outlined),
+            icon: Icon(Icons.image_not_supported_outlined),
             label: Text(trUi('حذف عکس پس‌زمینه')),
           ),
-          const SizedBox(height: 8),
-          const Text('قالب و عکس پس‌زمینه روی همین حساب ذخیره می‌شود و برای همهٔ گفتگوها اعمال خواهد شد.', style: TextStyle(color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('قالب و عکس پس‌زمینه روی همین حساب ذخیره می‌شود و برای همهٔ گفتگوها اعمال خواهد شد.', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -2507,14 +2469,14 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
     final uid = supabase.auth.currentUser?.id;
     return Scaffold(
       appBar: AppBar(title: Text(trUi('تاریخچه تماس‌ها'))),
-      body: loading ? const Center(child: CircularProgressIndicator()) : calls.isEmpty
+      body: loading ? Center(child: CircularProgressIndicator()) : calls.isEmpty
           ? const AppEmptyState(icon: Icons.phone_in_talk_rounded, title: 'هنوز تاریخچه تماس ثبت نشده است', subtitle: 'تماس‌های واقعی بعد از برقراری یا پایان تماس اینجا ثبت می‌شوند.')
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                 itemCount: calls.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 7),
+                separatorBuilder: (_, __) => SizedBox(height: 7),
                 itemBuilder: (_, i) {
                   final c = calls[i];
                   final incoming = c['callee_id']?.toString() == uid;
@@ -2529,7 +2491,7 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
                       backgroundColor: color.withValues(alpha: .12),
                       child: Icon(missed ? Icons.phone_missed_rounded : (video ? Icons.videocam_rounded : (incoming ? Icons.call_received_rounded : Icons.call_made_rounded)), color: color),
                     ),
-                    title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    title: Text(label, style: TextStyle(fontWeight: FontWeight.w800)),
                     subtitle: Text([_time(c['created_at'] ?? c['started_at']), if (duration.isNotEmpty) duration].join(' • ')),
                   ));
                 },
@@ -2549,9 +2511,9 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
     return Card(
       child: ListTile(
         leading: CircleAvatar(backgroundColor: scheme.primaryContainer, child: Icon(icon, color: scheme.primary)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w800)),
         subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_left_rounded),
+        trailing: Icon(Icons.chevron_left_rounded),
         onTap: () {
           HapticFeedback.selectionClick();
           Navigator.push(context, MaterialPageRoute(builder: (_) => page));
@@ -2569,7 +2531,7 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
           Card(child: SwitchListTile(
             value: appTheme.dark,
             secondary: Icon(appTheme.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: scheme.primary),
-            title: const Text('حالت تاریک', style: TextStyle(fontWeight: FontWeight.w800)),
+            title: Text('حالت تاریک', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: Text(trUi('تغییر فوری ظاهر کل برنامه')),
             onChanged: (v) async {
               await appTheme.setDark(v);
@@ -2580,14 +2542,14 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
           Card(child: SwitchListTile(
             value: appTheme.backgroundEffects,
             secondary: Icon(Icons.auto_awesome_rounded, color: scheme.primary),
-            title: const Text('افکت نور پس‌زمینه', style: TextStyle(fontWeight: FontWeight.w800)),
+            title: Text('افکت نور پس‌زمینه', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: Text(trUi('اگر برنامه کند است، افکت را خاموش کن')),
             onChanged: (v) async {
               await appTheme.setBackgroundEffects(v);
               if (mounted) setState(() {});
             },
           )),
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
             child: Text('تنظیمات پرکاربرد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
           ),
@@ -2701,7 +2663,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(trUi('مرکز اعلان‌ها')),
-        actions: [IconButton(tooltip: 'تازه‌سازی', onPressed: () => _load(), icon: const Icon(Icons.refresh_rounded))],
+        actions: [IconButton(tooltip: 'تازه‌سازی', onPressed: () => _load(), icon: Icon(Icons.refresh_rounded))],
       ),
       body: loading
           ? const AppSkeletonList(count: 5)
@@ -2710,18 +2672,18 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   padding: const EdgeInsets.all(24),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.cloud_off_rounded, size: 44, color: scheme.error),
-                    const SizedBox(height: 12),
-                    const Text('اعلان‌ها بارگذاری نشدند', style: TextStyle(fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 12),
+                    Text('اعلان‌ها بارگذاری نشدند', style: TextStyle(fontWeight: FontWeight.w800)),
+                    SizedBox(height: 8),
                     Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(onPressed: () => _load(), icon: const Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+                    SizedBox(height: 12),
+                    FilledButton.icon(onPressed: () => _load(), icon: Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
                   ]),
                 ))
               : rows.isEmpty
                   ? RefreshIndicator(
                       onRefresh: () => _load(showLoading: false),
-                      child: ListView(children: const [
+                      child: ListView(children: [
                         SizedBox(height: 150),
                         Icon(Icons.notifications_none_rounded, size: 62),
                         SizedBox(height: 14),
@@ -2735,7 +2697,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                         itemCount: rows.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 7),
+                        separatorBuilder: (_, __) => SizedBox(height: 7),
                         itemBuilder: (_, i) {
                           final row = rows[i];
                           final type = (row['type'] ?? 'direct').toString();
@@ -2752,7 +2714,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                 backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
                                 child: avatar.isEmpty ? Icon(icon, color: scheme.primary) : null,
                               ),
-                              title: Text((row['title'] ?? 'گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                              title: Text((row['title'] ?? 'گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800)),
                               subtitle: Text((row['_preview'] ?? 'پیام جدید').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
                               trailing: Container(
                                 constraints: const BoxConstraints(minWidth: 26),
@@ -2771,7 +2733,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
 }
 class SharedMediaFilesPage extends StatelessWidget {
   const SharedMediaFilesPage({super.key});
-  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),bottom:const TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:const TabBarView(children:[Center(child:Text(trUi('رسانه‌ای وجود ندارد'))),Center(child:Text(trUi('فایلی وجود ندارد'))),Center(child:Text(trUi('لینکی وجود ندارد'))),Center(child:Text(trUi('صدایی وجود ندارد')))])));
+  @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),bottom:TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:TabBarView(children:[Center(child:Text(trUi('رسانه‌ای وجود ندارد'))),Center(child:Text(trUi('فایلی وجود ندارد'))),Center(child:Text(trUi('لینکی وجود ندارد'))),Center(child:Text(trUi('صدایی وجود ندارد')))])));
 }
 class GlobalSearchPage extends StatefulWidget {
   const GlobalSearchPage({super.key});
@@ -2787,13 +2749,13 @@ class _GlobalSearchPageState extends State<GlobalSearchPage>{
       });
     });
   }
-  @override Widget build(BuildContext context)=>const Scaffold(
+  @override Widget build(BuildContext context)=>Scaffold(
     body:Center(child:CircularProgressIndicator()),
   );
 }
 class _SearchSection extends StatelessWidget {
   final String title; const _SearchSection({required this.title});
-  @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17))),const ListTile(leading:Icon(Icons.search_rounded),title:Text(trUi('نتیجه جستجو')))]);
+  @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:TextStyle(fontWeight:FontWeight.w800,fontSize:17))),ListTile(leading:Icon(Icons.search_rounded),title:Text(trUi('نتیجه جستجو')))]);
 }
 class StickersGifsPage extends StatelessWidget {
   const StickersGifsPage({super.key});
@@ -2801,12 +2763,12 @@ class StickersGifsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return DefaultTabController(length: 3, child: Scaffold(
       appBar: AppBar(title: Text(trUi('استیکر و ایموجی')), bottom: TabBar(tabs: [
-        Tab(text: trUi('استیکرها')), const Tab(text: 'GIF'), Tab(text: trUi('ایموجی')),
+        Tab(text: trUi('استیکرها')), Tab(text: 'GIF'), Tab(text: trUi('ایموجی')),
       ])),
       body: TabBarView(children: [
         ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 24), children: [
-          Text(trUi('پک‌های تصویری آراد'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-          const SizedBox(height: 10),
+          Text(trUi('پک‌های تصویری آراد'), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+          SizedBox(height: 10),
           for (final pack in const [
             ('🌌', 'فضایی', '🚀✨   🪐🌟   👾💜   🛸👽   🌌💫'),
             ('💜', 'احساسات', '🥹🫶   😭💔   😍🌹   💌✨   🫶✨'),
@@ -2830,28 +2792,28 @@ class StickersGifsPage extends StatelessWidget {
                       gradient: LinearGradient(colors: [scheme.primaryContainer, scheme.secondaryContainer]),
                     ),
                     alignment: Alignment.center,
-                    child: Text(pack.$1, style: const TextStyle(fontSize: 27)),
+                    child: Text(pack.$1, style: TextStyle(fontSize: 27)),
                   ),
-                  title: Text(trUi(pack.$2), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  title: Text(trUi(pack.$2), style: TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 7),
-                    child: Text(pack.$3, style: const TextStyle(fontSize: 17, height: 1.7)),
+                    child: Text(pack.$3, style: TextStyle(fontSize: 17, height: 1.7)),
                   ),
                   trailing: Icon(Icons.auto_awesome_rounded, color: scheme.primary),
                   isThreeLine: true,
                 ),
               ),
             ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           AppEmptyState(icon: Icons.auto_awesome_rounded, title: trUi('استیکرهای تصویری آماده‌اند'),
             subtitle: trUi('برای ارسال، داخل گفتگو روی 😀 بزنید و بخش استیکرها را باز کنید.')),
         ]),
         Center(child: Padding(padding: const EdgeInsets.all(18), child: TextField(
-          decoration: InputDecoration(hintText: trUi('جستجوی GIF'), prefixIcon: const Icon(Icons.search_rounded)),
+          decoration: InputDecoration(hintText: trUi('جستجوی GIF'), prefixIcon: Icon(Icons.search_rounded)),
           onSubmitted: (value) { if (value.trim().isNotEmpty) showMsg(context, trUi('جست‌وجوی GIF آنلاین هنوز به سرویس مستقل متصل نیست.')); },
         ))),
         GridView.count(crossAxisCount: 6, children: List.generate(24, (i) => Center(
-          child: Text(['😀','❤️','👍','😂','🔥','🎉'][i % 6], style: const TextStyle(fontSize: 25)),
+          child: Text(['😀','❤️','👍','😂','🔥','🎉'][i % 6], style: TextStyle(fontSize: 25)),
         ))),
       ]),
     ));
@@ -3112,7 +3074,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           IconButton(
             tooltip: 'تازه‌سازی',
             onPressed: loading ? null : _loadDevices,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(Icons.refresh_rounded),
           ),
         ],
       ),
@@ -3122,13 +3084,13 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               ? Center(child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.cloud_off_rounded, size: 44),
-                    const SizedBox(height: 12),
+                    Icon(Icons.cloud_off_rounded, size: 44),
+                    SizedBox(height: 12),
                     Text(trUi('فهرست دستگاه‌ها بارگذاری نشد')),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(onPressed: _loadDevices, icon: const Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+                    SizedBox(height: 12),
+                    FilledButton.icon(onPressed: _loadDevices, icon: Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
                   ]),
                 ))
               : RefreshIndicator(
@@ -3142,7 +3104,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             backgroundColor: scheme.primaryContainer,
                             child: Icon(Icons.devices_rounded, color: scheme.primary),
                           ),
-                          title: Text('$activeCount دستگاه فعال برای این حساب', style: const TextStyle(fontWeight: FontWeight.w900)),
+                          title: Text('$activeCount دستگاه فعال برای این حساب', style: TextStyle(fontWeight: FontWeight.w900)),
                           subtitle: Text(trUi('فقط نشست‌های همین حساب نمایش داده می‌شوند؛ ورود به حساب دیگر، دستگاه‌های آن را اینجا نشان نمی‌دهد. فعالیت هر ۳۰ ثانیه بررسی می‌شود و دستگاه خارج‌شده نمی‌تواند این نشست را ادامه دهد.')),
                         ),
                       ),
@@ -3151,16 +3113,16 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                           padding: const EdgeInsets.only(top: 8, bottom: 8),
                           child: FilledButton.tonalIcon(
                             onPressed: busy ? null : _revokeOtherDevices,
-                            icon: const Icon(Icons.phonelink_erase_rounded),
+                            icon: Icon(Icons.phonelink_erase_rounded),
                             label: Text(trUi('خروج از همه دستگاه‌های دیگر')),
                           ),
                         ),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
                         child: Text('دستگاه‌های حساب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
                       ),
                       if (devices.isEmpty)
-                        const Card(child: Padding(
+                        Card(child: Padding(
                           padding: EdgeInsets.all(18),
                           child: Text(trUi('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.')),
                         )),
@@ -3180,24 +3142,24 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                                 color: color,
                               ),
                             ),
-                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                            title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)),
                             subtitle: Text('${current ? 'این دستگاه • ' : ''}${_lastSeen(row)}'),
                             trailing: current
-                                ? const Chip(label: Text(trUi('فعلی')))
+                                ? Chip(label: Text(trUi('فعلی')))
                                 : revoked
-                                    ? const Icon(Icons.block_rounded)
+                                    ? Icon(Icons.block_rounded)
                                     : IconButton(
                                         tooltip: 'خروج از این دستگاه',
                                         onPressed: busy ? null : () => _revoke(id, name),
-                                        icon: const Icon(Icons.logout_rounded),
+                                        icon: Icon(Icons.logout_rounded),
                                       ),
                           ),
                         );
                       }),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       OutlinedButton.icon(
                         onPressed: busy ? null : _signOutEverywhere,
-                        icon: const Icon(Icons.logout_rounded),
+                        icon: Icon(Icons.logout_rounded),
                         label: Text(trUi('خروج از همه نشست‌های حساب')),
                       ),
                     ],
@@ -3223,9 +3185,9 @@ class AboutAppPage extends StatelessWidget {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(trUi('درباره برنامه'))),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      const Card(child:ListTile(title:Text(trUi('Arad Messenger')),subtitle:Text('نسخه $kAppVersion'))),
-      const Card(child:ListTile(title:Text(trUi('معماری')),subtitle:Text(trUi('Flutter + Supabase + GitHub Actions')))),
-      const Card(child:ListTile(title:Text(trUi('اصل محصول')),subtitle:Text(trUi('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.')))),
+      Card(child:ListTile(title:Text(trUi('Arad Messenger')),subtitle:Text('نسخه $kAppVersion'))),
+      Card(child:ListTile(title:Text(trUi('معماری')),subtitle:Text(trUi('Flutter + Supabase + GitHub Actions')))),
+      Card(child:ListTile(title:Text(trUi('اصل محصول')),subtitle:Text(trUi('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.')))),
     ]),
   );
 }
@@ -3278,7 +3240,7 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
                     loadingBuilder: (context, child, progress) =>
                         progress == null
                             ? child
-                            : const SizedBox(
+                            : SizedBox(
                                 width: 72,
                                 height: 72,
                                 child: CircularProgressIndicator(color: Colors.white),
@@ -3288,13 +3250,13 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
                             ? Image.network(
                                 fallbackUrl,
                                 fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(
+                                errorBuilder: (_, __, ___) => Icon(
                                   Icons.broken_image_rounded,
                                   size: 84,
                                   color: Colors.white70,
                                 ),
                               )
-                            : const Icon(
+                            : Icon(
                                 Icons.broken_image_rounded,
                                 size: 84,
                                 color: Colors.white70,
@@ -3310,8 +3272,8 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
                       border: Border.all(color: const Color(0xFF9B83FF), width: 2),
                     ),
                     child: isCharacter
-                        ? Text(url.substring(6), style: const TextStyle(fontSize: 112))
-                        : const Icon(Icons.person_rounded, size: 112, color: Colors.white70),
+                        ? Text(url.substring(6), style: TextStyle(fontSize: 112))
+                        : Icon(Icons.person_rounded, size: 112, color: Colors.white70),
                   ),
           ),
           Positioned(
@@ -3320,7 +3282,7 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
             child: IconButton.filledTonal(
               tooltip: 'بستن عکس',
               onPressed: () => Navigator.of(dialogContext).pop(),
-              icon: const Icon(Icons.close_rounded),
+              icon: Icon(Icons.close_rounded),
             ),
           ),
         ],
@@ -3479,22 +3441,22 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
   @override Widget build(BuildContext context){
     final current=(supabase.auth.currentUser?.email??'حساب فعلی').toLowerCase();
     return Scaffold(appBar:AppBar(title:Text(trUi('مدیریت حساب‌ها'))),body:loading
-      ?const Center(child:CircularProgressIndicator())
+      ?Center(child:CircularProgressIndicator())
       :ListView(padding:const EdgeInsets.all(16),children:[
-        Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.verified_user_rounded)),title:Text(trUi('حساب فعلی')),subtitle:Text(current),trailing:const Icon(Icons.check_circle_rounded))),
-        const SizedBox(height:8),
-        const Card(child: Padding(padding: EdgeInsets.all(14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.privacy_tip_outlined), SizedBox(width: 10), Expanded(child: Text(trUi('حساب‌ها فقط در فهرست همین دستگاه ذخیره می‌شوند. هیچ حساب دیگری این فهرست را از دستگاه خودش نمی‌بیند؛ پیام‌ها و دستگاه‌های فعال هر حساب جداگانه‌اند.')))]))),
-        if(accounts.isEmpty) const Padding(padding:EdgeInsets.symmetric(vertical:20),child:Text('حساب دیگری برای تغییر سریع روی این دستگاه ذخیره نشده است. برای افزودن حساب جدید، دکمه زیر را بزنید.',textAlign:TextAlign.center)),
+        Card(child:ListTile(leading:CircleAvatar(child:Icon(Icons.verified_user_rounded)),title:Text(trUi('حساب فعلی')),subtitle:Text(current),trailing:Icon(Icons.check_circle_rounded))),
+        SizedBox(height:8),
+        Card(child: Padding(padding: EdgeInsets.all(14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.privacy_tip_outlined), SizedBox(width: 10), Expanded(child: Text(trUi('حساب‌ها فقط در فهرست همین دستگاه ذخیره می‌شوند. هیچ حساب دیگری این فهرست را از دستگاه خودش نمی‌بیند؛ پیام‌ها و دستگاه‌های فعال هر حساب جداگانه‌اند.')))]))),
+        if(accounts.isEmpty) Padding(padding:EdgeInsets.symmetric(vertical:20),child:Text('حساب دیگری برای تغییر سریع روی این دستگاه ذخیره نشده است. برای افزودن حساب جدید، دکمه زیر را بزنید.',textAlign:TextAlign.center)),
         ...accounts.map((email)=>Card(child:ListTile(
-          leading:const CircleAvatar(child:Icon(Icons.person_outline_rounded)),title:Text(email),subtitle:Text(trUi('حساب ذخیره‌شده')),
-          trailing:PopupMenuButton<String>(onSelected:(v){if(v=='switch')_switch(email);if(v=='forget')_forget(email);},itemBuilder:(_)=>const [
+          leading:CircleAvatar(child:Icon(Icons.person_outline_rounded)),title:Text(email),subtitle:Text(trUi('حساب ذخیره‌شده')),
+          trailing:PopupMenuButton<String>(onSelected:(v){if(v=='switch')_switch(email);if(v=='forget')_forget(email);},itemBuilder:(_)=>[
             PopupMenuItem(value:'switch',child:Text(trUi('تغییر به این حساب'))),
             PopupMenuItem(value:'forget',child:Text(trUi('حذف از فهرست'))),
           ]),
           onTap:busy?null:()=>_switch(email),
         ))),
-        const SizedBox(height:12),
-        FilledButton.icon(onPressed:busy?null:_add,icon:const Icon(Icons.person_add_alt_1_rounded),label:Text(busy?'در حال تغییر حساب...':'افزودن حساب جدید')),
+        SizedBox(height:12),
+        FilledButton.icon(onPressed:busy?null:_add,icon:Icon(Icons.person_add_alt_1_rounded),label:Text(busy?'در حال تغییر حساب...':'افزودن حساب جدید')),
       ]));
   }
 }
@@ -3608,21 +3570,21 @@ class AppBannedPage extends StatelessWidget {
                 backgroundColor: s.errorContainer,
                 child: Icon(Icons.block_rounded, color: s.error, size: 42),
               ),
-              const SizedBox(height: 20),
-              const Text(
+              SizedBox(height: 20),
+              Text(
                 'دسترسی این حساب به برنامه محروم شده است',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 10),
-              const Text(
+              SizedBox(height: 10),
+              Text(
                 'اگر فکر می‌کنید این تصمیم اشتباه است، با پشتیبانی برنامه تماس بگیرید.',
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 22),
+              SizedBox(height: 22),
               FilledButton.icon(
                 onPressed: () => signOut(context),
-                icon: const Icon(Icons.logout_rounded),
+                icon: Icon(Icons.logout_rounded),
                 label: Text(trUi('خروج از حساب')),
               ),
             ],
@@ -3676,7 +3638,7 @@ class _ProfileGateState extends State<ProfileGate> {
       future: _profileFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -3698,22 +3660,22 @@ class _ProfileGateState extends State<ProfileGate> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.cloud_off_rounded, size: 46),
-                      const SizedBox(height: 12),
-                      const Text(
+                      Icon(Icons.cloud_off_rounded, size: 46),
+                      SizedBox(height: 12),
+                      Text(
                         'بررسی حساب انجام نشد',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
+                      SizedBox(height: 8),
+                      Text(
                         'اتصال یا دسترسی به اطلاعات پروفایل مشکل دارد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       FilledButton.icon(
                         onPressed: _retry,
-                        icon: const Icon(Icons.refresh_rounded),
+                        icon: Icon(Icons.refresh_rounded),
                         label: Text(trUi('تلاش دوباره')),
                       ),
                       TextButton(
@@ -3937,7 +3899,7 @@ class _LoginPageState extends State<LoginPage>{
               letterSpacing: .2,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             'ارتباطی ساده، سریع و امن.',
             textAlign: TextAlign.center,
@@ -3950,21 +3912,21 @@ class _LoginPageState extends State<LoginPage>{
         ],
       ),
     ),
-    const SizedBox(height:20),
+    SizedBox(height:20),
     Card(child:Padding(padding:const EdgeInsets.all(18),child:Column(children:[
-      if(signup)...[TextField(controller:first,decoration:const InputDecoration(labelText:'نام',prefixIcon:Icon(Icons.person_outline))),const SizedBox(height:12),TextField(controller:last,decoration:const InputDecoration(labelText:'نام خانوادگی',prefixIcon:Icon(Icons.badge_outlined))),const SizedBox(height:12)],
-      TextField(controller:email,keyboardType:TextInputType.emailAddress,onChanged:(v)=>setState(()=>emailError=validEmail(v)?null:'ایمیل معتبر نیست'),decoration:InputDecoration(labelText:'ایمیل',errorText:emailError,prefixIcon:const Icon(Icons.email_outlined))),
-      if(!signup)...[TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:const Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),],
+      if(signup)...[TextField(controller:first,decoration:InputDecoration(labelText:'نام',prefixIcon:Icon(Icons.person_outline))),SizedBox(height:12),TextField(controller:last,decoration:InputDecoration(labelText:'نام خانوادگی',prefixIcon:Icon(Icons.badge_outlined))),SizedBox(height:12)],
+      TextField(controller:email,keyboardType:TextInputType.emailAddress,onChanged:(v)=>setState(()=>emailError=validEmail(v)?null:'ایمیل معتبر نیست'),decoration:InputDecoration(labelText:'ایمیل',errorText:emailError,prefixIcon:Icon(Icons.email_outlined))),
+      if(!signup)...[TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),],
       if(!signup)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:busy?null:forgotPassword,child:Text(trUi('رمز را فراموش کرده‌ام')))),
-      const SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?const CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود به حساب'))),
+      SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود به حساب'))),
       if (!signup) ...[
-        const SizedBox(height: 12),
-        Row(children: const [
+        SizedBox(height: 12),
+        Row(children: [
           Expanded(child: Divider()),
           Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text(trUi('یا'))),
           Expanded(child: Divider()),
         ]),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         SizedBox(
           height: 50,
           width: double.infinity,
@@ -3973,15 +3935,15 @@ class _LoginPageState extends State<LoginPage>{
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('G', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF4285F4))),
-                const SizedBox(width: 10),
+                Text('G', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF4285F4))),
+                SizedBox(width: 10),
                 Text(trUi('ورود با گوگل')),
               ],
             ),
           ),
         ),
       ],
-      const SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
+      SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
     ])))
   ]))))));}
   @override void dispose(){email.dispose();password.dispose();first.dispose();last.dispose();super.dispose();}
@@ -3992,7 +3954,7 @@ class _PasswordSetupPageState extends State<PasswordSetupPage>{
  final p=TextEditingController(),c=TextEditingController();bool busy=false;
  String? err(String v)=>v.length<8||!RegExp(r'[A-Z]').hasMatch(v)||!RegExp(r'[0-9]').hasMatch(v)?'حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد لازم است':null;
  Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
- @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('ساخت رمز عبور'))),body:ListView(padding:const EdgeInsets.all(20),children:[const Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),const SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),const SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:const InputDecoration(labelText:'تکرار رمز عبور')),const SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]));
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('ساخت رمز عبور'))),body:ListView(padding:const EdgeInsets.all(20),children:[Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:InputDecoration(labelText:'تکرار رمز عبور')),SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]));
  @override void dispose(){p.dispose();c.dispose();super.dispose();}
 }
 class EmailVerificationPage extends StatefulWidget {
@@ -4171,38 +4133,38 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       ),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.mark_email_read_rounded,
                       size: 42,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
+                  SizedBox(height: 20),
+                  Text(
                     'کد تأیید ارسال شد',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         children: [
-                          const Text(
+                          Text(
                             'کد ۶ رقمی برای این ایمیل ارسال شده است:',
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             widget.email,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: 8),
+                          Text(
                             'کد فقط وقتی بررسی می‌شود که روی «تأیید و ورود» بزنید. کدهای قبلی یا منقضی‌شده قابل استفاده نیستند.',
                             textAlign: TextAlign.center,
                           ),
@@ -4210,7 +4172,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   TextField(
                     controller: code,
                     keyboardType: TextInputType.number,
@@ -4222,7 +4184,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9۰-۹٠-٩]')),
                     ],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 8,
@@ -4240,13 +4202,13 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       counterText: '',
                       labelText: 'کد ۶ رقمی',
                       hintText: '------',
-                      prefixIcon: const Icon(Icons.password_rounded),
+                      prefixIcon: Icon(Icons.password_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -4330,8 +4292,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       context: context,
       builder: (context) => SafeArea(
         child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.camera_alt), title: Text(trUi('دوربین')), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
-          ListTile(leading: const Icon(Icons.photo_library), title: Text(trUi('گالری')), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
+          ListTile(leading: Icon(Icons.camera_alt), title: Text(trUi('دوربین')), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.camera); }),
+          ListTile(leading: Icon(Icons.photo_library), title: Text(trUi('گالری')), onTap: () { Navigator.pop(context); pickAvatar(ImageSource.gallery); }),
         ]),
       ),
     );
@@ -4385,26 +4347,26 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading) return Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
       appBar: AppBar(title: Text(trUi('پروفایل شما'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('کاراکتر پروفایل', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-            const SizedBox(height: 5),
+            Text('کاراکتر پروفایل', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            SizedBox(height: 5),
             Text(trUi('کاراکتر آماده انتخاب کن یا عکس خودت را از دوربین و گالری بگذار.')),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 8, children: _profileCharacters.map((character) => InkWell(
               borderRadius: BorderRadius.circular(30),
               onTap: () => setState(() { selectedCharacter = character; avatarImage = null; avatarBytes = null; existingAvatarUrl = 'emoji:$character'; }),
               child: Container(width: 44, height: 44, alignment: Alignment.center,
                 decoration: BoxDecoration(color: selectedCharacter == character ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(52), border: Border.all(color: selectedCharacter == character ? Theme.of(context).colorScheme.primary : Colors.transparent, width: 2)),
-                child: Text(character, style: const TextStyle(fontSize: 25))),
+                child: Text(character, style: TextStyle(fontSize: 25))),
             )).toList()),
           ]))),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Center(
             child: GestureDetector(
               onTap: chooseAvatar,
@@ -4418,21 +4380,21 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         ? MemoryImage(avatarBytes!)
                         : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty && !existingAvatarUrl!.startsWith('emoji:') ? NetworkImage(existingAvatarUrl!) : null),
                     child: avatarBytes != null ? null : selectedCharacter != null
-                        ? Text(selectedCharacter!, style: const TextStyle(fontSize: 48))
-                        : (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? const Icon(Icons.person, size: 58) : null,
+                        ? Text(selectedCharacter!, style: TextStyle(fontSize: 48))
+                        : (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? Icon(Icons.person, size: 58) : null,
                   ),
                   const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: 22),
           TextField(
             controller: name,
             onChanged: (v) => setState(() => nameError = v.trim().isEmpty ? 'نام نمایشی را وارد کنید.' : null),
             decoration: InputDecoration(labelText: 'نام نمایشی', errorText: nameError, border: const OutlineInputBorder()),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextField(
             controller: username,
             onChanged: (v) {
@@ -4441,9 +4403,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             },
             decoration: InputDecoration(labelText: 'نام کاربری', errorText: usernameError, prefixText: '@', border: const OutlineInputBorder()),
           ),
-          const SizedBox(height: 12),
-          TextField(controller: bio, maxLines: 3, decoration: const InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
+          SizedBox(height: 12),
+          TextField(controller: bio, maxLines: 3, decoration: InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
+          SizedBox(height: 16),
           FilledButton(onPressed: busy ? null : save, child: Text(busy ? 'در حال ذخیره...' : 'ادامه')),
         ],
       ),
@@ -4470,9 +4432,9 @@ class _ChatSkeleton extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(children: [
           CircleAvatar(radius: 25, backgroundColor: s.onSurface.withValues(alpha: .07)),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            bar(140, 14), const SizedBox(height: 9), bar(210, 11),
+            bar(140, 14), SizedBox(height: 9), bar(210, 11),
           ])),
         ]),
       ),
@@ -5051,7 +5013,7 @@ class _HomePageState extends State<HomePage> {
           controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'لینک کامل یا کد دعوت',
             hintText: 'لینک دعوت را بچسبانید یا ARAD-…',
             prefixIcon: Icon(Icons.link_rounded),
@@ -5220,13 +5182,13 @@ class _HomePageState extends State<HomePage> {
                             ),
                             child: Icon(Icons.notifications_active_rounded, color: scheme.onPrimary, size: 22),
                           ),
-                          const SizedBox(width: 11),
+                          SizedBox(width: 11),
                           Expanded(child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                              const SizedBox(height: 3),
+                              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                              SizedBox(height: 3),
                               Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
                             ],
                           )),
@@ -5375,7 +5337,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
-            icon: const Icon(Icons.call_rounded),
+            icon: Icon(Icons.call_rounded),
             label: Text(trUi('پاسخ')),
           ),
         ],
@@ -5432,7 +5394,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(icon, size: 16, color: selected ? scheme.onPrimary : scheme.onSurfaceVariant),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w800 : FontWeight.w600, color: selected ? scheme.onPrimary : scheme.onSurface)),
             ]),
           ),
@@ -5448,14 +5410,14 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
-      const SizedBox(height: 4),
+      SizedBox(height: 4),
       SizedBox(height: 56, child: StoriesTray()),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 14, 7),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-            const SizedBox(height: 2),
+            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+            SizedBox(height: 2),
             Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
           Stack(
@@ -5464,7 +5426,7 @@ class _HomePageState extends State<HomePage> {
               IconButton(
                 tooltip: trUi('اعلان‌ها'),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage())),
-                icon: const Icon(Icons.notifications_none_rounded),
+                icon: Icon(Icons.notifications_none_rounded),
               ),
               if (unreadTotal > 0)
                 Positioned(
@@ -5491,7 +5453,7 @@ class _HomePageState extends State<HomePage> {
           ),
           PopupMenuButton<String>(
             tooltip: trUi('منوی اصلی'),
-            icon: const Icon(Icons.menu_rounded),
+            icon: Icon(Icons.menu_rounded),
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
@@ -5504,20 +5466,20 @@ class _HomePageState extends State<HomePage> {
               else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage()));
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: const Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
-              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: const Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
-              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: const Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
-              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: const Icon(Icons.notifications_none_rounded), title: Text(trUi('مرکز اعلان‌ها')))),
-              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: const Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
-              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: const Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
-              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: const Icon(Icons.edit_outlined), title: Text(trUi('گفتگوی جدید')))),
-              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: const Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
-              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: const Icon(Icons.auto_stories_outlined), title: Text(trUi('دیدن استوری‌ها')))),
+              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
+              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
+              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
+              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text(trUi('مرکز اعلان‌ها')))),
+              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
+              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
+              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text(trUi('گفتگوی جدید')))),
+              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
+              PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: Icon(Icons.auto_stories_outlined), title: Text(trUi('دیدن استوری‌ها')))),
             ],
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           actionButton(icon: Icons.search_rounded, tooltip: trUi('جستجوی سراسری پیام‌ها و کاربران'), onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           actionButton(icon: Icons.add_rounded, tooltip: trUi('گفتگوی جدید'), onTap: createDirect),
         ]),
       ),
@@ -5534,7 +5496,7 @@ class _HomePageState extends State<HomePage> {
             decoration: InputDecoration(
               hintText: trUi('جستجو در گفتگوهای فعلی'),
               prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
-              suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(tooltip: trUi('پاک کردن'), onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); }, icon: const Icon(Icons.close_rounded, size: 19)),
+              suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(tooltip: trUi('پاک کردن'), onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); }, icon: Icon(Icons.close_rounded, size: 19)),
               isDense: true,
               filled: true,
               fillColor: Colors.transparent,
@@ -5563,7 +5525,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      const SizedBox(height: 2),
+      SizedBox(height: 2),
       Expanded(
         child: loading
             ? ListView.builder(padding: const EdgeInsets.fromLTRB(12, 5, 12, 96), itemCount: 7, itemBuilder: (_, __) => const _ChatSkeleton())
@@ -5572,20 +5534,20 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.all(28),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Container(width: 76, height: 76, decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle), child: Icon(Icons.forum_rounded, size: 34, color: scheme.primary)),
-                      const SizedBox(height: 17),
-                      Text(chatQuery.trim().isNotEmpty ? trUi('نتیجه‌ای پیدا نشد') : trUi('هنوز گفتگویی ندارید'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 7),
+                      SizedBox(height: 17),
+                      Text(chatQuery.trim().isNotEmpty ? trUi('نتیجه‌ای پیدا نشد') : trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      SizedBox(height: 7),
                       Text(chatQuery.trim().isNotEmpty ? trUi('نام یا عبارت دیگری را جستجو کنید.') : trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
                       if (chatQuery.trim().isEmpty) ...[
-                        const SizedBox(height: 17),
-                        FilledButton.icon(onPressed: createDirect, icon: const Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
+                        SizedBox(height: 17),
+                        FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
                       ],
                     ]),
                   ))
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(11, 5, 11, 96),
                     itemCount: filteredChats.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 7),
+                    separatorBuilder: (_, __) => SizedBox(height: 7),
                     itemBuilder: (context, i) {
                       final c = filteredChats[i];
                       final id = c['id'].toString();
@@ -5646,27 +5608,27 @@ class _HomePageState extends State<HomePage> {
                                 if (c['is_online'] == true)
                                   Positioned(right: -1, bottom: -1, child: Container(width: 13, height: 13, decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 2.3)))),
                               ]),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 10),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Row(children: [
                                   Expanded(child: Row(children: [
                                     Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: unread ? FontWeight.w900 : FontWeight.w800, fontSize: 15.5, color: unread ? scheme.primary : scheme.onSurface))),
-                                    if (type == 'direct' && peer?['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: AnimatedVerifiedBadge(size: 16)),
+                                    if (type == 'direct' && peer?['is_verified'] == true) Padding(padding: EdgeInsets.only(right: 4), child: AnimatedVerifiedBadge(size: 16)),
                                   ])),
                                   if (lastAt != null) Text(_homeTime(lastAt), style: TextStyle(fontSize: 10.5, color: unread ? scheme.primary : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w800 : FontWeight.w500)),
                                 ]),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Row(children: [
-                                  if (isPinned) ...[Icon(Icons.push_pin_rounded, size: 14, color: scheme.primary), const SizedBox(width: 4)],
-                                  if (archived) ...[Icon(Icons.archive_rounded, size: 13, color: scheme.onSurfaceVariant), const SizedBox(width: 4)],
+                                  if (isPinned) ...[Icon(Icons.push_pin_rounded, size: 14, color: scheme.primary), SizedBox(width: 4)],
+                                  if (archived) ...[Icon(Icons.archive_rounded, size: 13, color: scheme.onSurfaceVariant), SizedBox(width: 4)],
                                   Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: unread ? scheme.onSurface : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w700 : FontWeight.w400, fontSize: 12))),
                                   if (unread) Container(constraints: const BoxConstraints(minWidth: 21), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(10)), child: Text(unreadCount > 0 ? unreadCount.toString() : '•', textAlign: TextAlign.center, style: TextStyle(color: scheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900))),
                                 ]),
                               ])),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               PopupMenuButton<String>(
                                 tooltip: 'گزینه‌های گفتگو',
-                                icon: const Icon(Icons.more_horiz_rounded, size: 21),
+                                icon: Icon(Icons.more_horiz_rounded, size: 21),
                                 onSelected: (action) {
                                   if (action == 'open') Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load());
                                   if (action == 'info') Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: id, fallbackTitle: title)));
@@ -5675,8 +5637,8 @@ class _HomePageState extends State<HomePage> {
                                   if (action == 'pin') _togglePin(c);
                                 },
                                 itemBuilder: (_) => [
-                                  const PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
-                                  const PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
+                                  PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
+                                  PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
                                   PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن')),
                                   PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
                                   PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
@@ -5710,15 +5672,15 @@ class _HomePageState extends State<HomePage> {
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 14, 6),
         child: Row(children: [
-          const Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
-          IconButton.filledTonal(onPressed: () => _openContactSearch(), icon: const Icon(Icons.person_add_alt_1_rounded)),
+          Expanded(child: Text('مخاطبین', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
+          IconButton.filledTonal(onPressed: () => _openContactSearch(), icon: Icon(Icons.person_add_alt_1_rounded)),
         ]),
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(children: [
           Expanded(child: _glassAction(Icons.person_add_rounded, 'افزودن مخاطب', () => _openContactSearch())),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(child: _glassAction(Icons.groups_rounded, 'ایجاد گروه', createGroup)),
         ]),
       ),
@@ -5726,7 +5688,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         child: Row(children: [
           Expanded(child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChannelCreatePage())).then((_) => load()))),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage())))),
         ]),
       ),
@@ -5742,7 +5704,7 @@ class _HomePageState extends State<HomePage> {
         ),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
               SizedBox(height: 12),
               Text(trUi('در حال بارگذاری مخاطبین…')),
@@ -5752,14 +5714,14 @@ class _HomePageState extends State<HomePage> {
             return Center(child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.cloud_off_rounded, size: 42),
-                const SizedBox(height: 10),
+                Icon(Icons.cloud_off_rounded, size: 42),
+                SizedBox(height: 10),
                 Text('مخاطبین بارگذاری نشدند. اتصال را بررسی کنید و دوباره تلاش کنید.',
                   textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: _retryContacts,
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: Icon(Icons.refresh_rounded),
                   label: Text(trUi('تلاش دوباره')),
                 ),
               ]),
@@ -5769,13 +5731,13 @@ class _HomePageState extends State<HomePage> {
           if (rows.isEmpty) return Center(child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.people_outline_rounded, size: 42),
-              const SizedBox(height: 10),
+              Icon(Icons.people_outline_rounded, size: 42),
+              SizedBox(height: 10),
               Text(trUi('هنوز مخاطبی اضافه نکرده‌اید.'), textAlign: TextAlign.center),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: _retryContacts,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: Icon(Icons.refresh_rounded),
                 label: Text(trUi('بارگذاری دوباره')),
               ),
             ]),
@@ -5783,7 +5745,7 @@ class _HomePageState extends State<HomePage> {
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 90),
             itemCount: rows.length,
-            separatorBuilder: (_,__) => const SizedBox(height: 6),
+            separatorBuilder: (_,__) => SizedBox(height: 6),
             itemBuilder: (_,i) {
               final p = rows[i];
               final title = ((p['_local_name']?.toString().trim().isNotEmpty ?? false)
@@ -5802,13 +5764,13 @@ class _HomePageState extends State<HomePage> {
                     onTap: () => _openAvatarPreview(context, p),
                     child: avatar(p),
                   ),
-                  title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  title: Text(title, style: TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text((p['username'] == null || p['username'].toString().isEmpty) ? '' : '@' + p['username'].toString()),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: p))),
                   trailing: IconButton.filledTonal(
                     tooltip: 'پیام',
                     onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: p['_conversation_id'].toString(), title: title))),
-                    icon: const Icon(Icons.chat_bubble_rounded),
+                    icon: Icon(Icons.chat_bubble_rounded),
                   ),
                 ),
               );
@@ -5943,8 +5905,8 @@ class _HomePageState extends State<HomePage> {
         onTap: onTap, borderRadius: BorderRadius.circular(kAppRadius),
         child: Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, color: s.primary), const SizedBox(width: 7),
-            Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+            Icon(icon, color: s.primary), SizedBox(width: 7),
+            Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800))),
           ]),
         ),
       )),
@@ -5962,8 +5924,8 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
                   child: Row(children: [
-                    IconButton(onPressed: () => setState(() => showContacts = false), icon: const Icon(Icons.arrow_back_rounded)),
-                    Expanded(child: Text(trUi('مخاطبین'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                    IconButton(onPressed: () => setState(() => showContacts = false), icon: Icon(Icons.arrow_back_rounded)),
+                    Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
                   ]),
                 ),
                 Expanded(child: contactsView()),
@@ -5972,7 +5934,7 @@ class _HomePageState extends State<HomePage> {
                 ? chatsView()
                 : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; })),
       ))),
-      floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: const Icon(Icons.chat_rounded)) : null,
+      floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: Icon(Icons.chat_rounded)) : null,
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         child: BackdropFilter(
@@ -5996,8 +5958,8 @@ class _HomePageState extends State<HomePage> {
               setState(() { navIndex = i; showContacts = false; });
             },
             destinations: [
-              NavigationDestination(icon: const Icon(Icons.forum_outlined), selectedIcon: const Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
-              NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: trUi('پروفایل')), 
+              NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
+              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')), 
             ],
           ),
         ),
@@ -6088,7 +6050,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
           controller: controller,
           autofocus: true,
           maxLength: 48,
-          decoration: const InputDecoration(hintText: 'فقط برای شما نمایش داده می‌شود'),
+          decoration: InputDecoration(hintText: 'فقط برای شما نمایش داده می‌شود'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(trUi('انصراف'))),
@@ -6222,15 +6184,15 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
             iconSize: 21,
             padding: const EdgeInsets.all(7),
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-            icon: const Icon(Icons.more_vert_rounded),
+            icon: Icon(Icons.more_vert_rounded),
             onSelected: (value) async {
               if (value == 'rename') await _editLocalName();
               if (value == 'friend') await _sendFriendRequest();
               if (value == 'contact') await _toggleContact();
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text(trUi('نام‌گذاری مخاطب')))),
-              PopupMenuItem(value: 'friend', child: ListTile(dense: true, leading: const Icon(Icons.person_add_alt_rounded), title: Text(trUi('درخواست دوستی')))),
+              PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text(trUi('نام‌گذاری مخاطب')))),
+              PopupMenuItem(value: 'friend', child: ListTile(dense: true, leading: Icon(Icons.person_add_alt_rounded), title: Text(trUi('درخواست دوستی')))),
               PopupMenuItem(value: 'contact', child: ListTile(dense: true, leading: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded), title: Text(isContact ? 'حذف از مخاطبین' : 'افزودن به مخاطبین'))),
             ],
           ),
@@ -6272,23 +6234,23 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Flexible(child: Text(displayName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
-                if (verified) ...[const SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
+                Flexible(child: Text(displayName, textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+                if (verified) ...[SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
               ]),
               if (username.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('@$username', style: TextStyle(color: s.primary, fontSize: 14, fontWeight: FontWeight.w800))),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(isSelf ? 'پروفایل شما' : (isFriend ? 'دوست شما' : (isContact ? 'در فهرست مخاطبین شما' : 'پروفایل کاربر')), style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
             ]),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           if (!isSelf) Row(children: [
             if (isFriend) ...[
               Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام', busy ? null : _openChat)),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(child: _profileAction(context, Icons.call_rounded, 'تماس صوتی', busy ? null : () => _startCall(video: false))),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(child: _profileAction(context, Icons.videocam_rounded, 'تماس تصویری', busy ? null : () => _startCall(video: true))),
             ] else
               Expanded(child: _profileAction(
@@ -6298,38 +6260,38 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                 busy || friendRequestPending ? null : () => _sendFriendRequest(),
               )),
           ]),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           Card(child: Column(children: [
             if (bio.isNotEmpty) ListTile(
               leading: Icon(Icons.format_quote_rounded, color: s.primary),
-              title: Text(bio, textAlign: TextAlign.start, style: const TextStyle(height: 1.5)),
+              title: Text(bio, textAlign: TextAlign.start, style: TextStyle(height: 1.5)),
               subtitle: Text(trUi('بیوگرافی')),
-            ) else const ListTile(leading: Icon(Icons.format_quote_rounded), title: Text(trUi('بیوگرافی ثبت نشده است'))),
-            if (username.isNotEmpty) const Divider(height: 1),
-            if (username.isNotEmpty) ListTile(leading: const Icon(Icons.alternate_email_rounded), title: Text('@$username'), subtitle: Text(trUi('نام کاربری'))),
+            ) else ListTile(leading: Icon(Icons.format_quote_rounded), title: Text(trUi('بیوگرافی ثبت نشده است'))),
+            if (username.isNotEmpty) Divider(height: 1),
+            if (username.isNotEmpty) ListTile(leading: Icon(Icons.alternate_email_rounded), title: Text('@$username'), subtitle: Text(trUi('نام کاربری'))),
           ])),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _loadMutualGroups(profile['id']?.toString() ?? ''),
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) return const Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک')), subtitle: Text(trUi('در حال بررسی…'))));
+              if (snap.connectionState == ConnectionState.waiting) return Card(child: ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک')), subtitle: Text(trUi('در حال بررسی…'))));
               final groups = snap.data ?? [];
               return Card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک'))),
-                if (groups.isEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text(trUi('هیچ گروه مشترکی ندارید.'))),
+                ListTile(leading: Icon(Icons.groups_rounded), title: Text(trUi('گروه‌های مشترک'))),
+                if (groups.isEmpty) Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text(trUi('هیچ گروه مشترکی ندارید.'))),
                 ...groups.map((g) => ListTile(
                   leading: CircleAvatar(child: Icon((g['type'] ?? 'group') == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded)),
                   title: Text('${g['title'] ?? 'گروه'}'),
                   subtitle: Text('${g['type'] == 'channel' ? 'کانال' : 'گروه'} مشترک'),
-                  trailing: const Icon(Icons.chevron_left_rounded),
+                  trailing: Icon(Icons.chevron_left_rounded),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${g['id']}', title: '${g['title'] ?? 'گروه'}'))),
                 )),
               ]));
             },
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Card(child: Column(children: [
-            ListTile(leading: const Icon(Icons.perm_media_outlined), title: Text(trUi('رسانه‌های مشترک')), subtitle: Text(trUi('عکس‌ها، ویدیوها، فایل‌ها و صداها')), trailing: const Icon(Icons.chevron_left_rounded), onTap: busy ? null : _openChatMedia),
+            ListTile(leading: Icon(Icons.perm_media_outlined), title: Text(trUi('رسانه‌های مشترک')), subtitle: Text(trUi('عکس‌ها، ویدیوها، فایل‌ها و صداها')), trailing: Icon(Icons.chevron_left_rounded), onTap: busy ? null : _openChatMedia),
           ])),
         ],
       ),
@@ -6348,8 +6310,8 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 3),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon, color: s.primary, size: 24),
-            const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+            SizedBox(height: 8),
+            Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
           ]),
         ),
       ),
@@ -6440,16 +6402,16 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: Text(trUi('درخواست‌های دوستی')), actions: [
-        IconButton(onPressed: loadRequests, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(onPressed: loadRequests, icon: Icon(Icons.refresh_rounded)),
       ]),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : requests.isEmpty
-              ? const Center(child: Text(trUi('درخواست دوستی جدیدی ندارید.')))
+              ? Center(child: Text(trUi('درخواست دوستی جدیدی ندارید.')))
               : ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: requests.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) => SizedBox(height: 8),
                   itemBuilder: (context, i) {
                     final r = requests[i];
                     final p = Map<String, dynamic>.from(r['_profile'] as Map);
@@ -6461,7 +6423,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: avatar(p, size: 48),
-                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                            title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)),
                             subtitle: Text(p['username'] == null ? 'درخواست دوستی' : '@${p['username']}'),
                             onTap: () => Navigator.push(context, MaterialPageRoute(
                               builder: (_) => PublicUserProfilePage(profile: p),
@@ -6470,9 +6432,9 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
                           Row(children: [
                             Expanded(child: FilledButton.icon(
                               onPressed: () => respond(r, true),
-                              icon: const Icon(Icons.check_rounded), label: Text(trUi('پذیرفتن')),
+                              icon: Icon(Icons.check_rounded), label: Text(trUi('پذیرفتن')),
                             )),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Expanded(child: OutlinedButton.icon(
                               onPressed: () => respond(r, false),
                               icon: Icon(Icons.close_rounded, color: scheme.error),
@@ -6490,10 +6452,10 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
 
 class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
   @override
-  List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear))];
+  List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed: () => query = '', icon: Icon(Icons.clear))];
 
   @override
-  Widget? buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: const Icon(Icons.arrow_back));
+  Widget? buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: Icon(Icons.arrow_back));
 
   @override
   Widget buildResults(BuildContext context) => resultsWidget();
@@ -6503,7 +6465,7 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
 
   Widget resultsWidget() {
     final q = query.trim();
-    if (q.isEmpty) return const Center(child: Text(trUi('نام یا نام کاربری را جستجو کنید')));
+    if (q.isEmpty) return Center(child: Text(trUi('نام یا نام کاربری را جستجو کنید')));
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: supabase.rpc('search_profiles', params: {'search_text': q}).then((v) => List<Map<String, dynamic>>.from(v)),
       builder: (context, snapshot) {
@@ -6631,7 +6593,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       body: Column(
         children: [
           Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: const OutlineInputBorder()))),
-          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: const InputDecoration(hintText: 'جستجو و انتخاب از مخاطبین...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
+          Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: InputDecoration(hintText: 'جستجو و انتخاب از مخاطبین...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
             SizedBox(
               height: 60,
@@ -6651,7 +6613,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
             ),
           Expanded(
             child: loadingContacts
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator())
                 : found.isEmpty
                   ? Center(child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -6662,13 +6624,13 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
                             ? 'هنوز مخاطبی ندارید. نام کاربری فرد را جستجو کنید یا از بخش «مخاطبین» او را اضافه کنید.'
                             : 'مخاطبی ندارید؛ برای افزودن افراد از جستجو استفاده کنید.'), textAlign: TextAlign.center),
                         if (search.text.trim().isEmpty && availableContacts.isEmpty) ...[
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: loadingContacts ? null : () {
                               setState(() { loadingContacts = true; });
                               loadContacts();
                             },
-                            icon: const Icon(Icons.refresh_rounded),
+                            icon: Icon(Icons.refresh_rounded),
                             label: Text(trUi('بارگذاری دوباره مخاطبین')),
                           ),
                         ],
@@ -6704,21 +6666,21 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
 }
 
 class ContactSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
-  @override List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear))];
-  @override Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: const Icon(Icons.arrow_back));
+  @override List<Widget>? buildActions(BuildContext context) => [IconButton(onPressed: () => query = '', icon: Icon(Icons.clear))];
+  @override Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: Icon(Icons.arrow_back));
   @override Widget buildResults(BuildContext context) => _build(context);
   @override Widget buildSuggestions(BuildContext context) => _build(context);
   Widget _build(BuildContext context) => FutureBuilder(
     future: query.trim().isEmpty ? Future.value([]) : supabase.rpc('search_profiles', params: {'search_text': query.trim()}),
     builder: (context, snap) {
-      if (query.trim().isEmpty) return const Center(child: Text(trUi('نام یا آیدی کاربر را جستجو کنید.')));
-      if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+      if (query.trim().isEmpty) return Center(child: Text(trUi('نام یا آیدی کاربر را جستجو کنید.')));
+      if (!snap.hasData) return Center(child: CircularProgressIndicator());
       final users = List<Map<String,dynamic>>.from(snap.data as List);
       return ListView(children: users.map((p) => ListTile(
         leading: avatar(p),
         title: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString()),
         subtitle: Text('@' + (p['username'] ?? '').toString()),
-        trailing: const Icon(Icons.person_add_alt_1_rounded),
+        trailing: Icon(Icons.person_add_alt_1_rounded),
         onTap: () async {
           final uid = supabase.auth.currentUser!.id;
           if (p['id'].toString() == uid) { showMsg(context, 'نمی‌توانید خودتان را اضافه کنید.'); return; }
@@ -6757,12 +6719,12 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(kAppRadius)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.campaign_rounded, size: 58), const SizedBox(height: 12),
-          TextField(controller:title, onChanged:(v)=>setState(()=>channelTitleError=v.trim().isEmpty?'نام کانال را وارد کنید.':null), decoration:InputDecoration(labelText:'نام کانال',errorText:channelTitleError,prefixIcon:const Icon(Icons.campaign_outlined))),
-          const SizedBox(height:10),
-          TextField(controller:about,maxLines:3,decoration:const InputDecoration(labelText:'توضیحات کانال')),
-          const SizedBox(height:16),
-          SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:busy?null:create,icon:const Icon(Icons.add_circle_outline),label:Text(busy?'در حال ساخت...':'ساخت کانال'))),
+          Icon(Icons.campaign_rounded, size: 58), SizedBox(height: 12),
+          TextField(controller:title, onChanged:(v)=>setState(()=>channelTitleError=v.trim().isEmpty?'نام کانال را وارد کنید.':null), decoration:InputDecoration(labelText:'نام کانال',errorText:channelTitleError,prefixIcon:Icon(Icons.campaign_outlined))),
+          SizedBox(height:10),
+          TextField(controller:about,maxLines:3,decoration:InputDecoration(labelText:'توضیحات کانال')),
+          SizedBox(height:16),
+          SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:busy?null:create,icon:Icon(Icons.add_circle_outline),label:Text(busy?'در حال ساخت...':'ساخت کانال'))),
         ]),
       )),
     ))),
@@ -6823,28 +6785,28 @@ class _ConversationToolsPageState extends State<ConversationToolsPage>{
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(trUi('مدیریت گفتگو'))),
     body:loading
-      ? const Center(child:CircularProgressIndicator())
+      ? Center(child:CircularProgressIndicator())
       : ListView(padding:const EdgeInsets.all(16),children:[
         Card(child:SwitchListTile(
           value:archived,
           onChanged:(_)=>_toggleArchive(),
           title:Text(trUi('آرشیو گفتگو')),
           subtitle:Text(archived?'این گفتگو در آرشیو است':'این گفتگو در فهرست اصلی است'),
-          secondary:const Icon(Icons.archive_rounded),
+          secondary:Icon(Icons.archive_rounded),
         )),
         Card(child:ListTile(
           title:Text(trUi('پوشه گفتگو')),
           subtitle:Text(trUi('ساخت و مدیریت پوشه‌های واقعی گفتگو')),
-          leading:const Icon(Icons.folder_rounded),
+          leading:Icon(Icons.folder_rounded),
           onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())),
         )),
         Card(child:ListTile(
           title:Text(trUi('پس‌زمینه گفتگو')),
           subtitle:Text(trUi('تغییر پس‌زمینه همین گفتگو')),
-          leading:const Icon(Icons.wallpaper_rounded),
+          leading:Icon(Icons.wallpaper_rounded),
           onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())),
         )),
-        const SizedBox(height:8),
+        SizedBox(height:8),
         const AppEmptyState(
           icon:Icons.tune_rounded,
           title:'گزینه‌های پین و بی‌صدا فعلاً نمایش داده نمی‌شوند',
@@ -6894,7 +6856,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
         IconButton(
           tooltip: 'تازه‌سازی',
           onPressed: _reload,
-          icon: const Icon(Icons.refresh_rounded),
+          icon: Icon(Icons.refresh_rounded),
         ),
         IconButton(
           tooltip: 'افزودن مخاطب',
@@ -6905,7 +6867,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
             );
             if (selected != null && mounted) _reload();
           },
-          icon: const Icon(Icons.person_add_alt_1_rounded),
+          icon: Icon(Icons.person_add_alt_1_rounded),
         ),
       ],
     ),
@@ -6927,10 +6889,10 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
                     title: 'مخاطبین بارگذاری نشدند',
                     subtitle: _friendlyError('${snapshot.error}'),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: _reload,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: Icon(Icons.refresh_rounded),
                     label: Text(trUi('تلاش دوباره')),
                   ),
                 ],
@@ -6951,7 +6913,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
                     title: 'هنوز مخاطبی نداری',
                     subtitle: 'با جستجوی نام کاربری، افراد را به فهرست مخاطبین اضافه کن.',
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: () async {
                       final selected = await showSearch<Map<String, dynamic>?>(
@@ -6960,7 +6922,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
                       );
                       if (selected != null && mounted) _reload();
                     },
-                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    icon: Icon(Icons.person_add_alt_1_rounded),
                     label: Text(trUi('افزودن مخاطب')),
                   ),
                 ],
@@ -6973,7 +6935,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
             itemCount: contacts.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 5),
+            separatorBuilder: (_, __) => SizedBox(height: 5),
             itemBuilder: (context, index) {
               final profile = contacts[index];
               final name = (profile['display_name'] ?? profile['username'] ?? 'کاربر')
@@ -6996,7 +6958,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
                       builder: (_) => PublicUserProfilePage(profile: profile),
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_left_rounded),
+                  trailing: Icon(Icons.chevron_left_rounded),
                 ),
               );
             },
@@ -7040,7 +7002,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
   }
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(trUi('مصرف داده'))),
-    body: loading ? const Center(child: CircularProgressIndicator()) : ListView(
+    body: loading ? Center(child: CircularProgressIndicator()) : ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Card(child: SwitchListTile(
@@ -7048,16 +7010,16 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
           onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
           title: Text(trUi('حالت کم‌مصرف')),
           subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
-          secondary: const Icon(Icons.data_saver_on_rounded),
+          secondary: Icon(Icons.data_saver_on_rounded),
         )),
         Card(child: SwitchListTile(
           value: wifi,
           onChanged: (v) => _change('wifi_only_downloads', v, wifi, (next) => wifi = next),
           title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
           subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
-          secondary: const Icon(Icons.wifi_rounded),
+          secondary: Icon(Icons.wifi_rounded),
         )),
-        const Padding(
+        Padding(
           padding: EdgeInsets.all(8),
           child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.')),
         ),
@@ -7100,8 +7062,8 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
                 children: [
                   Row(children: [
                     Icon(Icons.text_fields_rounded, color: scheme.primary),
-                    const SizedBox(width: 10),
-                    const Expanded(child: Text('اندازه متن در کل برنامه', style: TextStyle(fontWeight: FontWeight.w800))),
+                    SizedBox(width: 10),
+                    Expanded(child: Text('اندازه متن در کل برنامه', style: TextStyle(fontWeight: FontWeight.w800))),
                     Text('${(scale * 100).round()}%', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w900)),
                   ]),
                   Slider(
@@ -7112,9 +7074,9 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
                     label: '${(scale * 100).round()}%',
                     onChanged: (v) => appAccessibility.setTextScale(v),
                   ),
-                  const Text('این اندازه در صفحه‌ها و گفتگوها اعمال می‌شود و پس از بستن برنامه هم می‌ماند.',
+                  Text('این اندازه در صفحه‌ها و گفتگوها اعمال می‌شود و پس از بستن برنامه هم می‌ماند.',
                     style: TextStyle(fontSize: 12)),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -7123,19 +7085,19 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text('نمونه متن پیام • سلام، حالت چطوره؟',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Card(
             child: SwitchListTile(
               value: appAccessibility.highContrast,
               onChanged: appAccessibility.setHighContrast,
               secondary: Icon(Icons.contrast_rounded, color: scheme.primary),
-              title: const Text('کنتراست بالا', style: TextStyle(fontWeight: FontWeight.w800)),
+              title: Text('کنتراست بالا', style: TextStyle(fontWeight: FontWeight.w800)),
               subtitle: Text(trUi('مرزها و متن‌ها واضح‌تر می‌شوند؛ این تنظیم روی کل برنامه اثر دارد.')),
             ),
           ),
@@ -7183,11 +7145,11 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
   @override Widget build(BuildContext context){
     final filtered=rows.where(_matches).toList();
     return Scaffold(
-      appBar:AppBar(title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:const [ButtonSegment(value:0,label:Text(trUi('عکس و ویدیو'))),ButtonSegment(value:1,label:Text(trUi('فایل'))),ButtonSegment(value:2,label:Text(trUi('صدا')))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
-      body:loading?const Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
+      appBar:AppBar(title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:[ButtonSegment(value:0,label:Text(trUi('عکس و ویدیو'))),ButtonSegment(value:1,label:Text(trUi('فایل'))),ButtonSegment(value:2,label:Text(trUi('صدا')))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
+      body:loading?Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>SizedBox(height:8),itemBuilder:(_,i){
         final m=filtered[i]; final a=attachments['${m['id']}']; final name=(a?['file_name']??m['body']??'رسانه').toString(); final type='${m['message_type']??''}';
         final icon=type=='image'?Icons.image_rounded:type=='video'?Icons.video_file_rounded:type=='file'?Icons.insert_drive_file_rounded:Icons.audiotrack_rounded;
-        return Card(child:ListTile(leading:CircleAvatar(child:Icon(icon)),title:Text(name,maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text('${m['created_at']??''}'),trailing:const Icon(Icons.chevron_left_rounded),onTap:() async {
+        return Card(child:ListTile(leading:CircleAvatar(child:Icon(icon)),title:Text(name,maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text('${m['created_at']??''}'),trailing:Icon(Icons.chevron_left_rounded),onTap:() async {
           final url=await _url(m); if(url==null){if(mounted)showMsg(context,'لینک این فایل در دسترس نیست.');return;} if(!mounted)return;
           await showDialog<void>(context:context,builder:(_)=>AlertDialog(title:Text(name),content:SelectableText(url),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:Text(trUi('بستن')))]));
         }));
@@ -7201,8 +7163,8 @@ class StickersPage extends StatelessWidget { const StickersPage({super.key}); @o
 class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
 class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('امنیت پیشرفته'))),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:Text(trUi('تأیید دومرحله‌ای')))),
- const Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text(trUi('دستگاه‌های متصل')))),
- const Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text(trUi('مخاطبین مسدودشده')))),
+ Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text(trUi('دستگاه‌های متصل')))),
+ Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text(trUi('مخاطبین مسدودشده')))),
  Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:Text(trUi('پیام‌های خودتخریب‌شونده')))),
 ]));}
 
@@ -7231,17 +7193,17 @@ class _CallsPageState extends State<CallsPage> {
               margin: const EdgeInsets.all(20), padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(color:c.surface.withValues(alpha:.60),borderRadius:BorderRadius.circular(kAppRadius),border:Border.all(color:c.onSurface.withValues(alpha:.08))),
               child: Column(mainAxisSize:MainAxisSize.min,children:[
-                const CircleAvatar(radius:54,child:Icon(Icons.person_rounded,size:48)),
-                const SizedBox(height:16),
-                const Text('تماس صوتی / تصویری',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
-                const SizedBox(height:8),
+                CircleAvatar(radius:54,child:Icon(Icons.person_rounded,size:48)),
+                SizedBox(height:16),
+                Text('تماس صوتی / تصویری',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+                SizedBox(height:8),
                 Text(video ? 'تماس تصویری آماده است' : 'تماس صوتی آماده است',style:TextStyle(color:c.onSurface.withValues(alpha:.65))),
-                const SizedBox(height:28),
+                SizedBox(height:28),
                 Row(mainAxisAlignment:MainAxisAlignment.center,children:[
                   _glassCallButton(Icons.mic_off_rounded, muted, () => setState(()=>muted=!muted)),
-                  const SizedBox(width:14),
+                  SizedBox(width:14),
                   _glassCallButton(video?Icons.videocam_rounded:Icons.call_rounded, false, () => setState(()=>video=!video)),
-                  const SizedBox(width:14),
+                  SizedBox(width:14),
                   _glassCallButton(Icons.volume_up_rounded, speaker, () => setState(()=>speaker=!speaker)),
                 ]),
               ]),
@@ -7305,14 +7267,14 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
   }
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(trUi('پیام‌های ذخیره‌شده'))),
-    body: loading ? const Center(child: CircularProgressIndicator()) : items.isEmpty
-      ? const Center(child: Text(trUi('هنوز پیامی ذخیره نکرده‌اید.')))
-      : ListView.separated(padding: const EdgeInsets.all(12), itemCount: items.length, separatorBuilder: (_, __) => const SizedBox(height: 8), itemBuilder: (context, i) {
+    body: loading ? Center(child: CircularProgressIndicator()) : items.isEmpty
+      ? Center(child: Text(trUi('هنوز پیامی ذخیره نکرده‌اید.')))
+      : ListView.separated(padding: const EdgeInsets.all(12), itemCount: items.length, separatorBuilder: (_, __) => SizedBox(height: 8), itemBuilder: (context, i) {
           final m = items[i];
           final type = '${m['message_type'] ?? 'text'}';
           final body = '${m['body'] ?? ''}';
           final title = body.isEmpty ? (type == 'image' ? 'تصویر' : type == 'audio' ? 'پیام صوتی' : 'پیام') : body;
-          return Card(child: ListTile(leading: const Icon(Icons.bookmark_rounded), title: Text(title, maxLines: 3, overflow: TextOverflow.ellipsis), subtitle: Text(trUi('ذخیره‌شده در Arad Messenger')), trailing: IconButton(icon: const Icon(Icons.delete_outline_rounded), onPressed: () => _remove('${m['id']}'))));
+          return Card(child: ListTile(leading: Icon(Icons.bookmark_rounded), title: Text(title, maxLines: 3, overflow: TextOverflow.ellipsis), subtitle: Text(trUi('ذخیره‌شده در Arad Messenger')), trailing: IconButton(icon: Icon(Icons.delete_outline_rounded), onPressed: () => _remove('${m['id']}'))));
         }),
   );
 }
@@ -7378,8 +7340,8 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     if (!canEditRules || saving) return;
     final source = await showModalBottomSheet<ImageSource>(context: context, showDragHandle: true,
       builder: (sheet) => SafeArea(child: Wrap(children: [
-        ListTile(leading: const Icon(Icons.photo_library_rounded), title: Text(trUi('انتخاب عکس از گالری')), onTap: () => Navigator.pop(sheet, ImageSource.gallery)),
-        ListTile(leading: const Icon(Icons.camera_alt_rounded), title: Text(trUi('گرفتن عکس با دوربین')), onTap: () => Navigator.pop(sheet, ImageSource.camera)),
+        ListTile(leading: Icon(Icons.photo_library_rounded), title: Text(trUi('انتخاب عکس از گالری')), onTap: () => Navigator.pop(sheet, ImageSource.gallery)),
+        ListTile(leading: Icon(Icons.camera_alt_rounded), title: Text(trUi('گرفتن عکس با دوربین')), onTap: () => Navigator.pop(sheet, ImageSource.camera)),
       ])));
     if (source == null) return;
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 85, maxWidth: 1200);
@@ -7428,9 +7390,9 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
           SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(trUi('فقط مدیران پیام بفرستند')), value: adminsPost, onChanged: (v) => setDialog(() => adminsPost = v)),
           SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(trUi('فقط مدیران عضو اضافه کنند')), value: adminsAdd, onChanged: (v) => setDialog(() => adminsAdd = v)),
           SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(trUi('واکنش‌های ایموجی')), value: reactions, onChanged: (v) => setDialog(() => reactions = v)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(value: ttl, decoration: const InputDecoration(labelText: 'حذف خودکار پیام‌ها', border: OutlineInputBorder()),
-            items: const [DropdownMenuItem(value: 0, child: Text(trUi('خاموش'))), DropdownMenuItem(value: 86400, child: Text(trUi('پس از ۱ روز'))), DropdownMenuItem(value: 604800, child: Text(trUi('پس از ۱ هفته'))), DropdownMenuItem(value: 2592000, child: Text(trUi('پس از ۱ ماه')))],
+          SizedBox(height: 8),
+          DropdownButtonFormField<int>(value: ttl, decoration: InputDecoration(labelText: 'حذف خودکار پیام‌ها', border: OutlineInputBorder()),
+            items: [DropdownMenuItem(value: 0, child: Text(trUi('خاموش'))), DropdownMenuItem(value: 86400, child: Text(trUi('پس از ۱ روز'))), DropdownMenuItem(value: 604800, child: Text(trUi('پس از ۱ هفته'))), DropdownMenuItem(value: 2592000, child: Text(trUi('پس از ۱ ماه')))],
             onChanged: (v) => setDialog(() => ttl = v ?? 0)),
         ])),
         actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(trUi('لغو'))), FilledButton(onPressed: () => Navigator.pop(dialog, {'public':publicGroup,'approval':approval,'post':adminsPost,'add':adminsAdd,'reactions':reactions,'ttl':ttl}), child: Text(trUi('ذخیره همه تنظیمات')))],
@@ -7465,9 +7427,9 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final value = await showDialog<Map<String, String>>(context: context, builder: (ctx) => AlertDialog(
       title: Text(trUi('ویرایش نام و بیو گروه')),
       content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: titleController, maxLength: 80, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder())),
-        const SizedBox(height: 12),
-        TextField(controller: descriptionController, maxLines: 5, maxLength: 1500, decoration: const InputDecoration(labelText: 'بیو، معرفی و قوانین گروه', hintText: 'موضوع و قوانین گروه', border: OutlineInputBorder())),
+        TextField(controller: titleController, maxLength: 80, decoration: InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder())),
+        SizedBox(height: 12),
+        TextField(controller: descriptionController, maxLines: 5, maxLength: 1500, decoration: InputDecoration(labelText: 'بیو، معرفی و قوانین گروه', hintText: 'موضوع و قوانین گروه', border: OutlineInputBorder())),
       ])),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: Text(trUi('انصراف'))),
@@ -7518,11 +7480,11 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final action = await showModalBottomSheet<String>(
       context: context, showDragHandle: true,
       builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ListTile(leading: avatar(profile), title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${profile['username'] ?? ''}')),
-        ListTile(leading: const Icon(Icons.person_outline_rounded), title: Text(trUi('مشاهده پروفایل')), onTap: () => Navigator.pop(sheet, 'profile')),
+        ListTile(leading: avatar(profile), title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${profile['username'] ?? ''}')),
+        ListTile(leading: Icon(Icons.person_outline_rounded), title: Text(trUi('مشاهده پروفایل')), onTap: () => Navigator.pop(sheet, 'profile')),
         if (isCreator) ListTile(leading: Icon(targetRole == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded), title: Text(targetRole == 'admin' ? 'عزل از مدیریت' : 'تعیین به‌عنوان مدیر'), onTap: () => Navigator.pop(sheet, 'role')),
         if (canRemoveMembers) ...[
-          ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: Text(trUi('اخراج از گروه')), onTap: () => Navigator.pop(sheet, 'remove')),
+          ListTile(leading: Icon(Icons.person_remove_alt_1_rounded), title: Text(trUi('اخراج از گروه')), onTap: () => Navigator.pop(sheet, 'remove')),
           ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
         ],
       ])),
@@ -7561,7 +7523,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
       title: Text(action == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
       content: action == 'ban'
-        ? TextField(controller: reasonController, maxLines: 3, maxLength: 300, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)', border: OutlineInputBorder()))
+        ? TextField(controller: reasonController, maxLines: 3, maxLength: 300, decoration: InputDecoration(labelText: 'دلیل محرومیت (اختیاری)', border: OutlineInputBorder()))
         : Text('$name از گروه حذف شود؟ در حالت اخراج می‌تواند دوباره درخواست عضویت بدهد.'),
       actions: [
         TextButton(onPressed: () => Navigator.pop(d, false), child: Text(trUi('انصراف'))),
@@ -7609,11 +7571,11 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final ids=await showDialog<List<String>>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
       title:Text(trUi('دعوت اعضا')),
       content:SizedBox(width:420,height:420,child:Column(children:[
-        TextField(controller:query,decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'نام کاربری یا نام'),onChanged:(_)=>setDialog((){})),
-        const SizedBox(height:8),
+        TextField(controller:query,decoration:InputDecoration(prefixIcon:Icon(Icons.search),hintText:'نام کاربری یا نام'),onChanged:(_)=>setDialog((){})),
+        SizedBox(height:8),
         Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:peopleFuture,builder:(ctx,snap){
-          if(snap.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator());
-          if(snap.hasError)return const Center(child:Text(trUi('فهرست کاربران بارگذاری نشد')));
+          if(snap.connectionState==ConnectionState.waiting)return Center(child:CircularProgressIndicator());
+          if(snap.hasError)return Center(child:Text(trUi('فهرست کاربران بارگذاری نشد')));
           final q=query.text.trim().toLowerCase();
           final people=(snap.data??[]).where((p)=>!existing.contains(p['id'].toString()) && ('${p['display_name']??''} ${p['username']??''}').toLowerCase().contains(q)).toList();
           if(people.isEmpty)return Center(child:Text(q.isEmpty ? 'مخاطب جدیدی در فهرست مخاطبان شما نیست.' : 'مخاطبی با این نام پیدا نشد.'));
@@ -7644,16 +7606,16 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final title='${group['title']??widget.title}';
     final image='${group['avatar_url']??''}';
     final description='${group['description']??''}'.trim();
-    return Scaffold(appBar:AppBar(title:Text(trUi('پروفایل گروه'))),body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
+    return Scaffold(appBar:AppBar(title:Text(trUi('پروفایل گروه'))),body:loading?Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
       Center(child:Column(children:[
-        GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:const BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:const Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
-        const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
-        const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
-        const SizedBox(height:12),
+        GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
+        SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
+        SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
+        SizedBox(height:12),
         Wrap(alignment:WrapAlignment.center,spacing:8,runSpacing:8,children:[
           if(canAddMembers) FilledButton.icon(
             onPressed:saving?null:_addMembers,
-            icon:const Icon(Icons.person_add_alt_1_rounded,size:18),
+            icon:Icon(Icons.person_add_alt_1_rounded,size:18),
             label:Text(trUi('افزودن عضو')),
           ),
           PopupMenuButton<String>(
@@ -7678,10 +7640,10 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
               }
             },
             itemBuilder:(_)=>[
-              if(canEditRules) const PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text(trUi('ویرایش نام و توضیحات'))])),
-              if(canEditRules) const PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text(trUi('تنظیمات و اختیارات'))])),
-              if(canManageMembers) const PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text(trUi('مدیریت اعضا'))])),
-              if(isCreator) const PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text(trUi('مدیریت پیشرفته'))])),
+              if(canEditRules) PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text(trUi('ویرایش نام و توضیحات'))])),
+              if(canEditRules) PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text(trUi('تنظیمات و اختیارات'))])),
+              if(canManageMembers) PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text(trUi('مدیریت اعضا'))])),
+              if(isCreator) PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text(trUi('مدیریت پیشرفته'))])),
             ],
             child:Container(
               padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
@@ -7689,21 +7651,21 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                 border:Border.all(color:scheme.outlineVariant),
                 borderRadius:BorderRadius.circular(14),
               ),
-              child:const Row(mainAxisSize:MainAxisSize.min,children:[
+              child:Row(mainAxisSize:MainAxisSize.min,children:[
                 Icon(Icons.more_horiz_rounded,size:20),SizedBox(width:7),Text(trUi('مدیریت گروه')),
               ]),
             ),
           ),
         ]),
       ])),
-      const SizedBox(height:20),
+      SizedBox(height:20),
       Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[const Icon(Icons.info_outline_rounded),const SizedBox(width:8),const Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)const Chip(label:Text(trUi('مدیر قابل ویرایش')))]),
-        const SizedBox(height:8),Text(description.isEmpty?'هنوز توضیح یا قانونی برای این گروه ثبت نشده است.':description,style:TextStyle(height:1.5,color:scheme.onSurfaceVariant)),
+        Row(children:[Icon(Icons.info_outline_rounded),SizedBox(width:8),Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)Chip(label:Text(trUi('مدیر قابل ویرایش')))]),
+        SizedBox(height:8),Text(description.isEmpty?'هنوز توضیح یا قانونی برای این گروه ثبت نشده است.':description,style:TextStyle(height:1.5,color:scheme.onSurfaceVariant)),
       ]))),
-      const SizedBox(height:14),
-      Row(children:[const Icon(Icons.people_alt_rounded),const SizedBox(width:8),Text('اعضا  •  ${members.length}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
-      const SizedBox(height:8),
+      SizedBox(height:14),
+      Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:8),Text('اعضا  •  ${members.length}',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
+      SizedBox(height:8),
       Card(
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -7744,7 +7706,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                     PopupMenuButton<String>(
                       tooltip: 'اقدامات عضو',
                       onSelected: (_) => _manageMember(m),
-                      itemBuilder: (context) => const [
+                      itemBuilder: (context) => [
                         PopupMenuItem(
                           value: 'manage',
                           child: Row(
@@ -7756,10 +7718,10 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                           ),
                         ),
                       ],
-                      icon: const Icon(Icons.more_vert_rounded),
+                      icon: Icon(Icons.more_vert_rounded),
                     )
                   else
-                    const Icon(Icons.chevron_left_rounded),
+                    Icon(Icons.chevron_left_rounded),
                 ],
               ),
               onTap: p['id'] == null
@@ -7831,18 +7793,18 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: Text(trUi('پروفایل گفتگو'))),
-      body: loading ? const Center(child: CircularProgressIndicator()) : ListView(
+      body: loading ? Center(child: CircularProgressIndicator()) : ListView(
         padding: const EdgeInsets.fromLTRB(16,12,16,32),
         children: [
           Center(child: Column(children: [
             CircleAvatar(radius:54,backgroundColor:scheme.primaryContainer,backgroundImage:avatarUrl.isNotEmpty?NetworkImage(avatarUrl):null,child:avatarUrl.isEmpty?Icon(type=='group'?Icons.groups_rounded:type=='channel'?Icons.campaign_rounded:Icons.person_rounded,size:46,color:scheme.primary):null),
-            const SizedBox(height:12),
-            Row(mainAxisAlignment:MainAxisAlignment.center,children:[Flexible(child:Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w900))),if(type=='direct'&&peer['is_verified']==true) const Padding(padding:EdgeInsets.only(right:5),child:Icon(Icons.verified_rounded,color:Color(0xFF2F9BFF)))]),
+            SizedBox(height:12),
+            Row(mainAxisAlignment:MainAxisAlignment.center,children:[Flexible(child:Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:23,fontWeight:FontWeight.w900))),if(type=='direct'&&peer['is_verified']==true) Padding(padding:EdgeInsets.only(right:5),child:Icon(Icons.verified_rounded,color:Color(0xFF2F9BFF)))]),
             if(type=='direct'&&'${peer['username'] ?? ''}'.isNotEmpty) Text('@'+'${peer['username']}',style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w700)),
             if(type=='direct') Text(peer['is_online']==true?'آنلاین':'آخرین بازدید: '+_homeTime(peer['last_seen']),style:TextStyle(color:scheme.onSurfaceVariant)),
             if(bio.trim().isNotEmpty) Padding(padding:const EdgeInsets.only(top:10),child:Text(bio,textAlign:TextAlign.center,style:TextStyle(height:1.45,color:scheme.onSurfaceVariant))),
             if(type=='direct') ...[
-              const SizedBox(height:18),
+              SizedBox(height:18),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -7857,10 +7819,10 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
                         ),
                       ),
                     ),
-                    icon: const Icon(Icons.call_rounded),
+                    icon: Icon(Icons.call_rounded),
                     label: Text(trUi('تماس صوتی')),
                   ),
-                  const SizedBox(width:10),
+                  SizedBox(width:10),
                   OutlinedButton.icon(
                     onPressed: () => Navigator.push(
                       context,
@@ -7872,24 +7834,24 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
                         ),
                       ),
                     ),
-                    icon: const Icon(Icons.videocam_rounded),
+                    icon: Icon(Icons.videocam_rounded),
                     label: Text(trUi('تماس تصویری')),
                   ),
                 ],
               ),
             ],
           ])),
-          const SizedBox(height:22),
-          if(type=='group'||type=='channel') Card(child:ListTile(leading:Icon(type=='group'?Icons.groups_rounded:Icons.campaign_rounded),title:Text(type=='group'?'اعضای گروه':'اعضای کانال'),subtitle:Text(members.length.toString()+' نفر'),trailing:const Icon(Icons.chevron_left_rounded),onTap:type=='group'?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupProfilePage(conversationId:widget.conversationId,title:title))):null)),
+          SizedBox(height:22),
+          if(type=='group'||type=='channel') Card(child:ListTile(leading:Icon(type=='group'?Icons.groups_rounded:Icons.campaign_rounded),title:Text(type=='group'?'اعضای گروه':'اعضای کانال'),subtitle:Text(members.length.toString()+' نفر'),trailing:Icon(Icons.chevron_left_rounded),onTap:type=='group'?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupProfilePage(conversationId:widget.conversationId,title:title))):null)),
           Card(child:Column(children:[
-            ListTile(leading:const Icon(Icons.search_rounded),title:Text(trUi('جستجوی داخل گفتگو')),onTap:()=>showSearch(context:context,delegate:MessageSearchDelegate(widget.conversationId))),
-            ListTile(leading:const Icon(Icons.photo_library_outlined),title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>SharedMediaPage(conversationId:widget.conversationId)))),
+            ListTile(leading:Icon(Icons.search_rounded),title:Text(trUi('جستجوی داخل گفتگو')),onTap:()=>showSearch(context:context,delegate:MessageSearchDelegate(widget.conversationId))),
+            ListTile(leading:Icon(Icons.photo_library_outlined),title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>SharedMediaPage(conversationId:widget.conversationId)))),
             
           ])),
           if (type == 'group')
             Card(
               child: ExpansionTile(
-                leading: const Icon(Icons.people_alt_outlined),
+                leading: Icon(Icons.people_alt_outlined),
                 title: Text(trUi('اعضای گروه')),
                 subtitle: Text(trUi('برای دیدن پروفایل هر عضو روی نام او بزنید')),
                 children: members.take(50).map((m) {
@@ -7899,7 +7861,7 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
                     leading: avatar(p),
                     title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}'),
                     subtitle: Text('${m['role'] ?? 'member'}'),
-                    trailing: const Icon(Icons.chevron_left_rounded),
+                    trailing: Icon(Icons.chevron_left_rounded),
                     onTap: id.isEmpty
                         ? null
                         : () => Navigator.push(
@@ -7921,10 +7883,10 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
 class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   @override
   List<Widget>? buildActions(BuildContext context) => [
-    if (query.isNotEmpty) IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear_rounded)),
+    if (query.isNotEmpty) IconButton(onPressed: () => query = '', icon: Icon(Icons.clear_rounded)),
   ];
   @override
-  Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: const Icon(Icons.arrow_back_rounded));
+  Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: Icon(Icons.arrow_back_rounded));
   @override
   Widget buildResults(BuildContext context) => _results(context);
   @override
@@ -8012,7 +7974,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           .select('user_id').eq('conversation_id', id).eq('user_id', uid).maybeSingle();
       if (membership == null) {
         close(context, null);
-        messenger.showSnackBar(const SnackBar(content: Text(trUi('درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.'))));
+        messenger.showSnackBar(SnackBar(content: Text(trUi('درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.'))));
         return;
       }
       final title = (row['title'] ?? row['username'] ?? 'گروه عمومی').toString();
@@ -8025,39 +7987,39 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 
   Widget _avatar(Map<String,dynamic> row) {
     final url = (row['avatar_url'] ?? '').toString().trim();
-    return CircleAvatar(radius: 21, backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? const Icon(Icons.person_rounded) : null);
+    return CircleAvatar(radius: 21, backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(Icons.person_rounded) : null);
   }
 
   Widget _results(BuildContext context) {
     final q = query.trim();
-    if (q.isEmpty) return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.search_rounded, size: 54), SizedBox(height: 12), Text('جستجوی سراسری آراد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text(trUi('کاربر، گفتگو و پیام را یکجا پیدا کنید.')) ]));
+    if (q.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.search_rounded, size: 54), SizedBox(height: 12), Text('جستجوی سراسری آراد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text(trUi('کاربر، گفتگو و پیام را یکجا پیدا کنید.')) ]));
     return FutureBuilder<Map<String,dynamic>>(
       future: _search(q),
       builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snap.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
         if (snap.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snap.error}')));
         final data = snap.data ?? {};
         final users = List<Map<String,dynamic>>.from(data['users'] ?? const []);
         final chats = List<Map<String,dynamic>>.from(data['chats'] ?? const []);
         final publicChats = List<Map<String,dynamic>>.from(data['public_chats'] ?? const []);
         final messages = List<Map<String,dynamic>>.from(data['messages'] ?? const []);
-        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
+        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
         return ListView(padding: const EdgeInsets.fromLTRB(8, 8, 8, 24), children: [
           if (users.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'کاربران', icon: Icons.people_alt_rounded),
-            ...users.map((p) => ListTile(leading: _avatar(p), title: Row(children: [Flexible(child: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))), if (p['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 5), child: Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2F9BFF))) ]), subtitle: Text((p['username'] ?? '').toString().isEmpty ? (p['bio'] ?? '').toString() : '@' + p['username'].toString()), onTap: () => close(context, {...p, '_kind': 'user'}))),
+            ...users.map((p) => ListTile(leading: _avatar(p), title: Row(children: [Flexible(child: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800))), if (p['is_verified'] == true) Padding(padding: EdgeInsets.only(right: 5), child: Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2F9BFF))) ]), subtitle: Text((p['username'] ?? '').toString().isEmpty ? (p['bio'] ?? '').toString() : '@' + p['username'].toString()), onTap: () => close(context, {...p, '_kind': 'user'}))),
           ],
           if (chats.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'گفتگوها', icon: Icons.forum_rounded),
-            ...chats.map((c) { final type = (c['type'] ?? 'direct').toString(); final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded; final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(icon) : null), title: Text((c['title'] ?? c['username'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString(), style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(type == 'channel' ? 'کانال' : type == 'group' ? 'گروه' : 'گفتگوی خصوصی'), onTap: () => close(context, {...c, '_kind': 'chat'})); }),
+            ...chats.map((c) { final type = (c['type'] ?? 'direct').toString(); final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded; final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(icon) : null), title: Text((c['title'] ?? c['username'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString(), style: TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(type == 'channel' ? 'کانال' : type == 'group' ? 'گروه' : 'گفتگوی خصوصی'), onTap: () => close(context, {...c, '_kind': 'chat'})); }),
           ],
           if (publicChats.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'گروه‌ها و کانال‌های عمومی', icon: Icons.public_rounded),
-            ...publicChats.map((c) { final type = (c['type'] ?? 'group').toString(); final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(type == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded) : null), title: Text((c['title'] ?? c['username'] ?? 'گروه عمومی').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${c['username'] ?? ''} • ${type == 'channel' ? 'کانال عمومی' : 'گروه عمومی'}'), trailing: const Icon(Icons.arrow_forward_rounded), onTap: () => _openPublicConversation(context, c)); }),
+            ...publicChats.map((c) { final type = (c['type'] ?? 'group').toString(); final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(type == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded) : null), title: Text((c['title'] ?? c['username'] ?? 'گروه عمومی').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${c['username'] ?? ''} • ${type == 'channel' ? 'کانال عمومی' : 'گروه عمومی'}'), trailing: Icon(Icons.arrow_forward_rounded), onTap: () => _openPublicConversation(context, c)); }),
           ],
           if (messages.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'پیام‌ها', icon: Icons.chat_bubble_outline_rounded),
-            ...messages.map((m) => ListTile(leading: const CircleAvatar(child: Icon(Icons.message_rounded)), title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(_homeTime(m['created_at'])), onTap: () => close(context, {...m, '_kind': 'message'}))),
+            ...messages.map((m) => ListTile(leading: CircleAvatar(child: Icon(Icons.message_rounded)), title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(_homeTime(m['created_at'])), onTap: () => close(context, {...m, '_kind': 'message'}))),
           ],
         ]);
       },
@@ -8393,7 +8355,7 @@ class _ChatPageState extends State<ChatPage> {
     final durationMs = (a?['duration_ms'] as num?)?.toInt() ?? 0;
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) {
-      return const SizedBox(width: 250, child: Text(trUi('فایل صوتی در دسترس نیست.')));
+      return SizedBox(width: 250, child: Text(trUi('فایل صوتی در دسترس نیست.')));
     }
     return VoiceMessagePlayer(
       initialDurationMs: durationMs,
@@ -9000,10 +8962,10 @@ class _ChatPageState extends State<ChatPage> {
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(9))),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               Row(children: [
                 Expanded(child: Text(trUi('واکنش به پیام'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-                IconButton(tooltip: trUi('افرادی که واکنش داده‌اند'), onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: const Icon(Icons.people_alt_outlined)),
+                IconButton(tooltip: trUi('افرادی که واکنش داده‌اند'), onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: Icon(Icons.people_alt_outlined)),
               ]),
               // One-tap favorites stay visible so the most common reactions need
               // no category change or precise tap on a small grid cell.
@@ -9017,17 +8979,17 @@ class _ChatPageState extends State<ChatPage> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(15),
                       onTap: () { Navigator.pop(ctx); _toggleReaction(id, emoji); },
-                      child: SizedBox(width: 48, height: 46, child: Center(child: Text(emoji, style: const TextStyle(fontSize: 27)))),
+                      child: SizedBox(width: 48, height: 46, child: Center(child: Text(emoji, style: TextStyle(fontSize: 27)))),
                     ),
                   ),
                 )).toList()),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: categories.keys.map((name) => Padding(
                 padding: const EdgeInsetsDirectional.only(end: 7),
                 child: ChoiceChip(label: Text(name), selected: selectedCategory == name, onSelected: (_) => setSheetState(() => selectedCategory = name)),
               )).toList())),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Flexible(child: GridView.builder(
                 shrinkWrap: true,
                 itemCount: categories[selectedCategory]!.length,
@@ -9051,13 +9013,13 @@ class _ChatPageState extends State<ChatPage> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: () { Navigator.pop(ctx); _toggleReaction(id, emoji); },
-                        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 27))),
+                        child: Center(child: Text(emoji, style: TextStyle(fontSize: 27))),
                       ),
                     ),
                   );
                 },
               )),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(trUi('واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود'), style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
             ]),
           ),
@@ -9081,11 +9043,11 @@ class _ChatPageState extends State<ChatPage> {
           padding:const EdgeInsets.all(16),
           children:[
             Text(trUi('واکنش‌ها'),style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
-            const SizedBox(height:10),
+            SizedBox(height:10),
             ...rows.map((r){
               final p=people[r['user_id'].toString()];
               final name=(p?['display_name']??p?['username']??'کاربر').toString();
-              return ListTile(leading:Text(r['reaction'].toString(),style:const TextStyle(fontSize:25)),title:Text(name));
+              return ListTile(leading:Text(r['reaction'].toString(),style:TextStyle(fontSize:25)),title:Text(name));
             }),
           ],
         ),
@@ -9132,9 +9094,9 @@ class _ChatPageState extends State<ChatPage> {
                 ],
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(e.key, style: const TextStyle(fontSize: 17, height: 1.0)),
+                Text(e.key, style: TextStyle(fontSize: 17, height: 1.0)),
                 if (e.value > 1) ...[
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
                     color: dark ? Colors.white : const Color(0xFF27334A))),
                 ],
@@ -9519,8 +9481,8 @@ class _ChatPageState extends State<ChatPage> {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
-              const SizedBox(height: 18),
-              Row(children: [Expanded(child: Text(trUi('افزودن به پیام'), textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
+              SizedBox(height: 18),
+              Row(children: [Expanded(child: Text(trUi('افزودن به پیام'), textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: Icon(Icons.close_rounded))]),
               GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
                 _attachmentItem(sheetContext, Icons.photo_library_rounded, trUi('گالری'), () { Navigator.pop(sheetContext); sendImage(); }),
                 _attachmentItem(sheetContext, Icons.camera_alt_rounded, trUi('دوربین'), () { Navigator.pop(sheetContext); sendCameraImage(); }),
@@ -9540,7 +9502,7 @@ class _ChatPageState extends State<ChatPage> {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(borderRadius: BorderRadius.circular(24), onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Container(width: 68, height: 68, decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .72), shape: BoxShape.circle), child: Icon(icon, size: 32, color: scheme.primary)),
-      const SizedBox(height: 8), Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
+      SizedBox(height: 8), Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
     ]));
   }
   Future<void> sendImage() async {
@@ -9732,31 +9694,31 @@ class _ChatPageState extends State<ChatPage> {
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
               child: Column(children: [
                 Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(8))),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(children: [
-                  Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24), const SizedBox(width: 8),
+                  Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24), SizedBox(width: 8),
                   Expanded(child: Text(trUi('ایموجی و استیکر'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
                   Text(trUi('انتخاب‌شده: ') + selected.length.toString(), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
-                  IconButton(tooltip: 'پاک کردن همه', onPressed: selected.isEmpty ? null : () => setSheetState(() => selected.clear()), icon: const Icon(Icons.backspace_outlined)),
+                  IconButton(tooltip: 'پاک کردن همه', onPressed: selected.isEmpty ? null : () => setSheetState(() => selected.clear()), icon: Icon(Icons.backspace_outlined)),
                 ]),
                 if (selected.isNotEmpty) SizedBox(height: 46, child: ListView(scrollDirection: Axis.horizontal, children: [
                   for (final item in selected) Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: InputChip(
-                    label: Text(item, style: const TextStyle(fontSize: 20)), deleteIcon: const Icon(Icons.close, size: 16),
+                    label: Text(item, style: TextStyle(fontSize: 20)), deleteIcon: Icon(Icons.close, size: 16),
                     onDeleted: () => setSheetState(() => selected.remove(item)),
                   )),
                 ])),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextField(onChanged: (value) => setSheetState(() => filter = value), decoration: InputDecoration(
-                  hintText: trUi('جست‌وجوی ایموجی'), prefixIcon: const Icon(Icons.search_rounded), isDense: true, filled: true,
+                  hintText: trUi('جست‌وجوی ایموجی'), prefixIcon: Icon(Icons.search_rounded), isDense: true, filled: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 )),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 SegmentedButton<int>(
                   segments: [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text(trUi('ایموجی'))), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text(trUi('استیکرهای متنی')))],
                   selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; emojiCategory = 'همه'; selected.clear(); }), showSelectedIcon: false,
                 ),
                 if (tab == 0) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   SizedBox(
                     height: 38,
                     child: ListView(
@@ -9777,13 +9739,13 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Expanded(child: shown.isEmpty
                     ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Icon(Icons.search_off_rounded, size: 38, color: scheme.onSurface.withValues(alpha: .45)),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(trUi('ایموجی پیدا نشد'), style: TextStyle(color: scheme.onSurface.withValues(alpha: .7), fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(trUi('کلمه دیگری جست‌وجو کنید'), style: TextStyle(color: scheme.onSurface.withValues(alpha: .55), fontSize: 12)),
                       ]))
                     : GridView.builder(
@@ -9805,7 +9767,7 @@ class _ChatPageState extends State<ChatPage> {
                     );
                   },
                 )),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 SizedBox(width: double.infinity, child: FilledButton.icon(
                   onPressed: () async {
                     if (selected.isEmpty) {
@@ -9940,7 +9902,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(title: Text(trUi('حذف پیام'), style: TextStyle(fontWeight: FontWeight.w900))),
           ListTile(
-            leading: const Icon(Icons.person_outline_rounded),
+            leading: Icon(Icons.person_outline_rounded),
             title: Text(trUi('حذف برای من')),
             subtitle: Text(trUi('فقط از فهرست پیام‌های شما حذف می‌شود.')),
             onTap: () => Navigator.pop(ctx, 'me'),
@@ -9952,7 +9914,7 @@ class _ChatPageState extends State<ChatPage> {
               subtitle: Text(trUi('پیام از گفتگوی همه اعضا حذف می‌شود.')),
               onTap: () => Navigator.pop(ctx, 'everyone'),
             ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
         ]),
       ),
     );
@@ -10171,14 +10133,14 @@ class _ChatPageState extends State<ChatPage> {
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: Text(trUi('ارسال فوروارد به...'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                    child: Text(trUi('ارسال فوروارد به...'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                   ),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1),
                 Expanded(
                   child: ListView.separated(
                     itemCount: targets.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+                    separatorBuilder: (_, __) => Divider(height: 1, indent: 72),
                     itemBuilder: (_, index) {
                       final c = targets[index];
                       final type = '${c['type']}';
@@ -10187,9 +10149,9 @@ class _ChatPageState extends State<ChatPage> {
                       final avatarUrl = '${c['_peer_avatar_url'] ?? c['avatar_url'] ?? ''}'.trim();
                       return ListTile(
                         leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
-                        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        title: Text(title, style: TextStyle(fontWeight: FontWeight.w700)),
                         subtitle: Text(type == 'group' ? trUi('گروه') : type == 'channel' ? trUi('کانال') : trUi('گفتگوی شخصی')),
-                        trailing: const Icon(Icons.chevron_left_rounded),
+                        trailing: Icon(Icons.chevron_left_rounded),
                         onTap: () => Navigator.pop(sheetContext, c),
                       );
                     },
@@ -10347,7 +10309,7 @@ class _ChatPageState extends State<ChatPage> {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(icon, color: scheme.onSurface, size: 21),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: scheme.onSurface, fontSize: 11)),
             ]),
@@ -10360,7 +10322,7 @@ class _ChatPageState extends State<ChatPage> {
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.onSurfaceVariant.withValues(alpha: .45), borderRadius: BorderRadius.circular(4))),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .65), borderRadius: BorderRadius.circular(24)),
@@ -10368,7 +10330,7 @@ class _ChatPageState extends State<ChatPage> {
             ...emojis.map((e) => InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () { HapticFeedback.selectionClick(); Navigator.pop(context); reactTo(message, e); },
-              child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 23))),
+              child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: TextStyle(fontSize: 23))),
             )),
             IconButton(
               visualDensity: VisualDensity.compact,
@@ -10378,13 +10340,13 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ]),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5),
         Row(children: [
           action(Icons.reply_rounded, 'پاسخ', () => setReply(message)),
           action(Icons.bookmark_add_rounded, 'ذخیره', () => saveMessage(message)),
           action(Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
         ]),
-        const SizedBox(height: 2),
+        SizedBox(height: 2),
         Row(children: [
           if (body.trim().isNotEmpty)
             action(Icons.copy_rounded, 'کپی متن', () async {
@@ -10421,9 +10383,9 @@ class _ChatPageState extends State<ChatPage> {
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(trUi('واکنش به پیام'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             GridView.count(
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 5, padding: EdgeInsets.zero,
@@ -10445,7 +10407,7 @@ class _ChatPageState extends State<ChatPage> {
                           colors: [scheme.surface, scheme.primary.withValues(alpha: .09)]),
                         border: Border.all(color: scheme.outline.withValues(alpha: .12)),
                       ),
-                      child: Center(child: Text(e, style: const TextStyle(fontSize: 29, shadows: [Shadow(color: Color(0x33000000), blurRadius: 5, offset: Offset(0, 2))]))),
+                      child: Center(child: Text(e, style: TextStyle(fontSize: 29, shadows: [Shadow(color: Color(0x33000000), blurRadius: 5, offset: Offset(0, 2))]))),
                     ),
                   ),
                 ),
@@ -10479,11 +10441,11 @@ class _ChatPageState extends State<ChatPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(trUi('فرستنده: ') + _senderName(message)),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(trUi('نوع پیام: ') + (message['message_type']?.toString() ?? 'text')),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(trUi('زمان ارسال: ') + stamp(sentAt)),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 trUi('وضعیت: ') +
                     (pending
@@ -10495,20 +10457,20 @@ class _ChatPageState extends State<ChatPage> {
                                 : trUi('دریافت شده')))),
               ),
               if (readerIds.isNotEmpty && isMine) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(trUi('خوانده‌شده توسط:')),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(readerNames),
               ],
               if (readAt != null) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(trUi('زمان خواندن: ') + stamp(readAt)),
               ],
               if (edited) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(trUi('وضعیت: ویرایش شده')),
               ],
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               SelectableText(
                 trUi('شناسه پیام: ') +
                     (message['id']?.toString() ?? trUi('نامشخص')),
@@ -10574,7 +10536,7 @@ class _ChatPageState extends State<ChatPage> {
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -10616,11 +10578,11 @@ class _ChatPageState extends State<ChatPage> {
                   boxShadow: [BoxShadow(color: color.withValues(alpha: mine ? .24 : .10), blurRadius: mine ? 13 : 6, spreadRadius: mine ? 1 : 0)],
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(e.key, style: const TextStyle(fontSize: 16, height: 1.0)),
-                  const SizedBox(width: 5),
+                  Text(e.key, style: TextStyle(fontSize: 16, height: 1.0)),
+                  SizedBox(width: 5),
                   Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: mine ? color : Theme.of(context).colorScheme.onSurface)),
                   if (mine) ...[
-                    const SizedBox(width: 3),
+                    SizedBox(width: 3),
                     Icon(Icons.check_rounded, size: 12, color: color),
                   ],
                 ]),
@@ -10716,7 +10678,7 @@ class _ChatPageState extends State<ChatPage> {
                           : 1.20 - ((progress - .22) / .78) * .20,
                       child: Text(
                         emoji,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 62,
                           shadows: [
                             Shadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 5)),
@@ -10741,13 +10703,13 @@ class _ChatPageState extends State<ChatPage> {
   Widget _imageAttachment(Map<String, dynamic> m) {
     final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString() ?? '';
-    if (path.isEmpty) return const Icon(Icons.image_rounded, size: 42);
+    if (path.isEmpty) return Icon(Icons.image_rounded, size: 42);
     return FutureBuilder<String?>(
       future: _attachmentUrl(path),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
+        if (snapshot.connectionState == ConnectionState.waiting) return SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
         final url = snapshot.data;
-        if (url == null || url.isEmpty) return const Icon(Icons.broken_image_rounded, size: 42);
+        if (url == null || url.isEmpty) return Icon(Icons.broken_image_rounded, size: 42);
         return GestureDetector(
           onTap: () => _openImage(m),
           child: ClipRRect(
@@ -10757,7 +10719,7 @@ class _ChatPageState extends State<ChatPage> {
               width: 220,
               height: 180,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42))),
+              errorBuilder: (_, __, ___) => SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42))),
             ),
           ),
         );
@@ -10768,7 +10730,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget _videoAttachment(Map<String, dynamic> m) {
     final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString();
-    if (path == null || path.isEmpty) return const Icon(Icons.video_file_rounded, size: 42);
+    if (path == null || path.isEmpty) return Icon(Icons.video_file_rounded, size: 42);
     return _ChatVideoAttachment(storagePath: path);
   }
 
@@ -10792,7 +10754,7 @@ class _ChatPageState extends State<ChatPage> {
     final icon = mime == 'application/pdf' ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded;
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 32),
-      const SizedBox(width: 8),
+      SizedBox(width: 8),
       Flexible(child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
     ]);
   }
@@ -10838,15 +10800,15 @@ class _ChatPageState extends State<ChatPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(missed ? Icons.phone_missed_rounded : (incoming ? Icons.call_received_rounded : Icons.call_made_rounded), size: 19, color: color),
-            const SizedBox(width: 7),
+            SizedBox(width: 7),
             Icon(video ? Icons.videocam_rounded : Icons.call_rounded, size: 18, color: color),
-            const SizedBox(width: 7),
+            SizedBox(width: 7),
             Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
             if (duration.isNotEmpty) ...[
-              const SizedBox(width: 7),
+              SizedBox(width: 7),
               Text('• $duration', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
-            const SizedBox(width: 7),
+            SizedBox(width: 7),
             Text(_time(c['created_at'] ?? c['started_at']), style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
@@ -10908,9 +10870,9 @@ class _ChatPageState extends State<ChatPage> {
           boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: const Offset(0, 5))],
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(art, style: const TextStyle(fontSize: 58, shadows: [Shadow(color: Color(0xAAFFFFFF), blurRadius: 12, offset: Offset(0, 2))])),
-          const SizedBox(height: 4),
-          Text(caption, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+          Text(art, style: TextStyle(fontSize: 58, shadows: [Shadow(color: Color(0xAAFFFFFF), blurRadius: 12, offset: Offset(0, 2))])),
+          SizedBox(height: 4),
+          Text(caption, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
         ]),
       );
     } else if (m['message_type'] == 'image') {
@@ -10934,8 +10896,8 @@ class _ChatPageState extends State<ChatPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.link_rounded, size: 28),
-            const SizedBox(height: 4),
+            Icon(Icons.link_rounded, size: 28),
+            SizedBox(height: 4),
             Text(link, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
             Text(trUi('باز کردن لینک در آراد'), style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
           ]),
@@ -10963,8 +10925,8 @@ class _ChatPageState extends State<ChatPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.link_rounded, size: 28),
-              const SizedBox(height: 4),
+              Icon(Icons.link_rounded, size: 28),
+              SizedBox(height: 4),
               Text(url, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
               Text(isConversationInvite ? trUi('باز کردن دعوت و پیوستن به گروه') : (parsedUrl?.host ?? trUi('لینک')),
                   style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
@@ -11002,11 +10964,11 @@ class _ChatPageState extends State<ChatPage> {
                 child: CircleAvatar(
                   radius: 16,
                   backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null,
+                  child: avatarUrl.isEmpty ? Icon(Icons.person, size: 17) : null,
                 ),
               ),
-              const SizedBox(width: 6),
-            ] else if (!mine && isGroup) const SizedBox(width: 38),
+              SizedBox(width: 6),
+            ] else if (!mine && isGroup) SizedBox(width: 38),
             Flexible(
               child: Container(
                 constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * (isGroup ? .79 : .82)),
@@ -11075,7 +11037,7 @@ class _ChatPageState extends State<ChatPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.forward_rounded, size: 14, color: mine ? Colors.white70 : scheme.primary),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 forwardedSender,
@@ -11089,19 +11051,19 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     _replyPreview(m),
                     content,
-                    const SizedBox(height: 3),
+                    SizedBox(height: 3),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10,  color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
                         if (m['edited_at'] != null) ...[
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Text(trUi('ویرایش‌شده'), style: TextStyle(fontSize: 9, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
                         ],
                         if (mine) ...[
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .7)),
-                          const SizedBox(width: 2),
+                          SizedBox(width: 2),
                           Text(
                             m['__pending'] == true ? trUi('در حال ارسال') : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? '${trUi('دیده‌شده')} ${readReceipts['${m['id']}']!.length}' : trUi('خوانده شد')) : trUi('ارسال شد'),
                             style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
@@ -11328,9 +11290,9 @@ class _ChatPageState extends State<ChatPage> {
       final choice = await showModalBottomSheet<String>(
         context: context, showDragHandle: true,
         builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: const Icon(Icons.person_outline_rounded), title: Text(trUi('مشاهده پروفایل')), onTap: () => Navigator.pop(sheet, 'profile')),
+          ListTile(leading: Icon(Icons.person_outline_rounded), title: Text(trUi('مشاهده پروفایل')), onTap: () => Navigator.pop(sheet, 'profile')),
           if (isOwner && target['role'] != 'owner') ListTile(leading: Icon(target['role'] == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded), title: Text(target['role'] == 'admin' ? 'عزل از مدیریت' : 'مدیر کردن عضو'), onTap: () => Navigator.pop(sheet, 'role')),
-          if (canModerate) ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: Text(trUi('اخراج از گروه')), onTap: () => Navigator.pop(sheet, 'remove')),
+          if (canModerate) ListTile(leading: Icon(Icons.person_remove_alt_1_rounded), title: Text(trUi('اخراج از گروه')), onTap: () => Navigator.pop(sheet, 'remove')),
           if (canModerate) ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text(trUi('محروم کردن از گروه'), style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
         ])),
       );
@@ -11523,7 +11485,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
           PopupMenuButton<String>(
             tooltip: 'ابزارها و تنظیمات چت',
-            icon: const Icon(Icons.more_vert_rounded),
+            icon: Icon(Icons.more_vert_rounded),
             onSelected: (value) {
               switch (value) {
                 case 'search':
@@ -11563,7 +11525,7 @@ class _ChatPageState extends State<ChatPage> {
           FutureBuilder<bool>(
             future: _isGroupAdmin(),
             builder: (_,snap) => snap.data==true
-                ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:const Icon(Icons.admin_panel_settings_rounded))
+                ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:Icon(Icons.admin_panel_settings_rounded))
                 : const SizedBox.shrink(),
           ),
         ],
@@ -11615,7 +11577,7 @@ class _ChatPageState extends State<ChatPage> {
                   ),
               ],
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -11654,7 +11616,7 @@ class _ChatPageState extends State<ChatPage> {
                 backgroundColor: scheme.surface.withValues(alpha: .72),
                 foregroundColor: scheme.primary,
                 elevation: 2,
-                child: const Icon(Icons.keyboard_double_arrow_down_rounded),
+                child: Icon(Icons.keyboard_double_arrow_down_rounded),
               ),
             )
           : null,
@@ -11696,7 +11658,7 @@ class _ChatPageState extends State<ChatPage> {
                   if (_composerFocus.hasFocus) FocusScope.of(context).unfocus();
                 },
                 child: loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(child: CircularProgressIndicator())
                   : messages.isEmpty
                       ? Center(child: Text(trUi('هنوز پیامی یا سابقه تماسی وجود ندارد.')))
                       : ListView.builder(
@@ -11752,7 +11714,7 @@ class _ChatPageState extends State<ChatPage> {
                       leading: CircleAvatar(
                         radius: 17,
                         backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                        child: avatar.isEmpty ? const Icon(Icons.person_outline_rounded, size: 18) : null,
+                        child: avatar.isEmpty ? Icon(Icons.person_outline_rounded, size: 18) : null,
                       ),
                       title: Text('${profile['display_name'] ?? profile['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
                       subtitle: Text('@${profile['username']}', maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -11776,18 +11738,18 @@ class _ChatPageState extends State<ChatPage> {
                     child: Row(
                       children: [
                         Icon(Icons.reply_rounded, size: 20, color: scheme.primary),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             '${_senderName(replyMessage!)}: ${replyMessage!['body'] ?? ''}',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                         IconButton(
                           onPressed: () => setState(() => replyMessage = null),
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close),
                         ),
                       ],
                     ),
@@ -11850,12 +11812,12 @@ class _ChatPageState extends State<ChatPage> {
                   child: Row(
                     children: [
                       Icon(Icons.fiber_manual_record_rounded, color: scheme.error, size: 13),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text(
                         '${voiceSeconds ~/ 60}:${(voiceSeconds % 60).toString().padLeft(2, '0')}',
                         style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: SizedBox(
                           height: 26,
@@ -11884,7 +11846,7 @@ class _ChatPageState extends State<ChatPage> {
                         tooltip: trUi('لغو ضبط'),
                         visualDensity: VisualDensity.compact,
                         onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(cancel: true),
-                        icon: const Icon(Icons.delete_outline_rounded),
+                        icon: Icon(Icons.delete_outline_rounded),
                         color: scheme.error,
                       ),
                       IconButton(
@@ -11898,7 +11860,7 @@ class _ChatPageState extends State<ChatPage> {
                         tooltip: trUi('پایان ضبط و ارسال ویس'),
                         visualDensity: VisualDensity.compact,
                         onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(),
-                        icon: const Icon(Icons.send_rounded, size: 19),
+                        icon: Icon(Icons.send_rounded, size: 19),
                       ),
                     ],
                   ),
@@ -12080,7 +12042,7 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 3),
+                          SizedBox(width: 3),
                           IconButton(
                             style: IconButton.styleFrom(
                               backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
@@ -12108,8 +12070,8 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                               onPressed: sending ? null : sendText,
                               icon: sending
-                                  ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Icon(Icons.send_rounded, size: 24),
+                                  ? SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : Icon(Icons.send_rounded, size: 24),
                             )
                           else
                             IconButton(
@@ -12133,7 +12095,7 @@ class _ChatPageState extends State<ChatPage> {
                                       ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس')
                                       : trUi('ضبط ویس')),
                               icon: _voiceStarting
-                                  ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  ? SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                   : Icon(recordingVoice ? Icons.send_rounded : Icons.mic_rounded, color: Colors.white, size: 27),
                             ),
                         ],
@@ -12176,8 +12138,8 @@ class _ChatVideoAttachmentState extends State<_ChatVideoAttachment> {
 
   @override Widget build(BuildContext context) {
     final c = _controller;
-    if (_error != null) return Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.video_file_rounded), const SizedBox(width: 8), Text(_error!)]);
-    if (c == null || !c.value.isInitialized) return const SizedBox(width: 250, height: 150, child: Center(child: CircularProgressIndicator()));
+    if (_error != null) return Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.video_file_rounded), SizedBox(width: 8), Text(_error!)]);
+    if (c == null || !c.value.isInitialized) return SizedBox(width: 250, height: 150, child: Center(child: CircularProgressIndicator()));
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: SizedBox(
@@ -12213,7 +12175,7 @@ class _SearchSectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
   const _SearchSectionHeader({required this.title, required this.icon});
-  @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(8, 14, 8, 6), child: Row(children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w900))]));
+  @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(8, 14, 8, 6), child: Row(children: [Icon(icon, size: 18), SizedBox(width: 8), Text(title, style: TextStyle(fontWeight: FontWeight.w900))]));
 }
 
 class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
@@ -12250,15 +12212,15 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           toDate = null;
           showSuggestions(context);
         },
-        icon: const Icon(Icons.filter_alt_off_rounded),
+        icon: Icon(Icons.filter_alt_off_rounded),
       ),
     IconButton(
       tooltip: 'فیلتر جستجو',
       onPressed: () => _openFilters(context),
-      icon: Badge(isLabelVisible: _hasFilters, smallSize: 7, child: const Icon(Icons.tune_rounded)),
+      icon: Badge(isLabelVisible: _hasFilters, smallSize: 7, child: Icon(Icons.tune_rounded)),
     ),
     if (query.isNotEmpty)
-      IconButton(tooltip: 'پاک کردن متن', onPressed: () => query = '', icon: const Icon(Icons.clear)),
+      IconButton(tooltip: 'پاک کردن متن', onPressed: () => query = '', icon: Icon(Icons.clear)),
   ];
 
   bool get _hasFilters => contentType != 'all' || senderId != null || fromDate != null || toDate != null;
@@ -12336,7 +12298,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                   children: [
                     Row(
                       children: [
-                        const Expanded(child: Text('فیلتر پیشرفته جستجو', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                        Expanded(child: Text('فیلتر پیشرفته جستجو', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
                         TextButton(
                           onPressed: () => setSheetState(() {
                             nextType = 'all';
@@ -12348,9 +12310,9 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text('نوع محتوا', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -12371,18 +12333,18 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 18),
+                    SizedBox(height: 18),
                     Text('فرستنده', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     FutureBuilder<List<Map<String,dynamic>>>(
                       future: _sendersFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
+                        if (snapshot.connectionState == ConnectionState.waiting) return LinearProgressIndicator();
                         final people = snapshot.data ?? [];
                         return DropdownButtonFormField<String?>(
                            value: nextSender,
                           isExpanded: true,
-                          decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
+                          decoration: InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [
                             const DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
                             ...people.map((p) => DropdownMenuItem<String?>(
@@ -12394,9 +12356,9 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                           );
                         },
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14),
                     ListTile(
-                      leading: const Icon(Icons.date_range_rounded),
+                      leading: Icon(Icons.date_range_rounded),
                       title: Text(nextFrom == null ? 'از تاریخ' : 'از ${nextFrom!.year}/${nextFrom!.month}/${nextFrom!.day}'),
                       onTap: () async {
                         final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextFrom ?? DateTime.now());
@@ -12404,14 +12366,14 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.event_rounded),
+                      leading: Icon(Icons.event_rounded),
                       title: Text(nextTo == null ? 'تا تاریخ' : 'تا ${nextTo!.year}/${nextTo!.month}/${nextTo!.day}'),
                       onTap: () async {
                         final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextTo ?? DateTime.now());
                         if (d != null) setSheetState(() => nextTo = d);
                       },
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     FilledButton.icon(
                       onPressed: () {
                         contentType = nextType;
@@ -12421,7 +12383,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                         Navigator.pop(sheetContext);
                         showSuggestions(context);
                       },
-                      icon: const Icon(Icons.check_rounded),
+                      icon: Icon(Icons.check_rounded),
                       label: Text(trUi('اعمال فیلتر')),
                     ),
                   ],
@@ -12443,16 +12405,16 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   Widget _messageResults(BuildContext context) => FutureBuilder<List<Map<String,dynamic>>>(
     future: _search(),
     builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+      if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
       if (snapshot.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snapshot.error}')));
       final rows = snapshot.data ?? const <Map<String,dynamic>>[];
-      if (rows.isEmpty) return const Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
+      if (rows.isEmpty) return Center(child: Text(trUi('نتیجه‌ای پیدا نشد.')));
       return ListView.builder(
         itemCount: rows.length,
         itemBuilder: (context, index) {
           final m = rows[index];
           return ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.message_rounded)),
+            leading: CircleAvatar(child: Icon(Icons.message_rounded)),
             title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
             subtitle: Text('${m['message_type'] ?? 'text'} • ${m['created_at'] ?? ''}'),
             onTap: () => close(context, m),
@@ -12464,7 +12426,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-    icon: const Icon(Icons.arrow_back),
+    icon: Icon(Icons.arrow_back),
     onPressed: () => close(context, null),
   );
 }
@@ -12571,13 +12533,13 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   }
 
   @override Widget build(BuildContext context){
-    if(checking)return const Scaffold(body:Center(child:CircularProgressIndicator()));
+    if(checking)return Scaffold(body:Center(child:CircularProgressIndicator()));
     if(!locked)return widget.child;
     return Scaffold(body:Center(child:Padding(padding:const EdgeInsets.all(28),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
-      const Icon(Icons.lock_rounded,size:64),const SizedBox(height:18),
-      const Text('Arad Messenger قفل است',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
-      const SizedBox(height:8),Text(trUi('برای ادامه، PIN یا احراز هویت بیومتریک را تأیید کنید.')),
-      const SizedBox(height:20),FilledButton.icon(onPressed:_unlock,icon:const Icon(Icons.lock_open_rounded),label:Text(trUi('باز کردن')))
+      Icon(Icons.lock_rounded,size:64),SizedBox(height:18),
+      Text('Arad Messenger قفل است',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+      SizedBox(height:8),Text(trUi('برای ادامه، PIN یا احراز هویت بیومتریک را تأیید کنید.')),
+      SizedBox(height:20),FilledButton.icon(onPressed:_unlock,icon:Icon(Icons.lock_open_rounded),label:Text(trUi('باز کردن')))
     ]))));
   }
 }
