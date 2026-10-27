@@ -616,7 +616,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   String autoDeleteLabel(int seconds) {
     if (seconds <= 0) return 'خاموش';
-    if (seconds < 86400) return 'پس از ${seconds ~/ 3600} ساعت';
     if (seconds < 604800) return 'پس از ${seconds ~/ 86400} روز';
     if (seconds < 2592000) return 'پس از ${seconds ~/ 604800} هفته';
     return 'پس از ${seconds ~/ 2592000} ماه';
@@ -625,7 +624,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Future<void> chooseAutoDelete() async {
     if (!canEditGroup || busy || group == null) return;
     final current = (group!['auto_delete_seconds'] as num?)?.toInt() ?? 0;
-    const options = <int>[0, 3600, 86400, 604800, 2592000];
+    const options = <int>[0, 86400, 604800, 2592000];
     final chosen = await showDialog<int>(
       context: context,
       builder: (dialog) => AlertDialog(
