@@ -12432,6 +12432,12 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   );
 }
 
+String _normalizePinDigits(String value) => value.runes.map((rune) {
+  if (rune >= 0x06F0 && rune <= 0x06F9) return String.fromCharCode(0x30 + rune - 0x06F0);
+  if (rune >= 0x0660 && rune <= 0x0669) return String.fromCharCode(0x30 + rune - 0x0660);
+  return String.fromCharCode(rune);
+}).join();
+
 class AppLockGate extends StatefulWidget {
   final Widget child;
   const AppLockGate({super.key, required this.child});
@@ -12489,8 +12495,9 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
           if(ok){if(mounted)setState(()=>locked=false);return;}
         } catch(_){}
       }
-      final pin = await _secure.read(key: 'app_lock_pin')
+      final storedPin = await _secure.read(key: 'app_lock_pin')
           .timeout(const Duration(seconds: 4));
+      final pin = storedPin == null ? null : _normalizePinDigits(storedPin);
       if (pin != null && pin.isNotEmpty && mounted) {
         await _showPin(pin);
       } else if (mounted) {
@@ -12517,7 +12524,10 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
         content:TextField(controller:c,autofocus:true,keyboardType:TextInputType.number,obscureText:true,maxLength:6,decoration:InputDecoration(labelText:'PIN',errorText:error)),
         actions:[FilledButton(onPressed:()=>Navigator.pop(ctx,c.text),child:const Text('باز کردن'))]));
       if(entered==null)break;
-      if(entered==pin){if(mounted)setState(()=>locked=false);break;}
+      if (entered != null && _normalizePinDigits(entered.trim()) == pin) {
+        if (mounted) setState(() => locked = false);
+        break;
+      }
       error='PIN نادرست است.'; c.clear();
     }
     c.dispose();
