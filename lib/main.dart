@@ -81,6 +81,7 @@ String t(String key, String locale) {
   const data = {
     'fa': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ورود با حساب Google','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
     'prs': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ورود با حساب Google','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
+    'haz': {'login':'داخل‌شدن','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ادامه با گوگل','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
     'ps': {'login':'ننوتل','signup':'نوم‌لیکنه','email':'برېښنالیک','password':'پټنوم','google':'د Google له لارې دوام','profile':'ستاسو پېژندپاڼه','continue':'دوام','settings':'امستنې','language':'ژبه'},
     'en': {'login':'Login','signup':'Sign up','email':'Email','password':'Password','google':'Continue with Google','profile':'Your profile','continue':'Continue','settings':'Settings','language':'Language'},
     'ar': {'login':'تسجيل الدخول','signup':'إنشاء حساب','email':'البريد الإلكتروني','password':'كلمة المرور','google':'المتابعة باستخدام Google','profile':'ملفك الشخصي','continue':'متابعة','settings':'الإعدادات','language':'اللغة'},
@@ -179,6 +180,7 @@ const Map<String, String> _dariUiExtra = <String, String>{
 // so existing navigation handlers and backend values are not changed.
 String trUi(String source) {
   final code = aradLanguageController.locale.languageCode;
+  if (code == 'haz') return _hazaragiUi[source] ?? _hazaragiFallback(source);
   if (code == 'fa') {
     const persian = <String, String>{
       'تنظیمات':'تنظیمات','جستجو در تنظیمات':'جستجو در تنظیمات','حساب شما':'حساب شما',
@@ -873,8 +875,8 @@ final appAccessibility = AppAccessibilityController();
 
 class AppStrings {
   // prs = Dari (Afghanistan), ps = Pashto. Both choices are saved locally and restored on next launch.
-  static const supported = ['fa', 'prs', 'ps', 'en', 'ar', 'tr', 'fr', 'de'];
-  static const names = {'fa':'فارسی','prs':'دری افغانستان','ps':'پښتو (افغانستان)','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
+  static const supported = ['fa', 'prs', 'haz', 'ps', 'en', 'ar', 'tr', 'fr', 'de'];
+  static const names = {'fa':'فارسی','prs':'دری افغانستان','haz':'هزارگی (افغانستان)','ps':'پښتو (افغانستان)','en':'English','ar':'العربية','tr':'Türkçe','fr':'Français','de':'Deutsch'};
 }
 
 
@@ -1138,7 +1140,7 @@ class AradMessenger extends StatelessWidget {
       // Flutter's built-in Material widgets do not ship prs/ps delegates; use Persian
       // for built-in date/dialog labels while the app keeps Dari/Pashto selection and RTL.
       localeResolutionCallback: (locale, supportedLocales) {
-        if (locale?.languageCode == 'prs' || locale?.languageCode == 'ps') return const Locale('fa');
+        if (locale?.languageCode == 'prs' || locale?.languageCode == 'haz' || locale?.languageCode == 'ps') return const Locale('fa');
         return locale;
       },
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -1173,7 +1175,7 @@ class AradMessenger extends StatelessWidget {
                   ),
                 ),
                 Directionality(
-                  textDirection: ['fa', 'prs', 'ps', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+                  textDirection: ['fa', 'prs', 'haz', 'ps', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
                   child: MediaQuery(
                     data: MediaQuery.of(context).copyWith(
                       textScaler: TextScaler.linear(appAccessibility.textScale),
