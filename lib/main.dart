@@ -6756,15 +6756,21 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     query.dispose();
     if(ids==null || ids.isEmpty)return;
     try {
-      // One bulk insert avoids a network round-trip for every selected contact.
-      final additions = ids.where((id) => !existing.contains(id)).map((id) => <String,dynamic>{
-        'conversation_id': widget.conversationId,
-        'user_id': id,
-        'role': 'member',
-      }).toList();
-      if (additions.isEmpty) { if (mounted) showMsg(context, 'این کاربران از قبل عضو گروه هستند.'); return; }
-      await supabase.from('conversation_members').insert(additions);
-      await _load(); if(mounted)showMsg(context,'اعضا به گروه اضافه شدند');
+      final selectedIds = ids.where((id) => !existing.contains(id)).toList();
+      if (selectedIds.isEmpty) {
+        if (mounted) showMsg(context, 'این کاربران از قبل عضو گروه هستند.');
+        return;
+      }
+      // Use the permission-checked RPC instead of a direct table insert.
+      final added = await supabase.rpc('add_group_members', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_user_ids': selectedIds,
+      });
+      await _load();
+      if (mounted) {
+        final count = added is num ? added.toInt() : selectedIds.length;
+        showMsg(context, count > 0 ? '$count عضو به گروه اضافه شد.' : 'عضو جدیدی اضافه نشد.');
+      }
     } catch(e){if(mounted)showMsg(context,'افزودن عضو ناموفق بود: '+_friendlyError(e.toString()));}
   }
 
