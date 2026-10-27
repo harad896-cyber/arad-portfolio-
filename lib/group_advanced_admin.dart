@@ -78,8 +78,39 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
     }catch(e){toast('اعمال محدودیت ناموفق بود: $e');}
     finally{if(mounted)setState(()=>busy=false);}
   }
-  Future<void> pin(String id)async{if(!owner||busy)return;try{await db.rpc('pin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('پیام سنجاق شد.');await load();}catch(e){toast('سنجاق کردن ناموفق بود: $e');}}
-  Future<void> unpin(String id)async{if(!owner||busy)return;try{await db.rpc('unpin_group_message',params:{'p_conversation_id':widget.conversationId,'p_message_id':id});toast('سنجاق برداشته شد.');await load();}catch(e){toast('برداشتن سنجاق ناموفق بود: $e');}}
+  Future<void> pin(String id) async {
+    if (!owner || busy) return;
+    setState(() => busy = true);
+    try {
+      await db.rpc('pin_group_message', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_message_id': id,
+      });
+      toast('پیام سنجاق شد.');
+      await load();
+    } catch (e) {
+      toast('سنجاق کردن ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> unpin(String id) async {
+    if (!owner || busy) return;
+    setState(() => busy = true);
+    try {
+      await db.rpc('unpin_group_message', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_message_id': id,
+      });
+      toast('سنجاق برداشته شد.');
+      await load();
+    } catch (e) {
+      toast('برداشتن سنجاق ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
   Future<void> permissions(String id)async{
     if(!owner||busy)return;
     try {
@@ -106,31 +137,223 @@ class _GroupAdvancedAdminPageState extends State<GroupAdvancedAdminPage>{
     finally{if(mounted)setState(()=>busy=false);}
   }
   @override void initState(){super.initState();load();}
-  @override Widget build(BuildContext context){
-    if(loading)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:const AppSkeletonList(count: 6));
-    if(!owner)return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته')),body:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.lock_outline_rounded,size:48),const SizedBox(height:12),const Text('این بخش فقط برای مالک گروه قابل دسترسی است.',textAlign:TextAlign.center),const SizedBox(height:12),OutlinedButton.icon(onPressed:load,icon:const Icon(Icons.refresh_rounded),label:const Text('بررسی دوباره'))]))));
-    final pinnedIds=pinned.map((p)=>p['message_id'].toString()).toSet();
-    return Scaffold(appBar:AppBar(title:const Text('مدیریت پیشرفته'),actions:[IconButton(tooltip:'تازه‌سازی',onPressed:busy?null:load,icon:const Icon(Icons.refresh_rounded))]),body:ListView(padding:const EdgeInsets.all(12),children:[
-      Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const Text('مدیران و اختیارات',style:TextStyle(fontSize:17,fontWeight:FontWeight.w900)),
-        const SizedBox(height:4),
-        const Text('اختیارات هر مدیر را جداگانه تنظیم کنید. مالک گروه همیشه کنترل کامل دارد.'),
-        if(admins.isEmpty) const ListTile(leading:Icon(Icons.admin_panel_settings_outlined),title:Text('مدیر دیگری تعیین نشده است')),
-        ...admins.map((m){final id=m['user_id'].toString();final a=avatarOf(id);return ListTile(contentPadding:EdgeInsets.zero,leading:CircleAvatar(backgroundImage:a.isNotEmpty?NetworkImage(a):null,child:a.isEmpty?const Icon(Icons.person):null),title:Text(nameOf(id)),subtitle:const Text('مدیر گروه'),trailing:IconButton(tooltip:'تنظیم اختیارات',onPressed:busy?null:()=>permissions(id),icon:const Icon(Icons.tune_rounded)));}),
-      ]))),
-      Card(child:ListTile(leading:const Icon(Icons.how_to_reg_rounded),title:const Text('درخواست‌های عضویت',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text(requests.length.toString()+' درخواست در انتظار بررسی'))),
-      ...requests.map((r){final id=r['user_id'].toString();final a=avatarOf(id);return Card(child:ListTile(leading:CircleAvatar(backgroundImage:a.isNotEmpty?NetworkImage(a):null,child:a.isEmpty?const Icon(Icons.person):null),title:Text(nameOf(id)),subtitle:const Text('درخواست عضویت'),trailing:Wrap(children:[IconButton(onPressed:busy?null:()=>review(r['id'].toString(),false),icon:const Icon(Icons.close_rounded)),IconButton(onPressed:busy?null:()=>review(r['id'].toString(),true),icon:const Icon(Icons.check_rounded))])));}),
-      const SizedBox(height:8),
-      Card(child:ListTile(leading:const Icon(Icons.block_rounded),title:const Text('محروم‌شده‌ها',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text(banned.length.toString()+' نفر'))),
-      ...banned.map((b){final id=b['user_id'].toString();final a=avatarOf(id);return Card(child:ListTile(leading:CircleAvatar(backgroundImage:a.isNotEmpty?NetworkImage(a):null,child:a.isEmpty?const Icon(Icons.person):null),title:Text(nameOf(id)),subtitle:Text((b['reason']??'بدون دلیل').toString()),trailing:Wrap(children:[IconButton(onPressed:busy?null:()=>unban(id),icon:const Icon(Icons.lock_open_rounded)),IconButton(onPressed:busy?null:()=>restrict(id),icon:const Icon(Icons.tune_rounded))])));}),
-      const SizedBox(height:8),
-      Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const Text('سنجاق پیام‌ها',style:TextStyle(fontSize:17,fontWeight:FontWeight.w900)),const SizedBox(height:4),
-        if(pinned.isEmpty)const Text('هنوز پیامی سنجاق نشده است.'),
-        ...pinned.map((p){final id=p['message_id'].toString();final m=messages.firstWhere((x)=>x['id'].toString()==id,orElse:()=>{});return ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.push_pin_rounded),title:Text((m['body']??'پیام رسانه‌ای').toString(),maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(nameOf((m['sender_id']??'').toString())),trailing:IconButton(onPressed:()=>unpin(id),icon:const Icon(Icons.close_rounded)));}),
-        const Divider(),const Text('آخرین پیام‌ها برای سنجاق',style:TextStyle(fontWeight:FontWeight.w700)),
-        ...messages.where((m)=>!pinnedIds.contains(m['id'].toString())).take(12).map((m)=>ListTile(contentPadding:EdgeInsets.zero,title:Text((m['body']??'پیام رسانه‌ای').toString(),maxLines:1,overflow:TextOverflow.ellipsis),subtitle:Text(nameOf(m['sender_id'].toString())),trailing:IconButton(onPressed:()=>pin(m['id'].toString()),icon:const Icon(Icons.push_pin_outlined)))),
-      ]))),
-    ]));
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('مدیریت پیشرفته')),
+        body: const AppSkeletonList(count: 6),
+      );
+    }
+    if (!owner) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('مدیریت پیشرفته')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline_rounded, size: 48),
+                const SizedBox(height: 12),
+                const Text('این بخش فقط برای مالک گروه قابل دسترسی است.', textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: load,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('بررسی دوباره'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final pinnedIds = pinned.map((p) => p['message_id'].toString()).toSet();
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('مدیریت پیشرفته'),
+        actions: [
+          IconButton(
+            tooltip: 'تازه‌سازی',
+            onPressed: busy ? null : load,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('مدیران و اختیارات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 3),
+                  Text(
+                    'اختیارات هر مدیر را جداگانه تنظیم کنید.',
+                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  if (admins.isEmpty)
+                    const ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.admin_panel_settings_outlined),
+                      title: Text('مدیر دیگری تعیین نشده است'),
+                    ),
+                  ...admins.map((m) {
+                    final id = m['user_id'].toString();
+                    final a = avatarOf(id);
+                    return ListTile(
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        radius: 19,
+                        backgroundImage: a.isNotEmpty ? NetworkImage(a) : null,
+                        child: a.isEmpty ? const Icon(Icons.person, size: 19) : null,
+                      ),
+                      title: Text(nameOf(id), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: const Text('مدیر گروه'),
+                      trailing: IconButton(
+                        tooltip: 'تنظیم اختیارات',
+                        onPressed: busy ? null : () => permissions(id),
+                        icon: const Icon(Icons.tune_rounded),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              leading: const Icon(Icons.how_to_reg_rounded),
+              title: const Text('درخواست‌های عضویت', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text('${requests.length} درخواست در انتظار بررسی'),
+              children: requests.isEmpty
+                  ? [const ListTile(dense: true, title: Text('درخواستی برای بررسی وجود ندارد.'))]
+                  : requests.map((r) {
+                      final id = r['user_id'].toString();
+                      final a = avatarOf(id);
+                      return ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 19,
+                          backgroundImage: a.isNotEmpty ? NetworkImage(a) : null,
+                          child: a.isEmpty ? const Icon(Icons.person, size: 19) : null,
+                        ),
+                        title: Text(nameOf(id), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: const Text('درخواست عضویت'),
+                        trailing: Wrap(
+                          spacing: 0,
+                          children: [
+                            IconButton(
+                              tooltip: 'رد درخواست',
+                              onPressed: busy ? null : () => review(r['id'].toString(), false),
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                            IconButton(
+                              tooltip: 'پذیرش درخواست',
+                              onPressed: busy ? null : () => review(r['id'].toString(), true),
+                              icon: const Icon(Icons.check_rounded),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+            ),
+          ),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              leading: const Icon(Icons.block_rounded),
+              title: const Text('محروم‌شده‌ها', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text('${banned.length} نفر'),
+              children: banned.isEmpty
+                  ? [const ListTile(dense: true, title: Text('عضو محروم‌شده‌ای وجود ندارد.'))]
+                  : banned.map((b) {
+                      final id = b['user_id'].toString();
+                      final a = avatarOf(id);
+                      return ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 19,
+                          backgroundImage: a.isNotEmpty ? NetworkImage(a) : null,
+                          child: a.isEmpty ? const Icon(Icons.person, size: 19) : null,
+                        ),
+                        title: Text(nameOf(id), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text((b['reason'] ?? 'بدون دلیل').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        trailing: Wrap(
+                          spacing: 0,
+                          children: [
+                            IconButton(
+                              tooltip: 'رفع محرومیت',
+                              onPressed: busy ? null : () => unban(id),
+                              icon: const Icon(Icons.lock_open_rounded),
+                            ),
+                            IconButton(
+                              tooltip: 'تنظیم محدودیت',
+                              onPressed: busy ? null : () => restrict(id),
+                              icon: const Icon(Icons.tune_rounded),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+            ),
+          ),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              leading: const Icon(Icons.push_pin_rounded),
+              title: const Text('سنجاق پیام‌ها', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text('${pinned.length} پیام سنجاق‌شده • ${messages.length} پیام اخیر'),
+              children: [
+                if (pinned.isEmpty)
+                  const ListTile(dense: true, title: Text('هنوز پیامی سنجاق نشده است.')),
+                ...pinned.map((p) {
+                  final id = p['message_id'].toString();
+                  final m = messages.firstWhere((x) => x['id'].toString() == id, orElse: () => {});
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.push_pin_rounded),
+                    title: Text((m['body'] ?? 'پیام رسانه‌ای').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(nameOf((m['sender_id'] ?? '').toString())),
+                    trailing: IconButton(
+                      tooltip: 'برداشتن سنجاق',
+                      onPressed: busy ? null : () => unpin(id),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  );
+                }),
+                const Divider(height: 1),
+                const ListTile(dense: true, title: Text('پیام‌های اخیر برای سنجاق', style: TextStyle(fontWeight: FontWeight.w700))),
+                ...messages.where((m) => !pinnedIds.contains(m['id'].toString())).take(12).map((m) {
+                  final id = m['id'].toString();
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.chat_bubble_outline_rounded),
+                    title: Text((m['body'] ?? 'پیام رسانه‌ای').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(nameOf(m['sender_id'].toString())),
+                    trailing: IconButton(
+                      tooltip: 'سنجاق پیام',
+                      onPressed: busy ? null : () => pin(id),
+                      icon: const Icon(Icons.push_pin_outlined),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
