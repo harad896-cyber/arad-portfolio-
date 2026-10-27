@@ -12346,7 +12346,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                           isExpanded: true,
                           decoration: InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
+                            DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
                               child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
