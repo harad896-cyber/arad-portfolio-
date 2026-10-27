@@ -593,6 +593,13 @@ class AradMessenger extends StatelessWidget {
           filled: true,
           fillColor: const Color(0xFFF0F2F8),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          hintStyle: const TextStyle(color: const Color(0xFF6C7180), fontSize: 14),
+          labelStyle: const TextStyle(color: const Color(0xFF171320), fontSize: 14),
+          floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
+          helperStyle: const TextStyle(color: const Color(0xFF6C7180), fontSize: 12),
+          errorStyle: const TextStyle(color: Color(0xFFB42318), fontSize: 12),
+          prefixIconColor: Color(appTheme.seed),
+          suffixIconColor: const Color(0xFF6C7180),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
@@ -605,6 +612,11 @@ class AradMessenger extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: Color(appTheme.seed),
+          selectionColor: Color(appTheme.seed).withValues(alpha: .28),
+          selectionHandleColor: Color(appTheme.seed),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
@@ -673,6 +685,13 @@ class AradMessenger extends StatelessWidget {
           filled: true,
           fillColor: const Color(0xFF0B2032),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          hintStyle: const TextStyle(color: const Color(0xFF9DAFC0), fontSize: 14),
+          labelStyle: const TextStyle(color: const Color(0xFFE8EDF5), fontSize: 14),
+          floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
+          helperStyle: const TextStyle(color: const Color(0xFF9DAFC0), fontSize: 12),
+          errorStyle: const TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
+          prefixIconColor: Color(appTheme.seed),
+          suffixIconColor: const Color(0xFF9DAFC0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFF263653))
@@ -685,6 +704,11 @@ class AradMessenger extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: Color(appTheme.seed),
+          selectionColor: Color(appTheme.seed).withValues(alpha: .28),
+          selectionHandleColor: Color(appTheme.seed),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
