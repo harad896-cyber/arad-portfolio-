@@ -262,7 +262,7 @@ String _hazaragiFallback(String source) {
     'خروج از حساب؟':'از حساب برآیه؟', 'نشست این دستگاه پایان داده می‌شود.':'نشست ای دستگاه ختم می‌شه.',
     'پیدا کردن حساب':'پیدا کدن حساب', 'تنظیمات حساب':'تنظیمات حساب',
     'افزودن':'اضافه کو', 'ذخیره':'ذخیره کو', 'لغو':'لغو کو', 'بستن':'بسته کو',
-    'تاریک':'تاریک', 'روشن':'روشن', 'تلاش دوباره':'دوباره کوشش کو',
+    'تاریک':'تاریک', 'روشن':'روشن',
     'برنامه نتوانست راه‌اندازی شود.':'برنامه شروع شده نتانست.',
     'در حال آماده‌سازی برنامه…':'د حال آماده کدن برنامه…',
     'نام کاربری':'نام کاربری', 'نام کامل':'نام مکمل', 'نام':'نام',
@@ -6269,8 +6269,8 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                 if (groups.isEmpty) Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text(trUi('هیچ گروه مشترکی ندارید.'))),
                 ...groups.map((g) => ListTile(
                   leading: CircleAvatar(child: Icon((g['type'] ?? 'group') == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded)),
-                  title: Text(trUi('${g[')title'] ?? 'گروه'}'),
-                  subtitle: Text(trUi('${g[')type'] == 'channel' ? 'کانال' : 'گروه'} مشترک'),
+                  title: Text(trUi('${g['title'] ?? 'گروه'}'),
+                  subtitle: Text(trUi('${g['type'] == 'channel' ? 'کانال' : 'گروه'} مشترک'),
                   trailing: const Icon(Icons.chevron_left_rounded),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: '${g['id']}', title: '${g['title'] ?? 'گروه'}'))),
                 )),
@@ -6465,8 +6465,8 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
           children: rows.map((p) {
             return ListTile(
               leading: avatar(p),
-              title: Text(trUi('${p[')display_name'] ?? ''}'),
-              subtitle: Text(trUi('@${p[')username'] ?? ''}'),
+              title: Text(trUi('${p['display_name'] ?? ''}'),
+              subtitle: Text(trUi('@${p['username'] ?? ''}'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: p))),
             );
           }).toList(),
@@ -6592,7 +6592,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: Chip(
-                      label: Text(trUi('${p[')display_name'] ?? ''}'),
+                      label: Text(trUi('${p['display_name'] ?? ''}'),
                       onDeleted: () => setState(() => selected.remove(p)),
                     ),
                   );
@@ -6629,8 +6629,8 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
                 final isSelected = selected.any((x) => x['id'] == p['id']);
                 return ListTile(
                   leading: avatar(p),
-                  title: Text(trUi('${p[')display_name'] ?? ''}'),
-                  subtitle: Text(trUi('@${p[')username'] ?? ''}'),
+                  title: Text(trUi('${p['display_name'] ?? ''}'),
+                  subtitle: Text(trUi('@${p['username'] ?? ''}'),
                   trailing: Icon(isSelected ? Icons.check_circle : Icons.add),
                   onTap: () => setState(() {
                     if (isSelected) {
@@ -7137,7 +7137,7 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
       body:loading?const Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
         final m=filtered[i]; final a=attachments['${m['id']}']; final name=(a?['file_name']??m['body']??'رسانه').toString(); final type='${m['message_type']??''}';
         final icon=type=='image'?Icons.image_rounded:type=='video'?Icons.video_file_rounded:type=='file'?Icons.insert_drive_file_rounded:Icons.audiotrack_rounded;
-        return Card(child:ListTile(leading:CircleAvatar(child:Icon(icon)),title:Text(name,maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(trUi('${m[')created_at']??''}'),trailing:const Icon(Icons.chevron_left_rounded),onTap:() async {
+        return Card(child:ListTile(leading:CircleAvatar(child:Icon(icon)),title:Text(name,maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(trUi('${m['created_at']??''}'),trailing:const Icon(Icons.chevron_left_rounded),onTap:() async {
           final url=await _url(m); if(url==null){if(mounted)showMsg(context,'لینک این فایل در دسترس نیست.');return;} if(!mounted)return;
           await showDialog<void>(context:context,builder:(_)=>AlertDialog(title:Text(name),content:SelectableText(url),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:Text(trUi('بستن')))]));
         }));
@@ -7468,7 +7468,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final action = await showModalBottomSheet<String>(
       context: context, showDragHandle: true,
       builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ListTile(leading: avatar(profile), title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(trUi('@${profile[')username'] ?? ''}')),
+        ListTile(leading: avatar(profile), title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(trUi('@${profile['username'] ?? ''}')),
         ListTile(leading: const Icon(Icons.person_outline_rounded), title: Text(trUi('مشاهده پروفایل')), onTap: () => Navigator.pop(sheet, 'profile')),
         if (isCreator) ListTile(leading: Icon(targetRole == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded), title: Text(targetRole == 'admin' ? 'عزل از مدیریت' : 'تعیین به‌عنوان مدیر'), onTap: () => Navigator.pop(sheet, 'role')),
         if (canRemoveMembers) ...[
@@ -7567,7 +7567,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
           final q=query.text.trim().toLowerCase();
           final people=(snap.data??[]).where((p)=>!existing.contains(p['id'].toString()) && ('${p['display_name']??''} ${p['username']??''}').toLowerCase().contains(q)).toList();
           if(people.isEmpty)return Center(child:Text(q.isEmpty ? 'مخاطب جدیدی در فهرست مخاطبان شما نیست.' : 'مخاطبی با این نام پیدا نشد.'));
-          return ListView.builder(itemCount:people.length,itemBuilder:(ctx,i){final p=people[i];final id=p['id'].toString();return CheckboxListTile(value:selected.contains(id),onChanged:(v)=>setDialog(()=>v==true?selected.add(id):selected.remove(id)),secondary:avatar(p),title:Text(trUi('${p[')display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'':'@${p['username']}'));});
+          return ListView.builder(itemCount:people.length,itemBuilder:(ctx,i){final p=people[i];final id=p['id'].toString();return CheckboxListTile(value:selected.contains(id),onChanged:(v)=>setDialog(()=>v==true?selected.add(id):selected.remove(id)),secondary:avatar(p),title:Text(trUi('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'':'@${p['username']}'));});
         })),
       ])),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(trUi('لغو'))),FilledButton(onPressed:selected.isEmpty?null:()=>Navigator.pop(ctx,selected.toList()),child:Text(trUi('دعوت (${selected.length})')))],
@@ -7672,7 +7672,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
               visualDensity: VisualDensity.compact,
               minVerticalPadding: 4,
               leading: avatar(p),
-              title: Text(trUi('${p[')display_name'] ?? p['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text(trUi('${p['display_name'] ?? p['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(p['username'] == null ? '' : '@${p['username']}'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -7847,8 +7847,8 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
                   final id = (m['user_id'] ?? p['id'] ?? '').toString();
                   return ListTile(
                     leading: avatar(p),
-                    title: Text(trUi('${p[')display_name'] ?? p['username'] ?? 'کاربر'}'),
-                    subtitle: Text(trUi('${m[')role'] ?? 'member'}'),
+                    title: Text(trUi('${p['display_name'] ?? p['username'] ?? 'کاربر'}'),
+                    subtitle: Text(trUi('${m['role'] ?? 'member'}'),
                     trailing: const Icon(Icons.chevron_left_rounded),
                     onTap: id.isEmpty
                         ? null
@@ -8003,7 +8003,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           ],
           if (publicChats.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'گروه‌ها و کانال‌های عمومی', icon: Icons.public_rounded),
-            ...publicChats.map((c) { final type = (c['type'] ?? 'group').toString(); final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(type == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded) : null), title: Text((c['title'] ?? c['username'] ?? 'گروه عمومی').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(trUi('@${c[')username'] ?? ''} • ${type == 'channel' ? 'کانال عمومی' : 'گروه عمومی'}'), trailing: const Icon(Icons.arrow_forward_rounded), onTap: () => _openPublicConversation(context, c)); }),
+            ...publicChats.map((c) { final type = (c['type'] ?? 'group').toString(); final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(type == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded) : null), title: Text((c['title'] ?? c['username'] ?? 'گروه عمومی').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(trUi('@${c['username'] ?? ''} • ${type == 'channel' ? 'کانال عمومی' : 'گروه عمومی'}'), trailing: const Icon(Icons.arrow_forward_rounded), onTap: () => _openPublicConversation(context, c)); }),
           ],
           if (messages.isNotEmpty) ...[
             const _SearchSectionHeader(title: 'پیام‌ها', icon: Icons.chat_bubble_outline_rounded),
@@ -10524,7 +10524,7 @@ class _ChatPageState extends State<ChatPage> {
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-      child: Text(trUi('${_senderName(parent!)}: ${parent[')body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+      child: Text(trUi('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -11043,7 +11043,7 @@ class _ChatPageState extends State<ChatPage> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(trUi('${_dateLabel(m[')created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10,  color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
+                        Text(trUi('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10,  color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
                         if (m['edited_at'] != null) ...[
                           const SizedBox(width: 4),
                           Text(trUi('ویرایش‌شده'), style: TextStyle(fontSize: 9, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
@@ -11704,8 +11704,8 @@ class _ChatPageState extends State<ChatPage> {
                         backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
                         child: avatar.isEmpty ? const Icon(Icons.person_outline_rounded, size: 18) : null,
                       ),
-                      title: Text(trUi('${profile[')display_name'] ?? profile['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(trUi('@${profile[')username']}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      title: Text(trUi('${profile['display_name'] ?? profile['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(trUi('@${profile['username']}', maxLines: 1, overflow: TextOverflow.ellipsis),
                       onTap: () => _insertMention(profile),
                     );
                   },
@@ -11728,7 +11728,7 @@ class _ChatPageState extends State<ChatPage> {
                         Icon(Icons.reply_rounded, size: 20, color: scheme.primary),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(trUi('${_senderName(replyMessage!)}: ${replyMessage![')body'] ?? ''}',
+                          child: Text(trUi('${_senderName(replyMessage!)}: ${replyMessage!['body'] ?? ''}',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -11800,7 +11800,7 @@ class _ChatPageState extends State<ChatPage> {
                     children: [
                       Icon(Icons.fiber_manual_record_rounded, color: scheme.error, size: 13),
                       const SizedBox(width: 6),
-                      Text(trUi('${voiceSeconds ~/ 60}:${(voiceSeconds % 60).toString().padLeft(2, ')0')}',
+                      Text(trUi('${voiceSeconds ~/ 60}:${(voiceSeconds % 60).toString().padLeft(2, '0')}',
                         style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
                       const SizedBox(width: 8),
@@ -12332,10 +12332,10 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                           isExpanded: true,
                           decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
+                            DropdownMenuItem<String?>(value: null, child: Text(trUi('همه فرستنده‌ها'))),
                             ...people.map((p) => DropdownMenuItem<String?>(
                               value: p['id'].toString(),
-                              child: Text(trUi('${p[')display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
+                              child: Text(trUi('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
                             )),
                           ],
                           onChanged: (v) => setSheetState(() => nextSender = v),
@@ -12402,7 +12402,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
           return ListTile(
             leading: const CircleAvatar(child: Icon(Icons.message_rounded)),
             title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
-            subtitle: Text(trUi('${m[')message_type'] ?? 'text'} • ${m['created_at'] ?? ''}'),
+            subtitle: Text(trUi('${m['message_type'] ?? 'text'} • ${m['created_at'] ?? ''}'),
             onTap: () => close(context, m),
           );
         },
