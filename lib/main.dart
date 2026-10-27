@@ -177,7 +177,7 @@ const Map<String, String> _dariUiExtra = <String, String>{
 
 // هزارگی: ترجمهٔ مستقیم برچسب‌های اصلی و یک لایهٔ واژگانی برای متن‌های
 // پراکندهٔ برنامه؛ شناسه‌ها و داده‌های ذخیره‌شده تغییر نمی‌کنند.
-const Map<String, String> _hazaragiUi = <String, String>{
+final Map<String, String> _hazaragiUi = <String, String>{
   'حساب شما':'حساب شُما',
   'حساب واردشده':'حسابی که داخل شُدین',
   'افزودن یا تغییر حساب':'حساب نو اضافه کو یا حساب ره تبدیل کو',
