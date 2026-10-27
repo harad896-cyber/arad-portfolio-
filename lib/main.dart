@@ -6761,12 +6761,51 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:const BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:const Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
         const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
         const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
-        const SizedBox(height:14),Wrap(alignment:WrapAlignment.center,spacing:10,runSpacing:8,children:[
-          if(canAddMembers) FilledButton.icon(onPressed:saving?null:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
-          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('اطلاعات گروه')),
-          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_openGroupSettings,icon:const Icon(Icons.tune_rounded),label:const Text('اختیارات و تنظیمات')),
-          if(canManageMembers) OutlinedButton.icon(onPressed:saving?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.conversationId,title:title))).then((_)=>_load()),icon:const Icon(Icons.admin_panel_settings_rounded),label:const Text('مدیریت اعضا')),
-          if(isCreator) OutlinedButton.icon(onPressed:saving?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupAdvancedAdminPage(conversationId:widget.conversationId,title:title))).then((_)=>_load()),icon:const Icon(Icons.shield_rounded),label:const Text('مدیریت پیشرفته')),
+        const SizedBox(height:12),
+        Wrap(alignment:WrapAlignment.center,spacing:8,runSpacing:8,children:[
+          if(canAddMembers) FilledButton.icon(
+            onPressed:saving?null:_addMembers,
+            icon:const Icon(Icons.person_add_alt_1_rounded,size:18),
+            label:const Text('افزودن عضو'),
+          ),
+          PopupMenuButton<String>(
+            enabled:!saving && (canEditRules || canManageMembers || isCreator),
+            tooltip:'گزینه‌های گروه',
+            onSelected:(action) async {
+              switch(action) {
+                case 'edit':
+                  await _editRules();
+                  break;
+                case 'settings':
+                  await _openGroupSettings();
+                  break;
+                case 'members':
+                  await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.conversationId,title:title)));
+                  if(mounted) await _load();
+                  break;
+                case 'advanced':
+                  await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupAdvancedAdminPage(conversationId:widget.conversationId,title:title)));
+                  if(mounted) await _load();
+                  break;
+              }
+            },
+            itemBuilder:(_)=>[
+              if(canEditRules) const PopupMenuItem(value:'edit',child:Row(children:[Icon(Icons.edit_note_rounded),SizedBox(width:10),Text('ویرایش نام و توضیحات')])),
+              if(canEditRules) const PopupMenuItem(value:'settings',child:Row(children:[Icon(Icons.tune_rounded),SizedBox(width:10),Text('تنظیمات و اختیارات')])),
+              if(canManageMembers) const PopupMenuItem(value:'members',child:Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:10),Text('مدیریت اعضا')])),
+              if(isCreator) const PopupMenuItem(value:'advanced',child:Row(children:[Icon(Icons.shield_rounded),SizedBox(width:10),Text('مدیریت پیشرفته')])),
+            ],
+            child:Container(
+              padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
+              decoration:BoxDecoration(
+                border:Border.all(color:scheme.outlineVariant),
+                borderRadius:BorderRadius.circular(14),
+              ),
+              child:const Row(mainAxisSize:MainAxisSize.min,children:[
+                Icon(Icons.more_horiz_rounded,size:20),SizedBox(width:7),Text('مدیریت گروه'),
+              ]),
+            ),
+          ),
         ]),
       ])),
       const SizedBox(height:20),
