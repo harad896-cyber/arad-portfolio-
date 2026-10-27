@@ -289,6 +289,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   List<Map<String, dynamic>> members = [];
   Map<String, Map<String, dynamic>> profiles = {};
   bool loading = true, busy = false, admin = false, owner = false, canEditGroup = false, canRemoveMembers = false, canAddMembers = false, canDeleteMessages = false;
+  String memberQuery = '';
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
@@ -560,10 +561,49 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (canEditGroup) IconButton(onPressed: editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
       Card(child: ListTile(leading: CircleAvatar(backgroundImage: (group!['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(group!['avatar_url'].toString()) : null, child: (group!['avatar_url'] ?? '').toString().isEmpty ? const Icon(Icons.groups) : null), title: Text((group!['title'] ?? widget.title).toString(), style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(owner ? 'مالک گروه' : 'مدیر گروه'))),
       const SizedBox(height: 8),
-      const Text('اعضا', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-      const Text('«حذف از گروه» فقط اخراج است؛ «محروم کردن» اخراج + جلوگیری از عضویت دوباره است.'),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('مدیریت اعضا', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                Text('${members.length} عضو • ${members.where((m) => (m['role'] ?? 'member').toString() == 'admin').length} مدیر',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              ])),
+              CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                child: Icon(Icons.groups_rounded, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+            ]),
+            const SizedBox(height: 12),
+            TextField(
+              onChanged: (value) => setState(() => memberQuery = value.trim().toLowerCase()),
+              decoration: InputDecoration(
+                hintText: 'جستجوی نام یا نام کاربری عضو',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: memberQuery.isEmpty ? null : IconButton(
+                  tooltip: 'پاک کردن جستجو',
+                  onPressed: () => setState(() => memberQuery = ''),
+                  icon: const Icon(Icons.close_rounded)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                filled: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('«حذف از گروه» فقط اخراج است؛ «محروم کردن» از عضویت دوباره جلوگیری می‌کند.',
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ]),
+        ),
+      ),
       const SizedBox(height: 8),
-      ...members.map((m) {
+      ...members.where((m) {
+        if (memberQuery.isEmpty) return true;
+        final id = m['user_id'].toString();
+        final name = nameOf(id).toLowerCase();
+        final username = (profiles[id]?['username'] ?? '').toString().toLowerCase();
+        return name.contains(memberQuery) || username.contains(memberQuery) ||
+          (m['role'] ?? 'member').toString().toLowerCase().contains(memberQuery);
+      }).map((m) {
         final id = m['user_id'].toString(); final isGroupOwner = group!['created_by']?.toString() == id; final role = (m['role'] ?? 'member').toString(); final a = avatarOf(id);
         return Card(margin: const EdgeInsets.symmetric(vertical: 4), child: ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(isGroupOwner ? '👑 مالک' : role), trailing: isGroupOwner ? const Icon(Icons.lock_rounded) : ((canRemoveMembers || owner) ? PopupMenuButton<String>(onSelected: (v) { if (v == 'remove') removeMember(id); else if (v == 'ban') banMember(id); else if (v == 'admin') setRole(id, 'admin'); else if (v == 'member') setRole(id, 'member'); }, itemBuilder: (_) => <PopupMenuEntry<String>>[const PopupMenuItem(value: 'remove', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_remove_rounded), title: Text('حذف از گروه'))), const PopupMenuItem(value: 'ban', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.block_rounded), title: Text('محروم کردن'))), if (owner) const PopupMenuItem(value: 'admin', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.admin_panel_settings_rounded), title: Text('مدیر کردن'))), if (owner) const PopupMenuItem(value: 'member', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_rounded), title: Text('برداشتن مدیریت')))]) : null)));
       }),
