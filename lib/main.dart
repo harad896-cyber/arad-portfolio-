@@ -207,7 +207,8 @@ String trUi(String source) {
       'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'پیام‌هایی که برای خودتان ذخیره کرده‌اید',
       'ابزارهای پیشرفته متصل به Backend':'ابزارهای پیشرفته متصل به Backend',
       'نسخه، معماری و اطلاعات برنامه':'نسخه، معماری و اطلاعات برنامه',
-      'پیام خود را بنویسید…':'پیام خود را بنویسید…','پیوست‌ها':'پیوست‌ها','ارسال پیام':'ارسال پیام','گالری':'گالری','دوربین':'دوربین','فایل‌ها':'فایل‌ها','ویدئو':'ویدئو','موسیقی / صدا':'موسیقی / صدا','ضبط ویس':'ضبط ویس','افزودن به پیام':'افزودن به پیام',
+      'پیام خود را بنویسید…':'پیام خود را بنویسید…',
+      'بهبود نگارش':'بهبود نگارش','رسمی‌تر':'رسمی‌تر','صمیمی‌تر':'صمیمی‌تر','کوتاه‌تر':'کوتاه‌تر','پیوست‌ها':'پیوست‌ها','ارسال پیام':'ارسال پیام','گالری':'گالری','دوربین':'دوربین','فایل‌ها':'فایل‌ها','ویدئو':'ویدئو','موسیقی / صدا':'موسیقی / صدا','ضبط ویس':'ضبط ویس','افزودن به پیام':'افزودن به پیام',
     
       'واکنش به پیام':'واکنش به پیام',
       'افرادی که واکنش داده‌اند':'افرادی که واکنش داده‌اند',
@@ -443,7 +444,8 @@ String trUi(String source) {
       'هنوز گفتگویی ندارید':'No chats yet','نام یا عبارت دیگری را جستجو کنید.':'Search for another name or phrase.',
       'یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.':'Start a new chat or choose someone from Contacts.',
       'پیام نو':'New message','پیام جدید':'New message','پیام':'Message','پیام‌ها':'Messages',
-      'پیام خود را بنویسید…':'Write a message…','ارسال':'Send','ارسال پیام':'Send message',
+      'پیام خود را بنویسید…':'Write a message…',
+      'بهبود نگارش':'Improve writing','رسمی‌تر':'More formal','صمیمی‌تر':'Friendlier','کوتاه‌تر':'Shorten','ارسال':'Send','ارسال پیام':'Send message',
       'لغو':'Cancel','ذخیره':'Save','ذخیره تغییرات':'Save changes','تغییرات ذخیره شد':'Changes saved',
       'ویرایش':'Edit','حذف':'Delete','حذف برای همه':'Delete for everyone','حذف برای من':'Delete for me',
       'تأیید':'Confirm','بازگشت':'Back','برگشت':'Back','بستن':'Close','تمام شد':'Done',
@@ -614,7 +616,8 @@ String trUi(String source) {
       'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'هغه پیغامونه چې ځان ته مو خوندي کړي',
       'ابزارهای پیشرفته متصل به Backend':'له Backend سره تړلي پرمختللي وسایل',
       'نسخه، معماری و اطلاعات برنامه':'د نسخې، جوړښت او اپلېکېشن معلومات',
-      'پیام خود را بنویسید…':'خپل پیغام ولیکئ…','پیوست‌ها':'ضمیمې','ارسال پیام':'پیغام لېږل','گالری':'ګالري','دوربین':'کمره','فایل‌ها':'فایلونه','ویدئو':'ویډیو','موسیقی / صدا':'غږ / موسیقي','ضبط ویس':'غږ ثبتول','افزودن به پیام':'پیغام ته زیاتول',
+      'پیام خود را بنویسید…':'خپل پیغام ولیکئ…',
+      'بهبود نگارش':'لیکنه ښه کول','رسمی‌تر':'رسمي کول','صمیمی‌تر':'دوستانه کول','کوتاه‌تر':'لنډول','پیوست‌ها':'ضمیمې','ارسال پیام':'پیغام لېږل','گالری':'ګالري','دوربین':'کمره','فایل‌ها':'فایلونه','ویدئو':'ویډیو','موسیقی / صدا':'غږ / موسیقي','ضبط ویس':'غږ ثبتول','افزودن به پیام':'پیغام ته زیاتول',
 
       'همه':'ټول','همه گفتگوها':'ټولې خبرې','گفتگوی جدید':'نوې خبرې','ساخت گروه':'ګروپ جوړول',
       'مدیریت پوشه‌های گفتگو':'د خبرو فولډرونو اداره','مرکز اعلان‌ها':'د خبرتیاوو مرکز','بایگانی':'آرشیف',
@@ -11560,6 +11563,96 @@ class _ChatPageState extends State<ChatPage> {
                             child: TextField(
                               controller: text,
                               focusNode: _composerFocus,
+                              contextMenuBuilder: (context, editableTextState) {
+                                final selection = text.selection;
+                                final hasSelection = selection.isValid &&
+                                    !selection.isCollapsed &&
+                                    selection.start >= 0 &&
+                                    selection.end <= text.text.length;
+                                if (!hasSelection) {
+                                  return AdaptiveTextSelectionToolbar.buttonItems(
+                                    anchors: editableTextState.contextMenuAnchors,
+                                    buttonItems: editableTextState.contextMenuButtonItems,
+                                  );
+                                }
+                                String transform(String value, String action) {
+                                  var result = value.trim().replaceAll(RegExp(r'\\s+'), ' ');
+                                  if (action == 'formal') {
+                                    result = result
+                                        .replaceAll('سلام', 'سلام و احترام')
+                                        .replaceAll('مرسی', 'تشکر')
+                                        .replaceAll('ممنون', 'سپاسگزارم')
+                                        .replaceAll('hey ', 'Hello ')
+                                        .replaceAll('thanks', 'Thank you');
+                                  } else if (action == 'friendly') {
+                                    if (result.isNotEmpty && !RegExp(r'[😊🙂😄❤️🙏👍]$').hasMatch(result)) {
+                                      result = '$result 😊';
+                                    }
+                                  } else if (action == 'short') {
+                                    final parts = result.split(RegExp(r'(?<=[.!?،؛])\\s+|،\\s+'));
+                                    if (parts.length > 1) result = parts.first.trim();
+                                  } else {
+                                    result = result
+                                        .replaceAll(RegExp(r'\\s+([،؛:!?.,])'), r'$1')
+                                        .replaceAll(RegExp(r'([،؛:!?.,])(?=\\S)'), r'$1 ')
+                                        .trim();
+                                    if (aradLanguageController.locale.languageCode == 'en' && result.isNotEmpty) {
+                                      result = result[0].toUpperCase() + result.substring(1);
+                                    }
+                                  }
+                                  return result;
+                                }
+                                void applyEdit(String action) {
+                                  final current = text.value;
+                                  final start = current.selection.start;
+                                  final end = current.selection.end;
+                                  if (start < 0 || end <= start || end > current.text.length) return;
+                                  final selected = current.text.substring(start, end);
+                                  final replacement = transform(selected, action);
+                                  text.value = current.copyWith(
+                                    text: current.text.replaceRange(start, end, replacement),
+                                    selection: TextSelection.collapsed(offset: start + replacement.length),
+                                    composing: TextRange.empty,
+                                  );
+                                  _composerFocus.requestFocus();
+                                  if (mounted) setState(() {});
+                                }
+                                final items = <ContextMenuButtonItem>[
+                                  ...editableTextState.contextMenuButtonItems,
+                                  ContextMenuButtonItem(
+                                    label: trUi('بهبود نگارش'),
+                                    onPressed: () {
+                                      editableTextState.hideToolbar();
+                                      applyEdit('improve');
+                                    },
+                                  ),
+                                  ContextMenuButtonItem(
+                                    label: trUi('رسمی‌تر'),
+                                    onPressed: () {
+                                      editableTextState.hideToolbar();
+                                      applyEdit('formal');
+                                    },
+                                  ),
+                                  ContextMenuButtonItem(
+                                    label: trUi('صمیمی‌تر'),
+                                    onPressed: () {
+                                      editableTextState.hideToolbar();
+                                      applyEdit('friendly');
+                                    },
+                                  ),
+                                  ContextMenuButtonItem(
+                                    label: trUi('کوتاه‌تر'),
+                                    onPressed: () {
+                                      editableTextState.hideToolbar();
+                                      applyEdit('short');
+                                    },
+                                  ),
+                                ];
+                                return AdaptiveTextSelectionToolbar.buttonItems(
+                                  anchors: editableTextState.contextMenuAnchors,
+                                  buttonItems: items,
+                                );
+                              },
                               onChanged: (value) {
                                 _updateMentionSuggestions(value);
                                 // Rebuild the composer immediately so the right-hand
