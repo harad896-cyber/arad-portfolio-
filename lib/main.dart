@@ -2006,8 +2006,8 @@ class PremiumEmptyState extends StatelessWidget {
   PremiumEmptyState({super.key,required this.icon,required this.title,required this.subtitle});
   @override Widget build(BuildContext context)=>Center(child:Padding(padding:const EdgeInsets.all(32),child:Column(mainAxisSize:MainAxisSize.min,children:[
     Container(width:86,height:86,decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(kAppRadius)),child:Icon(icon,size:40)),
-    SizedBox(height:20),Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
-    SizedBox(height:8),Text(subtitle,textAlign:TextAlign.center)
+    SizedBox(height:20),Text(trUi(title),textAlign:TextAlign.center,style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+    SizedBox(height:8),Text(trUi(subtitle),textAlign:TextAlign.center)
   ])));
 }
 class PremiumPageRoute<T> extends PageRouteBuilder<T> {
@@ -2289,10 +2289,10 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
           foregroundColor: scheme.primary,
           child: Icon(icon, size: 21),
         ),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(trUi(title), style: TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 3),
-          child: Text(subtitle),
+          child: Text(trUi(subtitle)),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2318,9 +2318,9 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          Text(trUi(title), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
           SizedBox(height: 3),
-          Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(trUi(subtitle), style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -6314,7 +6314,7 @@ class _HomePageState extends State<HomePage> {
         child: Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(icon, color: s.primary), SizedBox(width: 7),
-            Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800))),
+            Flexible(child: Text(trUi(label), overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800))),
           ]),
         ),
       )),
