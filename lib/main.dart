@@ -9358,6 +9358,7 @@ class _ChatPageState extends State<ChatPage> {
       'غذا': ['🍎','🍊','🍉','🍇','🍓','🍒','🥑','🍔','🍕','🍜','🍦','🎂','☕','🍄'],
       'سرگرمی': ['⚽','🎮','🎧','🎉','🎁','🏆','🚀','💎','👑','🎯','🧿'],
       'طبیعت': ['🌍','🌙','⭐','✨','⚡','🔥','☀️','🌈','❄️','🌊','🪐','🌹','🌸'],
+      'پرمصرف': ['😂','❤️','🥰','😍','😘','😊','😭','🥹','👍','🙏','👏','🔥','✨','🎉','💯','🤝','🫶','👋','😎','🤔','💔','🌹','🌙','☕'],
     };
     // Search aliases make the picker useful even when users type a word instead of an emoji.
     const emojiSearchTerms = <String, List<String>>{
@@ -9394,13 +9395,19 @@ class _ChatPageState extends State<ChatPage> {
           final categoryItems = tab == 0 && emojiCategory != 'همه'
               ? (emojiCategories[emojiCategory] ?? emojis)
               : source;
-          final normalizedFilter = filter.toLowerCase();
-          final shown = filter.isEmpty
+          String normalizeEmojiQuery(String value) => value
+              .toLowerCase()
+              .replaceAll('ي', 'ی')
+              .replaceAll('ك', 'ک')
+              .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '')
+              .trim();
+          final normalizedFilter = normalizeEmojiQuery(filter);
+          final shown = normalizedFilter.isEmpty
               ? categoryItems
               : categoryItems.where((e) {
-                  if (e.contains(filter)) return true;
+                  if (normalizeEmojiQuery(e).contains(normalizedFilter)) return true;
                   final terms = emojiSearchTerms[e] ?? const <String>[];
-                  return terms.any((term) => term.toLowerCase().contains(normalizedFilter));
+                  return terms.any((term) => normalizeEmojiQuery(term).contains(normalizedFilter));
                 }).toList();
           return SafeArea(child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -9424,7 +9431,7 @@ class _ChatPageState extends State<ChatPage> {
                   )),
                 ])),
                 const SizedBox(height: 8),
-                TextField(onChanged: (value) => setSheetState(() => filter = value.trim()), decoration: InputDecoration(
+                TextField(onChanged: (value) => setSheetState(() => filter = value), decoration: InputDecoration(
                   hintText: trUi('جست‌وجوی ایموجی'), prefixIcon: const Icon(Icons.search_rounded), isDense: true, filled: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 )),
