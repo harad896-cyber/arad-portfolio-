@@ -208,6 +208,43 @@ String trUi(String source) {
       'ابزارهای پیشرفته متصل به Backend':'ابزارهای پیشرفته متصل به Backend',
       'نسخه، معماری و اطلاعات برنامه':'نسخه، معماری و اطلاعات برنامه',
       'پیام خود را بنویسید…':'پیام خود را بنویسید…','پیوست‌ها':'پیوست‌ها','ارسال پیام':'ارسال پیام','گالری':'گالری','دوربین':'دوربین','فایل‌ها':'فایل‌ها','ویدئو':'ویدئو','موسیقی / صدا':'موسیقی / صدا','ضبط ویس':'ضبط ویس','افزودن به پیام':'افزودن به پیام',
+    
+      'واکنش به پیام':'واکنش به پیام',
+      'افرادی که واکنش داده‌اند':'افرادی که واکنش داده‌اند',
+      'واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود':'واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود',
+      'واکنش‌ها':'واکنش‌ها',
+      'در حال ارسال':'در حال ارسال',
+      'دیده‌شده':'دیده‌شده',
+      'خوانده شد':'خوانده شد',
+      'ارسال شد':'ارسال شد',
+      'ویرایش‌شده':'ویرایش‌شده',
+      'هنوز پیامی یا سابقه تماسی وجود ندارد.':'هنوز پیامی یا سابقه تماسی وجود ندارد.',
+      'جستجوی پیام‌ها':'جستجوی پیام‌ها',
+      'رسانه‌ها و فایل‌ها':'رسانه‌ها و فایل‌ها',
+      'اطلاعات گفتگو':'اطلاعات گفتگو',
+      'رفتن به آخرین پیام':'رفتن به آخرین پیام',
+      'لغو ضبط':'لغو ضبط',
+      'باز کردن کنترل ضبط':'باز کردن کنترل ضبط',
+      'قفل ضبط':'قفل ضبط',
+      'پایان ضبط و ارسال ویس':'پایان ضبط و ارسال ویس',
+      'اموجی':'اموجی',
+      'ایموجی و استیکر':'ایموجی و استیکر',
+      'انتخاب‌شده: ':'انتخاب‌شده: ',
+      'جست‌وجوی ایموجی':'جست‌وجوی ایموجی',
+      'ایموجی':'ایموجی',
+      'استیکرهای متنی':'استیکرهای متنی',
+      'ارسال ایموجی‌های انتخاب‌شده (':'ارسال ایموجی‌های انتخاب‌شده (',
+      'ارسال استیکرهای انتخاب‌شده (':'ارسال استیکرهای انتخاب‌شده (',
+      'حذف پیام':'حذف پیام',
+      'فقط از فهرست پیام‌های شما حذف می‌شود.':'فقط از فهرست پیام‌های شما حذف می‌شود.',
+      'پیام از گفتگوی همه اعضا حذف می‌شود.':'پیام از گفتگوی همه اعضا حذف می‌شود.',
+      'این پیام برای همه اعضای گفتگو حذف می‌شود.':'این پیام برای همه اعضای گفتگو حذف می‌شود.',
+      'ارسال فوروارد به...':'ارسال فوروارد به...',
+      'گفتگوی شخصی':'گفتگوی شخصی',
+      'باز کردن لینک در آراد':'باز کردن لینک در آراد',
+      'باز کردن دعوت و پیوستن به گروه':'باز کردن دعوت و پیوستن به گروه',
+      'جزئیات پیام':'جزئیات پیام',
+      'مشاهده پروفایل':'مشاهده پروفایل',
     };
     return persian[source] ?? source;
   }
@@ -292,6 +329,41 @@ String trUi(String source) {
       'تغییر زبان':'تغییر زبان','بارگذاری تصویر':'بارگذاری تصویر','بارگذاری فایل':'بارگذاری فایل',
       'این بخش فعلاً در دسترس نیست':'این بخش فعلاً قابل دسترس نیست',
       'خطایی رخ داد':'یک خطا رخ داده است','دوباره تلاش کنید':'دوباره تلاش کنید',
+    
+      'واکنش به پیام':'واکنش به پیام',
+      'افرادی که واکنش داده‌اند':'افرادی که واکنش داده‌اند',
+      'واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود':'واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود',
+      'واکنش‌ها':'واکنش‌ها',
+      'در حال ارسال':'در حال فرستادن',
+      'دیده‌شده':'دیده‌شده',
+      'ارسال شد':'فرستاده شد',
+      'ویرایش‌شده':'ویرایش‌شده',
+      'هنوز پیامی یا سابقه تماسی وجود ندارد.':'هنوز پیامی یا تاریخچه تماس وجود ندارد.',
+      'جستجوی پیام‌ها':'جستجوی پیام‌ها',
+      'رسانه‌ها و فایل‌ها':'رسانه‌ها و فایل‌ها',
+      'اطلاعات گفتگو':'معلومات گپ',
+      'رفتن به آخرین پیام':'رفتن به آخرین پیام',
+      'لغو ضبط':'لغو ضبط',
+      'باز کردن کنترل ضبط':'باز کردن کنترول ضبط',
+      'قفل ضبط':'قفل ضبط',
+      'پایان ضبط و ارسال ویس':'پایان ضبط و فرستادن پیام صوتی',
+      'اموجی':'ایموجی',
+      'ایموجی و استیکر':'ایموجی و استیکر',
+      'انتخاب‌شده: ':'انتخاب‌شده: ',
+      'جست‌وجوی ایموجی':'جستجوی ایموجی',
+      'استیکرهای متنی':'استیکرهای متنی',
+      'ارسال ایموجی‌های انتخاب‌شده (':'فرستادن ایموجی‌های انتخاب‌شده (',
+      'ارسال استیکرهای انتخاب‌شده (':'فرستادن استیکرهای انتخاب‌شده (',
+      'حذف پیام':'پاک کردن پیام',
+      'فقط از فهرست پیام‌های شما حذف می‌شود.':'فقط از فهرست پیام‌های شما پاک می‌شود.',
+      'پیام از گفتگوی همه اعضا حذف می‌شود.':'پیام از گپ همه اعضا پاک می‌شود.',
+      'این پیام برای همه اعضای گفتگو حذف می‌شود.':'این پیام برای همه اعضای گپ پاک می‌شود.',
+      'ارسال فوروارد به...':'فرستادن پیام به...',
+      'گفتگوی شخصی':'گپ شخصی',
+      'باز کردن لینک در آراد':'باز کردن لینک در آراد',
+      'باز کردن دعوت و پیوستن به گروه':'باز کردن دعوت و پیوستن به گروپ',
+      'جزئیات پیام':'جزئیات پیام',
+      'مشاهده پروفایل':'دیدن پروفایل',
     };
     return dari[source] ?? _dariUiExtra[source] ?? _dariFallback(source);
   }
@@ -400,6 +472,39 @@ String trUi(String source) {
       'شریک‌ساختن':'Share','ضمیمه‌ها':'Attachments','آخرین دیدار':'Last seen',
       'پاک‌کردن برای من':'Delete for me',
       'پاک‌کردن برای همه':'Delete for everyone',
+    
+      'واکنش به پیام':'React to message',
+      'افرادی که واکنش داده‌اند':'People who reacted',
+      'واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود':'Your reaction is visible to everyone in this chat',
+      'واکنش‌ها':'Reactions',
+      'در حال ارسال':'Sending',
+      'دیده‌شده':'Seen',
+      'ویرایش‌شده':'Edited',
+      'هنوز پیامی یا سابقه تماسی وجود ندارد.':'No messages or call history yet.',
+      'جستجوی پیام‌ها':'Search messages',
+      'رسانه‌ها و فایل‌ها':'Media and files',
+      'اطلاعات گفتگو':'Chat info',
+      'رفتن به آخرین پیام':'Jump to latest message',
+      'لغو ضبط':'Cancel recording',
+      'باز کردن کنترل ضبط':'Show recording controls',
+      'قفل ضبط':'Lock recording',
+      'پایان ضبط و ارسال ویس':'Finish and send voice message',
+      'اموجی':'Emoji',
+      'ایموجی و استیکر':'Emoji & stickers',
+      'انتخاب‌شده: ':'Selected: ',
+      'جست‌وجوی ایموجی':'Search emoji',
+      'استیکرهای متنی':'Text stickers',
+      'ارسال ایموجی‌های انتخاب‌شده (':'Send selected emoji (',
+      'ارسال استیکرهای انتخاب‌شده (':'Send selected stickers (',
+      'فقط از فهرست پیام‌های شما حذف می‌شود.':'This only removes the message from your list.',
+      'پیام از گفتگوی همه اعضا حذف می‌شود.':'The message will be removed for everyone in the chat.',
+      'این پیام برای همه اعضای گفتگو حذف می‌شود.':'This message will be deleted for everyone in the chat.',
+      'ارسال فوروارد به...':'Forward to…',
+      'گفتگوی شخصی':'Direct chat',
+      'باز کردن لینک در آراد':'Open link in Arad',
+      'باز کردن دعوت و پیوستن به گروه':'Open invite and join group',
+      'جزئیات پیام':'Message details',
+      'مشاهده پروفایل':'View profile',
     };
     return english[source] ?? source;
   }
@@ -461,6 +566,42 @@ String trUi(String source) {
       'تغییر زبان':'ژبه بدلول','بارگذاری تصویر':'انځور پورته کول','بارگذاری فایل':'فایل پورته کول',
       'این بخش فعلاً در دسترس نیست':'دا برخه اوس د لاسرسي وړ نه ده',
       'خطایی رخ داد':'یوه تېروتنه رامنځته شوه','دوباره تلاش کنید':'بیا هڅه وکړئ',
+    
+      'واکنش به پیام':'پیغام ته غبرګون',
+      'افرادی که واکنش داده‌اند':'هغه کسان چې غبرګون یې ښودلی',
+      'واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود':'ستاسو غبرګون په دې خبرو کې ټولو ته ښکاري',
+      'واکنش‌ها':'غبرګونونه',
+      'در حال ارسال':'لېږل کېږي',
+      'دیده‌شده':'لیدل شوی',
+      'خوانده شد':'لوستل شوی',
+      'ارسال شد':'ولېږل شو',
+      'ویرایش‌شده':'سم شوی',
+      'هنوز پیامی یا سابقه تماسی وجود ندارد.':'تر اوسه پیغامونه یا د اړیکو تاریخچه نشته.',
+      'جستجوی پیام‌ها':'پیغامونه ولټوئ',
+      'رسانه‌ها و فایل‌ها':'رسنۍ او فایلونه',
+      'اطلاعات گفتگو':'د خبرو معلومات',
+      'رفتن به آخرین پیام':'وروستي پیغام ته لاړ شئ',
+      'لغو ضبط':'ثبت لغوه کړئ',
+      'باز کردن کنترل ضبط':'د ثبت کنټرولونه ښکاره کړئ',
+      'قفل ضبط':'ثبت قلف کړئ',
+      'پایان ضبط و ارسال ویس':'غږیز پیغام پای او ولېږئ',
+      'اموجی':'ایموجي',
+      'ایموجی و استیکر':'ایموجي او سټیکر',
+      'انتخاب‌شده: ':'ټاکل شوي: ',
+      'جست‌وجوی ایموجی':'ایموجي ولټوئ',
+      'استیکرهای متنی':'متني سټیکرونه',
+      'ارسال ایموجی‌های انتخاب‌شده (':'ټاکل شوي ایموجي ولېږئ (',
+      'ارسال استیکرهای انتخاب‌شده (':'ټاکل شوي سټیکرونه ولېږئ (',
+      'حذف پیام':'پیغام ړنګ کړئ',
+      'فقط از فهرست پیام‌های شما حذف می‌شود.':'دا یوازې ستاسو له لېست څخه پیغام ړنګوي.',
+      'پیام از گفتگوی همه اعضا حذف می‌شود.':'پیغام د ټولو غړو له خبرو ړنګېږي.',
+      'این پیام برای همه اعضای گفتگو حذف می‌شود.':'دا پیغام د خبرو ټولو غړو ته ړنګېږي.',
+      'ارسال فوروارد به...':'چا ته یې ولېږئ…',
+      'گفتگوی شخصی':'شخصي خبرې',
+      'باز کردن لینک در آراد':'لینک په آراد کې پرانیزئ',
+      'باز کردن دعوت و پیوستن به گروه':'بلنه پرانیزئ او ګروپ ته ورګډ شئ',
+      'جزئیات پیام':'د پیغام جزئیات',
+      'مشاهده پروفایل':'پېژندپاڼه وګورئ',
     };
     return pashto[source] ?? source;
   }
@@ -8519,8 +8660,8 @@ class _ChatPageState extends State<ChatPage> {
               Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(9))),
               const SizedBox(height: 14),
               Row(children: [
-                const Expanded(child: Text('واکنش به پیام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-                IconButton(tooltip: 'افرادی که واکنش داده‌اند', onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: const Icon(Icons.people_alt_outlined)),
+                Expanded(child: Text(trUi('واکنش به پیام'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                IconButton(tooltip: trUi('افرادی که واکنش داده‌اند'), onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: const Icon(Icons.people_alt_outlined)),
               ]),
               // One-tap favorites stay visible so the most common reactions need
               // no category change or precise tap on a small grid cell.
@@ -8570,7 +8711,7 @@ class _ChatPageState extends State<ChatPage> {
                 },
               )),
               const SizedBox(height: 8),
-              Text('واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+              Text(trUi('واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود'), style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
             ]),
           ),
         ));
@@ -8592,7 +8733,7 @@ class _ChatPageState extends State<ChatPage> {
         builder:(ctx)=>ListView(
           padding:const EdgeInsets.all(16),
           children:[
-            const Text('واکنش‌ها',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+            Text(trUi('واکنش‌ها'),style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
             const SizedBox(height:10),
             ...rows.map((r){
               final p=people[r['user_id'].toString()];
@@ -9114,8 +9255,8 @@ class _ChatPageState extends State<ChatPage> {
                 const SizedBox(height: 12),
                 Row(children: [
                   Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24), const SizedBox(width: 8),
-                  const Expanded(child: Text('ایموجی و استیکر', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-                  Text('انتخاب‌شده: ' + selected.length.toString(), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+                  Expanded(child: Text(trUi('ایموجی و استیکر'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                  Text(trUi('انتخاب‌شده: ') + selected.length.toString(), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
                   IconButton(tooltip: 'پاک کردن همه', onPressed: selected.isEmpty ? null : () => setSheetState(() => selected.clear()), icon: const Icon(Icons.backspace_outlined)),
                 ]),
                 if (selected.isNotEmpty) SizedBox(height: 46, child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -9126,12 +9267,12 @@ class _ChatPageState extends State<ChatPage> {
                 ])),
                 const SizedBox(height: 8),
                 TextField(onChanged: (value) => setSheetState(() => filter = value.trim()), decoration: InputDecoration(
-                  hintText: 'جست‌وجوی ایموجی', prefixIcon: const Icon(Icons.search_rounded), isDense: true, filled: true,
+                  hintText: trUi('جست‌وجوی ایموجی'), prefixIcon: const Icon(Icons.search_rounded), isDense: true, filled: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 )),
                 const SizedBox(height: 10),
                 SegmentedButton<int>(
-                  segments: const [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text('ایموجی')), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text('استیکرهای متنی'))],
+                  segments: const [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text(trUi('ایموجی'))), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text(trUi('استیکرهای متنی')))],
                   selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }), showSelectedIcon: false,
                 ),
                 const SizedBox(height: 10),
@@ -9290,15 +9431,15 @@ class _ChatPageState extends State<ChatPage> {
           const ListTile(title: Text('حذف پیام', style: TextStyle(fontWeight: FontWeight.w900))),
           ListTile(
             leading: const Icon(Icons.person_outline_rounded),
-            title: const Text('حذف برای من'),
-            subtitle: const Text('فقط از فهرست پیام‌های شما حذف می‌شود.'),
+            title: Text(trUi('حذف برای من')),
+            subtitle: Text(trUi('فقط از فهرست پیام‌های شما حذف می‌شود.')),
             onTap: () => Navigator.pop(ctx, 'me'),
           ),
           if (mine)
             ListTile(
               leading: Icon(Icons.delete_forever_rounded, color: Theme.of(ctx).colorScheme.error),
-              title: const Text('حذف برای همه'),
-              subtitle: const Text('پیام از گفتگوی همه اعضا حذف می‌شود.'),
+              title: Text(trUi('حذف برای همه')),
+              subtitle: Text(trUi('پیام از گفتگوی همه اعضا حذف می‌شود.')),
               onTap: () => Navigator.pop(ctx, 'everyone'),
             ),
           const SizedBox(height: 8),
@@ -9341,8 +9482,8 @@ class _ChatPageState extends State<ChatPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('حذف برای همه'),
-        content: const Text('این پیام برای همه اعضای گفتگو حذف می‌شود.'),
+        title: Text(trUi('حذف برای همه')),
+        content: Text(trUi('این پیام برای همه اعضای گفتگو حذف می‌شود.')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
@@ -9520,7 +9661,7 @@ class _ChatPageState extends State<ChatPage> {
                   padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: Text('ارسال فوروارد به...', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                    child: Text(trUi('ارسال فوروارد به...'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                   ),
                 ),
                 const Divider(height: 1),
@@ -9537,7 +9678,7 @@ class _ChatPageState extends State<ChatPage> {
                       return ListTile(
                         leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
                         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                        subtitle: Text(type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی شخصی'),
+                        subtitle: Text(type == 'group' ? trUi('گروه') : type == 'channel' ? trUi('کانال') : trUi('گفتگوی شخصی')),
                         trailing: const Icon(Icons.chevron_left_rounded),
                         onTap: () => Navigator.pop(sheetContext, c),
                       );
@@ -9818,7 +9959,7 @@ class _ChatPageState extends State<ChatPage> {
     final readerIds = receipts.map((r) => r['reader_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
     final readerNames = readerIds.map((id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر')).join('، ');
     final isMine = message['sender_id'] == supabase.auth.currentUser?.id;
-    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? 'در حال ارسال' : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), const Text('خوانده‌شده توسط:'), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? trUi('در حال ارسال') : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), const Text('خوانده‌شده توسط:'), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
   }
   Widget _actionTile(
     BuildContext sheetContext,
@@ -10228,7 +10369,7 @@ class _ChatPageState extends State<ChatPage> {
             const Icon(Icons.link_rounded, size: 28),
             const SizedBox(height: 4),
             Text(link, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
-            Text('باز کردن لینک در آراد', style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
+            Text(trUi('باز کردن لینک در آراد'), style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
           ]),
         ),
       );
@@ -10257,7 +10398,7 @@ class _ChatPageState extends State<ChatPage> {
               const Icon(Icons.link_rounded, size: 28),
               const SizedBox(height: 4),
               Text(url, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
-              Text(isConversationInvite ? 'باز کردن دعوت و پیوستن به گروه' : (parsedUrl?.host ?? 'لینک'),
+              Text(isConversationInvite ? trUi('باز کردن دعوت و پیوستن به گروه') : (parsedUrl?.host ?? trUi('لینک')),
                   style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
             ],
           ),
@@ -10394,7 +10535,7 @@ class _ChatPageState extends State<ChatPage> {
                           Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .7)),
                           const SizedBox(width: 2),
                           Text(
-                            m['__pending'] == true ? 'در حال ارسال' : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? 'دیده‌شده ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
+                            m['__pending'] == true ? trUi('در حال ارسال') : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? '${trUi('دیده‌شده')} ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
                             style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -10844,11 +10985,11 @@ class _ChatPageState extends State<ChatPage> {
               }
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text('جستجوی پیام‌ها'))),
-              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text('رسانه‌ها و فایل‌ها'))),
-              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text('اطلاعات گفتگو'))),
+              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text(trUi('جستجوی پیام‌ها')))),
+              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text(trUi('رسانه‌ها و فایل‌ها')))),
+              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text(trUi('اطلاعات گفتگو')))),
               PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('تنظیمات گفتگو'))),
-              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text('پیام‌های ذخیره‌شده'))),
+              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text(trUi('پیام‌های ذخیره‌شده')))),
             ],
           ),
           FutureBuilder<bool>(
@@ -10941,7 +11082,7 @@ class _ChatPageState extends State<ChatPage> {
               child: FloatingActionButton.small(
                 heroTag: 'jump-to-latest-${widget.id}',
                 onPressed: _jumpToLatest,
-                tooltip: 'رفتن به آخرین پیام',
+                tooltip: trUi('رفتن به آخرین پیام'),
                 backgroundColor: scheme.surface.withValues(alpha: .72),
                 foregroundColor: scheme.primary,
                 elevation: 2,
@@ -10989,7 +11130,7 @@ class _ChatPageState extends State<ChatPage> {
                 child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : messages.isEmpty
-                      ? const Center(child: Text('هنوز پیامی یا سابقه تماسی وجود ندارد.'))
+                      ? Center(child: Text(trUi('هنوز پیامی یا سابقه تماسی وجود ندارد.')))
                       : ListView.builder(
                           controller: _messagesScroll,
                           physics: const BouncingScrollPhysics(),
@@ -11172,21 +11313,21 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'لغو ضبط',
+                        tooltip: trUi('لغو ضبط'),
                         visualDensity: VisualDensity.compact,
                         onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(cancel: true),
                         icon: const Icon(Icons.delete_outline_rounded),
                         color: scheme.error,
                       ),
                       IconButton(
-                        tooltip: voiceLocked ? 'باز کردن کنترل ضبط' : 'قفل ضبط',
+                        tooltip: voiceLocked ? trUi('باز کردن کنترل ضبط') : trUi('قفل ضبط'),
                         visualDensity: VisualDensity.compact,
                         onPressed: () => setState(() => voiceLocked = !voiceLocked),
                         icon: Icon(voiceLocked ? Icons.lock_rounded : Icons.lock_open_rounded),
                         color: voiceLocked ? scheme.primary : scheme.onSurfaceVariant,
                       ),
                       IconButton.filled(
-                        tooltip: 'پایان ضبط و ارسال ویس',
+                        tooltip: trUi('پایان ضبط و ارسال ویس'),
                         visualDensity: VisualDensity.compact,
                         onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(),
                         icon: const Icon(Icons.send_rounded, size: 19),
@@ -11246,7 +11387,7 @@ class _ChatPageState extends State<ChatPage> {
                               padding: const EdgeInsets.all(10),
                             ),
                             onPressed: _showChatEmojiPicker,
-                            tooltip: 'اموجی',
+                            tooltip: trUi('اموجی'),
                             icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
                           ),
                           Expanded(
