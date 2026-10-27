@@ -8983,6 +8983,8 @@ class _ChatPageState extends State<ChatPage> {
               if (mounted) showMsg(this.context, 'متن پیام کپی شد.');
             }),
           if (canEdit) action(Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
+          if (_chatType == 'group' && !mine)
+            action(Icons.shield_outlined, 'مدیریت عضو', () => _showGroupMemberActions(message)),
           action(Icons.delete_outline_rounded, 'حذف', () => _chooseDeleteScope(message)),
         ]),
       ]),
@@ -9833,6 +9835,63 @@ class _ChatPageState extends State<ChatPage> {
       return r!=null;
     } catch (_) { return false; }
   }
+  Future<void> _showGroupMemberActions(Map<String, dynamic> message) async {
+    if (_chatType != 'group') return;
+    final targetId = (message['sender_id'] ?? '').toString();
+    final uid = supabase.auth.currentUser?.id;
+    if (targetId.isEmpty || uid == null || targetId == uid) return;
+    try {
+      final c = await supabase.from('conversations').select('created_by').eq('id', widget.id).single();
+      final isOwner = c['created_by']?.toString() == uid;
+      final mine = await supabase.from('conversation_members').select('role').eq('conversation_id', widget.id).eq('user_id', uid).maybeSingle();
+      final isAdmin = isOwner || ['admin','owner'].contains(mine?['role']);
+      var canModerate = isOwner;
+      if (isAdmin && !isOwner) {
+        final p = await supabase.from('group_admin_permissions').select('can_remove_members').eq('conversation_id', widget.id).eq('user_id', uid).maybeSingle();
+        canModerate = p?['can_remove_members'] == true;
+      }
+      final target = await supabase.from('conversation_members').select('role').eq('conversation_id', widget.id).eq('user_id', targetId).maybeSingle();
+      if (target == null) {
+        if (mounted) showMsg(context, 'این کاربر دیگر عضو گروه نیست.');
+        return;
+      }
+      if (c['created_by']?.toString() == targetId || target['role'] == 'owner') canModerate = false;
+      final choice = await showModalBottomSheet<String>(
+        context: context, showDragHandle: true,
+        builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+          if (canModerate) ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
+          if (canModerate) ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
+        ])),
+      );
+      if (choice == 'profile') await _openGroupMemberProfile(targetId);
+      if (choice != 'remove' && choice != 'ban') return;
+      final profile = await supabase.from('profiles').select('display_name,username').eq('id', targetId).maybeSingle();
+      final name = (profile?['display_name'] ?? profile?['username'] ?? 'این کاربر').toString();
+      final reasonController = TextEditingController();
+      final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
+        title: Text(choice == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
+        content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)')) : Text('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(choice == 'ban' ? 'محروم و اخراج' : 'اخراج')),
+        ],
+      )) ?? false;
+      final reason = reasonController.text.trim();
+      reasonController.dispose();
+      if (!confirmed) return;
+      if (choice == 'ban') {
+        await supabase.rpc('ban_group_member', params: {'p_conversation_id': widget.id, 'p_user_id': targetId, 'p_reason': reason.isEmpty ? null : reason});
+      } else {
+        await supabase.rpc('remove_group_member', params: {'p_conversation_id': widget.id, 'p_user_id': targetId});
+      }
+      if (mounted) showMsg(context, choice == 'ban' ? '$name از گروه محروم شد.' : '$name از گروه اخراج شد.');
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'عملیات مدیریت عضو ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
   Future<void> _openGroupMemberProfile(String userId) async {
     final id = userId.trim();
     if (id.isEmpty) return;
