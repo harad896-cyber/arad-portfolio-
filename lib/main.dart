@@ -9347,15 +9347,30 @@ class _ChatPageState extends State<ChatPage> {
     const stickers = ['🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧','😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️','💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭','💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️','🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤','🫶✨','🥹💖','😹🔥','😴🌙','🤝💯','😤⚡','🤍🕊️','🖤🥀','💜🦋','🌈🫧'];
     const stickerArt = ['🚀','👾','🪐','🛸','🌌','🤖','🐸','🦊','🐼','🐱','😎','🥹','😭','😂','😍','🤯','😈','👑','🫡','🫠','💀','🧠','🦋','🐉','🦄','🐙','🐳','🦖','🐣','🦝','💌','💘','❤️‍🔥','💜','💚','💙','🧡','🤍','🖤','💛','🎮','🎧','🏆','🎯','🧿','🍓','🍉','🍄','☕','🌙','🫶','🥹','😹','😴','🤝','😤','🕊️','🥀','🦋','🌈'];
     String filter = '';
+    String emojiCategory = 'همه';
     int tab = 0;
     final selected = <String>[];
+    const emojiCategories = <String, List<String>>{
+      'چهره': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','🥰','😍','🤩','🥲','😋','😜','🤗','🤔','😎','🥳','😢','😭','😡','🤖','🥹','😹','😴','🤯','😈','🫠','💀','😤'],
+      'دست‌ها': ['👋','👌','✌️','🤞','👍','👎','👏','🙌','🫶','🙏','💪','👀','🤝','🫡'],
+      'عشق': ['❤️','🧡','💛','💚','💙','🩵','💜','🩷','🤎','🖤','🤍','💔','❤️‍🔥','💕','💖','💯','💘','💌','🌹','🌸'],
+      'حیوانات': ['🐶','🐱','🦊','🐻','🐼','🐸','🐵','🐺','🦄','🦋','🐢','🐬','🦁','🐉','🐙','🐳','🦖','🐣','🦝'],
+      'غذا': ['🍎','🍊','🍉','🍇','🍓','🍒','🥑','🍔','🍕','🍜','🍦','🎂','☕','🍄'],
+      'سرگرمی': ['⚽','🎮','🎧','🎉','🎁','🏆','🚀','💎','👑','🎯','🧿'],
+      'طبیعت': ['🌍','🌙','⭐','✨','⚡','🔥','☀️','🌈','❄️','🌊','🪐','🌹','🌸'],
+    };
     await showModalBottomSheet<void>(
       context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
       builder: (sheetContext) {
         final scheme = Theme.of(sheetContext).colorScheme;
         return StatefulBuilder(builder: (context, setSheetState) {
           final source = tab == 0 ? emojis : stickers;
-          final shown = filter.isEmpty ? source : source.where((e) => e.contains(filter)).toList();
+          final categoryItems = tab == 0 && emojiCategory != 'همه'
+              ? (emojiCategories[emojiCategory] ?? emojis)
+              : source;
+          final shown = filter.isEmpty
+              ? categoryItems
+              : categoryItems.where((e) => e.contains(filter)).toList();
           return SafeArea(child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             child: Container(
@@ -9385,8 +9400,30 @@ class _ChatPageState extends State<ChatPage> {
                 const SizedBox(height: 10),
                 SegmentedButton<int>(
                   segments: [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text(trUi('ایموجی'))), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text(trUi('استیکرهای متنی')))],
-                  selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }), showSelectedIcon: false,
+                  selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; emojiCategory = 'همه'; }), showSelectedIcon: false,
                 ),
+                if (tab == 0) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        for (final name in ['همه', ...emojiCategories.keys])
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 7),
+                            child: ChoiceChip(
+                              label: Text(name),
+                              selected: emojiCategory == name,
+                              onSelected: (_) => setSheetState(() => emojiCategory = name),
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Expanded(child: GridView.builder(
                   itemCount: shown.length,
