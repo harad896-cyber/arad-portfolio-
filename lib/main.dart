@@ -9431,7 +9431,7 @@ class _ChatPageState extends State<ChatPage> {
                 const SizedBox(height: 10),
                 SegmentedButton<int>(
                   segments: [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text(trUi('ایموجی'))), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text(trUi('استیکرهای متنی')))],
-                  selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; emojiCategory = 'همه'; }), showSelectedIcon: false,
+                  selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; emojiCategory = 'همه'; selected.clear(); }), showSelectedIcon: false,
                 ),
                 if (tab == 0) ...[
                   const SizedBox(height: 10),
