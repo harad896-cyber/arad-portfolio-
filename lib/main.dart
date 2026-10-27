@@ -9359,6 +9359,32 @@ class _ChatPageState extends State<ChatPage> {
       'سرگرمی': ['⚽','🎮','🎧','🎉','🎁','🏆','🚀','💎','👑','🎯','🧿'],
       'طبیعت': ['🌍','🌙','⭐','✨','⚡','🔥','☀️','🌈','❄️','🌊','🪐','🌹','🌸'],
     };
+    // Search aliases make the picker useful even when users type a word instead of an emoji.
+    const emojiSearchTerms = <String, List<String>>{
+      '😀': ['خوشحال','خنده','لبخند','happy','smile'], '😂': ['خنده زیاد','قهقهه','لول','lol','laugh'],
+      '🤣': ['خنده زیاد','قهقهه','rofl'], '😊': ['لبخند','مهربان','blush','smile'],
+      '🥰': ['عاشق','عشق','محبت','love','in love'], '😍': ['عاشق','چشم قلبی','love','heart eyes'],
+      '😘': ['بوس','بوسه','kiss'], '😉': ['چشمک','wink'], '😎': ['باحال','عینک','cool'],
+      '🥳': ['جشن','تولد','party','celebrate'], '😢': ['گریه','غمگین','sad','cry'],
+      '😭': ['گریه','اشک','بسیار غمگین','crying'], '😡': ['عصبانی','قهر','angry'],
+      '🤔': ['فکر','فکر کردن','شاید','think','thinking'], '🤗': ['بغل','آغوش','hug'],
+      '🙏': ['تشکر','لطفا','خواهش','دعا','thanks','please'], '👍': ['تایید','قبول','آفرین','like','yes','thumbs up'],
+      '👎': ['رد','نه','موافق نیستم','dislike','no'], '👏': ['تشویق','آفرین','دست زدن','clap'],
+      '👋': ['سلام','خداحافظ','hello','bye','wave'], '🫶': ['محبت','عشق','قلب با دست','love'],
+      '❤️': ['قلب','عشق','دوستت دارم','love','heart'], '💔': ['دل شکسته','جدایی','شکست عشقی','broken heart'],
+      '🔥': ['آتش','عالی','داغ','fire','hot'], '✨': ['درخشش','جادویی','ستاره','sparkles'],
+      '⭐': ['ستاره','امتیاز','star'], '🎉': ['جشن','تبریک','مبارک','party','congrats'],
+      '🎂': ['کیک','تولد','birthday','cake'], '🎁': ['هدیه','کادو','gift','present'],
+      '☕': ['قهوه','چای','coffee','tea'], '🍕': ['پیتزا','غذا','pizza'], '🍔': ['برگر','همبرگر','burger'],
+      '🍎': ['سیب','میوه','apple'], '🍉': ['تربوز','هندوانه','watermelon'], '🍓': ['توت فرنگی','فراوله','strawberry'],
+      '🐱': ['گربه','پیشک','cat'], '🐶': ['سگ','dog'], '🦊': ['روباه','fox'],
+      '🦋': ['پروانه','butterfly'], '🐼': ['پاندا','panda'], '🚀': ['راکت','فضا','موشک','rocket','space'],
+      '🎮': ['بازی','گیم','game','gaming'], '🎧': ['موسیقی','هدفون','music','headphones'],
+      '🌙': ['ماه','شب','moon','night'], '☀️': ['آفتاب','خورشید','sun'], '🌈': ['رنگین کمان','رنگین‌کمان','rainbow'],
+      '🌹': ['گل','گل سرخ','rose','flower'], '💯': ['صد','کامل','عالی','100','perfect'],
+      '🤝': ['توافق','دست دادن','همکاری','deal','handshake'], '💪': ['قدرت','قوی','بازو','strong','muscle'],
+      '🤖': ['ربات','هوش مصنوعی','robot','ai'], '💎': ['الماس','جواهر','diamond'],
+    };
     await showModalBottomSheet<void>(
       context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
       builder: (sheetContext) {
@@ -9368,9 +9394,14 @@ class _ChatPageState extends State<ChatPage> {
           final categoryItems = tab == 0 && emojiCategory != 'همه'
               ? (emojiCategories[emojiCategory] ?? emojis)
               : source;
+          final normalizedFilter = filter.toLowerCase();
           final shown = filter.isEmpty
               ? categoryItems
-              : categoryItems.where((e) => e.contains(filter)).toList();
+              : categoryItems.where((e) {
+                  if (e.contains(filter)) return true;
+                  final terms = emojiSearchTerms[e] ?? const <String>[];
+                  return terms.any((term) => term.toLowerCase().contains(normalizedFilter));
+                }).toList();
           return SafeArea(child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             child: Container(
@@ -9425,7 +9456,15 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ],
                 const SizedBox(height: 10),
-                Expanded(child: GridView.builder(
+                Expanded(child: shown.isEmpty
+                    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.search_off_rounded, size: 38, color: scheme.onSurface.withValues(alpha: .45)),
+                        const SizedBox(height: 8),
+                        Text(trUi('ایموجی پیدا نشد'), style: TextStyle(color: scheme.onSurface.withValues(alpha: .7), fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(trUi('کلمه دیگری جست‌وجو کنید'), style: TextStyle(color: scheme.onSurface.withValues(alpha: .55), fontSize: 12)),
+                      ]))
+                    : GridView.builder(
                   itemCount: shown.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: MediaQuery.of(context).size.width < 380 ? 7 : 8, mainAxisSpacing: 5, crossAxisSpacing: 5, childAspectRatio: .95),
                   itemBuilder: (_, i) {
