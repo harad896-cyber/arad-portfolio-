@@ -5544,6 +5544,13 @@ class _HomePageState extends State<HomePage> {
     ]);
   }
 
+  Future<void> _retryContacts() async {
+    if (!mounted) return;
+    setState(() => _contactsFuture = null);
+    await Future<void>.delayed(Duration.zero);
+    if (mounted) setState(() {});
+  }
+
   Future<void> _openContactSearch() async {
     await showSearch(context: context, delegate: ContactSearchDelegate());
     if (mounted) setState(() => _contactsFuture = null);
@@ -5583,8 +5590,7 @@ class _HomePageState extends State<HomePage> {
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
         // A stalled local plugin or network request must never leave this tab spinning forever.
         future: _contactsFuture ??= _loadContacts().timeout(
-          const Duration(seconds: 8),
-          onTimeout: () => <Map<String, dynamic>>[],
+          const Duration(seconds: 12),
         ),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
@@ -5594,8 +5600,38 @@ class _HomePageState extends State<HomePage> {
               Text('در حال بارگذاری مخاطبین…'),
             ]));
           }
+          if (snap.hasError) {
+            return Center(child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.cloud_off_rounded, size: 42),
+                const SizedBox(height: 10),
+                Text('مخاطبین بارگذاری نشدند. اتصال را بررسی کنید و دوباره تلاش کنید.',
+                  textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _retryContacts,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('تلاش دوباره'),
+                ),
+              ]),
+            ));
+          }
           final rows = snap.data ?? [];
-          if (rows.isEmpty) return Center(child: Text(trUi('هنوز مخاطبی اضافه نکرده‌اید.')));
+          if (rows.isEmpty) return Center(child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.people_outline_rounded, size: 42),
+              const SizedBox(height: 10),
+              Text(trUi('هنوز مخاطبی اضافه نکرده‌اید.'), textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _retryContacts,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('بارگذاری دوباره'),
+              ),
+            ]),
+          ));
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 90),
             itemCount: rows.length,
@@ -6370,17 +6406,22 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
     try {
       final uid = supabase.auth.currentUser?.id;
       if (uid == null) throw Exception('ابتدا وارد حساب شوید.');
-      final rows = await supabase.from('contacts').select('contact_id').eq('user_id', uid);
+      final rows = await supabase.from('contacts').select('contact_id')
+          .eq('user_id', uid).timeout(const Duration(seconds: 8));
       final ids = (rows as List).map((r) => r['contact_id']?.toString() ?? '')
           .where((id) => id.isNotEmpty && id != uid).toSet().toList();
       final profiles = ids.isEmpty ? <Map<String,dynamic>>[] :
         List<Map<String,dynamic>>.from(await supabase.from('profiles')
-          .select('id,display_name,username,avatar_url').inFilter('id', ids));
+          .select('id,display_name,username,avatar_url').inFilter('id', ids)
+          .timeout(const Duration(seconds: 8)));
       profiles.sort((a,b) => (a['display_name'] ?? a['username'] ?? '').toString().toLowerCase()
           .compareTo((b['display_name'] ?? b['username'] ?? '').toString().toLowerCase()));
       if (mounted) setState(() { availableContacts = profiles; found = profiles; loadingContacts = false; });
     } catch (e) {
-      if (mounted) { setState(() => loadingContacts = false); showMsg(context, 'مخاطبین بارگذاری نشدند: $e'); }
+      if (mounted) {
+        setState(() => loadingContacts = false);
+        showMsg(context, 'مخاطبین بارگذاری نشدند؛ می‌توانید دوباره تلاش کنید. ${_friendlyError(e.toString())}');
+      }
     }
   }
 
@@ -6466,11 +6507,25 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
                 : found.isEmpty
                   ? Center(child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(search.text.trim().isNotEmpty
-                        ? 'کاربری با این نام یا شناسه پیدا نشد.'
-                        : (availableContacts.isEmpty
-                          ? 'هنوز مخاطبی ندارید. نام کاربری فرد را جستجو کنید یا از بخش «مخاطبین» او را اضافه کنید.'
-                          : 'مخاطبی ندارید؛ برای افزودن افراد از جستجو استفاده کنید.'), textAlign: TextAlign.center)))
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text(search.text.trim().isNotEmpty
+                          ? 'کاربری با این نام یا شناسه پیدا نشد.'
+                          : (availableContacts.isEmpty
+                            ? 'هنوز مخاطبی ندارید. نام کاربری فرد را جستجو کنید یا از بخش «مخاطبین» او را اضافه کنید.'
+                            : 'مخاطبی ندارید؛ برای افزودن افراد از جستجو استفاده کنید.'), textAlign: TextAlign.center),
+                        if (search.text.trim().isEmpty && availableContacts.isEmpty) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: loadingContacts ? null : () {
+                              setState(() { loadingContacts = true; });
+                              loadContacts();
+                            },
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('بارگذاری دوباره مخاطبین'),
+                          ),
+                        ],
+                      ]),
+                    ))
                   : ListView(
               children: found.map((p) {
                 final isSelected = selected.any((x) => x['id'] == p['id']);
