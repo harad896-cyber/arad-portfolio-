@@ -12447,10 +12447,25 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   @override void dispose(){WidgetsBinding.instance.removeObserver(this);super.dispose();}
 
   Future<void> _check() async {
-    final enabled=(await SharedPreferences.getInstance()).getBool('app_lock_enabled')??false;
-    if(!enabled){if(mounted)setState(()=>checking=false);return;}
-    if(mounted)setState(()=>locked=true);
-    await _unlock();
+    try {
+      final prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 4));
+      final enabled = prefs.getBool('app_lock_enabled') ?? false;
+      if (!enabled) {
+        if (mounted) setState(() { checking = false; locked = false; });
+        return;
+      }
+      // Important: stop the startup spinner before asking for the PIN.
+      // Otherwise a correct PIN can unlock the gate while build() keeps
+      // returning the loading screen forever.
+      if (mounted) setState(() { locked = true; checking = false; });
+      await _unlock();
+    } catch (e) {
+      debugPrint('App lock check failed: $e');
+      // A local-preferences failure must not permanently strand the user
+      // on the startup spinner. Let the app open and report the issue.
+      if (mounted) setState(() { checking = false; locked = false; });
+    }
   }
 
   @override void didChangeAppLifecycleState(AppLifecycleState state){
@@ -12474,8 +12489,22 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
           if(ok){if(mounted)setState(()=>locked=false);return;}
         } catch(_){}
       }
-      final pin=await _secure.read(key:'app_lock_pin');
-      if(pin!=null&&mounted) await _showPin(pin);
+      final pin = await _secure.read(key: 'app_lock_pin')
+          .timeout(const Duration(seconds: 4));
+      if (pin != null && pin.isNotEmpty && mounted) {
+        await _showPin(pin);
+      } else if (mounted) {
+        // Lock enabled without a saved PIN is an invalid configuration;
+        // don't trap the user behind a gate that cannot be unlocked.
+        setState(() => locked = false);
+        showMsg(context, 'رمز قفل ذخیره نشده بود؛ قفل برنامه غیرفعال شد.');
+      }
+    } catch (e) {
+      debugPrint('App unlock failed: $e');
+      if (mounted) {
+        setState(() => locked = false);
+        showMsg(context, 'بازکردن قفل ناموفق بود؛ دوباره از تنظیمات امنیتی تلاش کنید.');
+      }
     } finally {authenticating=false;}
   }
 
