@@ -93,6 +93,58 @@ String t(String key, String locale) {
 
 // Additional high-frequency labels used across chat, profile, stickers and dialogs.
 // Keep these exact-string translations separate so older keys remain backward compatible.
+// Fallback for UI strings that do not yet have an exact translation key.
+// Applied only when Dari (prs) is selected; it never changes stored IDs or backend values.
+String _dariFallback(String source) {
+  const terms = <String, String>{
+    'گفتگوهای جدید':'گپ‌های نو',
+    'گفتگوی جدید':'گپ نو',
+    'گفتگوها':'گپ‌ها',
+    'گفتگو':'گپ',
+    'گروه‌های':'گروپ‌های',
+    'گروه‌ها':'گروپ‌ها',
+    'گروه':'گروپ',
+    'اعلان‌های':'آگاهی‌های',
+    'اعلان‌ها':'آگاهی‌ها',
+    'اعلان':'آگاهی',
+    'حریم خصوصی':'محرمیت',
+    'کنترل':'کنترول',
+    'شماره تلفن':'شماره تیلفون',
+    'تلفن':'تیلفون',
+    'عکس‌های':'تصویرهای',
+    'عکس‌ها':'تصویرها',
+    'عکس':'تصویر',
+    'دوربین':'کمره',
+    'ویدئو':'ویدیو',
+    'ارسال کردن':'فرستادن',
+    'ارسال':'فرستادن',
+    'حذف کردن':'پاک کردن',
+    'حذف':'پاک کردن',
+    'بایگانی':'آرشیف',
+    'آرشیو':'آرشیف',
+    'کانال‌ها':'چنل‌ها',
+    'کانال':'چنل',
+    'اشتراک‌گذاری':'شریک‌ساختن',
+    'به اشتراک گذاری':'شریک‌ساختن',
+    'کپی':'کاپی',
+    'لغو':'لغو',
+    'بازگشت':'برگشت',
+    'اطلاعات':'معلومات',
+    'توضیحات':'شرح',
+    'جست‌وجو':'جستجو',
+    'پیوست‌ها':'ضمیمه‌ها',
+    'آخرین بازدید':'آخرین دیدار',
+    'وضعیت آنلاین':'حالت آنلاین',
+    'ذخیره شد':'ذخیره شد',
+    'تلاش دوباره':'دوباره کوشش کنید',
+  };
+  var result = source;
+  for (final entry in terms.entries) {
+    result = result.replaceAll(entry.key, entry.value);
+  }
+  return result;
+}
+
 const Map<String, String> _dariUiExtra = <String, String>{
   'آرشیو گفتگوها':'آرشیف گپ‌ها', 'اعلان‌ها':'آگاهی‌ها', 'همه':'همه',
   'گفتگو':'گپ', 'گفتگوها':'گپ‌ها', 'گفتگوی جدید':'گپ نو', 'مخاطبین':'مخاطبان',
@@ -241,7 +293,7 @@ String trUi(String source) {
       'این بخش فعلاً در دسترس نیست':'این بخش فعلاً قابل دسترس نیست',
       'خطایی رخ داد':'یک خطا رخ داده است','دوباره تلاش کنید':'دوباره تلاش کنید',
     };
-    return dari[source] ?? _dariUiExtra[source] ?? source;
+    return dari[source] ?? _dariUiExtra[source] ?? _dariFallback(source);
   }
   if (code == 'ps') {
     final pashto = <String, String>{
