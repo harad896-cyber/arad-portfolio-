@@ -9700,6 +9700,7 @@ class _ChatPageState extends State<ChatPage> {
             if (showGroupSender) ...[
               GestureDetector(
                 onTap: () => _openGroupMemberProfile('${m['sender_id']}'),
+                onLongPress: () => _showGroupMemberActions(m),
                 child: CircleAvatar(
                   radius: 16,
                   backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
@@ -9761,6 +9762,7 @@ class _ChatPageState extends State<ChatPage> {
                         padding: const EdgeInsets.only(bottom: 3),
                         child: InkWell(
                           onTap: () => _openGroupMemberProfile('${m['sender_id']}'),
+                          onLongPress: () => _showGroupMemberActions(m),
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2),
