@@ -132,6 +132,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     setState(() => busy = true);
     final search = TextEditingController();
     final selected = <String>{};
+    var searchRequest = 0;
     try {
       final contactRows = await db.from('contacts').select('contact_id').eq('user_id', uid);
       final contactIds = (contactRows as List)
@@ -159,6 +160,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                 const Text('مخاطبین نمایش داده می‌شوند؛ با جستجو می‌توانید کاربران ثبت‌نام‌شده را هم پیدا کنید.', textAlign: TextAlign.center),
                 const SizedBox(height: 10),
                 TextField(controller: search, autofocus: true, onChanged: (q) async {
+                  final requestId = ++searchRequest;
                   final term = q.trim();
                   if (term.isEmpty) {
                     setSheet(() => visible = List<Map<String, dynamic>>.from(contacts));
@@ -173,19 +175,19 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
                         p['id'].toString() != uid &&
                         !currentIds.contains(p['id'].toString()))
                       .toList();
-                    if (sheet.mounted) setSheet(() => visible = matches);
+                    if (sheet.mounted && requestId == searchRequest) setSheet(() => visible = matches);
                   } catch (_) {
                     final lower = term.toLowerCase();
-                    if (sheet.mounted) setSheet(() => visible = contacts.where((p) =>
+                    if (sheet.mounted && requestId == searchRequest) setSheet(() => visible = contacts.where((p) =>
                       (p['display_name'] ?? '').toString().toLowerCase().contains(lower) ||
                       (p['username'] ?? '').toString().toLowerCase().contains(lower)).toList());
                   }
                 }, decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'جستجوی مخاطب یا نام کاربری')),
-                if (contacts.isEmpty) const Padding(
+                if (contacts.isEmpty && search.text.trim().isEmpty) const Padding(
                   padding: EdgeInsets.all(20),
-                  child: Text('مخاطب جدیدی برای افزودن نیست. ابتدا از بخش مخاطبین، کاربر را اضافه کنید.', textAlign: TextAlign.center)),
-                if (contacts.isNotEmpty && visible.isEmpty) const Padding(
-                  padding: EdgeInsets.all(16), child: Text('مخاطبی پیدا نشد.')),
+                  child: Text('مخاطب جدیدی برای افزودن نیست. با جستجو می‌توانید کاربران را پیدا کنید.', textAlign: TextAlign.center)),
+                if (visible.isEmpty && search.text.trim().isNotEmpty) const Padding(
+                  padding: EdgeInsets.all(16), child: Text('کاربری با این نام یا آیدی پیدا نشد.')),
                 ConstrainedBox(constraints: const BoxConstraints(maxHeight: 340),
                   child: ListView(shrinkWrap: true, children: visible.map((p) {
                     final id = p['id'].toString(); final checked = selected.contains(id);
