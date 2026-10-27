@@ -6439,9 +6439,8 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Map<String,dynamic> group = {};
   List<Map<String,dynamic>> members = [];
   String myRole = 'member';
+  bool canEditRules = false, canManageMembers = false, canAddMembers = false;
   bool get isCreator => group['created_by']?.toString() == supabase.auth.currentUser?.id;
-  bool get canEditRules => isCreator || myRole == 'owner' || myRole == 'admin';
-  bool get canManageMembers => isCreator || myRole == 'owner' || myRole == 'admin';
 
   @override void initState() { super.initState(); _load(); }
 
@@ -6460,8 +6459,25 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       final enriched = rows.map((m)=>{...m,'_profile':byId[m['user_id'].toString()] ?? <String,dynamic>{}}).toList()
         ..sort((a,b) => (a['role']=='owner' ? 0 : a['role']=='admin' ? 1 : 2).compareTo(b['role']=='owner' ? 0 : b['role']=='admin' ? 1 : 2));
       final mine = rows.where((m)=>m['user_id'].toString()==uid).toList();
+      final resolvedRole = mine.isEmpty ? 'member' : (mine.first['role'] ?? 'member').toString();
+      final creatorNow = c['created_by']?.toString() == uid;
+      Map<String, dynamic> adminPermissions = {};
+      if (!creatorNow && resolvedRole == 'admin') {
+        try {
+          final permissionRow = await supabase.from('group_admin_permissions')
+              .select('can_add_members,can_remove_members,can_edit_group')
+              .eq('conversation_id', widget.conversationId).eq('user_id', uid).maybeSingle();
+          if (permissionRow != null) adminPermissions = Map<String, dynamic>.from(permissionRow);
+        } catch (_) {}
+      }
       if(!mounted)return;
-      setState(() { group=Map<String,dynamic>.from(c); members=enriched; myRole=mine.isEmpty?'member':(mine.first['role']??'member').toString(); loading=false; });
+      setState(() {
+        group=Map<String,dynamic>.from(c); members=enriched; myRole=resolvedRole;
+        canAddMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_add_members']==true;
+        canManageMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_add_members']==true || adminPermissions['can_remove_members']==true;
+        canEditRules=creatorNow || resolvedRole=='owner' || adminPermissions['can_edit_group']==true;
+        loading=false;
+      });
     } catch(e) {
       if(!mounted)return; setState(()=>loading=false);
       showMsg(context,'بارگذاری پروفایل گروه ناموفق بود: '+_friendlyError(e.toString()));
@@ -6654,7 +6670,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Future<void> _addMembers() async {
     final uid=supabase.auth.currentUser!.id;
     final existing=members.map((m)=>m['user_id'].toString()).toSet();
-    if (!canManageMembers) { showMsg(context, 'فقط مدیر یا سازنده گروه می‌تواند اعضا را اضافه کند.'); return; }
+    if (!canAddMembers) { showMsg(context, 'اختیار افزودن عضو برای حساب شما فعال نیست.'); return; }
     final query=TextEditingController();
     final selected=<String>{};
     // Keep one request for the lifetime of the dialog; typing/selecting must not
@@ -6714,7 +6730,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
         const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
         const SizedBox(height:14),Wrap(alignment:WrapAlignment.center,spacing:10,runSpacing:8,children:[
-          if(canManageMembers) FilledButton.icon(onPressed:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
+          if(canAddMembers) FilledButton.icon(onPressed:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
           if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('ویرایش نام و بیو')), if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_openGroupSettings,icon:const Icon(Icons.tune_rounded),label:const Text('تنظیمات گروه')), if(canManageMembers) OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.conversationId,title:title))),icon:const Icon(Icons.admin_panel_settings_rounded),label:const Text('مدیریت اعضا')),
         ]),
       ])),
