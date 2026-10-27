@@ -54,7 +54,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         profiles = {for (final p in ps) p['id'].toString(): p};
         owner = isOwner;
         admin = isAdmin;
-        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false);
+        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false) || g['only_admins_can_add'] != true;
         canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
@@ -653,6 +653,19 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   @override Widget build(BuildContext context) {
     if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
+    if (!admin) return Scaffold(
+      appBar: AppBar(title: const Text('مدیریت گروه')),
+      body: Center(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.lock_outline_rounded, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(height: 12),
+          const Text('این بخش فقط برای مدیران گروه قابل دسترسی است.', textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(onPressed: load, icon: const Icon(Icons.refresh_rounded), label: const Text('بررسی دوباره')),
+        ]),
+      )),
+    );
     return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (canEditGroup) IconButton(tooltip: 'تغییر عکس گروه', onPressed: busy ? null : changeGroupAvatar, icon: const Icon(Icons.add_a_photo_rounded)), if (canEditGroup) IconButton(tooltip: 'ویرایش نام و توضیحات', onPressed: busy ? null : editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
       Card(child: ListTile(leading: CircleAvatar(backgroundImage: (group!['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(group!['avatar_url'].toString()) : null, child: (group!['avatar_url'] ?? '').toString().isEmpty ? const Icon(Icons.groups) : null), title: Text((group!['title'] ?? widget.title).toString(), style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(owner ? 'مالک گروه' : 'مدیر گروه'))),
       const SizedBox(height: 8),
