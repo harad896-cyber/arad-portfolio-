@@ -8748,8 +8748,11 @@ class _ChatPageState extends State<ChatPage> {
     const categories = <String, List<String>>{
       'محبوب': ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'],
       'احساسات': ['😀','😁','🥹','🤣','😎','😍','😘','🥳','😭','😡','🤯','😴','🤗','😇','🙃','😔'],
-      'دست‌ها': ['👋','🤝','🫶','🤲','✌️','🤞','👌','💪','🫡','👏','🙌','🙏'],
-      'نمادها': ['✨','💫','⭐','🌟','❤️‍🔥','💔','💜','💙','💚','🖤','✅','❌','💯','🎯'],
+      'دست‌ها': ['👋','🤝','🫶','🤲','✌️','🤞','👌','💪','🫡','👏','🙌','🙏','🤟','🫰','🖐️','👊','✊','🤜','🤛'],
+      'نمادها': ['✨','💫','⭐','🌟','❤️‍🔥','💔','💜','💙','💚','🖤','✅','❌','💯','🎯','💢','💤','💬','🔔','🚩'],
+      'حیوانات': ['🐶','🐱','🐼','🐸','🦊','🐵','🦁','🐯','🐻','🐰','🦋','🐢','🐬','🐳','🦄','🐉'],
+      'غذا و جشن': ['🍎','🍓','🍉','🍕','🍔','🍟','🍰','🎂','☕','🥳','🎉','🎊','🎁','🏆','🥂','🧁'],
+      'فعالیت‌ها': ['⚽','🏀','🎮','🎧','🎵','🎤','🎬','📸','🚀','✈️','🏖️','🏋️','💃','🕺','🎯','🏅'],
     };
     await showModalBottomSheet<void>(
       context: context,
@@ -8801,7 +8804,12 @@ class _ChatPageState extends State<ChatPage> {
               Flexible(child: GridView.builder(
                 shrinkWrap: true,
                 itemCount: categories[selectedCategory]!.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, mainAxisSpacing: 5, crossAxisSpacing: 5),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: MediaQuery.of(ctx).size.width < 360 ? 5 : 6,
+                  mainAxisSpacing: 5,
+                  crossAxisSpacing: 5,
+                  childAspectRatio: 1,
+                ),
                 itemBuilder: (ctx, index) {
                   final emoji = categories[selectedCategory]![index];
                   return TweenAnimationBuilder<double>(
