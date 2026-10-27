@@ -851,7 +851,7 @@ String trUi(String source) {
   return source;
 }
 class LanguageController extends ChangeNotifier {
-  Locale locale = const Locale('fa');
+  Locale locale = Locale('fa');
 
   Future<void> load() async { final p = await SharedPreferences.getInstance(); locale = Locale(p.getString('locale') ?? 'fa'); notifyListeners(); }
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
@@ -958,7 +958,7 @@ class AppAccessibilityController extends ChangeNotifier {
     // Avoid writing preferences on every slider frame; save the final value
     // after the user stops dragging for a moment.
     _scaleSaveTimer?.cancel();
-    _scaleSaveTimer = Timer(const Duration(milliseconds: 250), () async {
+    _scaleSaveTimer = Timer(Duration(milliseconds: 250), () async {
       try {
         final p = await SharedPreferences.getInstance();
         await p.setDouble('accessibility_text_scale_$_scope', textScale);
@@ -1011,7 +1011,7 @@ Future<void> main() async {
 
   // Paint a real first frame immediately; do not leave users staring at white
   // while Supabase restores the session or a slow connection times out.
-  runApp(const StartupLoadingApp());
+  runApp(StartupLoadingApp());
 
   // Never leave the web app as a blank page if backend initialization fails.
   // Show a readable startup error so the failure can be diagnosed on-device.
@@ -1020,7 +1020,7 @@ Future<void> main() async {
       url: supabaseUrl,
       publishableKey: supabasePublishableKey,
     ).timeout(
-      const Duration(seconds: 10),
+      Duration(seconds: 10),
       onTimeout: () => throw TimeoutException(
         'اتصال به سرویس ورود بیش از ۱۰ ثانیه طول کشید. اینترنت یا دسترسی به سرویس را بررسی کنید و دوباره تلاش کنید.',
       ),
@@ -1036,7 +1036,7 @@ Future<void> main() async {
   // are local-only and must not delay startup or prevent the APK from showing
   // its UI if Android storage temporarily fails.
   ErrorWidget.builder = (details) => Material(
-    color: const Color(0xFFF8F7FC),
+    color: Color(0xFFF8F7FC),
     child: Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1049,21 +1049,21 @@ Future<void> main() async {
       ),
     ),
   );
-  runApp(const AradMessenger());
+  runApp(AradMessenger());
   unawaited(appTheme.load().catchError((_) {}));
   unawaited(aradLanguageController.load().catchError((_) {}));
   unawaited(appAccessibility.load().catchError((_) {}));
 }
 
 class StartupLoadingApp extends StatelessWidget {
-  const StartupLoadingApp({super.key});
+  StartupLoadingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: const Color(0xFF071A2D),
+        backgroundColor: Color(0xFF071A2D),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1074,7 +1074,7 @@ class StartupLoadingApp extends StatelessWidget {
                   Container(
                     width: 76, height: 76,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00C2A8).withValues(alpha: .14),
+                      color: Color(0xFF00C2A8).withValues(alpha: .14),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Icon(Icons.forum_rounded, size: 42, color: Color(0xFF00C2A8)),
@@ -1097,14 +1097,14 @@ class StartupLoadingApp extends StatelessWidget {
 
 class StartupFailureApp extends StatelessWidget {
   final String message;
-  const StartupFailureApp({super.key, required this.message});
+  StartupFailureApp({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: const Color(0xFFF8F7FC),
+        backgroundColor: Color(0xFFF8F7FC),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1206,7 +1206,7 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
                 ),
                 child: offline
                     ? Container(
-                        key: const ValueKey('offline'),
+                        key: ValueKey('offline'),
                         margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                         decoration: BoxDecoration(
@@ -1235,7 +1235,7 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
 }
 
 class AradMessenger extends StatelessWidget {
-  const AradMessenger({super.key});
+  AradMessenger({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1245,22 +1245,22 @@ class AradMessenger extends StatelessWidget {
       // Flutter's built-in Material widgets do not ship prs/ps delegates; use Persian
       // for built-in date/dialog labels while the app keeps Dari/Pashto selection and RTL.
       localeResolutionCallback: (locale, supportedLocales) {
-        if (locale?.languageCode == 'prs' || locale?.languageCode == 'haz' || locale?.languageCode == 'ps') return const Locale('fa');
+        if (locale?.languageCode == 'prs' || locale?.languageCode == 'haz' || locale?.languageCode == 'ps') return Locale('fa');
         return locale;
       },
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
-        final base = dark ? const Color(0xFF10121A) : const Color(0xFFF6F7FB);
-        final glowA = dark ? const Color(0xFF171827) : const Color(0xFFF0EDFA);
-        final glowB = dark ? const Color(0xFF111D28) : const Color(0xFFEDF4FB);
+        final base = dark ? Color(0xFF10121A) : Color(0xFFF6F7FB);
+        final glowA = dark ? Color(0xFF171827) : Color(0xFFF0EDFA);
+        final glowB = dark ? Color(0xFF111D28) : Color(0xFFEDF4FB);
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
               // A gradient already paints the base color. Supplying both
               // color and gradient triggers BoxDecoration's debug assertion.
               gradient: RadialGradient(
-                center: const Alignment(-0.8, -0.9),
+                center: Alignment(-0.8, -0.9),
                 radius: 1.45,
                 colors: [glowA, base],
               ),
@@ -1289,13 +1289,13 @@ class AradMessenger extends StatelessWidget {
                         ? Theme(
                             data: Theme.of(context).copyWith(
                               colorScheme: Theme.of(context).colorScheme.copyWith(
-                                primary: dark ? const Color(0xFFD6C4FF) : const Color(0xFF4C239D),
-                                onSurface: dark ? Colors.white : const Color(0xFF101018),
-                                outline: dark ? const Color(0xFFBDB4D4) : const Color(0xFF555064),
-                                outlineVariant: dark ? const Color(0xFF79718C) : const Color(0xFF777185),
+                                primary: dark ? Color(0xFFD6C4FF) : Color(0xFF4C239D),
+                                onSurface: dark ? Colors.white : Color(0xFF101018),
+                                outline: dark ? Color(0xFFBDB4D4) : Color(0xFF555064),
+                                outlineVariant: dark ? Color(0xFF79718C) : Color(0xFF777185),
                               ),
                               dividerTheme: DividerThemeData(
-                                color: dark ? const Color(0xFF79718C) : const Color(0xFF777185),
+                                color: dark ? Color(0xFF79718C) : Color(0xFF777185),
                                 thickness: 1.2,
                               ),
                             ),
@@ -1318,12 +1318,12 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: const Color(0xFFFCFCFE),
+          surface: Color(0xFFFCFCFE),
         ),
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
-        pageTransitionsTheme: const PageTransitionsTheme(
+        pageTransitionsTheme: PageTransitionsTheme(
           builders: {
             TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -1353,22 +1353,22 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: const Color(0xFFFFFFFF),
+          tileColor: Color(0xFFFFFFFF),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
-          iconColor: const Color(0xFF766A88),
+          iconColor: Color(0xFF766A88),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFF0F2F8),
+          fillColor: Color(0xFFF0F2F8),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: const Color(0xFF6C7180), fontSize: 14),
-          labelStyle: TextStyle(color: const Color(0xFF171320), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 14),
+          labelStyle: TextStyle(color: Color(0xFF171320), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: const Color(0xFF6C7180), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFB42318), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: const Color(0xFF6C7180),
+          suffixIconColor: Color(0xFF6C7180),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
@@ -1396,7 +1396,7 @@ class AradMessenger extends StatelessWidget {
             textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
           elevation: 2,
           shape: StadiumBorder(),
         ),
@@ -1412,12 +1412,12 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: const Color(0xFF071A2D),
+          surface: Color(0xFF071A2D),
         ),
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
-        pageTransitionsTheme: const PageTransitionsTheme(
+        pageTransitionsTheme: PageTransitionsTheme(
           builders: {
             TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -1429,7 +1429,7 @@ class AradMessenger extends StatelessWidget {
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
           backgroundColor: Color(0xFF071A2D),
           surfaceTintColor: Colors.transparent,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: const Color(0xFFF4F2FA)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -1445,22 +1445,22 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: const Color(0xFF0D2336),
+          tileColor: Color(0xFF0D2336),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
-          iconColor: const Color(0xFFBDB1D0),
+          iconColor: Color(0xFFBDB1D0),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFF0B2032),
+          fillColor: Color(0xFF0B2032),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: const Color(0xFF9DAFC0), fontSize: 14),
-          labelStyle: TextStyle(color: const Color(0xFFE8EDF5), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 14),
+          labelStyle: TextStyle(color: Color(0xFFE8EDF5), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: const Color(0xFF9DAFC0), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: const Color(0xFF9DAFC0),
+          suffixIconColor: Color(0xFF9DAFC0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
             borderSide: BorderSide(color: Color(0xFF263653))
@@ -1488,11 +1488,11 @@ class AradMessenger extends StatelessWidget {
             textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
           elevation: 2,
           shape: StadiumBorder(),
         ),
-      ),      home: const AuthGate(),
+      ),      home: AuthGate(),
     ));
   }
 }
@@ -1545,7 +1545,7 @@ String normalizeOtpDigits(String value) {
 }
 
 class ChatFoldersPage extends StatefulWidget {
-  const ChatFoldersPage({super.key});
+  ChatFoldersPage({super.key});
   @override State<ChatFoldersPage> createState()=>_ChatFoldersPageState();
 }
 class _ChatFoldersPageState extends State<ChatFoldersPage> {
@@ -1606,12 +1606,12 @@ class PremiumPageRoute<T> extends PageRouteBuilder<T> {
   PremiumPageRoute({required Widget page}):super(
     pageBuilder:(context,a,b)=>page,
     transitionsBuilder:(context,a,b,child)=>FadeTransition(opacity:a,child:SlideTransition(
-      position:Tween(begin:const Offset(.035,0),end:Offset.zero).animate(CurvedAnimation(parent:a,curve:Curves.easeOutCubic)),child:child)),
-    transitionDuration:const Duration(milliseconds:260),
+      position:Tween(begin:Offset(.035,0),end:Offset.zero).animate(CurvedAnimation(parent:a,curve:Curves.easeOutCubic)),child:child)),
+    transitionDuration:Duration(milliseconds:260),
   );
 }
 class ProfessionalSettingsPage extends StatefulWidget {
-  const ProfessionalSettingsPage({super.key});
+  ProfessionalSettingsPage({super.key});
   @override State<ProfessionalSettingsPage> createState()=>_ProfessionalSettingsPageState();
 }
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
@@ -1668,7 +1668,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
           title:Text(trUi('افزودن یا تغییر حساب'),style:TextStyle(fontWeight:FontWeight.w800)),
           subtitle:Text(trUi('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر')),
           trailing:Icon(Icons.chevron_left_rounded),
-          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccountSwitcherPage())),
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>AccountSwitcherPage())),
         )),
         Card(child:ListTile(
           leading:Icon(Icons.logout_rounded,color:Theme.of(context).colorScheme.error),
@@ -1687,21 +1687,21 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     'پیام‌رسانی پیشرفته'=>Icons.auto_awesome_rounded,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
   void _open(String title){
     switch(title){
-      case 'حساب کاربری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ProfilePage())); break;
-      case 'حریم خصوصی': Navigator.push(context,MaterialPageRoute(builder:(_)=>const PrivacySettingsPage())); break;
-      case 'امنیت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const SecurityCenterPage())); break;
-      case 'اعلان‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsCenterPage())); break;
-      case 'مصرف داده': Navigator.push(context,MaterialPageRoute(builder:(_)=>const DataSettingsPage())); break;
-      case 'دسترسی‌پذیری': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccessibilityPage())); break;
-      case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>const CallHistoryPage())); break;
+      case 'حساب کاربری': Navigator.push(context,MaterialPageRoute(builder:(_)=>ProfilePage())); break;
+      case 'حریم خصوصی': Navigator.push(context,MaterialPageRoute(builder:(_)=>PrivacySettingsPage())); break;
+      case 'امنیت': Navigator.push(context,MaterialPageRoute(builder:(_)=>SecurityCenterPage())); break;
+      case 'اعلان‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>NotificationsCenterPage())); break;
+      case 'مصرف داده': Navigator.push(context,MaterialPageRoute(builder:(_)=>DataSettingsPage())); break;
+      case 'دسترسی‌پذیری': Navigator.push(context,MaterialPageRoute(builder:(_)=>AccessibilityPage())); break;
+      case 'تماس‌ها': Navigator.push(context,MaterialPageRoute(builder:(_)=>CallHistoryPage())); break;
       case 'ظاهر': _showThemeSheet(); break;
-      case 'پس‌زمینه چت': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())); break;
+      case 'پس‌زمینه چت': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatBackgroundPage())); break;
       case 'زبان': _showLanguageSheet(); break;
-      case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatSettingsPage())); break;
-      case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())); break;
+      case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatSettingsPage())); break;
+      case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatFoldersPage())); break;
       case 'پیام‌های ذخیره‌شده': Navigator.push(context,MaterialPageRoute(builder:(_)=>SavedMessagesPage())); break;
-      case 'پیام‌رسانی پیشرفته': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedFeaturesPage())); break;
-      case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>const AboutAppPage())); break;
+      case 'پیام‌رسانی پیشرفته': Navigator.push(context,MaterialPageRoute(builder:(_)=>AdvancedFeaturesPage())); break;
+      case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>AboutAppPage())); break;
     }
   }
   void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
@@ -1723,7 +1723,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
 }
 
 class PrivacySettingsPage extends StatefulWidget {
-  const PrivacySettingsPage({super.key});
+  PrivacySettingsPage({super.key});
   @override
   State<PrivacySettingsPage> createState() => _PrivacySettingsPageState();
 }
@@ -2070,7 +2070,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
 }
 
 class ChatSettingsPage extends StatefulWidget {
-  const ChatSettingsPage({super.key});
+  ChatSettingsPage({super.key});
   @override State<ChatSettingsPage> createState()=>_ChatSettingsPageState();
 }
 class _ChatSettingsPageState extends State<ChatSettingsPage>{
@@ -2118,7 +2118,7 @@ class _ChoiceSheet extends StatelessWidget{
   @override Widget build(BuildContext context)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[Padding(padding:const EdgeInsets.all(18),child:Text(title,style:TextStyle(fontSize:19,fontWeight:FontWeight.w800))),...options.map((o)=>RadioListTile(value:o,groupValue:value,onChanged:(v)=>onChanged(v!),title:Text(o)))]));
 }
 class AppAppearancePage extends StatefulWidget {
-  const AppAppearancePage({super.key});
+  AppAppearancePage({super.key});
   @override State<AppAppearancePage> createState() => _AppAppearancePageState();
 }
 class _AppAppearancePageState extends State<AppAppearancePage> {
@@ -2259,7 +2259,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                           Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: Container(
-                              constraints: const BoxConstraints(maxWidth: 210),
+                              constraints: BoxConstraints(maxWidth: 210),
                               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
                               decoration: BoxDecoration(
                                 color: scheme.surfaceContainerHighest.withValues(alpha: .97),
@@ -2276,7 +2276,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                           Align(
                             alignment: AlignmentDirectional.centerEnd,
                             child: Container(
-                              constraints: const BoxConstraints(maxWidth: 220),
+                              constraints: BoxConstraints(maxWidth: 220),
                               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
@@ -2288,7 +2288,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                                   bottomLeft: Radius.circular(17),
                                 ),
                                 border: Border.all(color: Colors.white.withValues(alpha: .22)),
-                                boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .20), blurRadius: 9, offset: const Offset(0, 3))],
+                                boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .20), blurRadius: 9, offset: Offset(0, 3))],
                               ),
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
                                 Flexible(child: Text('خیلی شیک و مرتب شده ✨', style: TextStyle(color: Colors.white, fontSize: 12))),
@@ -2297,7 +2297,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
                               ]),
                             ),
                           ),
-                          const Spacer(),
+                          Spacer(),
                         ],
                       ),
                     ),
@@ -2355,9 +2355,9 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
           SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             itemCount: presets.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.15),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.15),
             itemBuilder: (context, i) {
               final p = presets[i];
               final selected = appTheme.backgroundSeed == p.color && !hasImage;
@@ -2424,7 +2424,7 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
   }
 }
 class CallHistoryPage extends StatefulWidget {
-  const CallHistoryPage({super.key});
+  CallHistoryPage({super.key});
   @override State<CallHistoryPage> createState() => _CallHistoryPageState();
 }
 
@@ -2470,7 +2470,7 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
     return Scaffold(
       appBar: AppBar(title: Text(trUi('تاریخچه تماس‌ها'))),
       body: loading ? Center(child: CircularProgressIndicator()) : calls.isEmpty
-          ? const AppEmptyState(icon: Icons.phone_in_talk_rounded, title: 'هنوز تاریخچه تماس ثبت نشده است', subtitle: 'تماس‌های واقعی بعد از برقراری یا پایان تماس اینجا ثبت می‌شوند.')
+          ? AppEmptyState(icon: Icons.phone_in_talk_rounded, title: 'هنوز تاریخچه تماس ثبت نشده است', subtitle: 'تماس‌های واقعی بعد از برقراری یا پایان تماس اینجا ثبت می‌شوند.')
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView.separated(
@@ -2502,7 +2502,7 @@ class _CallHistoryPageState extends State<CallHistoryPage> {
 }
 
 class QuickControlsPage extends StatefulWidget {
-  const QuickControlsPage({super.key});
+  QuickControlsPage({super.key});
   @override State<QuickControlsPage> createState() => _QuickControlsPageState();
 }
 class _QuickControlsPageState extends State<QuickControlsPage> {
@@ -2553,12 +2553,12 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
             padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
             child: Text('تنظیمات پرکاربرد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
           ),
-          _shortcut(Icons.wallpaper_rounded, 'پس‌زمینه و افکت‌ها', 'انتخاب رنگ، عکس و نور ملایم', const ChatBackgroundPage()),
-          _shortcut(Icons.notifications_active_outlined, 'اعلان‌ها', 'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها', const NotificationsCenterPage()),
-          _shortcut(Icons.data_saver_on_rounded, 'مصرف داده', 'کنترل مصرف اینترنت و دانلودها', const DataSettingsPage()),
-          _shortcut(Icons.text_fields_rounded, 'خوانایی و اندازه متن', 'اندازه متن و کنتراست کل برنامه', const AccessibilityPage()),
-          _shortcut(Icons.chat_bubble_outline_rounded, 'تنظیمات گفتگو', 'رسید خواندن، پیش‌نمایش و رفتار پیام‌ها', const ChatSettingsPage()),
-          _shortcut(Icons.palette_outlined, 'ظاهر و رنگ برنامه', 'حالت روشن/تاریک و شخصی‌سازی', const ProfessionalSettingsPage()),
+          _shortcut(Icons.wallpaper_rounded, 'پس‌زمینه و افکت‌ها', 'انتخاب رنگ، عکس و نور ملایم', ChatBackgroundPage()),
+          _shortcut(Icons.notifications_active_outlined, 'اعلان‌ها', 'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها', NotificationsCenterPage()),
+          _shortcut(Icons.data_saver_on_rounded, 'مصرف داده', 'کنترل مصرف اینترنت و دانلودها', DataSettingsPage()),
+          _shortcut(Icons.text_fields_rounded, 'خوانایی و اندازه متن', 'اندازه متن و کنتراست کل برنامه', AccessibilityPage()),
+          _shortcut(Icons.chat_bubble_outline_rounded, 'تنظیمات گفتگو', 'رسید خواندن، پیش‌نمایش و رفتار پیام‌ها', ChatSettingsPage()),
+          _shortcut(Icons.palette_outlined, 'ظاهر و رنگ برنامه', 'حالت روشن/تاریک و شخصی‌سازی', ProfessionalSettingsPage()),
         ],
       ),
     );
@@ -2566,7 +2566,7 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
 }
 
 class NotificationsCenterPage extends StatefulWidget {
-  const NotificationsCenterPage({super.key});
+  NotificationsCenterPage({super.key});
   @override State<NotificationsCenterPage> createState() => _NotificationsCenterPageState();
 }
 
@@ -2591,7 +2591,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
 
   void _scheduleRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer(const Duration(milliseconds: 350), () {
+    _refreshTimer = Timer(Duration(milliseconds: 350), () {
       if (mounted) unawaited(_load(showLoading: false));
     });
   }
@@ -2666,7 +2666,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
         actions: [IconButton(tooltip: 'تازه‌سازی', onPressed: () => _load(), icon: Icon(Icons.refresh_rounded))],
       ),
       body: loading
-          ? const AppSkeletonList(count: 5)
+          ? AppSkeletonList(count: 5)
           : error != null
               ? Center(child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -2717,7 +2717,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                               title: Text((row['title'] ?? 'گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800)),
                               subtitle: Text((row['_preview'] ?? 'پیام جدید').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
                               trailing: Container(
-                                constraints: const BoxConstraints(minWidth: 26),
+                                constraints: BoxConstraints(minWidth: 26),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                                 decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(14)),
                                 child: Text('$unread', textAlign: TextAlign.center, style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w900)),
@@ -2732,11 +2732,11 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   }
 }
 class SharedMediaFilesPage extends StatelessWidget {
-  const SharedMediaFilesPage({super.key});
+  SharedMediaFilesPage({super.key});
   @override Widget build(BuildContext context)=>DefaultTabController(length:4,child:Scaffold(appBar:AppBar(title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),bottom:TabBar(tabs:[Tab(text:'عکس/ویدیو'),Tab(text:'فایل'),Tab(text:'لینک'),Tab(text:'صدا')])),body:TabBarView(children:[Center(child:Text(trUi('رسانه‌ای وجود ندارد'))),Center(child:Text(trUi('فایلی وجود ندارد'))),Center(child:Text(trUi('لینکی وجود ندارد'))),Center(child:Text(trUi('صدایی وجود ندارد')))])));
 }
 class GlobalSearchPage extends StatefulWidget {
-  const GlobalSearchPage({super.key});
+  GlobalSearchPage({super.key});
   @override State<GlobalSearchPage> createState()=>_GlobalSearchPageState();
 }
 class _GlobalSearchPageState extends State<GlobalSearchPage>{
@@ -2758,7 +2758,7 @@ class _SearchSection extends StatelessWidget {
   @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(16,18,16,8),child:Text(title,style:TextStyle(fontWeight:FontWeight.w800,fontSize:17))),ListTile(leading:Icon(Icons.search_rounded),title:Text(trUi('نتیجه جستجو')))]);
 }
 class StickersGifsPage extends StatelessWidget {
-  const StickersGifsPage({super.key});
+  StickersGifsPage({super.key});
   @override Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DefaultTabController(length: 3, child: Scaffold(
@@ -2847,7 +2847,7 @@ String _deviceDisplayName() {
 
 class DeviceSessionGate extends StatefulWidget {
   final Widget child;
-  const DeviceSessionGate({super.key, required this.child});
+  DeviceSessionGate({super.key, required this.child});
   @override
   State<DeviceSessionGate> createState() => _DeviceSessionGateState();
 }
@@ -2865,7 +2865,7 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
     WidgetsBinding.instance.addObserver(this);
     unawaited(_heartbeat());
     _heartbeatTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      Duration(seconds: 30),
       (_) => unawaited(_heartbeat()),
     );
   }
@@ -2886,7 +2886,7 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
           'p_device_id': _deviceId,
           'p_device_name': _deviceDisplayName(),
         },
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(Duration(seconds: 8));
       if (active != true && mounted && !_signedOut) {
         _signedOut = true;
         await supabase.auth.signOut(scope: SignOutScope.local);
@@ -2911,7 +2911,7 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
 }
 
 class SecurityCenterPage extends StatefulWidget {
-  const SecurityCenterPage({super.key});
+  SecurityCenterPage({super.key});
   @override
   State<SecurityCenterPage> createState() => _SecurityCenterPageState();
 }
@@ -3037,7 +3037,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         deviceIds.map((id) => supabase.rpc(
           'revoke_device_session',
           params: {'p_device_id': id},
-        ).timeout(const Duration(seconds: 10)).catchError((_) => false)),
+        ).timeout(Duration(seconds: 10)).catchError((_) => false)),
       );
       final count = results.where((result) => result == true).length;
       if (mounted) {
@@ -3079,7 +3079,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         ],
       ),
       body: loading
-          ? const AppSkeletonList(count: 4)
+          ? AppSkeletonList(count: 4)
           : error != null
               ? Center(child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -3170,10 +3170,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 }
 
 class GroupAdvancedPage extends StatelessWidget {
-  const GroupAdvancedPage({super.key});
+  GroupAdvancedPage({super.key});
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(trUi('پیام‌رسانی گروهی'))),
-    body:const AppEmptyState(
+    body:AppEmptyState(
       icon:Icons.groups_rounded,
       title:'قابلیت‌های پیشرفته گروه',
       subtitle:'نظرسنجی، پین پیشرفته و ابزارهای @ فقط بعد از اتصال کامل به داده و مجوزهای سرور در رابط برنامه فعال می‌شوند.',
@@ -3181,7 +3181,7 @@ class GroupAdvancedPage extends StatelessWidget {
   );
 }
 class AboutAppPage extends StatelessWidget {
-  const AboutAppPage({super.key});
+  AboutAppPage({super.key});
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(trUi('درباره برنامه'))),
     body:ListView(padding:const EdgeInsets.all(16),children:[
@@ -3268,8 +3268,8 @@ void _openAvatarPreview(BuildContext context, Map<String, dynamic> profile) {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF292344),
-                      border: Border.all(color: const Color(0xFF9B83FF), width: 2),
+                      color: Color(0xFF292344),
+                      border: Border.all(color: Color(0xFF9B83FF), width: 2),
                     ),
                     child: isCharacter
                         ? Text(url.substring(6), style: TextStyle(fontSize: 112))
@@ -3301,8 +3301,8 @@ Widget avatar(Map<String, dynamic> profile, {double size = 44}) {
     alignment: Alignment.center,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: const Color(0xFF292344),
-      border: Border.all(color: const Color(0xFF9B83FF).withValues(alpha: .55)),
+      color: Color(0xFF292344),
+      border: Border.all(color: Color(0xFF9B83FF).withValues(alpha: .55)),
     ),
     child: isCharacter
         ? Text(url.substring(6), style: TextStyle(fontSize: size * .58))
@@ -3389,7 +3389,7 @@ Future<void> _removeSavedAccount(String email) async {
 }
 
 class AccountSwitcherPage extends StatefulWidget {
-  const AccountSwitcherPage({super.key});
+  AccountSwitcherPage({super.key});
   @override State<AccountSwitcherPage> createState()=>_AccountSwitcherPageState();
 }
 class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
@@ -3404,7 +3404,7 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
   Future<void> _add()async{
     await rememberCurrentSession();
     if(!mounted)return;
-    await Navigator.push(context,MaterialPageRoute(builder:(_)=>const LoginPage(addAccount:true)));
+    await Navigator.push(context,MaterialPageRoute(builder:(_)=>LoginPage(addAccount:true)));
     if(mounted)await _load();
   }
   Future<void> _switch(String email)async{
@@ -3418,13 +3418,13 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
         return;
       }
       await supabase.auth.setSession(refresh)
-          .timeout(const Duration(seconds: 15));
-      await rememberCurrentSession().timeout(const Duration(seconds: 5));
+          .timeout(Duration(seconds: 15));
+      await rememberCurrentSession().timeout(Duration(seconds: 5));
       // Restore this account's own theme and accessibility preferences.
-      await appTheme.loadForUser().timeout(const Duration(seconds: 5));
-      await appAccessibility.load().timeout(const Duration(seconds: 5));
+      await appTheme.loadForUser().timeout(Duration(seconds: 5));
+      await appAccessibility.load().timeout(Duration(seconds: 5));
       if(!mounted)return;
-      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(route)=>false);
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>ProfileGate()),(route)=>false);
     } on TimeoutException {
       if (mounted) showMsg(context, 'تغییر حساب بیش از حد طول کشید. اینترنت را بررسی و دوباره تلاش کنید.');
     } catch(e) {
@@ -3462,7 +3462,7 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
 }
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+  AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -3470,7 +3470,7 @@ class AuthGate extends StatelessWidget {
       stream: supabase.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = supabase.auth.currentSession;
-        if (session == null) return const LoginPage();
+        if (session == null) return LoginPage();
 
         final user = supabase.auth.currentUser;
         final meta = user?.appMetadata ?? const <String, dynamic>{};
@@ -3487,14 +3487,14 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        return const AppBanGate();
+        return AppBanGate();
       },
     );
   }
 }
 
 class AppBanGate extends StatefulWidget {
-  const AppBanGate({super.key});
+  AppBanGate({super.key});
 
   @override
   State<AppBanGate> createState() => _AppBanGateState();
@@ -3520,7 +3520,7 @@ class _AppBanGateState extends State<AppBanGate> {
     try {
       return await supabase
           .rpc('is_current_user_app_banned')
-          .timeout(const Duration(seconds: 2)) == true;
+          .timeout(Duration(seconds: 2)) == true;
     } catch (error) {
       debugPrint('Ban check unavailable; allowing app UI to open: $error');
       return false;
@@ -3535,21 +3535,21 @@ class _AppBanGateState extends State<AppBanGate> {
         // Do not cover the app while the optional moderation request is pending.
         // Show the authenticated home/profile flow immediately; if the server
         // confirms a ban, switch to the ban screen when the result arrives.
-        if (snapshot.data == true) return const AppBannedPage();
-        return const ProfileGate();
+        if (snapshot.data == true) return AppBannedPage();
+        return ProfileGate();
       },
     );
   }
 }
 
 class AppBannedPage extends StatelessWidget {
-  const AppBannedPage({super.key});
+  AppBannedPage({super.key});
 
   Future<void> signOut(BuildContext context) async {
     await supabase.auth.signOut();
     if (context.mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MaterialPageRoute(builder: (_) => LoginPage()),
         (_) => false,
       );
     }
@@ -3596,7 +3596,7 @@ class AppBannedPage extends StatelessWidget {
 }
 
 class ProfileGate extends StatefulWidget {
-  const ProfileGate({super.key});
+  ProfileGate({super.key});
 
   @override
   State<ProfileGate> createState() => _ProfileGateState();
@@ -3693,8 +3693,8 @@ class _ProfileGateState extends State<ProfileGate> {
           );
         }
         return snapshot.data == true
-            ? const DeviceSessionGate(child: AppLockGate(child: HomePage()))
-            : const ProfileSetupPage();
+            ? DeviceSessionGate(child: AppLockGate(child: HomePage()))
+            : ProfileSetupPage();
       },
     );
   }
@@ -3713,7 +3713,7 @@ Future<List<String>> rememberedAccountEmails()=>_savedAccountEmails();
 
 class LoginPage extends StatefulWidget {
   final bool addAccount;
-  const LoginPage({super.key,this.addAccount=false});
+  LoginPage({super.key,this.addAccount=false});
   @override State<LoginPage> createState()=>_LoginPageState();
 }
 class _LoginPageState extends State<LoginPage>{
@@ -3729,7 +3729,7 @@ class _LoginPageState extends State<LoginPage>{
       setState(()=>busy=true);
       try {
         // Clear only the previous local session, then request a signup OTP.
-        await supabase.auth.signOut().timeout(const Duration(seconds: 8));
+        await supabase.auth.signOut().timeout(Duration(seconds: 8));
         await supabase.auth.signInWithOtp(
           email: mail,
           shouldCreateUser: true,
@@ -3738,7 +3738,7 @@ class _LoginPageState extends State<LoginPage>{
             'last_name': last.text.trim(),
             'full_name': '${first.text.trim()} ${last.text.trim()}',
           },
-        ).timeout(const Duration(seconds: 15));
+        ).timeout(Duration(seconds: 15));
         if (mounted) {
           Navigator.push(context, MaterialPageRoute(
             builder: (_) => EmailVerificationPage(
@@ -3767,25 +3767,25 @@ class _LoginPageState extends State<LoginPage>{
         if(current != null && currentEmail == mail){
           await rememberCurrentSession();
           if(mounted) Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder:(_)=>const ProfileGate()), (route)=>false);
+            MaterialPageRoute(builder:(_)=>ProfileGate()), (route)=>false);
           return;
         }
         final secret = password.text;
         if(secret.isEmpty){showMsg(context,'رمز عبور را وارد کنید.');return;}
         await supabase.auth.signInWithPassword(email:mail,password:secret)
-            .timeout(const Duration(seconds: 15));
+            .timeout(Duration(seconds: 15));
         // Session persistence and theme loading must never block navigation
         // after Supabase has authenticated the user successfully.
         try {
-          await rememberCurrentSession().timeout(const Duration(seconds: 4));
+          await rememberCurrentSession().timeout(Duration(seconds: 4));
         } catch (_) {}
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ProfileGate()),
+          MaterialPageRoute(builder: (_) => ProfileGate()),
           (route) => false,
         );
         // Load user preferences in the background; they are non-critical to login.
-        appTheme.loadForUser().timeout(const Duration(seconds: 5)).catchError((_) {});
+        appTheme.loadForUser().timeout(Duration(seconds: 5)).catchError((_) {});
       }on AuthException catch(e){
         if(mounted)showMsg(context,'ورود انجام نشد: ${e.message}');
       }catch(e){
@@ -3809,7 +3809,7 @@ class _LoginPageState extends State<LoginPage>{
       // Native Android/iOS Google sign-in needs the Web OAuth client ID.
       // The APK workflow passes it through GOOGLE_SERVER_CLIENT_ID.
       if (googleServerClientId.isEmpty) {
-        throw const AuthException(
+        throw AuthException(
           'تنظیم ورود گوگل کامل نیست: شناسه Web Client در ساخت APK تنظیم نشده است.',
         );
       }
@@ -3817,7 +3817,7 @@ class _LoginPageState extends State<LoginPage>{
       final account = await googleSignIn.authenticate();
       final idToken = account.authentication.idToken;
       if (idToken == null || idToken.isEmpty) {
-        throw const AuthException(
+        throw AuthException(
           'از گوگل ID token دریافت نشد. شناسه Web OAuth و تنظیمات OAuth اندروید را بررسی کنید.',
         );
       }
@@ -3827,7 +3827,7 @@ class _LoginPageState extends State<LoginPage>{
       );
       final accessToken = authorization?.accessToken;
       if (accessToken == null || accessToken.isEmpty) {
-        throw const AuthException(
+        throw AuthException(
           'از گوگل access token دریافت نشد. تنظیمات OAuth و مجوزهای حساب را بررسی کنید.',
         );
       }
@@ -3840,7 +3840,7 @@ class _LoginPageState extends State<LoginPage>{
       await appTheme.loadForUser();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ProfileGate()),
+          MaterialPageRoute(builder: (_) => ProfileGate()),
           (route) => false,
         );
       }
@@ -3863,7 +3863,7 @@ class _LoginPageState extends State<LoginPage>{
     setState(() => busy = true);
     try {
       await supabase.auth.resetPasswordForEmail(mail)
-          .timeout(const Duration(seconds: 15));
+          .timeout(Duration(seconds: 15));
       if (mounted) showMsg(context, 'اگر این ایمیل ثبت شده باشد، لینک بازیابی ارسال می‌شود. پوشه هرزنامه را هم بررسی کنید.');
     } on AuthException catch (e) {
       if (mounted) showMsg(context, 'درخواست بازیابی ناموفق بود: ${e.message}');
@@ -3876,7 +3876,7 @@ class _LoginPageState extends State<LoginPage>{
       if (mounted) setState(() => busy = false);
     }
   }
-  @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  @override Widget build(BuildContext context){final t=Theme.of(context);return Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:BoxConstraints(maxWidth:520),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
     Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
       decoration: BoxDecoration(
@@ -3949,11 +3949,11 @@ class _LoginPageState extends State<LoginPage>{
   @override void dispose(){email.dispose();password.dispose();first.dispose();last.dispose();super.dispose();}
 }
 
-class PasswordSetupPage extends StatefulWidget{const PasswordSetupPage({super.key});@override State<PasswordSetupPage> createState()=>_PasswordSetupPageState();}
+class PasswordSetupPage extends StatefulWidget{PasswordSetupPage({super.key});@override State<PasswordSetupPage> createState()=>_PasswordSetupPageState();}
 class _PasswordSetupPageState extends State<PasswordSetupPage>{
  final p=TextEditingController(),c=TextEditingController();bool busy=false;
  String? err(String v)=>v.length<8||!RegExp(r'[A-Z]').hasMatch(v)||!RegExp(r'[0-9]').hasMatch(v)?'حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد لازم است':null;
- Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
+ Future<void> save()async{if(p.text!=c.text){showMsg(context,'رمزها یکسان نیستند.');return;}final e=err(p.text);if(e!=null){showMsg(context,e);return;}setState(()=>busy=true);try{await supabase.auth.updateUser(UserAttributes(password:p.text));await rememberCurrentSession();if(mounted)Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>ProfileGate()),(_)=>false);}catch(e){if(mounted)showMsg(context,'ذخیره رمز ناموفق بود: $e');}finally{if(mounted)setState(()=>busy=false);}}
  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('ساخت رمز عبور'))),body:ListView(padding:const EdgeInsets.all(20),children:[Text('ساخت رمز عبور',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),SizedBox(height:18),TextField(controller:p,obscureText:true,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:'رمز عبور',errorText:err(p.text))),SizedBox(height:12),TextField(controller:c,obscureText:true,decoration:InputDecoration(labelText:'تکرار رمز عبور')),SizedBox(height:20),FilledButton(onPressed:busy?null:save,child:Text(busy?'در حال ذخیره...':'ادامه'))]));
  @override void dispose(){p.dispose();c.dispose();super.dispose();}
 }
@@ -3963,7 +3963,7 @@ class EmailVerificationPage extends StatefulWidget {
   final bool allowCreateUser;
   final bool ownerOnly;
 
-  const EmailVerificationPage({
+  EmailVerificationPage({
     super.key,
     required this.email,
     this.verificationType = OtpType.email,
@@ -4009,13 +4009,13 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       );
 
       if (response.session == null || supabase.auth.currentSession == null) {
-        throw const AuthException('تأیید کد انجام نشد. دوباره تلاش کنید.');
+        throw AuthException('تأیید کد انجام نشد. دوباره تلاش کنید.');
       }
 
       if (widget.ownerOnly) {
         final user = supabase.auth.currentUser;
         if (user == null) {
-          throw const AuthException('حساب مالک پیدا نشد.');
+          throw AuthException('حساب مالک پیدا نشد.');
         }
         final adminRow = await supabase
             .from('admin_users')
@@ -4024,18 +4024,18 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
             .maybeSingle();
         if (adminRow == null) {
           await supabase.auth.signOut();
-          throw const AuthException('این ایمیل دسترسی مالک ندارد.');
+          throw AuthException('این ایمیل دسترسی مالک ندارد.');
         }
       }
 
-      if (widget.allowCreateUser) { if (!mounted) return; Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PasswordSetupPage())); return; }
+      if (widget.allowCreateUser) { if (!mounted) return; Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => PasswordSetupPage())); return; }
       await rememberCurrentSession();
       // Theme is private to the signed-in account, not shared between accounts.
       await appTheme.loadForUser();
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const ProfileGate()),
+        MaterialPageRoute(builder: (_) => ProfileGate()),
         (route) => false,
       );
     } on AuthException catch (e) {
@@ -4055,7 +4055,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   void startResendCooldown() {
     resendTimer?.cancel();
     setState(() => resendCooldown = 60);
-    resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    resendTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -4116,7 +4116,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
+              constraints: BoxConstraints(maxWidth: 520),
               child: Column(
                 children: [
                   Container(
@@ -4239,7 +4239,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 }
 
 class ProfileSetupPage extends StatefulWidget {
-  const ProfileSetupPage({super.key});
+  ProfileSetupPage({super.key});
   @override
   State<ProfileSetupPage> createState() => _ProfileSetupPageState();
 }
@@ -4325,7 +4325,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       if (avatarImage != null) {
         final bytes = avatarBytes ?? await avatarImage!.readAsBytes();
         final path = '$uid/avatar.jpg';
-        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+        await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: 'image/jpeg'));
         data['avatar_url'] = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
       } else if (selectedCharacter != null) {
         data['avatar_url'] = 'emoji:$selectedCharacter';
@@ -4375,7 +4375,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 children: [
                   CircleAvatar(
                     radius: 58,
-                    backgroundColor: selectedCharacter != null ? const Color(0xFF292344) : null,
+                    backgroundColor: selectedCharacter != null ? Color(0xFF292344) : null,
                     backgroundImage: avatarBytes != null
                         ? MemoryImage(avatarBytes!)
                         : (existingAvatarUrl != null && existingAvatarUrl!.isNotEmpty && !existingAvatarUrl!.startsWith('emoji:') ? NetworkImage(existingAvatarUrl!) : null),
@@ -4383,7 +4383,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         ? Text(selectedCharacter!, style: TextStyle(fontSize: 48))
                         : (existingAvatarUrl == null || existingAvatarUrl!.isEmpty) ? Icon(Icons.person, size: 58) : null,
                   ),
-                  const Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
+                  Positioned(bottom: -4, right: -4, child: CircleAvatar(radius: 20, child: Icon(Icons.camera_alt, size: 20))),
                 ],
               ),
             ),
@@ -4392,7 +4392,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           TextField(
             controller: name,
             onChanged: (v) => setState(() => nameError = v.trim().isEmpty ? 'نام نمایشی را وارد کنید.' : null),
-            decoration: InputDecoration(labelText: 'نام نمایشی', errorText: nameError, border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: 'نام نمایشی', errorText: nameError, border: OutlineInputBorder()),
           ),
           SizedBox(height: 12),
           TextField(
@@ -4401,7 +4401,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               final u = v.trim().replaceFirst('@', '');
               setState(() => usernameError = u.isEmpty || RegExp(r'^[A-Za-z0-9_]{3,32}$').hasMatch(u) ? null : 'نام کاربری نامعتبر است.');
             },
-            decoration: InputDecoration(labelText: 'نام کاربری', errorText: usernameError, prefixText: '@', border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: 'نام کاربری', errorText: usernameError, prefixText: '@', border: OutlineInputBorder()),
           ),
           SizedBox(height: 12),
           TextField(controller: bio, maxLines: 3, decoration: InputDecoration(labelText: 'معرفی کوتاه', border: OutlineInputBorder())),
@@ -4556,7 +4556,7 @@ Future<void> openAradLink(BuildContext context, Uri uri) async {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  HomePage({super.key});
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -4629,7 +4629,7 @@ class _HomePageState extends State<HomePage> {
       // Local storage must never be able to freeze the home screen.
       try {
         prefs = await SharedPreferences.getInstance()
-            .timeout(const Duration(seconds: 2));
+            .timeout(Duration(seconds: 2));
       } catch (error) {
         debugPrint('Local cache unavailable; opening home without cache: $error');
       }
@@ -4666,7 +4666,7 @@ class _HomePageState extends State<HomePage> {
       try {
         var rpcRows = List<Map<String, dynamic>>.from(
           await supabase.rpc('get_home_conversations')
-              .timeout(const Duration(seconds: 5)),
+              .timeout(Duration(seconds: 5)),
         );
         // Recover memberships when an older RPC succeeds but returns no rows.
         // Reconcile the RPC result against memberships on every refresh. The RPC
@@ -4675,7 +4675,7 @@ class _HomePageState extends State<HomePage> {
         try {
           final memberRows = await supabase.from('conversation_members')
               .select('conversation_id').eq('user_id', uid)
-              .timeout(const Duration(seconds: 4));
+              .timeout(Duration(seconds: 4));
           final ids = (memberRows as List).map((row) => row['conversation_id'])
               .where((id) => id != null).toSet().toList();
           final knownIds = rpcRows.map((row) => '${row['conversation_id']}').toSet();
@@ -4683,7 +4683,7 @@ class _HomePageState extends State<HomePage> {
           if (missingIds.isNotEmpty) {
             final directRows = await supabase.from('conversations')
                 .select('id,type,title,avatar_url,description,username,is_public,created_at')
-                .inFilter('id', missingIds).timeout(const Duration(seconds: 4));
+                .inFilter('id', missingIds).timeout(Duration(seconds: 4));
             rpcRows.addAll(List<Map<String, dynamic>>.from(directRows).map((row) => <String, dynamic>{
               'conversation_id': row['id'], 'type': row['type'],
               'title': row['title'], 'avatar_url': row['avatar_url'],
@@ -4726,7 +4726,7 @@ class _HomePageState extends State<HomePage> {
         if (prefs != null) {
           try {
             await prefs.setString(cacheKey, jsonEncode(enriched))
-                .timeout(const Duration(seconds: 2));
+                .timeout(Duration(seconds: 2));
           } catch (error) {
             debugPrint('Conversation cache save failed: $error');
           }
@@ -4740,7 +4740,7 @@ class _HomePageState extends State<HomePage> {
             supabase.from('chat_archives').select('conversation_id').eq('user_id', uid),
             supabase.from('chat_folders').select('id,name,icon_name,sort_order')
                 .eq('user_id', uid).order('sort_order').order('created_at'),
-          ]).timeout(const Duration(seconds: 5));
+          ]).timeout(Duration(seconds: 5));
           final manualUnread = (auxiliaryRows[0] as List)
               .map((r) => r['conversation_id'].toString()).toSet();
           final pinned = (auxiliaryRows[1] as List)
@@ -4756,7 +4756,7 @@ class _HomePageState extends State<HomePage> {
               await supabase.from('chat_folder_items')
                   .select('folder_id,conversation_id')
                   .inFilter('folder_id', folderRows.map((f) => f['id']).toList())
-                  .timeout(const Duration(seconds: 4)),
+                  .timeout(Duration(seconds: 4)),
             );
             for (final item in itemRows) {
               (assignmentMap[item['folder_id'].toString()] ??= <String>{})
@@ -4788,7 +4788,7 @@ class _HomePageState extends State<HomePage> {
                 .from('conversation_members')
                 .select('conversation_id')
                 .eq('user_id', uid)
-                .timeout(const Duration(seconds: 4));
+                .timeout(Duration(seconds: 4));
             ids.addAll((memberRows as List)
                 .map((r) => r['conversation_id'])
                 .where((id) => id != null));
@@ -4799,7 +4799,7 @@ class _HomePageState extends State<HomePage> {
               .from('conversations')
               .select('id,type,title,avatar_url,description,username,is_public,created_at')
               .eq('created_by', uid)
-              .timeout(const Duration(seconds: 4));
+              .timeout(Duration(seconds: 4));
           final owned = List<Map<String, dynamic>>.from(ownedRows);
           final Map<String, Map<String, dynamic>> unique = {
             for (final row in owned) '${row['id']}': row,
@@ -4809,7 +4809,7 @@ class _HomePageState extends State<HomePage> {
                 .from('conversations')
                 .select('id,type,title,avatar_url,description,username,is_public,created_at')
                 .inFilter('id', ids)
-                .timeout(const Duration(seconds: 4));
+                .timeout(Duration(seconds: 4));
             for (final row in List<Map<String, dynamic>>.from(conversationRows)) {
               unique['${row['id']}'] = row;
             }
@@ -4829,7 +4829,7 @@ class _HomePageState extends State<HomePage> {
           if (prefs != null) {
             try {
               await prefs.setString(cacheKey, jsonEncode(fallbackChats))
-                  .timeout(const Duration(seconds: 2));
+                  .timeout(Duration(seconds: 2));
             } catch (_) {}
           }
         } catch (fallbackError) {
@@ -4983,9 +4983,9 @@ class _HomePageState extends State<HomePage> {
       if (code.isEmpty) return;
       final key = code.toLowerCase();
       final now = DateTime.now();
-      _recentInviteCodes.removeWhere((_, seenAt) => now.difference(seenAt) > const Duration(minutes: 2));
+      _recentInviteCodes.removeWhere((_, seenAt) => now.difference(seenAt) > Duration(minutes: 2));
       final previous = _recentInviteCodes[key];
-      if (previous != null && now.difference(previous) < const Duration(seconds: 3)) return;
+      if (previous != null && now.difference(previous) < Duration(seconds: 3)) return;
       _recentInviteCodes[key] = now;
     }
     await openAradLink(context, uri);
@@ -5058,12 +5058,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> createGroup() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreatePage()));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => GroupCreatePage()));
     load();
   }
 
   Future<void> _openFolderManager() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatFolderManagerPage()));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatFolderManagerPage()));
     if (mounted) {
       setState(() {
         selectedFolderId = null;
@@ -5074,7 +5074,7 @@ class _HomePageState extends State<HomePage> {
 
   void _scheduleHomeRefresh() {
     _homeRefreshTimer?.cancel();
-    _homeRefreshTimer = Timer(const Duration(milliseconds: 260), () {
+    _homeRefreshTimer = Timer(Duration(milliseconds: 260), () {
       if (mounted) load();
     });
   }
@@ -5141,7 +5141,7 @@ class _HomePageState extends State<HomePage> {
           bottom: false,
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 420),
+            duration: Duration(milliseconds: 420),
             curve: Curves.easeOutCubic,
             child: Material(
               color: Colors.transparent,
@@ -5158,7 +5158,7 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: scheme.primary.withValues(alpha: .30)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 28, offset: const Offset(0, 10)),
+                    BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 28, offset: Offset(0, 10)),
                     BoxShadow(color: scheme.primary.withValues(alpha: .14), blurRadius: 24, spreadRadius: -3),
                   ],
                 ),
@@ -5177,7 +5177,7 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             width: 42, height: 42,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [scheme.primary, Color.lerp(scheme.primary, const Color(0xFF45B8FF), .45)!]),
+                              gradient: LinearGradient(colors: [scheme.primary, Color.lerp(scheme.primary, Color(0xFF45B8FF), .45)!]),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Icon(Icons.notifications_active_rounded, color: scheme.onPrimary, size: 22),
@@ -5218,7 +5218,7 @@ class _HomePageState extends State<HomePage> {
     });
     _messageNotificationEntry = entry;
     overlay.insert(entry);
-    _messageNotificationTimer = Timer(const Duration(seconds: 5), _dismissFloatingMessageNotification);
+    _messageNotificationTimer = Timer(Duration(seconds: 5), _dismissFloatingMessageNotification);
   }
 
   Future<void> _handleIncomingMessage(Map<String, dynamic> row) async {
@@ -5373,10 +5373,10 @@ class _HomePageState extends State<HomePage> {
       message: tooltip ?? '',
       child: Material(
         color: scheme.surfaceContainerHighest.withValues(alpha: dark ? .72 : .92),
-        shape: const CircleBorder(),
+        shape: CircleBorder(),
         child: InkWell(
           onTap: onTap,
-          customBorder: const CircleBorder(),
+          customBorder: CircleBorder(),
           child: SizedBox(width: 42, height: 42, child: Icon(icon, size: 21, color: scheme.onSurface)),
         ),
       ),
@@ -5425,7 +5425,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               IconButton(
                 tooltip: trUi('اعلان‌ها'),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage())),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsCenterPage())),
                 icon: Icon(Icons.notifications_none_rounded),
               ),
               if (unreadTotal > 0)
@@ -5434,7 +5434,7 @@ class _HomePageState extends State<HomePage> {
                   right: 2,
                   child: IgnorePointer(
                     child: Container(
-                      constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                      constraints: BoxConstraints(minWidth: 17, minHeight: 17),
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                       decoration: BoxDecoration(
                         color: scheme.error,
@@ -5455,15 +5455,15 @@ class _HomePageState extends State<HomePage> {
             tooltip: trUi('منوی اصلی'),
             icon: Icon(Icons.menu_rounded),
             onSelected: (value) {
-              if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickControlsPage()));
+              if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
               else if (value == 'folders') _openFolderManager();
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
-              else if (value == 'notifications') Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage()));
+              else if (value == 'notifications') Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsCenterPage()));
               else if (value == 'group') createGroup();
               else if (value == 'chat') createDirect();
               else if (value == 'join') _joinGroupByInviteCode();
-              else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => const StoriesPage()));
+              else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
             },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
@@ -5606,7 +5606,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                                 if (c['is_online'] == true)
-                                  Positioned(right: -1, bottom: -1, child: Container(width: 13, height: 13, decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 2.3)))),
+                                  Positioned(right: -1, bottom: -1, child: Container(width: 13, height: 13, decoration: BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 2.3)))),
                               ]),
                               SizedBox(width: 10),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -5622,7 +5622,7 @@ class _HomePageState extends State<HomePage> {
                                   if (isPinned) ...[Icon(Icons.push_pin_rounded, size: 14, color: scheme.primary), SizedBox(width: 4)],
                                   if (archived) ...[Icon(Icons.archive_rounded, size: 13, color: scheme.onSurfaceVariant), SizedBox(width: 4)],
                                   Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: unread ? scheme.onSurface : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w700 : FontWeight.w400, fontSize: 12))),
-                                  if (unread) Container(constraints: const BoxConstraints(minWidth: 21), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(10)), child: Text(unreadCount > 0 ? unreadCount.toString() : '•', textAlign: TextAlign.center, style: TextStyle(color: scheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900))),
+                                  if (unread) Container(constraints: BoxConstraints(minWidth: 21), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(10)), child: Text(unreadCount > 0 ? unreadCount.toString() : '•', textAlign: TextAlign.center, style: TextStyle(color: scheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w900))),
                                 ]),
                               ])),
                               SizedBox(width: 4),
@@ -5687,20 +5687,20 @@ class _HomePageState extends State<HomePage> {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         child: Row(children: [
-          Expanded(child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChannelCreatePage())).then((_) => load()))),
+          Expanded(child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelCreatePage())).then((_) => load()))),
           SizedBox(width: 8),
-          Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage())))),
+          Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage())))),
         ]),
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         child: _glassAction(Icons.person_add_alt_1_rounded, 'درخواست‌های دوستی', () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendRequestsPage()))),
+          Navigator.push(context, MaterialPageRoute(builder: (_) => FriendRequestsPage()))),
       ),
       Expanded(child: FutureBuilder<List<Map<String,dynamic>>>(
         // A stalled local plugin or network request must never leave this tab spinning forever.
         future: _contactsFuture ??= _loadContacts().timeout(
-          const Duration(seconds: 12),
+          Duration(seconds: 12),
         ),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
@@ -5786,12 +5786,12 @@ class _HomePageState extends State<HomePage> {
     if (uid == null) return [];
     SharedPreferences prefs;
     try {
-      prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
+      prefs = await SharedPreferences.getInstance().timeout(Duration(seconds: 2));
     } catch (error) {
       debugPrint('Contacts local cache unavailable: $error');
       try {
         return await _refreshContactsWithoutCache(uid).timeout(
-          const Duration(seconds: 8),
+          Duration(seconds: 8),
           onTimeout: () => <Map<String, dynamic>>[],
         );
       } catch (_) {
@@ -5822,12 +5822,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<List<Map<String, dynamic>>> _refreshContactsWithoutCache(String uid) async {
     final rows = await supabase.from('contacts').select('contact_id')
-        .eq('user_id', uid).timeout(const Duration(seconds: 4));
+        .eq('user_id', uid).timeout(Duration(seconds: 4));
     final ids = (rows as List).map((x) => x['contact_id']).where((x) => x != null).toList();
     if (ids.isEmpty) return <Map<String, dynamic>>[];
     final profiles = List<Map<String, dynamic>>.from(
       await supabase.from('profiles').select('id,display_name,username,avatar_url')
-          .inFilter('id', ids).timeout(const Duration(seconds: 4)),
+          .inFilter('id', ids).timeout(Duration(seconds: 4)),
     );
     for (final p in profiles) {
       p['_local_name'] = '';
@@ -5841,7 +5841,7 @@ class _HomePageState extends State<HomePage> {
   ) async {
     try {
       final rows = await supabase.from('contacts').select('contact_id')
-          .eq('user_id', uid).timeout(const Duration(seconds: 5));
+          .eq('user_id', uid).timeout(Duration(seconds: 5));
       final ids = (rows as List).map((x) => x['contact_id']).toList();
       if (ids.isEmpty) {
         await prefs.setString(cacheKey, '[]');
@@ -5850,7 +5850,7 @@ class _HomePageState extends State<HomePage> {
       final profiles = List<Map<String, dynamic>>.from(
         await supabase.from('profiles')
           .select('id,display_name,username,avatar_url')
-          .inFilter('id', ids).timeout(const Duration(seconds: 5)),
+          .inFilter('id', ids).timeout(Duration(seconds: 5)),
       );
       for (final p in profiles) {
         p['_local_name'] = prefs.getString('contact_alias_${uid}_${p['id']}') ?? '';
@@ -5861,7 +5861,7 @@ class _HomePageState extends State<HomePage> {
         final memberRows = await supabase.from('conversation_members')
             .select('conversation_id,user_id')
             .inFilter('user_id', [uid, ...ids])
-            .timeout(const Duration(seconds: 3));
+            .timeout(Duration(seconds: 3));
         final grouped = <String, List<String>>{};
         for (final row in List<Map<String, dynamic>>.from(memberRows)) {
           grouped.putIfAbsent('${row['conversation_id']}', () => <String>[])
@@ -5917,7 +5917,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree(
+      body: SafeArea(child: AnimatedSwitcher(duration: Duration(milliseconds: 180), child: KeyedSubtree(
         key: ValueKey('$navIndex-$showContacts'),
         child: showContacts
             ? Column(children: [
@@ -5990,7 +5990,7 @@ Future<String?> _ensureDirectConversationForUser(Map<String, dynamic> profile) a
 
 class PublicUserProfilePage extends StatefulWidget {
   final Map<String, dynamic> profile;
-  const PublicUserProfilePage({super.key, required this.profile});
+  PublicUserProfilePage({super.key, required this.profile});
   @override State<PublicUserProfilePage> createState() => _PublicUserProfilePageState();
 }
 
@@ -6183,7 +6183,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
             tooltip: 'گزینه‌های مخاطب',
             iconSize: 21,
             padding: const EdgeInsets.all(7),
-            constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+            constraints: BoxConstraints(minWidth: 38, minHeight: 38),
             icon: Icon(Icons.more_vert_rounded),
             onSelected: (value) async {
               if (value == 'rename') await _editLocalName();
@@ -6215,7 +6215,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
               ),
               borderRadius: BorderRadius.circular(26),
               border: Border.all(color: s.primary.withValues(alpha: .14)),
-              boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .06), blurRadius: 22, offset: const Offset(0, 8))],
+              boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .06), blurRadius: 22, offset: Offset(0, 8))],
             ),
             child: Column(children: [
               GestureDetector(
@@ -6347,7 +6347,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
 }
 
 class FriendRequestsPage extends StatefulWidget {
-  const FriendRequestsPage({super.key});
+  FriendRequestsPage({super.key});
   @override
   State<FriendRequestsPage> createState() => _FriendRequestsPageState();
 }
@@ -6469,10 +6469,10 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: supabase.rpc('search_profiles', params: {'search_text': q}).then((v) => List<Map<String, dynamic>>.from(v)),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const AppSkeletonList(count: 5);
+        if (snapshot.connectionState == ConnectionState.waiting) return AppSkeletonList(count: 5);
         if (snapshot.hasError) return AppEmptyState(icon: Icons.search_off_rounded, title: 'جستجو ناموفق بود', subtitle: _friendlyError('${snapshot.error}'));
         final rows = snapshot.data ?? [];
-        if (rows.isEmpty) return const AppEmptyState(icon: Icons.person_search_rounded, title: 'کاربری پیدا نشد', subtitle: 'نام یا نام کاربری دیگری را امتحان کنید.');
+        if (rows.isEmpty) return AppEmptyState(icon: Icons.person_search_rounded, title: 'کاربری پیدا نشد', subtitle: 'نام یا نام کاربری دیگری را امتحان کنید.');
         return ListView(
           children: rows.map((p) {
             return ListTile(
@@ -6489,7 +6489,7 @@ class UserSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
 }
 
 class GroupCreatePage extends StatefulWidget {
-  const GroupCreatePage({super.key});
+  GroupCreatePage({super.key});
 
   @override
   State<GroupCreatePage> createState() => _GroupCreatePageState();
@@ -6517,13 +6517,13 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       final uid = supabase.auth.currentUser?.id;
       if (uid == null) throw Exception('ابتدا وارد حساب شوید.');
       final rows = await supabase.from('contacts').select('contact_id')
-          .eq('user_id', uid).timeout(const Duration(seconds: 8));
+          .eq('user_id', uid).timeout(Duration(seconds: 8));
       final ids = (rows as List).map((r) => r['contact_id']?.toString() ?? '')
           .where((id) => id.isNotEmpty && id != uid).toSet().toList();
       final profiles = ids.isEmpty ? <Map<String,dynamic>>[] :
         List<Map<String,dynamic>>.from(await supabase.from('profiles')
           .select('id,display_name,username,avatar_url').inFilter('id', ids)
-          .timeout(const Duration(seconds: 8)));
+          .timeout(Duration(seconds: 8)));
       profiles.sort((a,b) => (a['display_name'] ?? a['username'] ?? '').toString().toLowerCase()
           .compareTo((b['display_name'] ?? b['username'] ?? '').toString().toLowerCase()));
       if (mounted) setState(() { availableContacts = profiles; found = profiles; loadingContacts = false; });
@@ -6592,7 +6592,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       appBar: AppBar(title: Text(trUi('ساخت گروه'))),
       body: Column(
         children: [
-          Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: const OutlineInputBorder()))),
+          Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: OutlineInputBorder()))),
           Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: InputDecoration(hintText: 'جستجو و انتخاب از مخاطبین...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
             SizedBox(
@@ -6693,7 +6693,7 @@ class ContactSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
 }
 
 class ChannelCreatePage extends StatefulWidget {
-  const ChannelCreatePage({super.key});
+  ChannelCreatePage({super.key});
   @override State<ChannelCreatePage> createState() => _ChannelCreatePageState();
 }
 class _ChannelCreatePageState extends State<ChannelCreatePage> {
@@ -6735,7 +6735,7 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
 
 class ConversationToolsPage extends StatefulWidget {
   final String conversationId;
-  const ConversationToolsPage({super.key, required this.conversationId});
+  ConversationToolsPage({super.key, required this.conversationId});
   @override State<ConversationToolsPage> createState()=>_ConversationToolsPageState();
 }
 
@@ -6798,16 +6798,16 @@ class _ConversationToolsPageState extends State<ConversationToolsPage>{
           title:Text(trUi('پوشه گفتگو')),
           subtitle:Text(trUi('ساخت و مدیریت پوشه‌های واقعی گفتگو')),
           leading:Icon(Icons.folder_rounded),
-          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatFoldersPage())),
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatFoldersPage())),
         )),
         Card(child:ListTile(
           title:Text(trUi('پس‌زمینه گفتگو')),
           subtitle:Text(trUi('تغییر پس‌زمینه همین گفتگو')),
           leading:Icon(Icons.wallpaper_rounded),
-          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ChatBackgroundPage())),
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatBackgroundPage())),
         )),
         SizedBox(height:8),
-        const AppEmptyState(
+        AppEmptyState(
           icon:Icons.tune_rounded,
           title:'گزینه‌های پین و بی‌صدا فعلاً نمایش داده نمی‌شوند',
           subtitle:'تا زمانی که ذخیره‌سازی واقعی این وضعیت‌ها به حساب کاربر متصل نشود، گزینه نمایشی در برنامه وجود ندارد.',
@@ -6817,7 +6817,7 @@ class _ConversationToolsPageState extends State<ConversationToolsPage>{
 }
 
 class ContactsToolsPage extends StatefulWidget {
-  const ContactsToolsPage({super.key});
+  ContactsToolsPage({super.key});
   @override State<ContactsToolsPage> createState() => _ContactsToolsPageState();
 }
 
@@ -6875,7 +6875,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AppSkeletonList(count: 6);
+          return AppSkeletonList(count: 6);
         }
         if (snapshot.hasError) {
           return Center(
@@ -6908,7 +6908,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const AppEmptyState(
+                  AppEmptyState(
                     icon: Icons.people_alt_outlined,
                     title: 'هنوز مخاطبی نداری',
                     subtitle: 'با جستجوی نام کاربری، افراد را به فهرست مخاطبین اضافه کن.',
@@ -6970,7 +6970,7 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
 }
 
 class DataSettingsPage extends StatefulWidget {
-  const DataSettingsPage({super.key});
+  DataSettingsPage({super.key});
   @override State<DataSettingsPage> createState() => _DataSettingsPageState();
 }
 class _DataSettingsPageState extends State<DataSettingsPage> {
@@ -7029,7 +7029,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
 }
 
 class AccessibilityPage extends StatefulWidget {
-  const AccessibilityPage({super.key});
+  AccessibilityPage({super.key});
   @override State<AccessibilityPage> createState() => _AccessibilityPageState();
 }
 class _AccessibilityPageState extends State<AccessibilityPage> {
@@ -7117,14 +7117,14 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
 class NotificationsPage extends StatelessWidget {
   final String id;
   final String title;
-  const NotificationsPage({super.key, this.id = '', this.title = 'اعلان‌ها'});
+  NotificationsPage({super.key, this.id = '', this.title = 'اعلان‌ها'});
   @override
-  Widget build(BuildContext context) => const NotificationsCenterPage();
+  Widget build(BuildContext context) => NotificationsCenterPage();
 }
 
 class SharedMediaPage extends StatefulWidget {
   final String conversationId;
-  const SharedMediaPage({super.key, this.conversationId=''});
+  SharedMediaPage({super.key, this.conversationId=''});
   @override State<SharedMediaPage> createState()=>_SharedMediaPageState();
 }
 class _SharedMediaPageState extends State<SharedMediaPage>{
@@ -7146,7 +7146,7 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
     final filtered=rows.where(_matches).toList();
     return Scaffold(
       appBar:AppBar(title:Text(trUi('رسانه‌ها و فایل‌های مشترک')),bottom:PreferredSize(preferredSize:const Size.fromHeight(48),child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:SegmentedButton<int>(segments:[ButtonSegment(value:0,label:Text(trUi('عکس و ویدیو'))),ButtonSegment(value:1,label:Text(trUi('فایل'))),ButtonSegment(value:2,label:Text(trUi('صدا')))],selected:{tab},onSelectionChanged:(v){if(v.isNotEmpty)setState(()=>tab=v.first);})))),
-      body:loading?Center(child:CircularProgressIndicator()):filtered.isEmpty?const AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>SizedBox(height:8),itemBuilder:(_,i){
+      body:loading?Center(child:CircularProgressIndicator()):filtered.isEmpty?AppEmptyState(icon:Icons.perm_media_outlined,title:'چیزی پیدا نشد',subtitle:'رسانه‌های ارسال‌شده در این گفتگو اینجا نمایش داده می‌شوند.'):RefreshIndicator(onRefresh:_load,child:ListView.separated(padding:const EdgeInsets.all(12),itemCount:filtered.length,separatorBuilder:(_,__)=>SizedBox(height:8),itemBuilder:(_,i){
         final m=filtered[i]; final a=attachments['${m['id']}']; final name=(a?['file_name']??m['body']??'رسانه').toString(); final type='${m['message_type']??''}';
         final icon=type=='image'?Icons.image_rounded:type=='video'?Icons.video_file_rounded:type=='file'?Icons.insert_drive_file_rounded:Icons.audiotrack_rounded;
         return Card(child:ListTile(leading:CircleAvatar(child:Icon(icon)),title:Text(name,maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text('${m['created_at']??''}'),trailing:Icon(Icons.chevron_left_rounded),onTap:() async {
@@ -7157,10 +7157,10 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
     );
   }
 }
-class StickersPage extends StatelessWidget { const StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('استیکر و ایموجی'))),body:ListView(padding:const EdgeInsets.all(16),children:[
+class StickersPage extends StatelessWidget { StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('استیکر و ایموجی'))),body:ListView(padding:const EdgeInsets.all(16),children:[
 ]));}
 
-class SecurityPage extends StatefulWidget { const SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
+class SecurityPage extends StatefulWidget { SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
 class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('امنیت پیشرفته'))),body:ListView(padding:const EdgeInsets.all(16),children:[
  Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:Text(trUi('تأیید دومرحله‌ای')))),
  Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text(trUi('دستگاه‌های متصل')))),
@@ -7169,7 +7169,7 @@ class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @
 ]));}
 
 class CallsPage extends StatefulWidget {
-  const CallsPage({super.key});
+  CallsPage({super.key});
   @override State<CallsPage> createState() => _CallsPageState();
 }
 class _CallsPageState extends State<CallsPage> {
@@ -7222,10 +7222,10 @@ class _CallsPageState extends State<CallsPage> {
       ),
       child: Material(
         color: c.surface.withValues(alpha:.70),
-        shape: const CircleBorder(),
+        shape: CircleBorder(),
         child: InkWell(
           onTap: tap,
-          customBorder: const CircleBorder(),
+          customBorder: CircleBorder(),
           child: Padding(padding: const EdgeInsets.all(18), child: Icon(icon, color: active ? c.primary : c.onSurface)),
         ),
       ),
@@ -7234,7 +7234,7 @@ class _CallsPageState extends State<CallsPage> {
 }
 
 class SavedMessagesPage extends StatefulWidget {
-  const SavedMessagesPage({super.key});
+  SavedMessagesPage({super.key});
   @override
   State<SavedMessagesPage> createState() => _SavedMessagesPageState();
 }
@@ -7281,7 +7281,7 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
 class GroupProfilePage extends StatefulWidget {
   final String conversationId;
   final String title;
-  const GroupProfilePage({super.key, required this.conversationId, required this.title});
+  GroupProfilePage({super.key, required this.conversationId, required this.title});
   @override State<GroupProfilePage> createState() => _GroupProfilePageState();
 }
 
@@ -7351,7 +7351,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       final bytes = await picked.readAsBytes();
       final path = 'groups/${widget.conversationId}/avatar-${DateTime.now().millisecondsSinceEpoch}.jpg';
       await supabase.storage.from('avatars').uploadBinary(path, bytes,
-        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
+        fileOptions: FileOptions(upsert: true, contentType: 'image/jpeg'));
       final url = supabase.storage.from('avatars').getPublicUrl(path);
       await supabase.rpc('update_group_settings', params: {
         'p_conversation_id': widget.conversationId,
@@ -7660,11 +7660,11 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       ])),
       SizedBox(height:20),
       Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[Icon(Icons.info_outline_rounded),SizedBox(width:8),Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)Chip(label:Text(trUi('مدیر قابل ویرایش')))]),
+        Row(children:[Icon(Icons.info_outline_rounded),SizedBox(width:8),Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),Spacer(),if(canEditRules)Chip(label:Text(trUi('مدیر قابل ویرایش')))]),
         SizedBox(height:8),Text(description.isEmpty?'هنوز توضیح یا قانونی برای این گروه ثبت نشده است.':description,style:TextStyle(height:1.5,color:scheme.onSurfaceVariant)),
       ]))),
       SizedBox(height:14),
-      Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:8),Text('اعضا  •  ${members.length}',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
+      Row(children:[Icon(Icons.people_alt_rounded),SizedBox(width:8),Text('اعضا  •  ${members.length}',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)),Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
       SizedBox(height:8),
       Card(
         clipBehavior: Clip.antiAlias,
@@ -7746,7 +7746,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
 class ConversationInfoPage extends StatefulWidget {
   final String conversationId;
   final String fallbackTitle;
-  const ConversationInfoPage({super.key, required this.conversationId, required this.fallbackTitle});
+  ConversationInfoPage({super.key, required this.conversationId, required this.fallbackTitle});
   @override State<ConversationInfoPage> createState() => _ConversationInfoPageState();
 }
 
@@ -7935,7 +7935,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
             .select('message_id')
             .eq('user_id', uid)
             .inFilter('message_id', searchMessageIds)
-            .timeout(const Duration(seconds: 4));
+            .timeout(Duration(seconds: 4));
         hiddenForUser.addAll(List<Map<String,dynamic>>.from(deletedRows)
             .map((row) => '${row['message_id']}'));
       } catch (_) {
@@ -8044,7 +8044,7 @@ class _AmbientChatGlowState extends State<_AmbientChatGlow> with SingleTickerPro
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: Duration(seconds: 12),
     );
     if (widget.enabled) _controller.repeat(reverse: true);
   }
@@ -8101,8 +8101,8 @@ class _AmbientChatGlowState extends State<_AmbientChatGlow> with SingleTickerPro
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(colors: [
-                        const Color(0xFF36B8FF).withValues(alpha: .105),
-                        const Color(0xFF36B8FF).withValues(alpha: .025),
+                        Color(0xFF36B8FF).withValues(alpha: .105),
+                        Color(0xFF36B8FF).withValues(alpha: .025),
                         Colors.transparent,
                       ]),
                     ),
@@ -8122,7 +8122,7 @@ class ChatPage extends StatefulWidget {
   final String title;
   final String? targetMessageId;
 
-  const ChatPage({super.key, required this.id, required this.title, this.targetMessageId});
+  ChatPage({super.key, required this.id, required this.title, this.targetMessageId});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -8270,7 +8270,7 @@ class _ChatPageState extends State<ChatPage> {
   void _jumpToLatest() {
     if (!_messagesScroll.hasClients) return;
     _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+      duration: Duration(milliseconds: 260), curve: Curves.easeOutCubic);
   }
 
   void _scrollToLatestForKeyboard() {
@@ -8285,7 +8285,7 @@ class _ChatPageState extends State<ChatPage> {
       Scrollable.ensureVisible(
         latestContext,
         alignment: 1.0,
-        duration: const Duration(milliseconds: 120),
+        duration: Duration(milliseconds: 120),
         curve: Curves.easeOutCubic,
         alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
       );
@@ -8300,7 +8300,7 @@ class _ChatPageState extends State<ChatPage> {
     } else {
       position.animateTo(
         target,
-        duration: const Duration(milliseconds: 180),
+        duration: Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
       );
     }
@@ -8647,14 +8647,14 @@ class _ChatPageState extends State<ChatPage> {
         supabase.from('conversations')
             .select('id,type,title,avatar_url,created_by,created_at')
             .eq('id', widget.id).single()
-            .timeout(const Duration(seconds: 8)),
+            .timeout(Duration(seconds: 8)),
         supabase.from('messages')
             .select()
             .eq('conversation_id', widget.id)
             .isFilter('deleted_at', null)
             .order('created_at', ascending: false)
             .limit(120)
-            .timeout(const Duration(seconds: 8)),
+            .timeout(Duration(seconds: 8)),
       ]);
       final conversation = Map<String, dynamic>.from(initialRows[0] as Map);
       // Deduplicate by server ID before composing the timeline. This guards
@@ -8729,7 +8729,7 @@ class _ChatPageState extends State<ChatPage> {
                 .select('message_id')
                 .eq('user_id', uid)
                 .inFilter('message_id', pageIds)
-                .timeout(const Duration(seconds: 5));
+                .timeout(Duration(seconds: 5));
             final hidden = {
               for (final r in List<Map<String, dynamic>>.from(deletedRows))
                 '${r['message_id']}'
@@ -8908,9 +8908,9 @@ class _ChatPageState extends State<ChatPage> {
     if (!mounted || targetId == null) return;
     final targetContext = _messageKeys[targetId]?.currentContext;
     if (targetContext != null) {
-      Scrollable.ensureVisible(targetContext, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic, alignment: .5);
+      Scrollable.ensureVisible(targetContext, duration: Duration(milliseconds: 420), curve: Curves.easeOutCubic, alignment: .5);
     } else if (_messagesScroll.hasClients) {
-      _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+      _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent, duration: Duration(milliseconds: 300), curve: Curves.easeOutCubic);
     }
   }
 
@@ -8958,7 +8958,7 @@ class _ChatPageState extends State<ChatPage> {
               color: scheme.surface,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               border: Border.all(color: scheme.outlineVariant.withValues(alpha: .55)),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .22), blurRadius: 28, offset: const Offset(0, -6))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .22), blurRadius: 28, offset: Offset(0, -6))],
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(9))),
@@ -9070,7 +9070,7 @@ class _ChatPageState extends State<ChatPage> {
         children: grouped.entries.map<Widget>((e) => TweenAnimationBuilder<double>(
           key: ValueKey('${messageId}_${e.key}_${e.value}'),
           tween: Tween(begin: .78, end: 1),
-          duration: const Duration(milliseconds: 220),
+          duration: Duration(milliseconds: 220),
           curve: Curves.easeOutBack,
           builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
           child: InkWell(
@@ -9083,14 +9083,14 @@ class _ChatPageState extends State<ChatPage> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: dark
-                      ? [const Color(0xFF394A65), const Color(0xFF202B40)]
-                      : [Colors.white, const Color(0xFFE7EEFF)],
+                      ? [Color(0xFF394A65), Color(0xFF202B40)]
+                      : [Colors.white, Color(0xFFE7EEFF)],
                 ),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: .30)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 7, offset: const Offset(0, 3)),
-                  BoxShadow(color: Colors.white.withValues(alpha: dark ? .08 : .85), blurRadius: 2, offset: const Offset(0, 1)),
+                  BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 7, offset: Offset(0, 3)),
+                  BoxShadow(color: Colors.white.withValues(alpha: dark ? .08 : .85), blurRadius: 2, offset: Offset(0, 1)),
                 ],
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -9098,7 +9098,7 @@ class _ChatPageState extends State<ChatPage> {
                 if (e.value > 1) ...[
                   SizedBox(width: 4),
                   Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
-                    color: dark ? Colors.white : const Color(0xFF27334A))),
+                    color: dark ? Colors.white : Color(0xFF27334A))),
                 ],
               ]),
             ),
@@ -9300,13 +9300,13 @@ class _ChatPageState extends State<ChatPage> {
         });
       }
       _voiceTimer?.cancel();
-      _voiceTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      _voiceTimer = Timer.periodic(Duration(milliseconds: 200), (_) {
         if (!mounted || _voiceStartedAt == null || !recordingVoice) return;
         final elapsed = DateTime.now().difference(_voiceStartedAt!).inSeconds;
         if (elapsed != voiceSeconds) setState(() => voiceSeconds = elapsed);
       });
       await _voiceAmplitudeSub?.cancel();
-      _voiceAmplitudeSub = _voiceRecorder.onAmplitudeChanged(const Duration(milliseconds: 120)).listen((a) {
+      _voiceAmplitudeSub = _voiceRecorder.onAmplitudeChanged(Duration(milliseconds: 120)).listen((a) {
         if (!mounted) return;
         final normalized = ((a.current + 60) / 60).clamp(0.06, 1.0).toDouble();
         setState(() {
@@ -9414,7 +9414,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendVideo() async {
     if (sending) return;
     try {
-      final video = await ImagePicker().pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
+      final video = await ImagePicker().pickVideo(source: ImageSource.gallery, maxDuration: Duration(minutes: 10));
       if (video == null) return;
       final bytes = await video.readAsBytes();
       if (bytes.isEmpty) throw Exception('ویدئو خالی است');
@@ -9459,7 +9459,7 @@ class _ChatPageState extends State<ChatPage> {
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
       final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}';
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': image.name, 'message_type': 'image', 'reply_to': replyMessage?['id']}).select().single();
       await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
       if (mounted) setState(() => replyMessage = null);
@@ -9483,7 +9483,7 @@ class _ChatPageState extends State<ChatPage> {
               Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
               SizedBox(height: 18),
               Row(children: [Expanded(child: Text(trUi('افزودن به پیام'), textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: Icon(Icons.close_rounded))]),
-              GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
+              GridView.count(shrinkWrap: true, physics: NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
                 _attachmentItem(sheetContext, Icons.photo_library_rounded, trUi('گالری'), () { Navigator.pop(sheetContext); sendImage(); }),
                 _attachmentItem(sheetContext, Icons.camera_alt_rounded, trUi('دوربین'), () { Navigator.pop(sheetContext); sendCameraImage(); }),
                 _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, trUi('فایل‌ها'), () { Navigator.pop(sheetContext); sendFile(); }),
@@ -9514,7 +9514,7 @@ class _ChatPageState extends State<ChatPage> {
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
       final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
         'sender_id': supabase.auth.currentUser!.id,
@@ -10123,7 +10123,7 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         showDragHandle: true,
         isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         builder: (sheetContext) => SafeArea(
           child: SizedBox(
             height: MediaQuery.sizeOf(sheetContext).height * .62,
@@ -10250,7 +10250,7 @@ class _ChatPageState extends State<ChatPage> {
       barrierLabel: 'عملیات پیام',
       barrierDismissible: true,
       barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 220),
+      transitionDuration: Duration(milliseconds: 220),
       pageBuilder: (context, animation, secondaryAnimation) => Align(
         alignment: Alignment.bottomCenter,
         child: Material(
@@ -10275,7 +10275,7 @@ class _ChatPageState extends State<ChatPage> {
           opacity: curved,
           child: SlideTransition(
             position: Tween<Offset>(
-              begin: const Offset(0, .18),
+              begin: Offset(0, .18),
               end: Offset.zero,
             ).animate(curved),
             child: ScaleTransition(
@@ -10334,7 +10334,7 @@ class _ChatPageState extends State<ChatPage> {
             )),
             IconButton(
               visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              constraints: BoxConstraints(minWidth: 34, minHeight: 34),
               onPressed: () { Navigator.pop(context); _showMoreReactions(message); },
               icon: Icon(Icons.add_reaction_outlined, color: scheme.onSurface, size: 20),
             ),
@@ -10379,7 +10379,7 @@ class _ChatPageState extends State<ChatPage> {
               colors: [scheme.surface, scheme.surfaceContainerHighest]),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(color: scheme.primary.withValues(alpha: .22)),
-            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .18), blurRadius: 28, offset: const Offset(0, -5))],
+            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .18), blurRadius: 28, offset: Offset(0, -5))],
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
@@ -10387,12 +10387,12 @@ class _ChatPageState extends State<ChatPage> {
             Text(trUi('واکنش به پیام'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
             SizedBox(height: 14),
             GridView.count(
-              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true, physics: NeverScrollableScrollPhysics(),
               crossAxisCount: 5, padding: EdgeInsets.zero,
               mainAxisSpacing: 10, crossAxisSpacing: 10,
               children: more.map((e) => TweenAnimationBuilder<double>(
                 key: ValueKey(e), tween: Tween(begin: .72, end: 1),
-                duration: const Duration(milliseconds: 260), curve: Curves.easeOutBack,
+                duration: Duration(milliseconds: 260), curve: Curves.easeOutBack,
                 builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
                 child: Material(
                   color: scheme.surface, borderRadius: BorderRadius.circular(17),
@@ -10560,7 +10560,7 @@ class _ChatPageState extends State<ChatPage> {
           return TweenAnimationBuilder<double>(
             key: ValueKey('${message['id']}-${e.key}-${e.value}'),
             tween: Tween(begin: .72, end: 1),
-            duration: const Duration(milliseconds: 360),
+            duration: Duration(milliseconds: 360),
             curve: Curves.elasticOut,
             builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
             child: InkWell(
@@ -10595,14 +10595,14 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Color _reactionAccent(String emoji) {
-    if (emoji.contains('😂') || emoji.contains('🤣') || emoji.contains('😆')) return const Color(0xFFFFB52E);
-    if (emoji.contains('❤️') || emoji.contains('😍') || emoji.contains('🥰') || emoji.contains('💖')) return const Color(0xFFFF4F87);
-    if (emoji.contains('🔥') || emoji.contains('😡') || emoji.contains('💥')) return const Color(0xFFFF6A3D);
-    if (emoji.contains('⭐') || emoji.contains('✨') || emoji.contains('🌟')) return const Color(0xFFFFD45E);
-    if (emoji.contains('😢') || emoji.contains('😭') || emoji.contains('💙')) return const Color(0xFF58B9FF);
-    if (emoji.contains('👍') || emoji.contains('👏') || emoji.contains('💚')) return const Color(0xFF47D7A0);
-    if (emoji.contains('🚀') || emoji.contains('⚡') || emoji.contains('🤯')) return const Color(0xFF9B83FF);
-    return const Color(0xFF73C8FF);
+    if (emoji.contains('😂') || emoji.contains('🤣') || emoji.contains('😆')) return Color(0xFFFFB52E);
+    if (emoji.contains('❤️') || emoji.contains('😍') || emoji.contains('🥰') || emoji.contains('💖')) return Color(0xFFFF4F87);
+    if (emoji.contains('🔥') || emoji.contains('😡') || emoji.contains('💥')) return Color(0xFFFF6A3D);
+    if (emoji.contains('⭐') || emoji.contains('✨') || emoji.contains('🌟')) return Color(0xFFFFD45E);
+    if (emoji.contains('😢') || emoji.contains('😭') || emoji.contains('💙')) return Color(0xFF58B9FF);
+    if (emoji.contains('👍') || emoji.contains('👏') || emoji.contains('💚')) return Color(0xFF47D7A0);
+    if (emoji.contains('🚀') || emoji.contains('⚡') || emoji.contains('🤯')) return Color(0xFF9B83FF);
+    return Color(0xFF73C8FF);
   }
 
   void _showReactionBurst(String emoji) {
@@ -10615,7 +10615,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Center(
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 1050),
+            duration: Duration(milliseconds: 1050),
             curve: Curves.easeOutCubic,
             builder: (context, progress, child) => Opacity(
               opacity: (1 - progress * progress).clamp(0.0, 1.0),
@@ -10695,7 +10695,7 @@ class _ChatPageState extends State<ChatPage> {
       ),
     ));
     overlay.insert(entry);
-    Future<void>.delayed(const Duration(milliseconds: 1100), () {
+    Future<void>.delayed(Duration(milliseconds: 1100), () {
       if (entry.mounted) entry.remove();
     });
   }
@@ -10860,14 +10860,14 @@ class _ChatPageState extends State<ChatPage> {
       final art = stickerMatch.group(1) ?? '✨';
       final caption = stickerMatch.group(2) ?? '';
       content = Container(
-        constraints: const BoxConstraints(minWidth: 118, minHeight: 112, maxWidth: 190),
+        constraints: BoxConstraints(minWidth: 118, minHeight: 112, maxWidth: 190),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
             colors: [Color(0xFF352064), Color(0xFF7951C7), Color(0xFF1C315C)]),
           border: Border.all(color: Colors.white.withValues(alpha: .28)),
-          boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: const Offset(0, 5))],
+          boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: Offset(0, 5))],
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(art, style: TextStyle(fontSize: 58, shadows: [Shadow(color: Color(0xAAFFFFFF), blurRadius: 12, offset: Offset(0, 2))])),
@@ -11005,12 +11005,12 @@ class _ChatPageState extends State<ChatPage> {
                       color: (mine ? myBubble : Colors.black).withValues(alpha: dark ? .34 : .13),
                       blurRadius: 14,
                       spreadRadius: -5,
-                      offset: const Offset(0, 4),
+                      offset: Offset(0, 4),
                     ),
                     BoxShadow(
                       color: Colors.white.withValues(alpha: dark ? .025 : .70),
                       blurRadius: 2,
-                      offset: const Offset(0, -1),
+                      offset: Offset(0, -1),
                     ),
                   ],
                 ),
@@ -11095,7 +11095,7 @@ class _ChatPageState extends State<ChatPage> {
       if (messageId == null || messageId.isEmpty ||
           !messages.any((message) => '${message['id']}' == messageId)) return;
       _reactionRefreshTimers.remove(messageId)?.cancel();
-      _reactionRefreshTimers[messageId] = Timer(const Duration(milliseconds: 260), () async {
+      _reactionRefreshTimers[messageId] = Timer(Duration(milliseconds: 260), () async {
         _reactionRefreshTimers.remove(messageId);
         try {
           final rows = List<Map<String, dynamic>>.from(
@@ -11117,7 +11117,7 @@ class _ChatPageState extends State<ChatPage> {
 
   void _scheduleChatReload() {
     _chatReloadDebounce?.cancel();
-    _chatReloadDebounce = Timer(const Duration(milliseconds: 350), () { if (mounted) unawaited(load()); });
+    _chatReloadDebounce = Timer(Duration(milliseconds: 350), () { if (mounted) unawaited(load()); });
   }
 
   void _scheduleChatReloadForMessageMetadata(dynamic payload) {
@@ -11452,7 +11452,7 @@ class _ChatPageState extends State<ChatPage> {
                 conversationId: widget.id, title: widget.title, video: true,
               ))),
               visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              constraints: BoxConstraints(minWidth: 38, minHeight: 38),
               padding: const EdgeInsets.all(7),
               icon: Icon(Icons.videocam_rounded, color: scheme.primary, size: 21),
             ),
@@ -11463,7 +11463,7 @@ class _ChatPageState extends State<ChatPage> {
                 conversationId: widget.id, title: widget.title, video: false,
               ))),
               visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              constraints: BoxConstraints(minWidth: 38, minHeight: 38),
               padding: const EdgeInsets.all(7),
               icon: Icon(Icons.call_rounded, color: scheme.primary, size: 20),
             ),
@@ -11477,7 +11477,7 @@ class _ChatPageState extends State<ChatPage> {
                         conversationId: widget.id, title: widget.title, video: false,
                       ))),
                       visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                      constraints: BoxConstraints(minWidth: 38, minHeight: 38),
                       padding: const EdgeInsets.all(7),
                       icon: Icon(Icons.groups_rounded, color: scheme.primary, size: 21),
                     )
@@ -11498,13 +11498,13 @@ class _ChatPageState extends State<ChatPage> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
                   break;
                 case 'settings':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatSettingsPage()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ChatSettingsPage()));
                   break;
                 case 'saved':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()));
                   break;
                 case 'appearance':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AppAppearancePage()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => AppAppearancePage()));
                   break;
                 case 'notifications':
                   _toggleChatNotifications();
@@ -11569,7 +11569,7 @@ class _ChatPageState extends State<ChatPage> {
                       width: 9,
                       height: 9,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF35C759),
+                        color: Color(0xFF35C759),
                         shape: BoxShape.circle,
                         border: Border.all(color: scheme.surface, width: 2),
                       ),
@@ -11621,7 +11621,7 @@ class _ChatPageState extends State<ChatPage> {
             )
           : null,
       body: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
+        duration: Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.only(bottom: keyboardInset),
         child: Container(
@@ -11639,9 +11639,9 @@ class _ChatPageState extends State<ChatPage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
-              Color.alphaBlend(scheme.primary.withValues(alpha: .045), dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed)),
-              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
+              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
+              Color.alphaBlend(scheme.primary.withValues(alpha: .045), dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), Color(0xFF090A0F)) : Color(appTheme.backgroundSeed)),
+              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
             ],
           ) : null,
         ),
@@ -11663,7 +11663,7 @@ class _ChatPageState extends State<ChatPage> {
                       ? Center(child: Text(trUi('هنوز پیامی یا سابقه تماسی وجود ندارد.')))
                       : ListView.builder(
                           controller: _messagesScroll,
-                          physics: const BouncingScrollPhysics(),
+                          physics: BouncingScrollPhysics(),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
                           // Keep a real breathing zone below the last bubble.
                           // It scales with the IME instead of using a fixed value,
@@ -11693,13 +11693,13 @@ class _ChatPageState extends State<ChatPage> {
             ),
             if (_mentionSuggestions.isNotEmpty)
               Container(
-                constraints: const BoxConstraints(maxHeight: 220),
+                constraints: BoxConstraints(maxHeight: 220),
                 margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
                 decoration: BoxDecoration(
                   color: scheme.surface.withValues(alpha: .97),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: scheme.outline.withValues(alpha: .15)),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, -3))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 14, offset: Offset(0, -3))],
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
@@ -11761,7 +11761,7 @@ class _ChatPageState extends State<ChatPage> {
                 height: 44,
                 child: ListView(
                 scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
+                physics: BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 children: [
                   for (final suggestion in _quickMessageSuggestions)
@@ -11769,9 +11769,9 @@ class _ChatPageState extends State<ChatPage> {
                       padding: const EdgeInsetsDirectional.only(end: 8),
                       child: Material(
                         color: scheme.surfaceContainerHighest.withValues(alpha: .96),
-                        shape: const StadiumBorder(),
+                        shape: StadiumBorder(),
                         child: InkWell(
-                          customBorder: const StadiumBorder(),
+                          customBorder: StadiumBorder(),
                           onTap: () {
                             if (sending) return;
                             _composerFocus.unfocus();
@@ -11805,7 +11805,7 @@ class _ChatPageState extends State<ChatPage> {
                       BoxShadow(
                         color: scheme.primary.withValues(alpha: .10),
                         blurRadius: 12,
-                        offset: const Offset(0, 3),
+                        offset: Offset(0, 3),
                       ),
                     ],
                   ),
@@ -11829,7 +11829,7 @@ class _ChatPageState extends State<ChatPage> {
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 1.2),
                                   child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 100),
+                                    duration: Duration(milliseconds: 100),
                                     width: 3,
                                     height: 5 + level.clamp(.06, 1.0).toDouble() * 20,
                                     decoration: BoxDecoration(
@@ -11897,12 +11897,12 @@ class _ChatPageState extends State<ChatPage> {
                             color: scheme.primary.withValues(alpha: dark ? .12 : .07),
                             blurRadius: 14,
                             spreadRadius: -5,
-                            offset: const Offset(0, 3),
+                            offset: Offset(0, 3),
                           ),
                           BoxShadow(
                             color: Colors.white.withValues(alpha: dark ? .035 : .62),
                             blurRadius: 2,
-                            offset: const Offset(0, -1),
+                            offset: Offset(0, -1),
                           ),
                         ],
                       ),
@@ -11913,7 +11913,7 @@ class _ChatPageState extends State<ChatPage> {
                             style: IconButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               foregroundColor: scheme.onSurfaceVariant,
-                              shape: const CircleBorder(),
+                              shape: CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
                             onPressed: _showChatEmojiPicker,
@@ -12047,7 +12047,7 @@ class _ChatPageState extends State<ChatPage> {
                             style: IconButton.styleFrom(
                               backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
                               foregroundColor: scheme.primary,
-                              shape: const CircleBorder(),
+                              shape: CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
                             onPressed: _showAttachmentPanel,
@@ -12062,8 +12062,8 @@ class _ChatPageState extends State<ChatPage> {
                               style: IconButton.styleFrom(
                                 backgroundColor: scheme.primary,
                                 foregroundColor: Colors.white,
-                                shape: const CircleBorder(),
-                                minimumSize: const Size(48, 48),
+                                shape: CircleBorder(),
+                                minimumSize: Size(48, 48),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.all(11),
@@ -12078,8 +12078,8 @@ class _ChatPageState extends State<ChatPage> {
                               style: IconButton.styleFrom(
                                 backgroundColor: scheme.primary,
                                 foregroundColor: Colors.white,
-                                shape: const CircleBorder(),
-                                minimumSize: const Size(48, 48),
+                                shape: CircleBorder(),
+                                minimumSize: Size(48, 48),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.all(11),
@@ -12263,7 +12263,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
             .select('message_id')
             .eq('user_id', uid)
             .inFilter('message_id', results.map((m) => '${m['id']}').toList())
-            .timeout(const Duration(seconds: 5));
+            .timeout(Duration(seconds: 5));
         final hiddenIds = {
           for (final row in List<Map<String, dynamic>>.from(hiddenRows))
             '${row['message_id']}'
@@ -12361,7 +12361,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                       leading: Icon(Icons.date_range_rounded),
                       title: Text(nextFrom == null ? 'از تاریخ' : 'از ${nextFrom!.year}/${nextFrom!.month}/${nextFrom!.day}'),
                       onTap: () async {
-                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextFrom ?? DateTime.now());
+                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(Duration(days: 365)), initialDate: nextFrom ?? DateTime.now());
                         if (d != null) setSheetState(() => nextFrom = d);
                       },
                     ),
@@ -12369,7 +12369,7 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
                       leading: Icon(Icons.event_rounded),
                       title: Text(nextTo == null ? 'تا تاریخ' : 'تا ${nextTo!.year}/${nextTo!.month}/${nextTo!.day}'),
                       onTap: () async {
-                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextTo ?? DateTime.now());
+                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(Duration(days: 365)), initialDate: nextTo ?? DateTime.now());
                         if (d != null) setSheetState(() => nextTo = d);
                       },
                     ),
@@ -12439,11 +12439,11 @@ String _normalizePinDigits(String value) => value.runes.map((rune) {
 
 class AppLockGate extends StatefulWidget {
   final Widget child;
-  const AppLockGate({super.key, required this.child});
+  AppLockGate({super.key, required this.child});
   @override State<AppLockGate> createState()=>_AppLockGateState();
 }
 class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
-  final _secure=const FlutterSecureStorage();
+  final _secure=FlutterSecureStorage();
   final _auth=LocalAuthentication();
   bool locked=false, checking=true, authenticating=false;
   DateTime? _backgroundAt;
@@ -12454,7 +12454,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   Future<void> _check() async {
     try {
       final prefs = await SharedPreferences.getInstance()
-          .timeout(const Duration(seconds: 4));
+          .timeout(Duration(seconds: 4));
       final enabled = prefs.getBool('app_lock_enabled') ?? false;
       if (!enabled) {
         if (mounted) setState(() { checking = false; locked = false; });
@@ -12490,12 +12490,12 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
       final bio=p.getBool('app_lock_biometric')??false;
       if(bio){
         try {
-          final ok=await _auth.authenticate(localizedReason:'برای ورود به Arad Messenger احراز هویت کنید',options:const AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
+          final ok=await _auth.authenticate(localizedReason:'برای ورود به Arad Messenger احراز هویت کنید',options:AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
           if(ok){if(mounted)setState(()=>locked=false);return;}
         } catch(_){}
       }
       final storedPin = await _secure.read(key: 'app_lock_pin')
-          .timeout(const Duration(seconds: 4));
+          .timeout(Duration(seconds: 4));
       final pin = storedPin == null ? null : _normalizePinDigits(storedPin);
       if (pin != null && pin.isNotEmpty && mounted) {
         await _showPin(pin);
