@@ -94,6 +94,7 @@ String t(String key, String locale) {
 // Additional high-frequency labels used across chat, profile, stickers and dialogs.
 // Keep these exact-string translations separate so older keys remain backward compatible.
 const Map<String, String> _dariUiExtra = <String, String>{
+  'آرشیو گفتگوها':'آرشیف گپ‌ها', 'اعلان‌ها':'آگاهی‌ها', 'همه':'همه',
   'گفتگو':'گپ', 'گفتگوها':'گپ‌ها', 'گفتگوی جدید':'گپ نو', 'مخاطبین':'مخاطبان',
   'مخاطب':'مخاطب', 'گروه':'گروپ', 'گروه‌ها':'گروپ‌ها', 'مدیریت گروه':'مدیریت گروپ',
   'ساخت گروه':'ساخت گروپ', 'نام گروه':'نام گروپ', 'توضیحات گروه':'شرح گروپ',
@@ -4868,15 +4869,15 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.fromLTRB(16, 4, 14, 7),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(activeFolder?['name']?.toString() ?? 'گفتگوها', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             const SizedBox(height: 2),
-            Text(selectedFilter == 5 ? 'آرشیو گفتگوها' : '${filteredChats.length} گفتگو', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+            Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
           Stack(
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                tooltip: 'اعلان‌ها',
+                tooltip: trUi('اعلان‌ها'),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsCenterPage())),
                 icon: const Icon(Icons.notifications_none_rounded),
               ),
