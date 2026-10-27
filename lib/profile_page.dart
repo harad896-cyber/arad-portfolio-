@@ -121,8 +121,17 @@ class _ProfilePageState extends State<ProfilePage> {
         showMsg(context, 'پروفایل ذخیره شد.');
         setState(() {});
       }
-    } catch (e) {
-      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود: $e');
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        final message = e.message.toLowerCase();
+        if (message.contains('username') && (message.contains('duplicate') || message.contains('unique'))) {
+          showMsg(context, 'این آیدی قبلاً انتخاب شده است؛ یک آیدی دیگر امتحان کنید.');
+        } else {
+          showMsg(context, 'ذخیره پروفایل ناموفق بود. اتصال و اطلاعات واردشده را بررسی کنید.');
+        }
+      }
+    } catch (_) {
+      if (mounted) showMsg(context, 'ذخیره پروفایل ناموفق بود؛ اینترنت را بررسی و دوباره تلاش کنید.');
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -419,6 +428,38 @@ class _ProfilePageState extends State<ProfilePage> {
                     _profileFieldLabel(sheet, 'بیوگرافی', Icons.notes_rounded),
                     const SizedBox(height: 7),
                     TextField(controller: bio, textDirection: TextDirection.rtl, textAlignVertical: TextAlignVertical.top, maxLines: 4, minLines: 3, maxLength: 150, decoration: const InputDecoration(hintText: 'چند کلمه درباره خودت بنویس…', alignLabelWithHint: true, prefixIcon: Icon(Icons.info_outline_rounded))),
+                    const SizedBox(height: 8),
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: bio,
+                      builder: (context, value, _) {
+                        final text = value.text.trim();
+                        final scheme = Theme.of(sheet).colorScheme;
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest.withValues(alpha: .55),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: scheme.outlineVariant.withValues(alpha: .6)),
+                          ),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              Icon(Icons.visibility_outlined, size: 16, color: scheme.primary),
+                              const SizedBox(width: 6),
+                              Text('پیش‌نمایش بیو', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: scheme.primary)),
+                              const Spacer(),
+                              Text('${value.text.length}/150', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+                            ]),
+                            const SizedBox(height: 7),
+                            Text(
+                              text.isEmpty ? 'بیوی شما اینجا نمایش داده می‌شود…' : text,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(height: 1.55, color: text.isEmpty ? scheme.onSurfaceVariant : scheme.onSurface),
+                            ),
+                          ]),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 7),
                     Container(
                       padding: const EdgeInsets.all(12),
