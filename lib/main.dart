@@ -249,20 +249,17 @@ String trUi(String source) {
     return persian[source] ?? source;
   }
   if (code == 'prs') {
-    final dari = <String, String>{
-      'تنظیمات':'تنظیمات','جستجو در تنظیمات':'جستجو در تنظیمات','حساب شما':'حساب شما',
+    final dari = <String, String>{'جستجو در تنظیمات':'جستجو در تنظیمات','حساب شما':'حساب شما',
       'حساب واردشده':'حساب واردشده','افزودن یا تغییر حساب':'افزودن یا تغییر حساب',
       'مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر':'مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر',
-      'خروج از حساب':'خروج از حساب','خروج امن از این دستگاه':'خروج امن از این دستگاه',
-      'حریم خصوصی':'محرمیت','امنیت':'امنیت','اعلان‌ها':'آگاهی‌ها','مصرف داده':'مصرف اینترنت',
-      'دسترسی‌پذیری':'دسترسی‌پذیری','تماس‌ها':'تماس‌ها','ظاهر':'ظاهر','پس‌زمینه چت':'پس‌زمینه گفتگو',
-      'زبان':'زبان','تنظیمات گفتگو':'تنظیمات گپ','پوشه‌های گفتگو':'فولدرهای گپ',
+      'خروج از حساب':'خروج از حساب','خروج امن از این دستگاه':'خروج امن از این دستگاه','مصرف داده':'مصرف اینترنت',
+      'دسترسی‌پذیری':'دسترسی‌پذیری','تماس‌ها':'تماس‌ها',
+      'زبان':'زبان','پوشه‌های گفتگو':'فولدرهای گپ',
       'پیام‌های ذخیره‌شده':'پیام‌های ذخیره‌شده','پیام‌رسانی پیشرفته':'پیام‌رسانی پیشرفته',
       'درباره برنامه':'درباره برنامه','حریم خصوصی و امنیت':'محرمیت و امنیت',
       'کنترل برنامه':'کنترول برنامه','ظاهر و شخصی‌سازی':'ظاهر و شخصی‌سازی',
       'گفتگو و پیام‌ها':'گپ و پیام‌ها','محتوا':'محتوا','درباره':'درباره',
-      'زبان رابط کاربری':'زبان برنامه','گفتگوها':'گپ‌ها','پروفایل':'پروفایل',
-      'مخاطبین':'مخاطبان','گروه‌ها':'گروپ‌ها','تاریک':'تاریک','روشن':'روشن',
+      'زبان رابط کاربری':'زبان برنامه',
       'حساب کاربری':'حساب کاربری','آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل':'آخرین بازدید، حالت آنلاین، شماره تیلفون و دیده‌شدن پروفایل',
       'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی':'نشست‌ها، خروج از دستگاه‌ها و کنترول‌های امنیتی',
       'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها':'پیام‌های خوانده‌نشده و تازه‌سازی گفتگوها',
@@ -275,19 +272,11 @@ String trUi(String source) {
       'ساخت و مدیریت پوشه‌های گفتگو':'ساخت و مدیریت پوشه‌های گفتگو',
       'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'پیام‌هایی که برای خود ذخیره کرده‌اید',
       'ابزارهای پیشرفته متصل به Backend':'ابزارهای پیشرفته متصل به Backend',
-      'نسخه، معماری و اطلاعات برنامه':'نسخه، ساختار و معلومات برنامه',
-      'پیام خود را بنویسید…':'پیام‌تان را بنویسید…','پیوست‌ها':'ضمیمه‌ها','ارسال پیام':'فرستادن پیام','گالری':'گالری','دوربین':'کمره','فایل‌ها':'فایل‌ها','ویدئو':'ویدیو','موسیقی / صدا':'موسیقی / صدا','ضبط ویس':'ضبط پیام صوتی','افزودن به پیام':'افزودن به پیام',
+      'نسخه، معماری و اطلاعات برنامه':'نسخه، ساختار و معلومات برنامه','افزودن به پیام':'افزودن به پیام',
       'ورود':'داخل‌شدن','ثبت‌نام':'ثبت‌نام','ایمیل':'ایمیل','رمز عبور':'رمزواژه','ادامه':'ادامه',
-      'پروفایل شما':'پروفایل شما','جستجو':'جستجو','ارسال':'ارسال','لغو':'لغو','ذخیره':'ذخیره',
-      'ویرایش':'ویرایش','حذف':'حذف','تأیید':'تأیید','بازگشت':'بازگشت',
-
-      'همه':'همه','همه گفتگوها':'تمام گپ‌ها','گفتگوی جدید':'گپ نو','ساخت گروه':'ساخت گروپ',
-      'مدیریت پوشه‌های گفتگو':'مدیریت فولدرهای گفتگو','مرکز اعلان‌ها':'مرکز آگاهی‌ها','بایگانی':'آرشیف',
-      'پیوستن با لینک گروه':'پیوستن از طریق لینک گروپ','دیدن استوری‌ها':'دیدن استوری‌ها',
+      'مدیریت پوشه‌های گفتگو':'مدیریت فولدرهای گفتگو','بایگانی':'آرشیف','دیدن استوری‌ها':'دیدن استوری‌ها',
       'کنترل سریع برنامه':'کنترول سریع برنامه','منوی اصلی':'منوی اصلی','جستجوی سراسری پیام‌ها و کاربران':'جستجوی عمومی پیام‌ها و کاربران',
-      'جستجو در گفتگوهای فعلی':'جستجو در گفتگوهای فعلی','پاک کردن':'پاک کردن','کانال‌ها':'چنل‌ها',
-      'خوانده‌نشده':'خوانده‌نشده','آرشیو':'آرشیف','نتیجه‌ای پیدا نشد':'نتیجه‌ای پیدا نشد',
-      'هنوز گفتگویی ندارید':'هنوز گفتگویی ندارید','نام یا عبارت دیگری را جستجو کنید.':'نام یا عبارت دیگری را جستجو کنید.',
+      'جستجو در گفتگوهای فعلی':'جستجو در گفتگوهای فعلی','پاک کردن':'پاک کردن','آرشیو':'آرشیف',
       'یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.':'یک گفتگوی نو آغاز کنید یا از مخاطبین انتخاب نمایید.',
       'پیام نو':'پیام نو','پیام جدید':'پیام نو','گپ':'گپ','گپ‌ها':'گپ‌ها','گفتگو':'گپ','گفتگوها':'گپ‌ها',
       'مخاطبین':'مخاطبان','مخاطب':'مخاطب','گروه':'گروپ','گروه‌ها':'گروپ‌ها','ساخت گروه':'ساخت گروپ',
@@ -306,8 +295,7 @@ String trUi(String source) {
       'همه':'همه','همه گفتگوها':'تمام گپ‌ها','گفتگوی جدید':'گپ نو','هنوز گفتگویی ندارید':'هنوز گپی ندارید',
       'نتیجه‌ای پیدا نشد':'نتیجه‌ای پیدا نشد','نام یا عبارت دیگری را جستجو کنید.':'نام یا عبارت دیگری را جستجو کنید.',
       'پیوستن با لینک گروه':'پیوستن از راه لینک گروپ','کانال‌ها':'چنل‌ها','خوانده‌نشده':'خوانده‌نشده',
-      'ارسال فایل':'فرستادن فایل','ارسال تصویر':'فرستادن تصویر','ارسال ویدیو':'فرستادن ویدیو',
-      'اعضای گروه':'اعضای گروپ','افزودن عضو':'افزودن عضو','مدیریت گروه':'مدیریت گروپ',
+      'ارسال فایل':'فرستادن فایل','ارسال تصویر':'فرستادن تصویر','ارسال ویدیو':'فرستادن ویدیو','افزودن عضو':'افزودن عضو','مدیریت گروه':'مدیریت گروپ',
       'در حال بارگذاری…':'در حال بارگذاری…','خطا':'خطا','تلاش دوباره':'دوباره تلاش کنید',
 
       'نو':'نو','شروع گفتگو':'آغاز گپ','تماس صوتی':'تماس صوتی','تماس تصویری':'تماس تصویری',
@@ -9400,11 +9388,11 @@ class _ChatPageState extends State<ChatPage> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('ویرایش پیام'),
+        title: Text(trUi('ویرایش پیام')),
         content: TextField(controller: controller, autofocus: true, maxLines: 5),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('ذخیره')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(trUi('انصراف'))),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: Text(trUi('ذخیره'))),
         ],
       ),
     );
@@ -9428,7 +9416,7 @@ class _ChatPageState extends State<ChatPage> {
       showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const ListTile(title: Text('حذف پیام', style: TextStyle(fontWeight: FontWeight.w900))),
+          ListTile(title: Text(trUi('حذف پیام'), style: TextStyle(fontWeight: FontWeight.w900))),
           ListTile(
             leading: const Icon(Icons.person_outline_rounded),
             title: Text(trUi('حذف برای من')),
@@ -9485,7 +9473,7 @@ class _ChatPageState extends State<ChatPage> {
         title: Text(trUi('حذف برای همه')),
         content: Text(trUi('این پیام برای همه اعضای گفتگو حذف می‌شود.')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(trUi('انصراف'))),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
         ],
       ),
@@ -9912,7 +9900,7 @@ class _ChatPageState extends State<ChatPage> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
-            const Text('واکنش به پیام', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            Text(trUi('واکنش به پیام'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
             const SizedBox(height: 14),
             GridView.count(
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
@@ -9959,7 +9947,7 @@ class _ChatPageState extends State<ChatPage> {
     final readerIds = receipts.map((r) => r['reader_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
     final readerNames = readerIds.map((id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر')).join('، ');
     final isMine = message['sender_id'] == supabase.auth.currentUser?.id;
-    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? trUi('در حال ارسال') : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), const Text('خوانده‌شده توسط:'), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: Text(trUi('جزئیات پیام')), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? trUi('در حال ارسال') : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), Text(trUi('خوانده‌شده توسط:')), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), Text(trUi('وضعیت: ویرایش شده'))], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(trUi('بستن')))]));
   }
   Widget _actionTile(
     BuildContext sheetContext,
@@ -10528,14 +10516,14 @@ class _ChatPageState extends State<ChatPage> {
                         Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10,  color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
                         if (m['edited_at'] != null) ...[
                           const SizedBox(width: 4),
-                          Text('ویرایش‌شده', style: TextStyle(fontSize: 9, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
+                          Text(trUi('ویرایش‌شده'), style: TextStyle(fontSize: 9, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
                         ],
                         if (mine) ...[
                           const SizedBox(width: 4),
                           Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .7)),
                           const SizedBox(width: 2),
                           Text(
-                            m['__pending'] == true ? trUi('در حال ارسال') : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? '${trUi('دیده‌شده')} ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
+                            m['__pending'] == true ? trUi('در حال ارسال') : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? '${trUi('دیده‌شده')} ${readReceipts['${m['id']}']!.length}' : trUi('خوانده شد')) : trUi('ارسال شد'),
                             style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -10760,7 +10748,7 @@ class _ChatPageState extends State<ChatPage> {
       final choice = await showModalBottomSheet<String>(
         context: context, showDragHandle: true,
         builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+          ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text(trUi('مشاهده پروفایل')), onTap: () => Navigator.pop(sheet, 'profile')),
           if (isOwner && target['role'] != 'owner') ListTile(leading: Icon(target['role'] == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded), title: Text(target['role'] == 'admin' ? 'عزل از مدیریت' : 'مدیر کردن عضو'), onTap: () => Navigator.pop(sheet, 'role')),
           if (canModerate) ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
           if (canModerate) ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
@@ -10795,7 +10783,7 @@ class _ChatPageState extends State<ChatPage> {
         title: Text(choice == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
         content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)')) : Text('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+          TextButton(onPressed: () => Navigator.pop(d, false), child: Text(trUi('انصراف'))),
           FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(choice == 'ban' ? 'محروم و اخراج' : 'اخراج')),
         ],
       )) ?? false;
