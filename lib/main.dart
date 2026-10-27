@@ -9769,11 +9769,11 @@ class _ChatPageState extends State<ChatPage> {
             height: MediaQuery.sizeOf(sheetContext).height * .62,
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: Text(trUi('ارسال فوروارد به...'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                    child: Text(trUi('ارسال فوروارد به...'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                   ),
                 ),
                 const Divider(height: 1),
