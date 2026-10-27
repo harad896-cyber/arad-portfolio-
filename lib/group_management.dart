@@ -54,7 +54,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         profiles = {for (final p in ps) p['id'].toString(): p};
         owner = isOwner;
         admin = isAdmin;
-        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false) || g['only_admins_can_add'] != true;
+        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false);
         canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
@@ -470,10 +470,37 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   Future<void> removeMember(String id) async {
     if (!canRemoveMembers || busy || id == group?['created_by']?.toString()) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('حذف عضو از گروه'),
+        content: Text('آیا ${nameOf(id)} را از این گروه حذف کنید؟ این کار به‌تنهایی او را برای همیشه محروم نمی‌کند.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('انصراف')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(dialog).colorScheme.error, foregroundColor: Theme.of(dialog).colorScheme.onError),
+            onPressed: () => Navigator.pop(dialog, true),
+            child: const Text('حذف عضو'),
+          ),
+        ],
+      ),
+    ) ?? false;
+    if (!ok || !mounted) return;
     setState(() => busy = true);
-    try { await db.rpc('remove_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id}); toast('عضو از گروه حذف شد.'); await load(); }
-    catch (e) { toast('حذف عضو ناموفق بود: $e'); }
-    finally { if (mounted) setState(() => busy = false); }
+    try {
+      final removed = await db.rpc('remove_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id});
+      if (removed != true) {
+        toast('این کاربر دیگر عضو گروه نیست یا حذف نشد.');
+        await load();
+        return;
+      }
+      await load();
+      toast('عضو از گروه حذف شد.');
+    } catch (e) {
+      toast('حذف عضو ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   Future<void> banMember(String id) async {
@@ -490,10 +517,76 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   Future<void> setRole(String id, String role) async {
     if (!owner || busy || id == group?['created_by']?.toString()) return;
+    final promoting = role == 'admin';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(promoting ? 'تعیین مدیر گروه' : 'لغو مدیریت'),
+        content: Text(promoting
+          ? '${nameOf(id)} را مدیر گروه می‌کنید؟ دسترسی‌های مدیر را بعداً از بخش «مدیریت پیشرفته» تنظیم کنید.'
+          : 'مدیریت ${nameOf(id)} لغو و نقش او به عضو عادی تغییر داده شود؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialog, true), child: Text(promoting ? 'مدیر کردن' : 'لغو مدیریت')),
+        ],
+      ),
+    ) ?? false;
+    if (!ok || !mounted) return;
     setState(() => busy = true);
-    try { await db.rpc('set_group_member_role', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id, 'p_role': role}); toast(role == 'admin' ? 'مدیر شد.' : 'نقش به عضو تغییر کرد.'); await load(); }
-    catch (e) { toast('تغییر نقش ناموفق بود: $e'); }
-    finally { if (mounted) setState(() => busy = false); }
+    try {
+      await db.rpc('set_group_member_role', params: {'p_conversation_id': widget.conversationId, 'p_user_id': id, 'p_role': role});
+      await load();
+      toast(promoting ? 'نقش مدیر برای کاربر ثبت شد.' : 'مدیریت کاربر لغو شد.');
+    } catch (e) {
+      toast('تغییر نقش ناموفق بود: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> changeGroupAvatar() async {
+    if (!canEditGroup || group == null || busy) return;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(child: Wrap(children: [
+        ListTile(leading: const Icon(Icons.photo_library_rounded), title: const Text('انتخاب از گالری'), onTap: () => Navigator.pop(sheet, ImageSource.gallery)),
+        ListTile(leading: const Icon(Icons.camera_alt_rounded), title: const Text('گرفتن عکس با دوربین'), onTap: () => Navigator.pop(sheet, ImageSource.camera)),
+      ])),
+    );
+    if (source == null || !mounted) return;
+    final file = await ImagePicker().pickImage(source: source, imageQuality: 85, maxWidth: 1200);
+    if (file == null || !mounted) return;
+    setState(() => busy = true);
+    try {
+      final bytes = await file.readAsBytes();
+      final path = 'groups/${widget.conversationId}/avatar-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await db.storage.from('avatars').uploadBinary(
+        path, bytes,
+        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+      );
+      final url = db.storage.from('avatars').getPublicUrl(path);
+      final g = group!;
+      await db.rpc('update_group_settings', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_title': g['title'],
+        'p_description': g['description'],
+        'p_avatar_url': url,
+        'p_is_public': g['is_public'] ?? false,
+        'p_username': g['username'],
+        'p_join_approval': g['join_approval'] ?? false,
+        'p_only_admins_can_post': g['only_admins_can_post'] ?? false,
+        'p_only_admins_can_add': g['only_admins_can_add'] ?? false,
+        'p_auto_delete_seconds': g['auto_delete_seconds'] ?? 0,
+        'p_allow_reactions': g['allow_reactions'] ?? true,
+      });
+      await load();
+      toast('عکس گروه تغییر کرد.');
+    } catch (e) {
+      toast('تغییر عکس گروه ناموفق بود. دسترسی ذخیره‌سازی یا مجوز ویرایش گروه را بررسی کنید: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   Future<void> editInfo() async {
@@ -560,7 +653,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   @override Widget build(BuildContext context) {
     if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
-    return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (canEditGroup) IconButton(onPressed: editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
+    return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه'), actions: [if (canEditGroup) IconButton(tooltip: 'تغییر عکس گروه', onPressed: busy ? null : changeGroupAvatar, icon: const Icon(Icons.add_a_photo_rounded)), if (canEditGroup) IconButton(tooltip: 'ویرایش نام و توضیحات', onPressed: busy ? null : editInfo, icon: const Icon(Icons.edit_rounded))]), body: ListView(padding: const EdgeInsets.all(12), children: [
       Card(child: ListTile(leading: CircleAvatar(backgroundImage: (group!['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(group!['avatar_url'].toString()) : null, child: (group!['avatar_url'] ?? '').toString().isEmpty ? const Icon(Icons.groups) : null), title: Text((group!['title'] ?? widget.title).toString(), style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(owner ? 'مالک گروه' : 'مدیر گروه'))),
       const SizedBox(height: 8),
       Card(
