@@ -80,8 +80,8 @@ String _friendlyError(String message) {
 String t(String key, String locale) {
   const data = {
     'fa': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ورود با حساب Google','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
-    'prs': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ادامه با حساب Google','profile':'نمایه شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
-    'ps': {'login':'ننوتل','signup':'نوم‌لیکنه','email':'برېښنالیک','password':'پټ نوم','google':'د Google له لارې دوام','profile':'ستاسو پېژندپاڼه','continue':'دوام','settings':'امستنې','language':'ژبه'},
+    'prs': {'login':'ورود','signup':'ثبت‌نام','email':'ایمیل','password':'رمز عبور','google':'ورود با حساب Google','profile':'پروفایل شما','continue':'ادامه','settings':'تنظیمات','language':'زبان'},
+    'ps': {'login':'ننوتل','signup':'نوم‌لیکنه','email':'برېښنالیک','password':'پټنوم','google':'د Google له لارې دوام','profile':'ستاسو پېژندپاڼه','continue':'دوام','settings':'امستنې','language':'ژبه'},
     'en': {'login':'Login','signup':'Sign up','email':'Email','password':'Password','google':'Continue with Google','profile':'Your profile','continue':'Continue','settings':'Settings','language':'Language'},
     'ar': {'login':'تسجيل الدخول','signup':'إنشاء حساب','email':'البريد الإلكتروني','password':'كلمة المرور','google':'المتابعة باستخدام Google','profile':'ملفك الشخصي','continue':'متابعة','settings':'الإعدادات','language':'اللغة'},
     'tr': {'login':'Giriş','signup':'Kayıt ol','email':'E-posta','password':'Şifre','google':'Google ile devam et','profile':'Profiliniz','continue':'Devam','settings':'Ayarlar','language':'Dil'},
@@ -91,6 +91,74 @@ String t(String key, String locale) {
   return data[locale]?[key] ?? data['en']![key] ?? key;
 }
 
+// UI labels translated at render time. Internal setting IDs remain Persian
+// so existing navigation handlers and backend values are not changed.
+String trUi(String source) {
+  final code = aradLanguageController.locale.languageCode;
+  if (code == 'fa' || code == 'prs') {
+    const dari = <String, String>{
+      'تنظیمات':'تنظیمات','جستجو در تنظیمات':'جستجو در تنظیمات','حساب شما':'حساب شما',
+      'حساب واردشده':'حساب واردشده','افزودن یا تغییر حساب':'افزودن یا تغییر حساب',
+      'مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر':'مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر',
+      'خروج از حساب':'خروج از حساب','خروج امن از این دستگاه':'خروج امن از این دستگاه',
+      'حریم خصوصی':'حریم خصوصی','امنیت':'امنیت','اعلان‌ها':'اعلان‌ها','مصرف داده':'مصرف داده',
+      'دسترسی‌پذیری':'دسترسی‌پذیری','تماس‌ها':'تماس‌ها','ظاهر':'ظاهر','پس‌زمینه چت':'پس‌زمینه چت',
+      'زبان':'زبان','تنظیمات گفتگو':'تنظیمات گفتگو','پوشه‌های گفتگو':'پوشه‌های گفتگو',
+      'پیام‌های ذخیره‌شده':'پیام‌های ذخیره‌شده','پیام‌رسانی پیشرفته':'پیام‌رسانی پیشرفته',
+      'درباره برنامه':'درباره برنامه','حریم خصوصی و امنیت':'حریم خصوصی و امنیت',
+      'کنترل برنامه':'کنترل برنامه','ظاهر و شخصی‌سازی':'ظاهر و شخصی‌سازی',
+      'گفتگو و پیام‌ها':'گفتگو و پیام‌ها','محتوا':'محتوا','درباره':'درباره',
+      'زبان رابط کاربری':'زبان رابط کاربری','گفتگوها':'گفتگوها','پروفایل':'پروفایل',
+      'مخاطبین':'مخاطبین','گروه‌ها':'گروه‌ها','تاریک':'تاریک','روشن':'روشن',
+      'حساب کاربری':'حساب کاربری','آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل',
+      'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی':'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی',
+      'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها':'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها',
+      'تنظیم حالت کم‌مصرف و دانلود خودکار':'تنظیم حالت کم‌مصرف و دانلود خودکار',
+      'تنظیم اندازه متن و کنتراست برای خوانایی بهتر':'تنظیم اندازه متن و کنتراست برای خوانایی بهتر',
+      'تماس صوتی و تصویری و سابقه تماس':'تماس صوتی و تصویری و سابقه تماس',
+      'تم روشن/تاریک و رنگ رابط برنامه':'تم روشن/تاریک و رنگ رابط برنامه',
+      'انتخاب عکس از گالری و رنگ پس‌زمینه گفتگو':'انتخاب عکس از گالری و رنگ پس‌زمینه گفتگو',
+      'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا':'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا',
+      'ساخت و مدیریت پوشه‌های گفتگو':'ساخت و مدیریت پوشه‌های گفتگو',
+      'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'پیام‌هایی که برای خودتان ذخیره کرده‌اید',
+      'ابزارهای پیشرفته متصل به Backend':'ابزارهای پیشرفته متصل به Backend',
+      'نسخه، معماری و اطلاعات برنامه':'نسخه، معماری و اطلاعات برنامه',
+    };
+    return dari[source] ?? source;
+  }
+  if (code == 'ps') {
+    const pashto = <String, String>{
+      'تنظیمات':'امستنې','جستجو در تنظیمات':'په امستنو کې لټون','حساب شما':'ستاسو حساب',
+      'حساب واردشده':'ننوتل شوی حساب','افزودن یا تغییر حساب':'حساب زیاتول یا بدلول',
+      'مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر':'خوندي شوي حسابونه اداره کړئ او بل حساب ته ننوځئ',
+      'خروج از حساب':'له حسابه وتل','خروج امن از این دستگاه':'له دې وسیلې څخه خوندي وتل',
+      'حریم خصوصی':'محرمیت','امنیت':'امنیت','اعلان‌ها':'خبرتیاوې','مصرف داده':'د معلوماتو کارونه',
+      'دسترسی‌پذیری':'لاسرسی','تماس‌ها':'اړیکې','ظاهر':'بڼه','پس‌زمینه چت':'د خبرو شالید',
+      'زبان':'ژبه','تنظیمات گفتگو':'د خبرو امستنې','پوشه‌های گفتگو':'د خبرو فولډرونه',
+      'پیام‌های ذخیره‌شده':'خوندي شوي پیغامونه','پیام‌رسانی پیشرفته':'پرمختللي پیغامونه',
+      'درباره برنامه':'د اپلېکېشن په اړه','حریم خصوصی و امنیت':'محرمیت او امنیت',
+      'کنترل برنامه':'د اپلېکېشن کنټرول','ظاهر و شخصی‌سازی':'بڼه او شخصي کول',
+      'گفتگو و پیام‌ها':'خبرې او پیغامونه','محتوا':'منځپانګه','درباره':'په اړه',
+      'زبان رابط کاربری':'د اپلېکېشن ژبه','گفتگوها':'خبرې','پروفایل':'پېژندپاڼه',
+      'مخاطبین':'اړیکې','گروه‌ها':'ګروپونه','تاریک':'تیاره','روشن':'روښانه',
+      'حساب کاربری':'د کارن حساب','آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل':'وروستی لیدل، آنلاین حالت، د تلیفون شمېره او د پېژندپاڼې لیدل',
+      'نشست‌ها، خروج از دستگاه‌ها و کنترل‌های امنیتی':'ناستې، له وسیلو وتل او امنیتي کنټرولونه',
+      'پیام‌های خوانده‌نشده و به‌روزرسانی گفتگوها':'نا لوستل شوي پیغامونه او د خبرو تازه معلومات',
+      'تنظیم حالت کم‌مصرف و دانلود خودکار':'د معلوماتو سپما او اتومات ډاونلوډ تنظیمول',
+      'تنظیم اندازه متن و کنتراست برای خوانایی بهتر':'د لوستلو لپاره د متن اندازه او توپیر تنظیمول',
+      'تماس صوتی و تصویری و سابقه تماس':'غږیزې او ویډیويي اړیکې او د اړیکو تاریخچه',
+      'تم روشن/تاریک و رنگ رابط برنامه':'روښانه/تیاره بڼه او د اپلېکېشن رنګ',
+      'انتخاب عکس از گالری و رنگ پس‌زمینه گفتگو':'له ګالرۍ څخه انځور او د خبرو شالید رنګ وټاکئ',
+      'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا':'د لوستلو نښې، د لینک مخکتنه، د Enter له لارې لېږل او غږ غږول',
+      'ساخت و مدیریت پوشه‌های گفتگو':'د خبرو فولډرونه جوړ او اداره کړئ',
+      'پیام‌هایی که برای خودتان ذخیره کرده‌اید':'هغه پیغامونه چې ځان ته مو خوندي کړي',
+      'ابزارهای پیشرفته متصل به Backend':'له Backend سره تړلي پرمختللي وسایل',
+      'نسخه، معماری و اطلاعات برنامه':'د نسخې، جوړښت او اپلېکېشن معلومات',
+    };
+    return pashto[source] ?? source;
+  }
+  return source;
+}
 class LanguageController extends ChangeNotifier {
   Locale locale = const Locale('fa');
 
@@ -886,35 +954,35 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     final groups=<String,List<Map<String,String>>>{};
     for(final x in filtered){final cat=x['cat']!;(groups[cat]??=<Map<String,String>>[]).add(x);}
     return Scaffold(
-      appBar:AppBar(title:const Text('تنظیمات'),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
+      appBar:AppBar(title:Text(trUi('تنظیمات')),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
         padding:const EdgeInsets.fromLTRB(16,4,14,10),
-        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:const InputDecoration(hintText:'جستجو در تنظیمات',prefixIcon:Icon(Icons.search_rounded))),
+        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:const Icon(Icons.search_rounded))),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
         Card(child:ListTile(
           leading:CircleAvatar(backgroundColor:Theme.of(context).colorScheme.primaryContainer,child:Icon(Icons.person_rounded,color:Theme.of(context).colorScheme.primary)),
-          title:const Text('حساب شما',style:TextStyle(fontWeight:FontWeight.w900)),
-          subtitle:Text(supabase.auth.currentUser?.email??'حساب واردشده'),
+          title:Text(trUi('حساب شما'),style:const TextStyle(fontWeight:FontWeight.w900)),
+          subtitle:Text(supabase.auth.currentUser?.email??trUi('حساب واردشده')),
           trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open('حساب کاربری'),
         )),
         ...groups.entries.expand<Widget>((g)=><Widget>[
-          Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(g.key,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w900))),
+          Padding(padding:const EdgeInsets.fromLTRB(4,18,4,8),child:Text(trUi(g.key),style:const TextStyle(fontSize:14,fontWeight:FontWeight.w900))),
           ...g.value.map<Widget>((x)=>Card(margin:const EdgeInsets.only(bottom:6),child:ListTile(
-            leading:Icon(_iconForSetting(x['title']!)),title:Text(x['title']!,style:const TextStyle(fontWeight:FontWeight.w700)),
-            subtitle:Text(x['desc']!),trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open(x['title']!),
+            leading:Icon(_iconForSetting(x['title']!)),title:Text(trUi(x['title']!),style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text(trUi(x['desc']!)),trailing:const Icon(Icons.chevron_left_rounded),onTap:()=>_open(x['title']!),
           ))),
         ]),
         Card(child:ListTile(
           leading:const Icon(Icons.switch_account_rounded),
-          title:const Text('افزودن یا تغییر حساب',style:TextStyle(fontWeight:FontWeight.w800)),
-          subtitle:const Text('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر'),
+          title:Text(trUi('افزودن یا تغییر حساب'),style:const TextStyle(fontWeight:FontWeight.w800)),
+          subtitle:Text(trUi('مدیریت حساب‌های ذخیره‌شده و ورود به حساب دیگر')),
           trailing:const Icon(Icons.chevron_left_rounded),
           onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AccountSwitcherPage())),
         )),
         Card(child:ListTile(
           leading:Icon(Icons.logout_rounded,color:Theme.of(context).colorScheme.error),
-          title:const Text('خروج از حساب',style:TextStyle(fontWeight:FontWeight.w800)),
-          subtitle:const Text('خروج امن از این دستگاه'),onTap:_signOut,
+          title:Text(trUi('خروج از حساب'),style:const TextStyle(fontWeight:FontWeight.w800)),
+          subtitle:Text(trUi('خروج امن از این دستگاه')),onTap:_signOut,
         )),
       ]),
     );
@@ -951,7 +1019,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:const Text('روشن')),
   ])));
   void _showLanguageSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    const Padding(padding:EdgeInsets.all(18),child:Text('زبان',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+    Padding(padding:const EdgeInsets.all(18),child:Text(trUi('زبان'),style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
     ...AppStrings.supported.map((code)=>RadioListTile<String>(value:code,groupValue:aradLanguageController.locale.languageCode,title:Text(AppStrings.names[code]??code),onChanged:(v)async{if(v==null)return;await aradLanguageController.setLocale(v);await saveUserSettings({'language_code':v});if(mounted){setState(()=>language=AppStrings.names[v]??v);Navigator.pop(context);}})),
   ])));
   Future<void> _signOut()async{
@@ -4730,8 +4798,8 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 5),
           children: [
             filterChip(label: 'همه', icon: Icons.forum_rounded, selected: selectedFilter == 0 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 0; })),
-            filterChip(label: 'مخاطبین', icon: Icons.person_rounded, selected: selectedFilter == 1 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 1; })),
-            filterChip(label: 'گروه‌ها', icon: Icons.groups_rounded, selected: selectedFilter == 2 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 2; })),
+            filterChip(label: trUi('مخاطبین'), icon: Icons.person_rounded, selected: selectedFilter == 1 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 1; })),
+            filterChip(label: trUi('گروه‌ها'), icon: Icons.groups_rounded, selected: selectedFilter == 2 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 2; })),
             filterChip(label: 'کانال‌ها', icon: Icons.campaign_rounded, selected: selectedFilter == 3 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 3; })),
             filterChip(label: 'خوانده‌نشده', icon: Icons.mark_email_unread_rounded, selected: selectedFilter == 4 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 4; })),
             filterChip(label: 'آرشیو', icon: Icons.archive_rounded, selected: selectedFilter == 5 && selectedFolderId == null, onTap: () => setState(() { selectedFolderId = null; selectedFilter = 5; })),
@@ -5136,8 +5204,8 @@ class _HomePageState extends State<HomePage> {
               setState(() { navIndex = i; showContacts = false; });
             },
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'گفتگوها'),
-              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'پروفایل'),
+              NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
+              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
             ],
           ),
         ),
@@ -7555,6 +7623,26 @@ class _ChatPageState extends State<ChatPage> {
 
   List<({String label, String message})> get _quickMessageSuggestions {
     switch (aradLanguageController.locale.languageCode) {
+      case 'prs':
+        return [
+          (label: '👋  سلام', message: 'سلام 👋'),
+          (label: '😊  چطور هستید؟', message: 'چطور هستید؟ 😊'),
+          (label: '🙏  تشکر', message: 'تشکر 🙏'),
+          (label: '👍  خوب است', message: 'خوب است 👍'),
+          (label: '❤️  عالی', message: 'عالی ❤️'),
+          (label: '😂  خنده', message: '😂😂'),
+          (label: '🔥  بسیار خوب', message: 'بسیار خوب 🔥'),
+        ];
+      case 'ps':
+        return [
+          (label: '👋  سلام', message: 'سلام 👋'),
+          (label: '😊  څنګه یې؟', message: 'څنګه یې؟ 😊'),
+          (label: '🙏  مننه', message: 'مننه 🙏'),
+          (label: '👍  سمه ده', message: 'سمه ده 👍'),
+          (label: '❤️  غوره', message: 'غوره ❤️'),
+          (label: '😂  هاها', message: '😂😂'),
+          (label: '🔥  ښه ده', message: 'ښه ده 🔥'),
+        ];
       case 'en':
         return [
           (label: '👋  Hello', message: 'Hello 👋'),
