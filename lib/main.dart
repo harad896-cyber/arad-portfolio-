@@ -7701,12 +7701,12 @@ class _ChatPageState extends State<ChatPage> {
       case 'prs':
         return [
           (label: '👋  سلام', message: 'سلام 👋'),
-          (label: '😊  چطور هستید؟', message: 'چطور هستید؟ 😊'),
+          (label: '😊  چطور استین؟', message: 'چطور استین؟ 😊'),
           (label: '🙏  تشکر', message: 'تشکر 🙏'),
-          (label: '👍  خوب است', message: 'خوب است 👍'),
-          (label: '❤️  عالی', message: 'عالی ❤️'),
+          (label: '👍  جور است', message: 'جور است 👍'),
+          (label: '❤️  بسیار خوب', message: 'بسیار خوب ❤️'),
           (label: '😂  خنده', message: '😂😂'),
-          (label: '🔥  بسیار خوب', message: 'بسیار خوب 🔥'),
+          (label: '🔥  عالی است', message: 'عالی است 🔥'),
         ];
       case 'ps':
         return [
