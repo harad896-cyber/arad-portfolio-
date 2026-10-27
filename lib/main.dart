@@ -6573,19 +6573,4710 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     if (!canEditRules || saving) return;
     final titleController = TextEditingController(text: (group['title'] ?? widget.title).toString());
     final descriptionController = TextEditingController(text: (group['description'] ?? '').toString());
+    final usernameController = TextEditingController(text: (group['username'] ?? '').toString());
     final value = await showDialog<Map<String, String>>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('ویرایش نام و بیو گروه'),
+      title: const Text('ویرایش اطلاعات گروه'),
       content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         TextField(controller: titleController, maxLength: 80, decoration: const InputDecoration(labelText: 'نام گروه', border: OutlineInputBorder())),
         const SizedBox(height: 12),
-        TextField(controller: descriptionController, maxLines: 5, maxLength: 1500, decoration: const InputDecoration(labelText: 'بیو، معرفی و قوانین گروه', hintText: 'موضوع و قوانین گروه', border: OutlineInputBorder())),
+        TextField(controller: usernameController, maxLength: 32, autocorrect: false, decoration: const InputDecoration(labelText: 'نام کاربری عمومی (اختیاری)', prefixText: '@', hintText: 'مثلاً arad_group', helperText: '۳ تا ۳۲ حرف؛ فقط حروف انگلیسی، عدد و _', border: OutlineInputBorder())),
+        const SizedBox(height: 12),
+        TextField(controller: descriptionController, maxLines: 5, maxLength: 1500, decoration: const InputDecoration(labelText: 'بیو، معرفی و قوانین گروه', hintText: 'موضوع، توضیحات و قوانین گروه', border: OutlineInputBorder())),
       ])),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')),
         FilledButton(onPressed: () {
           final title = titleController.text.trim();
+          final username = usernameController.text.trim().replaceFirst(RegExp(r'^@'), '').toLowerCase();
           if (title.isEmpty) { showMsg(ctx, 'نام گروه نمی‌تواند خالی باشد.'); return; }
-          Navigator.pop(ctx, {'title': title, 'description': descriptionController.text.trim()});
+          if (username.isNotEmpty && !RegExp(r'^[a-z0-9_]{3,32}
+        }, child: const Text('ذخیره')),
+      ],
+    ));
+    final newTitle = titleController.text.trim();
+    titleController.dispose();
+    descriptionController.dispose();
+    usernameController.dispose();
+    if (value == null) return;
+    setState(() => saving = true);
+    try {
+      await supabase.rpc('update_group_settings', params: {
+        'p_conversation_id': widget.conversationId,
+        'p_title': value['title'] ?? newTitle,
+        'p_description': value['description'] ?? '',
+        'p_avatar_url': group['avatar_url'],
+        'p_is_public': group['is_public'] ?? false,
+        'p_username': value['username'] ?? '',
+        'p_join_approval': group['join_approval'] ?? false,
+        'p_only_admins_can_post': group['only_admins_can_post'] ?? false,
+        'p_only_admins_can_add': group['only_admins_can_add'] ?? false,
+        'p_auto_delete_seconds': group['auto_delete_seconds'] ?? 0,
+        'p_allow_reactions': group['allow_reactions'] ?? true,
+      });
+      await _load();
+      if (mounted) showMsg(context, 'نام، نام کاربری و بیو گروه ذخیره شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره نام یا بیو ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally { if (mounted) setState(() => saving = false); }
+  }
+
+  Future<void> _manageMember(Map<String, dynamic> member) async {
+    if ((!canRemoveMembers && !isCreator) || saving) return;
+    final targetId = (member['user_id'] ?? '').toString();
+    final targetRole = (member['role'] ?? 'member').toString();
+    final uid = supabase.auth.currentUser?.id;
+    if (targetId.isEmpty || targetId == uid || targetId == group['created_by']?.toString() || targetRole == 'owner') {
+      showMsg(context, 'حساب خودت یا مالک اصلی گروه قابل اخراج نیست.');
+      return;
+    }
+    final profile = (member['_profile'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+    final name = (profile['display_name'] ?? profile['username'] ?? 'این عضو').toString();
+    final action = await showModalBottomSheet<String>(
+      context: context, showDragHandle: true,
+      builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(leading: avatar(profile), title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${profile['username'] ?? ''}')),
+        ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+        if (isCreator)
+          ListTile(
+            leading: Icon(targetRole == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded),
+            title: Text(targetRole == 'admin' ? 'عزل از مدیریت' : 'تعیین به‌عنوان مدیر'),
+            subtitle: Text(targetRole == 'admin' ? 'دسترسی‌های مدیریتی این عضو برداشته می‌شود' : 'امکان تنظیم اختیارات مدیر پس از ارتقا'),
+            onTap: () => Navigator.pop(sheet, 'role'),
+          ),
+        if (canRemoveMembers) ...[
+          ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
+          ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
+        ],
+      ])),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'profile') {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: {...profile, 'id': targetId})));
+      return;
+    }
+    if (action == 'role') {
+      final nextRole = targetRole == 'admin' ? 'member' : 'admin';
+      final promote = nextRole == 'admin';
+      final confirmedRole = await showDialog<bool>(
+        context: context,
+        builder: (d) => AlertDialog(
+          title: Text(promote ? 'مدیر کردن $name' : 'عزل $name از مدیریت'),
+          content: Text(promote
+              ? 'این عضو مدیر گروه می‌شود. بعداً می‌توانی اختیاراتش را جداگانه تنظیم کنی.'
+              : 'نقش این کاربر به عضو عادی تغییر می‌کند.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+            FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(promote ? 'تأیید و مدیر کردن' : 'عزل از مدیریت')),
+          ],
+        ),
+      ) ?? false;
+      if (!confirmedRole) return;
+      setState(() => saving = true);
+      try {
+        await supabase.rpc('set_group_member_role', params: {
+          'p_conversation_id': widget.conversationId,
+          'p_user_id': targetId,
+          'p_role': nextRole,
+        });
+        await _load();
+        if (mounted) showMsg(context, promote ? '$name مدیر گروه شد.' : 'مدیریت $name لغو شد.');
+      } catch (e) {
+        if (mounted) showMsg(context, 'تغییر نقش ناموفق بود: ${_friendlyError(e.toString())}');
+      } finally {
+        if (mounted) setState(() => saving = false);
+      }
+      return;
+    }
+    if (!canRemoveMembers) return;
+    final reasonController = TextEditingController();
+    final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
+      title: Text(action == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
+      content: action == 'ban'
+        ? TextField(controller: reasonController, maxLines: 3, maxLength: 300, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)', border: OutlineInputBorder()))
+        : Text('$name از گروه حذف شود؟ در حالت اخراج می‌تواند دوباره درخواست عضویت بدهد.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+        FilledButton(style: action == 'ban' ? FilledButton.styleFrom(backgroundColor: Theme.of(d).colorScheme.error, foregroundColor: Theme.of(d).colorScheme.onError) : null, onPressed: () => Navigator.pop(d, true), child: Text(action == 'ban' ? 'محروم و اخراج' : 'اخراج')),
+      ],
+    )) ?? false;
+    final reason = reasonController.text.trim();
+    reasonController.dispose();
+    if (!confirmed) return;
+    setState(() => saving = true);
+    try {
+      if (action == 'ban') {
+        await supabase.rpc('ban_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': targetId, 'p_reason': reason.isEmpty ? null : reason});
+      } else {
+        await supabase.rpc('remove_group_member', params: {'p_conversation_id': widget.conversationId, 'p_user_id': targetId});
+      }
+      await _load();
+      if (mounted) showMsg(context, action == 'ban' ? '$name محروم شد و دیگر نمی‌تواند به گروه بپیوندد.' : '$name از گروه اخراج شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'عملیات انجام نشد: ${_friendlyError(e.toString())}');
+    } finally { if (mounted) setState(() => saving = false); }
+  }
+
+  Future<void> _addMembers() async {
+    final uid=supabase.auth.currentUser!.id;
+    final existing=members.map((m)=>m['user_id'].toString()).toSet();
+    if (!canAddMembers) { showMsg(context, 'اختیار افزودن عضو برای حساب شما فعال نیست.'); return; }
+    final query=TextEditingController();
+    final selected=<String>{};
+    // Keep one request for the lifetime of the dialog; typing/selecting must not
+    // trigger a new profiles query on every StatefulBuilder rebuild.
+    final peopleFuture = supabase.from('contacts').select('contact_id')
+        .eq('user_id', uid)
+        .then<List<String>>((rows) => (rows as List)
+            .map((row) => row['contact_id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty && !existing.contains(id) && id != uid)
+            .toList())
+        .then<List<Map<String,dynamic>>>((ids) async {
+          if (ids.isEmpty) return <Map<String,dynamic>>[];
+          final rows = await supabase.from('profiles')
+              .select('id,display_name,username,avatar_url')
+              .inFilter('id', ids).limit(150);
+          return List<Map<String,dynamic>>.from(rows as List);
+        });
+    final ids=await showDialog<List<String>>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
+      title:const Text('دعوت اعضا'),
+      content:SizedBox(width:420,height:420,child:Column(children:[
+        TextField(controller:query,decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'نام کاربری یا نام'),onChanged:(_)=>setDialog((){})),
+        const SizedBox(height:8),
+        Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:peopleFuture,builder:(ctx,snap){
+          if(snap.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator());
+          if(snap.hasError)return const Center(child:Text('فهرست کاربران بارگذاری نشد'));
+          final q=query.text.trim().toLowerCase();
+          final people=(snap.data??[]).where((p)=>!existing.contains(p['id'].toString()) && ('${p['display_name']??''} ${p['username']??''}').toLowerCase().contains(q)).toList();
+          if(people.isEmpty)return Center(child:Text(q.isEmpty ? 'مخاطب جدیدی در فهرست مخاطبان شما نیست.' : 'مخاطبی با این نام پیدا نشد.'));
+          return ListView.builder(itemCount:people.length,itemBuilder:(ctx,i){final p=people[i];final id=p['id'].toString();return CheckboxListTile(value:selected.contains(id),onChanged:(v)=>setDialog(()=>v==true?selected.add(id):selected.remove(id)),secondary:avatar(p),title:Text('${p['display_name']??p['username']??'کاربر'}'),subtitle:Text(p['username']==null?'':'@${p['username']}'));});
+        })),
+      ])),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('لغو')),FilledButton(onPressed:selected.isEmpty?null:()=>Navigator.pop(ctx,selected.toList()),child:Text('دعوت (${selected.length})'))],
+    )));
+    query.dispose();
+    if(ids==null || ids.isEmpty)return;
+    try {
+      // One bulk insert avoids a network round-trip for every selected contact.
+      final additions = ids.where((id) => !existing.contains(id)).map((id) => <String,dynamic>{
+        'conversation_id': widget.conversationId,
+        'user_id': id,
+        'role': 'member',
+      }).toList();
+      if (additions.isEmpty) { if (mounted) showMsg(context, 'این کاربران از قبل عضو گروه هستند.'); return; }
+      await supabase.from('conversation_members').insert(additions);
+      await _load(); if(mounted)showMsg(context,'اعضا به گروه اضافه شدند');
+    } catch(e){if(mounted)showMsg(context,'افزودن عضو ناموفق بود: '+_friendlyError(e.toString()));}
+  }
+
+  @override Widget build(BuildContext context) {
+    final scheme=Theme.of(context).colorScheme;
+    final title='${group['title']??widget.title}';
+    final image='${group['avatar_url']??''}';
+    final description='${group['description']??''}'.trim();
+    return Scaffold(appBar:AppBar(title:const Text('پروفایل گروه')),body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
+      Center(child:Column(children:[
+        GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:const BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:const Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
+        const SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
+        const SizedBox(height:4),Text('${members.length} عضو',style:TextStyle(color:scheme.onSurfaceVariant)),
+        const SizedBox(height:14),Wrap(alignment:WrapAlignment.center,spacing:10,runSpacing:8,children:[
+          if(canAddMembers) FilledButton.icon(onPressed:saving?null:_addMembers,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('افزودن اعضا')),
+          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_editRules,icon:const Icon(Icons.edit_note_rounded),label:const Text('اطلاعات گروه')),
+          if(canEditRules) OutlinedButton.icon(onPressed:saving?null:_openGroupSettings,icon:const Icon(Icons.tune_rounded),label:const Text('اختیارات و تنظیمات')),
+          if(canManageMembers) OutlinedButton.icon(onPressed:saving?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.conversationId,title:title))),icon:const Icon(Icons.admin_panel_settings_rounded),label:const Text('مدیریت اعضا')),
+          if(isCreator) OutlinedButton.icon(onPressed:saving?null:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupAdvancedAdminPage(conversationId:widget.conversationId,title:title))).then((_)=>_load()),icon:const Icon(Icons.shield_rounded),label:const Text('مدیریت پیشرفته')),
+        ]),
+      ])),
+      const SizedBox(height:20),
+      Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(children:[const Icon(Icons.info_outline_rounded),const SizedBox(width:8),const Text('درباره و قوانین',style:TextStyle(fontWeight:FontWeight.w800)),const Spacer(),if(canEditRules)const Chip(label:Text('مدیر قابل ویرایش'))]),
+        const SizedBox(height:8),Text(description.isEmpty?'هنوز توضیح یا قانونی برای این گروه ثبت نشده است.':description,style:TextStyle(height:1.5,color:scheme.onSurfaceVariant)),
+      ]))),
+      const SizedBox(height:14),
+      Row(children:[const Icon(Icons.people_alt_rounded),const SizedBox(width:8),Text('اعضا  •  ${members.length}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const Spacer(),Text('مالک و مدیران در بالا',style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant))]),
+      const SizedBox(height:8),
+      Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: members.map((m) {
+            final p = (m['_profile'] as Map?)?.cast<String, dynamic>() ?? {};
+            final role = '${m['role'] ?? 'member'}';
+            final roleLabel = role == 'owner' ? 'مالک' : role == 'admin' ? 'مدیر' : 'عضو';
+            final memberId = m['user_id']?.toString();
+            final currentId = supabase.auth.currentUser?.id;
+            final canModerate = canRemoveMembers &&
+                memberId != currentId &&
+                memberId != group['created_by']?.toString() &&
+                role != 'owner';
+            return ListTile(
+              leading: avatar(p),
+              title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}'),
+              subtitle: Text(p['username'] == null ? '' : '@${p['username']}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      role == 'owner'
+                          ? Icons.workspace_premium_rounded
+                          : role == 'admin'
+                              ? Icons.admin_panel_settings_rounded
+                              : Icons.person_rounded,
+                      size: 15,
+                    ),
+                    label: Text(roleLabel),
+                  ),
+                  if (canModerate)
+                    PopupMenuButton<String>(
+                      tooltip: 'اقدامات عضو',
+                      onSelected: (_) => _manageMember(m),
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'manage',
+                          child: Row(
+                            children: [
+                              Icon(Icons.shield_outlined),
+                              SizedBox(width: 8),
+                              Text('مدیریت / اخراج / محرومیت'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      icon: const Icon(Icons.more_vert_rounded),
+                    )
+                  else
+                    const Icon(Icons.chevron_left_rounded),
+                ],
+              ),
+              onTap: p['id'] == null
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PublicUserProfilePage(
+                            profile: {...p, 'id': memberId},
+                          ),
+                        ),
+                      ),
+            );
+          }).toList(),
+        ),
+      ),
+      if(!canEditRules) Padding(padding:const EdgeInsets.only(top:10),child:Text('ویرایش قوانین فقط در اختیار مالک یا مدیر گروه است.',style:TextStyle(color:scheme.onSurfaceVariant))),
+    ]));
+  }
+}
+
+class ConversationInfoPage extends StatefulWidget {
+  final String conversationId;
+  final String fallbackTitle;
+  const ConversationInfoPage({super.key, required this.conversationId, required this.fallbackTitle});
+  @override State<ConversationInfoPage> createState() => _ConversationInfoPageState();
+}
+
+class _ConversationInfoPageState extends State<ConversationInfoPage> {
+  bool loading = true;
+  Map<String,dynamic> conversation = {};
+  Map<String,dynamic> peer = {};
+  List<Map<String,dynamic>> members = [];
+
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final c = await supabase.from('conversations').select().eq('id', widget.conversationId).single();
+      final type = '${c['type'] ?? 'direct'}';
+      final memberRows = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId));
+      final ids = memberRows.map((m) => m['user_id']).toList();
+      Map<String,dynamic> p = {};
+      var ms = <Map<String,dynamic>>[];
+      if (ids.isNotEmpty) {
+        final people = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,last_seen,is_verified').inFilter('id', ids));
+        final map = {for(final x in people) x['id'].toString(): x};
+        ms = memberRows.map((m) => {...m, '_profile': map[m['user_id'].toString()] ?? {}}).toList();
+        if (type == 'direct') {
+          final other = ms.firstWhere((m) => '${m['user_id']}' != uid, orElse: () => {'_profile': {}});
+          p = Map<String,dynamic>.from(other['_profile'] as Map);
+        }
+      }
+      if (!mounted) return;
+      setState(() { conversation = Map<String,dynamic>.from(c); peer = p; members = ms; loading = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      showMsg(context, 'اطلاعات گفتگو بارگذاری نشد: ' + _friendlyError(e.toString()));
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    final type = '${conversation['type'] ?? 'direct'}';
+    final title = type == 'direct' ? '${peer['display_name'] ?? peer['username'] ?? widget.fallbackTitle}' : '${conversation['title'] ?? widget.fallbackTitle}';
+    final bio = type == 'direct' ? '${peer['bio'] ?? ''}' : '${conversation['description'] ?? ''}';
+    final avatarUrl = type == 'direct' ? '${peer['avatar_url'] ?? ''}' : '${conversation['avatar_url'] ?? ''}';
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل گفتگو')),
+      body: loading ? const Center(child: CircularProgressIndicator()) : ListView(
+        padding: const EdgeInsets.fromLTRB(16,12,16,32),
+        children: [
+          Center(child: Column(children: [
+            CircleAvatar(radius:54,backgroundColor:scheme.primaryContainer,backgroundImage:avatarUrl.isNotEmpty?NetworkImage(avatarUrl):null,child:avatarUrl.isEmpty?Icon(type=='group'?Icons.groups_rounded:type=='channel'?Icons.campaign_rounded:Icons.person_rounded,size:46,color:scheme.primary):null),
+            const SizedBox(height:12),
+            Row(mainAxisAlignment:MainAxisAlignment.center,children:[Flexible(child:Text(title,textAlign:TextAlign.center,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w900))),if(type=='direct'&&peer['is_verified']==true) const Padding(padding:EdgeInsets.only(right:5),child:Icon(Icons.verified_rounded,color:Color(0xFF2F9BFF)))]),
+            if(type=='direct'&&'${peer['username'] ?? ''}'.isNotEmpty) Text('@'+'${peer['username']}',style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w700)),
+            if(type=='direct') Text(peer['is_online']==true?'آنلاین':'آخرین بازدید: '+_homeTime(peer['last_seen']),style:TextStyle(color:scheme.onSurfaceVariant)),
+            if(bio.trim().isNotEmpty) Padding(padding:const EdgeInsets.only(top:10),child:Text(bio,textAlign:TextAlign.center,style:TextStyle(height:1.45,color:scheme.onSurfaceVariant))),
+            if(type=='direct') ...[
+              const SizedBox(height:18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CallSessionPage(
+                          conversationId: widget.conversationId,
+                          title: title,
+                          video: false,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.call_rounded),
+                    label: const Text('تماس صوتی'),
+                  ),
+                  const SizedBox(width:10),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CallSessionPage(
+                          conversationId: widget.conversationId,
+                          title: title,
+                          video: true,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.videocam_rounded),
+                    label: const Text('تماس تصویری'),
+                  ),
+                ],
+              ),
+            ],
+          ])),
+          const SizedBox(height:22),
+          if(type=='group'||type=='channel') Card(child:ListTile(leading:Icon(type=='group'?Icons.groups_rounded:Icons.campaign_rounded),title:Text(type=='group'?'اعضای گروه':'اعضای کانال'),subtitle:Text(members.length.toString()+' نفر'),trailing:const Icon(Icons.chevron_left_rounded),onTap:type=='group'?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupProfilePage(conversationId:widget.conversationId,title:title))):null)),
+          Card(child:Column(children:[
+            ListTile(leading:const Icon(Icons.search_rounded),title:const Text('جستجوی داخل گفتگو'),onTap:()=>showSearch(context:context,delegate:MessageSearchDelegate(widget.conversationId))),
+            ListTile(leading:const Icon(Icons.photo_library_outlined),title:const Text('رسانه‌ها و فایل‌های مشترک'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>SharedMediaPage(conversationId:widget.conversationId)))),
+            
+          ])),
+          if (type == 'group')
+            Card(
+              child: ExpansionTile(
+                leading: const Icon(Icons.people_alt_outlined),
+                title: const Text('اعضای گروه'),
+                subtitle: const Text('برای دیدن پروفایل هر عضو روی نام او بزنید'),
+                children: members.take(50).map((m) {
+                  final p = (m['_profile'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+                  final id = (m['user_id'] ?? p['id'] ?? '').toString();
+                  return ListTile(
+                    leading: avatar(p),
+                    title: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}'),
+                    subtitle: Text('${m['role'] ?? 'member'}'),
+                    trailing: const Icon(Icons.chevron_left_rounded),
+                    onTap: id.isEmpty
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PublicUserProfilePage(profile: {...p, 'id': id}),
+                              ),
+                            ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+    if (query.isNotEmpty) IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear_rounded)),
+  ];
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(onPressed: () => close(context, null), icon: const Icon(Icons.arrow_back_rounded));
+  @override
+  Widget buildResults(BuildContext context) => _results(context);
+  @override
+  Widget buildSuggestions(BuildContext context) => _results(context);
+
+  Future<Map<String,dynamic>> _search(String value) async {
+    final q = value.trim();
+    if (q.isEmpty) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
+    final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid).limit(150);
+    final ids = (memberRows as List).map((e) => e['conversation_id'].toString()).where((e) => e.isNotEmpty).toSet();
+    final usersFuture = supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online,is_verified').or('display_name.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
+    final publicFuture = supabase.rpc('search_public_conversations', params: {'p_query': q}).then((value) => value);
+    if (ids.isEmpty) {
+      final results = await Future.wait<dynamic>([usersFuture, publicFuture]);
+      return {
+        'messages': <Map<String,dynamic>>[],
+        'users': List<Map<String,dynamic>>.from(results[0] as List),
+        'chats': <Map<String,dynamic>>[],
+        'public_chats': List<Map<String,dynamic>>.from(results[1] as List),
+      };
+    }
+    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
+    final messagesFuture = supabase.from('messages')
+        .select('id,conversation_id,body,message_type,created_at,sender_id')
+        .inFilter('conversation_id', ids.toList())
+        .isFilter('deleted_at', null)
+        .ilike('body', '%$q%')
+        .order('created_at', ascending: false)
+        .limit(50)
+        .then((value) => value);
+    final results = await Future.wait<dynamic>([usersFuture, chatsFuture, messagesFuture, publicFuture]);
+    final publicChats = List<Map<String,dynamic>>.from(results[3] as List)
+        .where((c) => !ids.contains(c['id'].toString())).toList();
+
+    // Search must follow the same deletion rules as the chat timeline. Without
+    // this filter, messages removed "for me" could still appear in global search.
+    var searchMessages = List<Map<String,dynamic>>.from(results[2] as List);
+    final searchMessageIds = searchMessages.map((m) => '${m['id']}').toList();
+    if (searchMessageIds.isNotEmpty) {
+      final hiddenForUser = <String>{};
+      try {
+        final deletedRows = await supabase
+            .from('message_user_deletions')
+            .select('message_id')
+            .eq('user_id', uid)
+            .inFilter('message_id', searchMessageIds)
+            .timeout(const Duration(seconds: 4));
+        hiddenForUser.addAll(List<Map<String,dynamic>>.from(deletedRows)
+            .map((row) => '${row['message_id']}'));
+      } catch (_) {
+        // Keep search usable if deletion metadata is temporarily unavailable;
+        // server-deleted messages are already excluded by deleted_at above.
+      }
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        for (final message in searchMessages) {
+          final conversationId = message['conversation_id']?.toString() ?? '';
+          final hiddenIds = prefs.getStringList('arad_hidden_messages_v1_${uid}_${conversationId}') ?? const <String>[];
+          if (hiddenIds.contains('${message['id']}')) {
+            hiddenForUser.add('${message['id']}');
+          }
+        }
+      } catch (_) {}
+      searchMessages.removeWhere((message) => hiddenForUser.contains('${message['id']}'));
+    }
+
+    return {
+      'users': List<Map<String,dynamic>>.from(results[0] as List),
+      'chats': List<Map<String,dynamic>>.from(results[1] as List),
+      'messages': searchMessages,
+      'public_chats': publicChats,
+    };
+  }
+
+  Future<void> _openPublicConversation(BuildContext context, Map<String,dynamic> row) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final rawId = await supabase.rpc('join_public_conversation', params: {'p_username': row['username']});
+      final id = rawId.toString();
+      final uid = supabase.auth.currentUser?.id;
+      final membership = uid == null ? null : await supabase.from('conversation_members')
+          .select('user_id').eq('conversation_id', id).eq('user_id', uid).maybeSingle();
+      if (membership == null) {
+        close(context, null);
+        messenger.showSnackBar(const SnackBar(content: Text('درخواست عضویت ثبت شد؛ پس از تأیید مدیر می‌توانید وارد شوید.')));
+        return;
+      }
+      final title = (row['title'] ?? row['username'] ?? 'گروه عمومی').toString();
+      close(context, null);
+      await navigator.push(MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title)));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('باز کردن گروه عمومی ناموفق بود: ${_friendlyError(e.toString())}')));
+    }
+  }
+
+  Widget _avatar(Map<String,dynamic> row) {
+    final url = (row['avatar_url'] ?? '').toString().trim();
+    return CircleAvatar(radius: 21, backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? const Icon(Icons.person_rounded) : null);
+  }
+
+  Widget _results(BuildContext context) {
+    final q = query.trim();
+    if (q.isEmpty) return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.search_rounded, size: 54), SizedBox(height: 12), Text('جستجوی سراسری آراد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text('کاربر، گفتگو و پیام را یکجا پیدا کنید.') ]));
+    return FutureBuilder<Map<String,dynamic>>(
+      future: _search(q),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snap.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snap.error}')));
+        final data = snap.data ?? {};
+        final users = List<Map<String,dynamic>>.from(data['users'] ?? const []);
+        final chats = List<Map<String,dynamic>>.from(data['chats'] ?? const []);
+        final publicChats = List<Map<String,dynamic>>.from(data['public_chats'] ?? const []);
+        final messages = List<Map<String,dynamic>>.from(data['messages'] ?? const []);
+        if (users.isEmpty && chats.isEmpty && publicChats.isEmpty && messages.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
+        return ListView(padding: const EdgeInsets.fromLTRB(8, 8, 8, 24), children: [
+          if (users.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'کاربران', icon: Icons.people_alt_rounded),
+            ...users.map((p) => ListTile(leading: _avatar(p), title: Row(children: [Flexible(child: Text((p['display_name'] ?? p['username'] ?? 'کاربر').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))), if (p['is_verified'] == true) const Padding(padding: EdgeInsets.only(right: 5), child: Icon(Icons.verified_rounded, size: 16, color: Color(0xFF2F9BFF))) ]), subtitle: Text((p['username'] ?? '').toString().isEmpty ? (p['bio'] ?? '').toString() : '@' + p['username'].toString()), onTap: () => close(context, {...p, '_kind': 'user'}))),
+          ],
+          if (chats.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'گفتگوها', icon: Icons.forum_rounded),
+            ...chats.map((c) { final type = (c['type'] ?? 'direct').toString(); final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded; final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(icon) : null), title: Text((c['title'] ?? c['username'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')).toString(), style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(type == 'channel' ? 'کانال' : type == 'group' ? 'گروه' : 'گفتگوی خصوصی'), onTap: () => close(context, {...c, '_kind': 'chat'})); }),
+          ],
+          if (publicChats.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'گروه‌ها و کانال‌های عمومی', icon: Icons.public_rounded),
+            ...publicChats.map((c) { final type = (c['type'] ?? 'group').toString(); final url = (c['avatar_url'] ?? '').toString(); return ListTile(leading: CircleAvatar(backgroundImage: url.isNotEmpty ? NetworkImage(url) : null, child: url.isEmpty ? Icon(type == 'channel' ? Icons.campaign_rounded : Icons.groups_rounded) : null), title: Text((c['title'] ?? c['username'] ?? 'گروه عمومی').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${c['username'] ?? ''} • ${type == 'channel' ? 'کانال عمومی' : 'گروه عمومی'}'), trailing: const Icon(Icons.arrow_forward_rounded), onTap: () => _openPublicConversation(context, c)); }),
+          ],
+          if (messages.isNotEmpty) ...[
+            const _SearchSectionHeader(title: 'پیام‌ها', icon: Icons.chat_bubble_outline_rounded),
+            ...messages.map((m) => ListTile(leading: const CircleAvatar(child: Icon(Icons.message_rounded)), title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(_homeTime(m['created_at'])), onTap: () => close(context, {...m, '_kind': 'message'}))),
+          ],
+        ]);
+      },
+    );
+  }
+}
+
+class _AmbientChatGlow extends StatefulWidget {
+  final bool enabled;
+  final Color primary;
+  const _AmbientChatGlow({required this.enabled, required this.primary});
+
+  @override
+  State<_AmbientChatGlow> createState() => _AmbientChatGlowState();
+}
+
+class _AmbientChatGlowState extends State<_AmbientChatGlow> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    );
+    if (widget.enabled) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AmbientChatGlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.enabled && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.enabled && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return const SizedBox.shrink();
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final t = Curves.easeInOutSine.transform(_controller.value);
+              return Stack(children: [
+                Positioned(
+                  top: -92 + (t * 38),
+                  right: -76 + (t * 28),
+                  width: 285,
+                  height: 285,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [
+                        widget.primary.withValues(alpha: .17),
+                        widget.primary.withValues(alpha: .055),
+                        Colors.transparent,
+                      ]),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 54 + (t * 34),
+                  left: -96 + (t * 22),
+                  width: 300,
+                  height: 300,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [
+                        const Color(0xFF36B8FF).withValues(alpha: .105),
+                        const Color(0xFF36B8FF).withValues(alpha: .025),
+                        Colors.transparent,
+                      ]),
+                    ),
+                  ),
+                ),
+              ]);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ChatPage extends StatefulWidget {
+  final String id;
+  final String title;
+  final String? targetMessageId;
+
+  const ChatPage({super.key, required this.id, required this.title, this.targetMessageId});
+
+  @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  List<Map<String, dynamic>> get _displayTimelineItems {
+    final output = <Map<String, dynamic>>[];
+    DateTime? previousDay;
+    for (final item in timelineItems) {
+      final parsed = DateTime.tryParse('${item['created_at'] ?? ''}')?.toLocal();
+      if (parsed != null) {
+        final day = DateTime(parsed.year, parsed.month, parsed.day);
+        if (previousDay == null || day != previousDay) {
+          output.add({'__kind': 'date_separator', 'created_at': item['created_at'], 'label': _dateLabel(item['created_at'])});
+          previousDay = day;
+        }
+      }
+      output.add(item);
+    }
+    return output;
+  }
+
+  Widget _systemTimelineTile(Map<String, dynamic> item) {
+    final scheme = Theme.of(context).colorScheme;
+    final actorId = item['actor_id']?.toString() ?? '';
+    final actor = profiles[actorId];
+    final name = (actor?['display_name'] ?? actor?['username'] ?? 'کاربر').toString();
+    final targetId = item['target_user_id']?.toString() ?? '';
+    final target = profiles[targetId];
+    final targetName = (target?['display_name'] ?? target?['username'] ?? 'کاربر').toString();
+    final action = item['system_action'];
+    final label = action == 'group_created'
+        ? '$name این گروه را ایجاد کرد'
+        : action == 'member_added'
+            ? '$name، $targetName را به گروه اضافه کرد'
+            : action == 'joined_by_link'
+                ? '$targetName از طریق لینک به گروه پیوست'
+                : action == 'join_requested_by_link'
+                    ? '$targetName از طریق لینک درخواست عضویت فرستاد'
+                    : action == 'joined_by_public_username'
+                        ? '$targetName از طریق نام کاربری عمومی پیوست'
+                        : action == 'join_requested_by_public_username'
+                            ? '$targetName از نام کاربری عمومی درخواست عضویت فرستاد'
+                            : action == 'joined_after_approval'
+                                ? '$targetName پس از تأیید مدیر به گروه پیوست'
+                                : 'رویداد گروه';
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: scheme.secondaryContainer.withValues(alpha: .68),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(label, textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: scheme.onSecondaryContainer)),
+      ),
+    );
+  }
+
+  Widget _dateSeparator(String label) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: scheme.surface.withValues(alpha: .88),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.outline.withValues(alpha: .14)),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+      ),
+    );
+  }
+  final text = TextEditingController();
+  List<Map<String, dynamic>> messages = [];
+  List<Map<String, dynamic>> callSessions = [];
+  List<Map<String, dynamic>> timelineItems = [];
+  Map<String, Map<String, dynamic>> profiles = {};
+  Map<String, List<Map<String, dynamic>>> reactions = {};
+  Map<String, List<Map<String, dynamic>>> readReceipts = {};
+  Map<String, Map<String, dynamic>> attachments = {};
+  RealtimeChannel? channel;
+  final ScrollController _messagesScroll = ScrollController();
+  final FocusNode _composerFocus = FocusNode();
+  final GlobalKey _latestMessageKey = GlobalKey();
+  final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
+  bool _didJumpToTargetMessage = false;
+  bool _chatLoadInProgress = false;
+  bool _chatLoadQueued = false;
+  bool loading = true;
+  bool _isSyncing = true;
+  bool sending = false;
+  bool _chatNotificationsMuted = false;
+  Map<String, dynamic>? replyMessage;
+  final AudioRecorder _voiceRecorder = AudioRecorder();
+  final AudioPlayer _voicePlayer = AudioPlayer();
+  bool recordingVoice = false;
+  bool _voiceStarting = false;
+  bool _voiceFinishing = false;
+  bool voiceLocked = false;
+  bool voiceCancelArmed = false;
+  String _chatType = 'direct';
+  String? _localChatTitle;
+  String _groupAvatarUrl = '';
+  String _directPeerId = '';
+  List<Map<String, dynamic>> _mentionSuggestions = [];
+  int _mentionStart = -1;
+  int _groupMemberCount = 0;
+  int _groupOnlineCount = 0;
+  DateTime? _voiceStartedAt;
+  Timer? _voiceTimer;
+  int voiceSeconds = 0;
+  double voiceAmplitude = 0;
+  List<double> voiceWaveform = [];
+  StreamSubscription<Amplitude>? _voiceAmplitudeSub;
+  Timer? _keyboardScrollTimer;
+  double _lastKeyboardInset = 0;
+  bool _showJumpToLatest = false;
+  bool _keepLatestVisibleOnKeyboard = false;
+  final Set<String> _locallyHiddenMessageIds = <String>{};
+  bool _localHiddenIdsLoaded = false;
+
+  void _onMessagesScroll() {
+    if (!_messagesScroll.hasClients || !mounted) return;
+    final distance = _messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels;
+    final show = distance > 220;
+    if (show != _showJumpToLatest) setState(() => _showJumpToLatest = show);
+  }
+
+  void _onComposerFocus() {
+    // Preserve the current reading position when the keyboard opens.
+  }
+
+  void _scheduleKeyboardScroll() {
+    if (!_keepLatestVisibleOnKeyboard) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_composerFocus.hasFocus || !_messagesScroll.hasClients) return;
+      _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+    });
+  }
+
+  void _jumpToLatest() {
+    if (!_messagesScroll.hasClients) return;
+    _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+  }
+
+  void _scrollToLatestForKeyboard() {
+    if (!mounted || !_messagesScroll.hasClients) return;
+    final position = _messagesScroll.position;
+    if (!position.hasContentDimensions) return;
+
+    // First make the actual last bubble visible. This is more reliable than
+    // relying only on maxScrollExtent while Android is animating the IME.
+    final latestContext = _latestMessageKey.currentContext;
+    if (_lastKeyboardInset > 0 && latestContext != null) {
+      Scrollable.ensureVisible(
+        latestContext,
+        alignment: 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    }
+
+    final target = position.maxScrollExtent;
+    if ((position.pixels - target).abs() < 2) return;
+    // After the keyboard resize settles, force the list to its real bottom.
+    // The extra bottom padding keeps the final bubble above the composer/IME.
+    if (_lastKeyboardInset > 0) {
+      position.jumpTo(target);
+    } else {
+      position.animateTo(
+        target,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  Future<String?> _attachmentUrl(String path) async {
+    if (path.isEmpty) return null;
+    try {
+      return await supabase.storage.from('chat-media').createSignedUrl(path, 3600);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _playAttachment(String messageId) async {
+    try {
+      final a = attachments[messageId];
+      final path = a?['storage_path']?.toString() ?? '';
+      if (path.isEmpty) throw Exception('مسیر فایل صوتی خالی است');
+      final bytes = await supabase.storage.from('chat-media').download(path);
+      if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
+      await _voicePlayer.stop();
+      final mime = (a?['mime_type'] ?? 'audio/mp4').toString();
+      await _voicePlayer.play(BytesSource(bytes, mimeType: mime));
+    } catch (e) {
+      if (mounted) showMsg(context, 'پخش فایل صوتی ناموفق بود: $e');
+    }
+  }
+
+  Future<void> _openImage(Map<String, dynamic> m) async {
+    final a = attachments['${m['id']}'];
+    final path = a?['storage_path']?.toString() ?? '';
+    if (path.isEmpty) { if (mounted) showMsg(context, 'تصویر پیدا نشد'); return; }
+    final url = await _attachmentUrl(path);
+    if (!mounted || url == null || url.isEmpty) { if (mounted) showMsg(context, 'باز کردن تصویر ناموفق بود'); return; }
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: .88),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(12),
+        child: GestureDetector(
+          onTap: () => Navigator.pop(dialogContext),
+          child: InteractiveViewer(minScale: .8, maxScale: 4, child: ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.network(url, fit: BoxFit.contain))),
+        ),
+      ),
+    );
+  }
+
+  Widget _voicePlayButton(String messageId) {
+    final a = attachments[messageId];
+    final durationMs = (a?['duration_ms'] as num?)?.toInt() ?? 0;
+    final path = a?['storage_path']?.toString() ?? '';
+    if (path.isEmpty) {
+      return const SizedBox(width: 250, child: Text('فایل صوتی در دسترس نیست.'));
+    }
+    return VoiceMessagePlayer(
+      initialDurationMs: durationMs,
+      mine: false,
+      mimeType: (a?['mime_type'] ?? 'audio/mp4').toString(),
+      loadAudio: () async {
+        final bytes = await supabase.storage.from('chat-media').download(path);
+        if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
+        return bytes;
+      },
+    );
+  }
+
+  String _time(dynamic value) {
+    final dt = DateTime.tryParse('$value')?.toLocal();
+    if (dt == null) return '';
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _dateLabel(dynamic value) {
+    final dt = DateTime.tryParse('$value')?.toLocal();
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'امروز';
+    if (diff == 1) return 'دیروز';
+    const months = ['ژانویه', 'فوریه', 'مارس', 'آوریل', 'مه', 'ژوئن', 'ژوئیه', 'اوت', 'سپتامبر', 'اکتبر', 'نوامبر', 'دسامبر'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+  }
+
+  String _senderName(Map<String, dynamic> m) {
+    final p = profiles['${m['sender_id']}'];
+    if (p == null) return m['sender_id'] == supabase.auth.currentUser?.id ? 'شما' : 'کاربر';
+    return '${p['display_name'] ?? p['username'] ?? 'کاربر'}';
+  }
+
+  List<({String label, String message})> get _quickMessageSuggestions {
+    switch (aradLanguageController.locale.languageCode) {
+      case 'en':
+        return [
+          (label: '👋  Hello', message: 'Hello 👋'),
+          (label: '😊  How are you?', message: 'How are you? 😊'),
+          (label: '🙏  Thanks', message: 'Thanks 🙏'),
+          (label: '👍  Okay', message: 'Okay 👍'),
+          (label: '❤️  Great', message: 'Great ❤️'),
+          (label: '😂  Haha', message: '😂😂'),
+          (label: '🔥  Nice one', message: 'Nice one 🔥'),
+        ];
+      case 'ar':
+        return [
+          (label: '👋  مرحباً', message: 'مرحباً 👋'),
+          (label: '😊  كيف حالك؟', message: 'كيف حالك؟ 😊'),
+          (label: '🙏  شكراً', message: 'شكراً 🙏'),
+          (label: '👍  حسناً', message: 'حسناً 👍'),
+          (label: '❤️  رائع', message: 'رائع ❤️'),
+          (label: '😂  ههه', message: '😂😂'),
+          (label: '🔥  ممتاز', message: 'ممتاز 🔥'),
+        ];
+      default:
+        return [
+          (label: '👋  سلام', message: 'سلام 👋'),
+          (label: '😊  خوبی؟', message: 'خوبی؟ 😊'),
+          (label: '🙏  ممنون', message: 'ممنون 🙏'),
+          (label: '👍  باشه', message: 'باشه 👍'),
+          (label: '❤️  عالیه', message: 'عالیه ❤️'),
+          (label: '😂  خخخ', message: '😂😂'),
+          (label: '🔥  دمت گرم', message: 'دمت گرم 🔥'),
+        ];
+    }
+  }
+
+  void _updateMentionSuggestions(String value) {
+    if (_chatType != 'group') {
+      if (_mentionSuggestions.isNotEmpty) setState(() => _mentionSuggestions = []);
+      return;
+    }
+    final cursor = text.selection.baseOffset.clamp(0, value.length).toInt();
+    final before = value.substring(0, cursor);
+    final at = before.lastIndexOf('@');
+    if (at < 0 || (before.substring(at).contains(' ') || before.substring(at).contains('\n'))) {
+      if (_mentionSuggestions.isNotEmpty) setState(() { _mentionSuggestions = []; _mentionStart = -1; });
+      return;
+    }
+    final query = before.substring(at + 1).toLowerCase();
+    final matches = profiles.values.where((p) {
+      final username = '${p['username'] ?? ''}'.toLowerCase();
+      final display = '${p['display_name'] ?? ''}'.toLowerCase();
+      return username.isNotEmpty && (query.isEmpty || username.contains(query) || display.contains(query));
+    }).take(8).map((p) => Map<String, dynamic>.from(p)).toList();
+    if (_mentionStart != at || matches.length != _mentionSuggestions.length || matches.any((p) => !_mentionSuggestions.any((old) => old['id'] == p['id']))) {
+      setState(() { _mentionStart = at; _mentionSuggestions = matches; });
+    }
+  }
+
+  void _insertMention(Map<String, dynamic> profile) {
+    final username = '${profile['username'] ?? ''}'.trim();
+    if (username.isEmpty) return;
+    final cursor = text.selection.baseOffset.clamp(0, text.text.length).toInt();
+    final start = _mentionStart >= 0 ? _mentionStart : text.text.lastIndexOf('@', cursor - 1);
+    if (start < 0) return;
+    final next = '${text.text.substring(0, start)}@$username ${text.text.substring(cursor)}';
+    text.value = TextEditingValue(text: next, selection: TextSelection.collapsed(offset: start + username.length + 2));
+    setState(() { _mentionSuggestions = []; _mentionStart = -1; });
+    _restoreComposerFocus();
+  }
+
+  void _restoreComposerFocus() {
+    if (!mounted) return;
+    _composerFocus.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _composerFocus.requestFocus();
+      _scrollToLatestForKeyboard();
+    });
+  }
+
+  String get _notificationPreferenceKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'chat_notifications_muted_${uid}_${widget.id}';
+  }
+
+  Future<void> _loadChatNotificationPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _chatNotificationsMuted = prefs.getBool(_notificationPreferenceKey) ?? false);
+  }
+
+  Future<void> _toggleChatNotifications() async {
+    final next = !_chatNotificationsMuted;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationPreferenceKey, next);
+    if (!mounted) return;
+    setState(() => _chatNotificationsMuted = next);
+    showMsg(context, next
+        ? 'اعلان‌های این گفتگو در این دستگاه بی‌صدا شد.'
+        : 'اعلان‌های این گفتگو دوباره روشن شد.');
+  }
+
+  Future<void> _copyChatUsername() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      String value = '';
+      if (_chatType == 'direct') {
+        final rows = await supabase.from('conversation_members')
+            .select('user_id').eq('conversation_id', widget.id);
+        final peerId = (rows as List).map((r) => '${r['user_id'] ?? ''}')
+            .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
+        if (peerId.isNotEmpty) {
+          final p = await supabase.from('profiles').select('username,display_name')
+              .eq('id', peerId).maybeSingle();
+          final username = '${p?['username'] ?? ''}'.trim();
+          value = username.isNotEmpty ? '@$username' : '${p?['display_name'] ?? widget.title}'.trim();
+        }
+      } else {
+        final c = await supabase.from('conversations').select('username,title')
+            .eq('id', widget.id).maybeSingle();
+        final username = '${c?['username'] ?? ''}'.trim();
+        value = username.isNotEmpty ? '@$username' : '${c?['title'] ?? widget.title}'.trim();
+      }
+      if (value.isEmpty) value = _localChatTitle ?? widget.title;
+      await Clipboard.setData(ClipboardData(text: value));
+      if (mounted) showMsg(context, 'کپی شد: $value');
+    } catch (e) {
+      if (mounted) showMsg(context, 'کپی ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> _loadChatType() async {
+    try {
+      final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();
+      if (mounted) setState(() { _chatType = (r?['type'] ?? 'direct').toString(); });
+    } catch (_) {}
+  }
+
+  String get _chatCacheKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'arad_chat_cache_v1_${uid}_${widget.id}';
+  }
+
+  String get _hiddenMessageIdsKey {
+    final uid = supabase.auth.currentUser?.id ?? 'guest';
+    return 'arad_hidden_messages_v1_${uid}_${widget.id}';
+  }
+
+  Future<void> _ensureLocalHiddenIds() async {
+    if (_localHiddenIdsLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _locallyHiddenMessageIds.addAll(prefs.getStringList(_hiddenMessageIdsKey) ?? const <String>[]);
+    } catch (_) {}
+    _localHiddenIdsLoaded = true;
+  }
+
+  Future<void> _setLocalMessageHidden(String messageId, bool hidden) async {
+    await _ensureLocalHiddenIds();
+    if (hidden) {
+      _locallyHiddenMessageIds.add(messageId);
+      // Keep deletion tombstones persistent. Evicting old IDs can make deleted
+      // messages reappear after cache refreshes or app restarts.
+    } else {
+      _locallyHiddenMessageIds.remove(messageId);
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_hiddenMessageIdsKey, _locallyHiddenMessageIds.toList());
+    } catch (_) {}
+  }
+
+  Future<void> _restoreCachedChat() async {
+    await _ensureLocalHiddenIds();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_chatCacheKey);
+      if (raw == null || raw.isEmpty || !mounted) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      final cached = decoded
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .where((row) =>
+              !_locallyHiddenMessageIds.contains('${row['id']}') &&
+              row['deleted_at'] == null)
+          .toList();
+      if (cached.isEmpty || !mounted || messages.isNotEmpty) return;
+      setState(() {
+        messages = cached;
+        timelineItems = cached.map((m) => <String, dynamic>{...m, '__kind': 'message'}).toList();
+        loading = false;
+      });
+    } catch (_) {
+      // A damaged cache must never prevent the live conversation from opening.
+    }
+  }
+
+  Future<void> _saveCachedChat(List<Map<String, dynamic>> rows) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await _ensureLocalHiddenIds();
+      final cacheable = rows.where((m) =>
+          !'${m['id']}'.startsWith('pending-') &&
+          !_locallyHiddenMessageIds.contains('${m['id']}') &&
+          m['deleted_at'] == null &&
+          m['__kind'] != 'system' &&
+          m['__kind'] != 'call').toList();
+      await prefs.setString(_chatCacheKey, jsonEncode(cacheable.take(120).toList()));
+    } catch (_) {
+      // Cache is an optimization; the server remains the source of truth.
+    }
+  }
+
+  Future<void> load() async {
+    // Serialize refreshes triggered by sends, Realtime and screen lifecycle.
+    // A burst queues at most one follow-up refresh instead of racing state writes.
+    if (_chatLoadInProgress) {
+      _chatLoadQueued = true;
+      return;
+    }
+    _chatLoadInProgress = true;
+    final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
+    await _ensureLocalHiddenIds();
+    await _restoreCachedChat();
+    if (mounted) setState(() { _isSyncing = true; loading = messages.isEmpty; });
+    try {
+      // Conversation metadata and recent messages are independent reads.
+      // Run them together so opening a chat waits for one network round-trip, not two.
+      final initialRows = await Future.wait<dynamic>([
+        supabase.from('conversations')
+            .select('id,type,title,avatar_url,created_by,created_at')
+            .eq('id', widget.id).single()
+            .timeout(const Duration(seconds: 8)),
+        supabase.from('messages')
+            .select()
+            .eq('conversation_id', widget.id)
+            .isFilter('deleted_at', null)
+            .order('created_at', ascending: false)
+            .limit(120)
+            .timeout(const Duration(seconds: 8)),
+      ]);
+      final conversation = Map<String, dynamic>.from(initialRows[0] as Map);
+      // Deduplicate by server ID before composing the timeline. This guards
+      // against repeated rows returned during reconnects or overlapping writes.
+      final loadedById = <String, Map<String, dynamic>>{};
+      for (final row in List<Map<String, dynamic>>.from(initialRows[1] as List).reversed) {
+        final id = row['id']?.toString() ?? '';
+        if (id.isNotEmpty) loadedById[id] = row;
+      }
+      final loaded = loadedById.values.toList();
+      // Call history is independent of messages/profiles; start it immediately
+      // so it overlaps the rest of the chat hydration instead of adding latency.
+      final callRowsFuture = supabase.from('call_sessions')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,started_at,accepted_at,ended_at,created_at')
+          .eq('conversation_id', widget.id)
+          .order('created_at', ascending: true)
+          .limit(80)
+          .then<List<Map<String, dynamic>>>((value) => List<Map<String, dynamic>>.from(value as List))
+          .catchError((_) => <Map<String, dynamic>>[]);
+      if (widget.targetMessageId != null &&
+          !loaded.any((m) => '${m['id']}' == widget.targetMessageId) &&
+          !_locallyHiddenMessageIds.contains(widget.targetMessageId)) {
+        try {
+          final target = await supabase.from('messages').select()
+              .eq('id', widget.targetMessageId!).eq('conversation_id', widget.id)
+              .isFilter('deleted_at', null).maybeSingle();
+          // A deep link must obey the same "delete for me" tombstones as the
+          // regular message page; otherwise opening an old link can resurrect
+          // a message that the current user already removed from their chat.
+          var hiddenForCurrentUser = false;
+          final currentUid = supabase.auth.currentUser?.id;
+          if (target != null && currentUid != null) {
+            try {
+              final deletion = await supabase.from('message_user_deletions')
+                  .select('message_id')
+                  .eq('message_id', widget.targetMessageId!)
+                  .eq('user_id', currentUid)
+                  .maybeSingle();
+              hiddenForCurrentUser = deletion != null;
+            } catch (_) {
+              // If deletion status cannot be verified, prefer not to resurrect
+              // the target from a deep link. Regular chat history remains usable.
+              hiddenForCurrentUser = true;
+            }
+          }
+          if (target != null && !hiddenForCurrentUser &&
+              !_locallyHiddenMessageIds.contains(widget.targetMessageId)) {
+            loaded.add(Map<String, dynamic>.from(target));
+          }
+          loaded.sort((a, b) {
+            final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return ad.compareTo(bd);
+          });
+        } catch (_) {}
+      }
+      final uid = supabase.auth.currentUser?.id;
+      if (loaded.isNotEmpty) {
+        // Always apply local deletion tombstones first. They remain authoritative
+        // for this device even if the deletion-marker table is temporarily
+        // unreachable, misconfigured, or blocked by RLS.
+        loaded.removeWhere((m) =>
+            _locallyHiddenMessageIds.contains('${m['id']}') ||
+            m['deleted_at'] != null);
+        if (uid != null && loaded.isNotEmpty) {
+          // Fetch only markers for the current page to keep refreshes fast.
+          // A failed metadata lookup must not break the entire chat load.
+          final pageIds = loaded.map((m) => '${m['id']}').toList();
+          try {
+            final deletedRows = await supabase
+                .from('message_user_deletions')
+                .select('message_id')
+                .eq('user_id', uid)
+                .inFilter('message_id', pageIds)
+                .timeout(const Duration(seconds: 5));
+            final hidden = {
+              for (final r in List<Map<String, dynamic>>.from(deletedRows))
+                '${r['message_id']}'
+            };
+            loaded.removeWhere((m) => hidden.contains('${m['id']}'));
+            // Persist server-confirmed tombstones locally too, so brief outages
+            // cannot make the same messages flash back into the timeline.
+            if (hidden.isNotEmpty) {
+              _locallyHiddenMessageIds.addAll(hidden);
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setStringList(_hiddenMessageIdsKey, _locallyHiddenMessageIds.toList());
+              } catch (_) {}
+            }
+          } catch (_) {
+            // Continue with local tombstones and the remaining server messages.
+          }
+        }
+      }
+      final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
+      List<Map<String, dynamic>> groupMembers = [];
+      List<Map<String, dynamic>> groupEvents = [];
+      if (conversation['type'] == 'group') {
+        // Member roster and audit history are also independent; neither should
+        // block the other before profiles can be requested.
+        final groupReads = await Future.wait<dynamic>([
+          supabase.from('conversation_members')
+              .select('user_id,role,joined_at').eq('conversation_id', widget.id)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          supabase.from('group_audit_logs')
+              .select('id,actor_id,action,target_user_id,details,created_at')
+              .eq('conversation_id', widget.id).order('created_at', ascending: true).limit(100)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+        ]);
+        groupMembers = List<Map<String, dynamic>>.from(groupReads[0] as List);
+        groupEvents = List<Map<String, dynamic>>.from(groupReads[1] as List);
+        for (final event in groupEvents) {
+          if (event['actor_id'] != null) senderIds.add(event['actor_id'].toString());
+          if (event['target_user_id'] != null) senderIds.add(event['target_user_id'].toString());
+        }
+        for (final member in groupMembers) {
+          if (member['user_id'] != null) senderIds.add(member['user_id'].toString());
+        }
+      }
+      if (conversation['type'] == 'group' && conversation['created_by'] != null) {
+        senderIds.add(conversation['created_by'].toString());
+      }
+      var directPeerId = '';
+      if (conversation['type'] == 'direct' && uid != null) {
+        try {
+          final directMembers = await supabase.from('conversation_members')
+              .select('user_id').eq('conversation_id', widget.id);
+          directPeerId = (directMembers as List).map((m) => '${m['user_id'] ?? ''}')
+              .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
+          if (directPeerId.isNotEmpty) senderIds.add(directPeerId);
+        } catch (_) {}
+      }
+      final senderIdList = senderIds.toList();
+      if (senderIdList.isNotEmpty) {
+        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_online,last_seen').inFilter('id', senderIdList);
+        profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
+      }
+      final ids = loaded.map((m) => '${m['id']}').toList();
+      final loadedReactions = <String, List<Map<String, dynamic>>>{};
+      final loadedReadReceipts = <String, List<Map<String, dynamic>>>{};
+      final loadedAttachments = <String, Map<String, dynamic>>{};
+      if (ids.isNotEmpty) {
+        // Receipts, reactions and attachment metadata are independent lookups
+        // for the same page of messages. Fetch together to shorten chat refreshes.
+        final messageMeta = await Future.wait<dynamic>([
+          supabase.from('message_read_receipts')
+              .select('message_id,reader_id,read_at').inFilter('message_id', ids)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          supabase.from('message_reactions')
+              .select('message_id,user_id,reaction,created_at').inFilter('message_id', ids)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          supabase.from('message_attachments')
+              .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
+              .then<dynamic>((value) => value)
+              .catchError((_) => <Map<String, dynamic>>[]),
+        ]);
+        for (final receipt in List<Map<String, dynamic>>.from(messageMeta[0] as List)) {
+          loadedReadReceipts.putIfAbsent('${receipt['message_id']}', () => []).add(receipt);
+        }
+        for (final r in List<Map<String, dynamic>>.from(messageMeta[1] as List)) {
+          loadedReactions.putIfAbsent('${r['message_id']}', () => []).add(r);
+        }
+        for (final a in List<Map<String, dynamic>>.from(messageMeta[2] as List)) {
+          loadedAttachments['${a['message_id']}'] = a;
+        }
+      }
+      // The request was started when the initial message page arrived; await it only
+      // when assembling the timeline so profile/reaction lookups run concurrently.
+      final calls = await callRowsFuture;
+      final merged = <Map<String, dynamic>>[
+        ...loaded.map((m) => <String, dynamic>{...m, '__kind': 'message'}),
+        ...calls.map((c) => <String, dynamic>{...c, '__kind': 'call', 'created_at': c['created_at'] ?? c['started_at']}),
+        if (conversation['type'] == 'group' && conversation['created_at'] != null)
+          <String, dynamic>{
+            '__kind': 'system',
+            'system_action': 'group_created',
+            'actor_id': conversation['created_by'],
+            'created_at': conversation['created_at'],
+          },
+        ...groupEvents.map((event) => <String, dynamic>{
+          '__kind': 'system',
+          'system_action': event['action'],
+          'actor_id': event['actor_id'],
+          'target_user_id': event['target_user_id'],
+          'created_at': event['created_at'],
+        }),
+      ];
+      merged.sort((a, b) {
+        final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return ad.compareTo(bd);
+      });
+      if (mounted) {
+        setState(() {
+          messages = loaded;
+          callSessions = calls;
+          timelineItems = merged;
+          _directPeerId = directPeerId;
+          _groupAvatarUrl = '${conversation['avatar_url'] ?? ''}';
+          _groupMemberCount = groupMembers.length;
+          _groupOnlineCount = groupMembers.where((member) =>
+            profiles[member['user_id']?.toString()]?['is_online'] == true).length;
+          reactions = loadedReactions;
+          readReceipts = loadedReadReceipts;
+          attachments = loadedAttachments;
+          loading = false;
+          _isSyncing = false;
+        });
+        // Persist the latest server-confirmed messages for quick/offline reopening.
+        await _saveCachedChat(loaded);
+        if (widget.targetMessageId != null && !_didJumpToTargetMessage) {
+          _didJumpToTargetMessage = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToTargetMessage());
+        } else if (stickToBottom) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_messagesScroll.hasClients) return;
+            _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+          });
+        }
+      }
+      await markRead();
+    } catch (e) {
+      if (mounted) {
+        setState(() { loading = false; _isSyncing = false; });
+        if (messages.isEmpty) {
+          showMsg(context, _isNetworkFailure(e)
+              ? 'اینترنت در دسترس نیست و هنوز نسخهٔ ذخیره‌شده‌ای از این گفتگو ندارید.'
+              : 'گفتگو بارگذاری نشد: ${_friendlyError(e.toString())}');
+        } else {
+          // Keep cached messages visible if the network request fails.
+          showMsg(context, _isNetworkFailure(e)
+              ? 'اتصال ضعیف است؛ پیام‌های ذخیره‌شده نمایش داده می‌شوند.'
+              : 'به‌روزرسانی گفتگو ناموفق بود؛ پیام‌های قبلی حفظ شدند.');
+        }
+      }
+    } finally {
+      _chatLoadInProgress = false;
+      if (_chatLoadQueued && mounted) {
+        _chatLoadQueued = false;
+        unawaited(load());
+      }
+    }
+  }
+
+  void _jumpToTargetMessage() {
+    final targetId = widget.targetMessageId;
+    if (!mounted || targetId == null) return;
+    final targetContext = _messageKeys[targetId]?.currentContext;
+    if (targetContext != null) {
+      Scrollable.ensureVisible(targetContext, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic, alignment: .5);
+    } else if (_messagesScroll.hasClients) {
+      _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+    }
+  }
+
+  Future<void> markRead() async {
+    try {
+      final settings = await loadUserSettings();
+      if (settings['read_receipts'] == false) return;
+      await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
+      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
+    } catch (_) {}
+  }
+
+  final List<String> quickReactions = const ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'];
+  Future<void> _toggleReaction(String messageId, String emoji) async {
+    final message = messages.cast<Map<String, dynamic>>().firstWhere(
+      (item) => '${item['id']}' == messageId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (message.isEmpty) return;
+    await reactTo(message, emoji);
+  }
+  Future<void> _showReactionPicker(Map<String,dynamic> m) async {
+    final id = m['id'].toString();
+    const categories = <String, List<String>>{
+      'محبوب': ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'],
+      'احساسات': ['😀','😁','🥹','🤣','😎','😍','😘','🥳','😭','😡','🤯','😴','🤗','😇','🙃','😔'],
+      'دست‌ها': ['👋','🤝','🫶','🤲','✌️','🤞','👌','💪','🫡','👏','🙌','🙏'],
+      'نمادها': ['✨','💫','⭐','🌟','❤️‍🔥','💔','💜','💙','💚','🖤','✅','❌','💯','🎯'],
+    };
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final scheme = Theme.of(ctx).colorScheme;
+        var selectedCategory = 'محبوب';
+        return StatefulBuilder(builder: (ctx, setSheetState) => SafeArea(
+          child: Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * .62),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: .55)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .22), blurRadius: 28, offset: const Offset(0, -6))],
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(9))),
+              const SizedBox(height: 14),
+              Row(children: [
+                const Expanded(child: Text('واکنش به پیام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                IconButton(tooltip: 'افرادی که واکنش داده‌اند', onPressed: () { Navigator.pop(ctx); _showReactionPeople(id); }, icon: const Icon(Icons.people_alt_outlined)),
+              ]),
+              // One-tap favorites stay visible so the most common reactions need
+              // no category change or precise tap on a small grid cell.
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: ['❤️', '👍', '😂', '🔥', '🥰', '👏'].map((emoji) => Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: Material(
+                    color: scheme.primaryContainer.withValues(alpha: .55),
+                    borderRadius: BorderRadius.circular(15),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(15),
+                      onTap: () { Navigator.pop(ctx); _toggleReaction(id, emoji); },
+                      child: SizedBox(width: 48, height: 46, child: Center(child: Text(emoji, style: const TextStyle(fontSize: 27)))),
+                    ),
+                  ),
+                )).toList()),
+              ),
+              const SizedBox(height: 10),
+              SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: categories.keys.map((name) => Padding(
+                padding: const EdgeInsetsDirectional.only(end: 7),
+                child: ChoiceChip(label: Text(name), selected: selectedCategory == name, onSelected: (_) => setSheetState(() => selectedCategory = name)),
+              )).toList())),
+              const SizedBox(height: 10),
+              Flexible(child: GridView.builder(
+                shrinkWrap: true,
+                itemCount: categories[selectedCategory]!.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, mainAxisSpacing: 5, crossAxisSpacing: 5),
+                itemBuilder: (ctx, index) {
+                  final emoji = categories[selectedCategory]![index];
+                  return TweenAnimationBuilder<double>(
+                    key: ValueKey('$selectedCategory-$emoji'),
+                    tween: Tween(begin: .78, end: 1),
+                    duration: Duration(milliseconds: 150 + (index % 5) * 25),
+                    curve: Curves.easeOutBack,
+                    builder: (ctx, scale, child) => Transform.scale(scale: scale, child: child),
+                    child: Material(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: .55),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () { Navigator.pop(ctx); _toggleReaction(id, emoji); },
+                        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 27))),
+                      ),
+                    ),
+                  );
+                },
+              )),
+              const SizedBox(height: 8),
+              Text('واکنش شما برای همه اعضای گفتگو نمایش داده می‌شود', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+            ]),
+          ),
+        ));
+      },
+    );
+  }
+  Future<void> _showReactionPeople(String messageId) async {
+    try {
+      final rows=List<Map<String,dynamic>>.from(await supabase.from('message_reactions').select('user_id,reaction').eq('message_id',messageId));
+      final ids=rows.map((r)=>r['user_id'].toString()).toSet().toList();
+      final people=<String,Map<String,dynamic>>{};
+      if(ids.isNotEmpty){
+        final profilesRows=await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id',ids);
+        for(final p in List<Map<String,dynamic>>.from(profilesRows)) people['${p['id']}']=p;
+      }
+      if(!mounted)return;
+      await showModalBottomSheet<void>(
+        context:context,showDragHandle:true,
+        builder:(ctx)=>ListView(
+          padding:const EdgeInsets.all(16),
+          children:[
+            const Text('واکنش‌ها',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+            const SizedBox(height:10),
+            ...rows.map((r){
+              final p=people[r['user_id'].toString()];
+              final name=(p?['display_name']??p?['username']??'کاربر').toString();
+              return ListTile(leading:Text(r['reaction'].toString(),style:const TextStyle(fontSize:25)),title:Text(name));
+            }),
+          ],
+        ),
+      );
+    } catch(e) {
+      if(mounted)showMsg(context,'واکنش‌ها بارگذاری نشد: '+_friendlyError(e.toString()));
+    }
+  }
+  Widget _reactionBar(String messageId) {
+    final rs = reactions[messageId] ?? [];
+    if (rs.isEmpty) return const SizedBox.shrink();
+    final grouped = <String,int>{};
+    for (final r in rs) { final e = r['reaction'].toString(); grouped[e] = (grouped[e] ?? 0) + 1; }
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 5,
+        runSpacing: 4,
+        children: grouped.entries.map<Widget>((e) => TweenAnimationBuilder<double>(
+          key: ValueKey('${messageId}_${e.key}_${e.value}'),
+          tween: Tween(begin: .78, end: 1),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutBack,
+          builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+          child: InkWell(
+            onTap: () => _showReactionPeople(messageId),
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: dark
+                      ? [const Color(0xFF394A65), const Color(0xFF202B40)]
+                      : [Colors.white, const Color(0xFFE7EEFF)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: .30)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: dark ? .22 : .08), blurRadius: 7, offset: const Offset(0, 3)),
+                  BoxShadow(color: Colors.white.withValues(alpha: dark ? .08 : .85), blurRadius: 2, offset: const Offset(0, 1)),
+                ],
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(e.key, style: const TextStyle(fontSize: 17, height: 1.0)),
+                if (e.value > 1) ...[
+                  const SizedBox(width: 4),
+                  Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
+                    color: dark ? Colors.white : const Color(0xFF27334A))),
+                ],
+              ]),
+            ),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Future<void> sendText({bool keepKeyboardOpen = true}) async {
+    final value = text.text.trim();
+    final uid = supabase.auth.currentUser?.id;
+    if (value.isEmpty || sending || uid == null) return;
+
+    // Render the bubble immediately; don't wait for the full chat history,
+    // profile, reactions, attachments and call-session queries to finish.
+    final tempId = 'pending-${DateTime.now().microsecondsSinceEpoch}';
+    final replyId = replyMessage?['id'];
+    final optimistic = <String, dynamic>{
+      'id': tempId,
+      'conversation_id': widget.id,
+      'sender_id': uid,
+      'body': value,
+      'message_type': 'text',
+      'reply_to': replyId,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      '__pending': true,
+    };
+
+    text.clear();
+    setState(() {
+      replyMessage = null;
+      sending = true;
+      messages = [...messages, optimistic];
+      timelineItems = [...timelineItems, {...optimistic, '__kind': 'message'}]
+        ..sort((a, b) {
+          final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return ad.compareTo(bd);
+        });
+    });
+    // Normal sends keep the keyboard open; one-tap quick replies deliberately
+    // dismiss it so tapping a suggestion never unexpectedly opens the IME.
+    if (keepKeyboardOpen) {
+      _composerFocus.requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _composerFocus.requestFocus();
+        _scrollToLatestForKeyboard();
+      });
+    } else {
+      _composerFocus.unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+
+    try {
+      final saved = Map<String, dynamic>.from(await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': uid,
+        'body': value,
+        'message_type': 'text',
+        'reply_to': replyId,
+      }).select().single());
+
+      if (!mounted) return;
+      setState(() {
+        messages = [
+          ...messages.where((m) => '${m['id']}' != tempId && '${m['id']}' != '${saved['id']}'),
+          saved,
+        ];
+        timelineItems = [
+          ...timelineItems.where((m) => '${m['id']}' != tempId && '${m['id']}' != '${saved['id']}'),
+          {...saved, '__kind': 'message'},
+        ]..sort((a, b) {
+          final ad = DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bd = DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return ad.compareTo(bd);
+        });
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        messages = messages.where((m) => '${m['id']}' != tempId).toList();
+        timelineItems = timelineItems.where((m) => '${m['id']}' != tempId).toList();
+        if (text.text.trim().isEmpty) text.text = value;
+      });
+      if (keepKeyboardOpen) _composerFocus.requestFocus();
+      showMsg(context, 'ارسال نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => sending = false);
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (keepKeyboardOpen) {
+            _composerFocus.requestFocus();
+            _scrollToLatestForKeyboard();
+          } else {
+            // Quick replies must remain keyboard-free even after the network send completes.
+            _composerFocus.unfocus();
+            FocusManager.instance.primaryFocus?.unfocus();
+            _scrollToLatestForKeyboard();
+          }
+        });
+      }
+    }
+  }
+
+  String _mimeType(String name) {
+    final n = name.toLowerCase();
+    if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
+    if (n.endsWith('.png')) return 'image/png';
+    if (n.endsWith('.webp')) return 'image/webp';
+    if (n.endsWith('.gif')) return 'image/gif';
+    if (n.endsWith('.mp3')) return 'audio/mpeg';
+    if (n.endsWith('.m4a')) return 'audio/mp4';
+    if (n.endsWith('.aac')) return 'audio/aac';
+    if (n.endsWith('.wav')) return 'audio/wav';
+    if (n.endsWith('.ogg') || n.endsWith('.oga')) return 'audio/ogg';
+    if (n.endsWith('.opus')) return 'audio/opus';
+    if (n.endsWith('.mp4')) return 'video/mp4';
+    if (n.endsWith('.mov')) return 'video/quicktime';
+    if (n.endsWith('.pdf')) return 'application/pdf';
+    return 'application/octet-stream';
+  }
+
+  Future<void> sendFile() async {
+    if (sending) return;
+    try {
+      final result = await FilePicker.platform.pickFiles(withData: true);
+      if (result == null) return;
+      final f = result.files.single;
+      final localPath = f.path;
+      final bytes = f.bytes ?? (localPath == null || localPath.isEmpty
+          ? null
+          : await XFile(localPath).readAsBytes());
+      if (bytes == null || bytes.isEmpty) throw Exception('خواندن فایل ناموفق بود');
+      if (bytes.isEmpty) throw Exception('فایل خالی است');
+      final mime = _mimeType(f.name);
+      final isAudio = mime.startsWith('audio/');
+      final isImage = mime.startsWith('image/');
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${f.name}';
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: mime, upsert: false));
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': f.name,
+        'message_type': isAudio ? 'audio' : (isImage ? 'image' : 'file'),
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': path,
+        'file_name': f.name,
+        'file_size': f.size,
+        'mime_type': mime,
+      });
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+      _restoreComposerFocus();
+    } catch (e) {
+      if (mounted) showMsg(context, 'فایل ارسال نشد: $e');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> _startVoiceRecording() async {
+    if (sending || recordingVoice || _voiceStarting || _voiceFinishing) return;
+    _voiceStarting = true;
+    try {
+      if (!await _voiceRecorder.hasPermission()) {
+        if (mounted) showMsg(context, 'دسترسی میکروفون فعال نیست.');
+        return;
+      }
+      final voicePath = kIsWeb
+          ? 'arad_voice_${DateTime.now().millisecondsSinceEpoch}.webm'
+          : '${(await getTemporaryDirectory()).path}/arad_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      // Browser MediaRecorder commonly emits Opus/WebM; requesting AAC here
+      // can create a file whose extension/MIME disagree with the actual codec.
+      await _voiceRecorder.start(
+        RecordConfig(
+          encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc,
+          bitRate: 96000,
+          sampleRate: 48000,
+          numChannels: 1,
+        ),
+        path: voicePath,
+      );
+      _voiceStartedAt = DateTime.now();
+      if (mounted) {
+        setState(() {
+          recordingVoice = true;
+          voiceLocked = false;
+          voiceCancelArmed = false;
+          voiceSeconds = 0;
+          voiceWaveform = [];
+          voiceAmplitude = .08;
+        });
+      }
+      _voiceTimer?.cancel();
+      _voiceTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+        if (!mounted || _voiceStartedAt == null || !recordingVoice) return;
+        final elapsed = DateTime.now().difference(_voiceStartedAt!).inSeconds;
+        if (elapsed != voiceSeconds) setState(() => voiceSeconds = elapsed);
+      });
+      await _voiceAmplitudeSub?.cancel();
+      _voiceAmplitudeSub = _voiceRecorder.onAmplitudeChanged(const Duration(milliseconds: 120)).listen((a) {
+        if (!mounted) return;
+        final normalized = ((a.current + 60) / 60).clamp(0.06, 1.0).toDouble();
+        setState(() {
+          voiceAmplitude = normalized;
+          voiceWaveform.add(normalized);
+          if (voiceWaveform.length > 34) voiceWaveform.removeAt(0);
+        });
+      }, onError: (_) {});
+    } catch (e) {
+      _voiceTimer?.cancel();
+      _voiceTimer = null;
+      await _voiceAmplitudeSub?.cancel();
+      _voiceAmplitudeSub = null;
+      if (mounted) showMsg(context, 'شروع ضبط ویس ناموفق بود: $e');
+    } finally {
+      _voiceStarting = false;
+    }
+  }
+
+  Future<void> _finishVoiceRecording({bool cancel = false}) async {
+    if (!recordingVoice || _voiceFinishing) return;
+    _voiceFinishing = true;
+    _voiceTimer?.cancel();
+    _voiceTimer = null;
+    await _voiceAmplitudeSub?.cancel();
+    _voiceAmplitudeSub = null;
+
+    final startedAt = _voiceStartedAt;
+    final durationMilliseconds = startedAt == null
+        ? voiceSeconds * 1000
+        : DateTime.now().difference(startedAt).inMilliseconds;
+    final durationSeconds = (durationMilliseconds / 1000).ceil();
+    String? path;
+    try {
+      path = await _voiceRecorder.stop();
+    } catch (_) {
+      path = null;
+      if (mounted) showMsg(context, 'ضبط ویس متوقف نشد؛ دوباره تلاش کنید.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          recordingVoice = false;
+          voiceLocked = false;
+          voiceCancelArmed = false;
+          voiceAmplitude = .08;
+          voiceSeconds = durationSeconds;
+        });
+      }
+    }
+
+    if (cancel || path == null || path.isEmpty) {
+      _voiceFinishing = false;
+      return;
+    }
+
+    try {
+      final bytes = await XFile(path).readAsBytes();
+      if (bytes.isEmpty) throw Exception('فایل ویس خالی است');
+      if (mounted) setState(() => sending = true);
+      final voiceMime = kIsWeb ? 'audio/webm' : 'audio/mp4';
+      final voiceExtension = kIsWeb ? 'webm' : 'm4a';
+      final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension';
+      await supabase.storage.from('chat-media').uploadBinary(
+        storagePath,
+        bytes,
+        fileOptions: FileOptions(contentType: voiceMime, upsert: false),
+      );
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': 'پیام صوتی',
+        'message_type': 'audio',
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': storagePath,
+        'file_name': storagePath.split('/').last,
+        'mime_type': voiceMime,
+        'file_size': bytes.length,
+        'duration_ms': durationMilliseconds,
+      });
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+      _restoreComposerFocus();
+    } catch (e) {
+      if (mounted) showMsg(context, 'ارسال ویس ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      _voiceFinishing = false;
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> toggleVoiceRecording() async {
+    // Keep the chat surface mounted while the recorder starts/stops. Only the
+    // compact recording controls should change; do not replace the message body.
+    if (recordingVoice) {
+      await _finishVoiceRecording();
+    } else {
+      await _startVoiceRecording();
+    }
+  }
+
+
+  Future<void> sendVideo() async {
+    if (sending) return;
+    try {
+      final video = await ImagePicker().pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
+      if (video == null) return;
+      final bytes = await video.readAsBytes();
+      if (bytes.isEmpty) throw Exception('ویدئو خالی است');
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_video_${video.name}';
+      final videoMime = _mimeType(video.name);
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(
+        path,
+        bytes,
+        fileOptions: FileOptions(contentType: videoMime.startsWith('video/') ? videoMime : 'video/mp4', upsert: false),
+      );
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': video.name,
+        'message_type': 'video',
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': path,
+        'file_name': video.name,
+        'mime_type': videoMime.startsWith('video/') ? videoMime : 'video/mp4',
+        'file_size': bytes.length,
+      });
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+      _restoreComposerFocus();
+    } catch (e) {
+      if (mounted) showMsg(context, 'ویدئو ارسال نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> sendCameraImage() async {
+    if (sending) return;
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92, maxWidth: 2200, maxHeight: 2200);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (bytes.isEmpty) throw Exception('تصویر خالی است');
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}';
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': image.name, 'message_type': 'image', 'reply_to': replyMessage?['id']}).select().single();
+      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+      _restoreComposerFocus();
+    } catch (e) { if (mounted) showMsg(context, 'ارسال عکس دوربین ناموفق بود: $e'); }
+    finally { if (mounted) setState(() => sending = false); }
+  }
+
+  Future<void> _showAttachmentPanel() async {
+    await showModalBottomSheet<void>(
+      context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30), bottom: Radius.circular(24)),
+          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22), child: Container(
+            decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .94), border: Border.all(color: scheme.onSurface.withValues(alpha: .08))),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 18),
+              Row(children: [Expanded(child: Text({'en':'Add to message','ar':'إضافة إلى الرسالة'}[aradLanguageController.locale.languageCode] ?? 'افزودن به پیام', textAlign: TextAlign.start, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded))]),
+              GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, mainAxisSpacing: 16, crossAxisSpacing: 12, childAspectRatio: 1.05, children: [
+                _attachmentItem(sheetContext, Icons.photo_library_rounded, {'en':'Gallery','ar':'المعرض'}[aradLanguageController.locale.languageCode] ?? 'گالری', () { Navigator.pop(sheetContext); sendImage(); }),
+                _attachmentItem(sheetContext, Icons.camera_alt_rounded, {'en':'Camera','ar':'الكاميرا'}[aradLanguageController.locale.languageCode] ?? 'دوربین', () { Navigator.pop(sheetContext); sendCameraImage(); }),
+                _attachmentItem(sheetContext, Icons.insert_drive_file_rounded, {'en':'Files','ar':'الملفات'}[aradLanguageController.locale.languageCode] ?? 'فایل‌ها', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.videocam_rounded, {'en':'Video','ar':'فيديو'}[aradLanguageController.locale.languageCode] ?? 'ویدئو', () { Navigator.pop(sheetContext); sendVideo(); }),
+                _attachmentItem(sheetContext, Icons.music_note_rounded, {'en':'Audio / Music','ar':'صوت / موسيقى'}[aradLanguageController.locale.languageCode] ?? 'موسیقی / صدا', () { Navigator.pop(sheetContext); sendFile(); }),
+                _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
+              ]),
+            ]),
+          )),
+        ));
+      },
+    );
+  }
+
+  Widget _attachmentItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(borderRadius: BorderRadius.circular(24), onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(width: 68, height: 68, decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .72), shape: BoxShape.circle), child: Icon(icon, size: 32, color: scheme.primary)),
+      const SizedBox(height: 8), Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
+    ]));
+  }
+  Future<void> sendImage() async {
+    if (sending) return;
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 92, maxWidth: 2200, maxHeight: 2200);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (bytes.isEmpty) throw Exception('تصویر خالی است');
+      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      setState(() => sending = true);
+      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      final msg = await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': supabase.auth.currentUser!.id,
+        'body': image.name,
+        'message_type': 'image',
+        'reply_to': replyMessage?['id'],
+      }).select().single();
+      await supabase.from('message_attachments').insert({
+        'message_id': msg['id'],
+        'storage_path': path,
+        'file_name': image.name,
+        'mime_type': 'image/jpeg',
+        'file_size': bytes.length,
+      });
+      if (mounted) setState(() => replyMessage = null);
+      await load();
+      _restoreComposerFocus();
+    } catch (e) {
+      if (mounted) showMsg(context, 'تصویر ارسال نشد: $e');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> _showChatEmojiPicker() async {
+    const emojis = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','🥰','😍','🤩','🥲','😋','😜','🤗','🤔','😎','🥳','😢','😭','😡','🤖','👋','👌','✌️','🤞','👍','👎','👏','🙌','🫶','🙏','💪','👀','❤️','🧡','💛','💚','💙','🩵','💜','🩷','🤎','🖤','🤍','💔','❤️‍🔥','💕','💖','💯','🐶','🐱','🦊','🐻','🐼','🐸','🐵','🐺','🦄','🦋','🐢','🐬','🦁','🍎','🍊','🍉','🍇','🍓','🍒','🥑','🍔','🍕','🍜','🍦','🎂','☕','⚽','🎮','🎧','🎉','🎁','🏆','🚀','🌍','🌙','⭐','✨','⚡','🔥','☀️','🌈','❄️','🌊','🪐','💎','👑','🌹','🌸'];
+    const stickers = ['🚀✨','👾💜','🪐🌟','🛸👽','🌌💫','🤖💙','🐸🔥','🦊✨','🐼💖','🐱🎧','😎🕶️','🥹🫶','😭💔','😂⚡','😍🌹','🤯💥','😈🔥','👑💎','🫡⭐','🫠☀️','💀😂','🧠⚡','🦋💜','🐉🔥','🦄🌈','🐙💫','🐳🌊','🦖💚','🐣💛','🦝🎭','💌✨','💘🏹','❤️‍🔥⚡','💜🪐','💚🐸','💙🌊','🧡🔥','🤍🪽','🖤🌑','💛☀️','🎮👾','🎧🎵','🏆🔥','🎯💯','🧿✨','🍓💗','🍉🌞','🍄🌈','☕🌧️','🌙💤','🫶✨','🥹💖','😹🔥','😴🌙','🤝💯','😤⚡','🤍🕊️','🖤🥀','💜🦋','🌈🫧'];
+    const stickerArt = ['🚀','👾','🪐','🛸','🌌','🤖','🐸','🦊','🐼','🐱','😎','🥹','😭','😂','😍','🤯','😈','👑','🫡','🫠','💀','🧠','🦋','🐉','🦄','🐙','🐳','🦖','🐣','🦝','💌','💘','❤️‍🔥','💜','💚','💙','🧡','🤍','🖤','💛','🎮','🎧','🏆','🎯','🧿','🍓','🍉','🍄','☕','🌙','🫶','🥹','😹','😴','🤝','😤','🕊️','🥀','🦋','🌈'];
+    String filter = '';
+    int tab = 0;
+    final selected = <String>[];
+    await showModalBottomSheet<void>(
+      context: context, backgroundColor: Colors.transparent, isScrollControlled: true, showDragHandle: false,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return StatefulBuilder(builder: (context, setSheetState) {
+          final source = tab == 0 ? emojis : stickers;
+          final shown = filter.isEmpty ? source : source.where((e) => e.contains(filter)).toList();
+          return SafeArea(child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            child: Container(
+              height: MediaQuery.of(context).size.height * .72,
+              decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .3)))),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(children: [
+                Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .25), borderRadius: BorderRadius.circular(8))),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Icon(Icons.emoji_emotions_rounded, color: scheme.primary, size: 24), const SizedBox(width: 8),
+                  const Expanded(child: Text('ایموجی و استیکر', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                  Text('انتخاب‌شده: ' + selected.length.toString(), style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+                  IconButton(tooltip: 'پاک کردن همه', onPressed: selected.isEmpty ? null : () => setSheetState(() => selected.clear()), icon: const Icon(Icons.backspace_outlined)),
+                ]),
+                if (selected.isNotEmpty) SizedBox(height: 46, child: ListView(scrollDirection: Axis.horizontal, children: [
+                  for (final item in selected) Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: InputChip(
+                    label: Text(item, style: const TextStyle(fontSize: 20)), deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => setSheetState(() => selected.remove(item)),
+                  )),
+                ])),
+                const SizedBox(height: 8),
+                TextField(onChanged: (value) => setSheetState(() => filter = value.trim()), decoration: InputDecoration(
+                  hintText: 'جست‌وجوی ایموجی', prefixIcon: const Icon(Icons.search_rounded), isDense: true, filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                )),
+                const SizedBox(height: 10),
+                SegmentedButton<int>(
+                  segments: const [ButtonSegment(value: 0, icon: Icon(Icons.emoji_emotions_outlined), label: Text('ایموجی')), ButtonSegment(value: 1, icon: Icon(Icons.auto_awesome_rounded), label: Text('استیکرهای متنی'))],
+                  selected: {tab}, onSelectionChanged: (value) => setSheetState(() { tab = value.first; filter = ''; }), showSelectedIcon: false,
+                ),
+                const SizedBox(height: 10),
+                Expanded(child: GridView.builder(
+                  itemCount: shown.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: MediaQuery.of(context).size.width < 380 ? 7 : 8, mainAxisSpacing: 5, crossAxisSpacing: 5, childAspectRatio: .95),
+                  itemBuilder: (_, i) {
+                    final item = shown[i]; final isSelected = selected.contains(item);
+                    final art = tab == 1 ? stickerArt[stickers.indexOf(item)] : item;
+                    return Material(color: isSelected ? scheme.primaryContainer : scheme.surfaceContainerHighest.withValues(alpha: .55), borderRadius: BorderRadius.circular(13),
+                      child: InkWell(borderRadius: BorderRadius.circular(13), onTap: () {
+                        // Both emoji and sticker choices support multi-select.
+                        setSheetState(() {
+                          if (isSelected) { selected.remove(item); } else { selected.add(item); }
+                        });
+                      }, child: Stack(alignment: Alignment.center, children: [
+                        Text(art, textAlign: TextAlign.center, style: TextStyle(fontSize: tab == 0 ? 27 : 34, shadows: tab == 1 ? const [Shadow(color: Color(0x667C3AED), blurRadius: 10, offset: Offset(0, 2))] : const [])),
+                        if (isSelected) PositionedDirectional(top: 2, end: 2, child: Icon(Icons.check_circle, size: 13, color: scheme.primary)),
+                      ])),
+                    );
+                  },
+                )),
+                const SizedBox(height: 8),
+                SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: () async {
+                    if (selected.isEmpty) {
+                      Navigator.pop(sheetContext);
+                      return;
+                    }
+                    final chosen = List<String>.from(selected);
+                    final selectedTab = tab;
+                    if (selectedTab == 0) {
+                      // Insert the whole selection at the cursor and send it
+                      // through the regular composer path without dismissing the picker.
+                      final value = text.text;
+                      final selection = text.selection;
+                      final start = selection.start < 0 ? value.length : selection.start;
+                      final end = selection.end < 0 ? value.length : selection.end;
+                      final insertion = chosen.join();
+                      text.value = TextEditingValue(
+                        text: value.replaceRange(start, end, insertion),
+                        selection: TextSelection.collapsed(offset: start + insertion.length),
+                      );
+                      await sendText(keepKeyboardOpen: false);
+                    } else {
+                      // Deliver each selected sticker using the existing send path.
+                      for (final item in chosen) {
+                        if (!mounted) break;
+                        final index = stickers.indexOf(item);
+                        if (index < 0) continue;
+                        final art = stickerArt[index];
+                        final payload = '[[ARAD_STICKER]]$art|$item';
+                        text.value = TextEditingValue(
+                          text: payload,
+                          selection: TextSelection.collapsed(offset: payload.length),
+                        );
+                        await sendText(keepKeyboardOpen: false);
+                      }
+                    }
+                    if (sheetContext.mounted) {
+                      setSheetState(() {
+                        selected.clear();
+                        filter = '';
+                      });
+                    }
+                  },
+                  icon: Icon(selected.isEmpty ? Icons.close_rounded : (tab == 0 ? Icons.send_rounded : Icons.auto_awesome_rounded)),
+                  label: Text(selected.isEmpty ? 'بستن' : (tab == 0 ? 'ارسال ایموجی‌های انتخاب‌شده (' + selected.length.toString() + ')' : 'ارسال استیکرهای انتخاب‌شده (' + selected.length.toString() + ')')),
+                )),
+              ]),
+            ),
+          ));
+        });
+      },
+    );
+  }
+
+  Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
+    final uid = supabase.auth.currentUser?.id;
+    final messageId = message['id']?.toString();
+    if (uid == null || messageId == null || messageId.isEmpty) return;
+    final previous = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
+    final mine = previous.where((r) => r['user_id']?.toString() == uid).toList();
+    final sameReaction = mine.any((r) => r['reaction']?.toString() == emoji);
+
+    // Give immediate feedback; network reconciliation happens after the UI update.
+    HapticFeedback.selectionClick();
+    _showReactionBurst(emoji);
+    if (mounted) setState(() {
+      final current = List<Map<String, dynamic>>.from(reactions[messageId] ?? const []);
+      current.removeWhere((r) => r['user_id']?.toString() == uid);
+      if (!sameReaction) current.add({'message_id': messageId, 'user_id': uid, 'reaction': emoji});
+      reactions[messageId] = current;
+    });
+
+    try {
+      await supabase.from('message_reactions').delete()
+          .eq('message_id', messageId).eq('user_id', uid);
+      if (!sameReaction) {
+        await supabase.from('message_reactions').insert({
+          'message_id': messageId, 'user_id': uid, 'reaction': emoji,
+        });
+      }
+      // Reconcile only this message's reactions. Fetching all chat metadata here
+      // used to cause a visible pause after every tap.
+      final fresh = List<Map<String, dynamic>>.from(
+        await supabase.from('message_reactions')
+          .select('message_id,user_id,reaction,created_at')
+          .eq('message_id', messageId),
+      );
+      if (mounted) setState(() => reactions[messageId] = fresh);
+    } catch (e) {
+      if (mounted) setState(() => reactions[messageId] = previous);
+      if (mounted) showMsg(context, 'واکنش ثبت نشد: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  void setReply(Map<String, dynamic> message) {
+    setState(() => replyMessage = message);
+  }
+
+  Future<void> editMessage(Map<String, dynamic> message) async {
+    if (message['sender_id'] != supabase.auth.currentUser?.id || message['message_type'] != 'text') return;
+    final controller = TextEditingController(text: message['body']?.toString() ?? '');
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ویرایش پیام'),
+        content: TextField(controller: controller, autofocus: true, maxLines: 5),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('ذخیره')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null || value.isEmpty || value == (message['body']?.toString() ?? '')) return;
+    try {
+      await supabase.from('messages').update({
+        'body': value,
+        'edited_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id);
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'ویرایش پیام ناموفق بود: $e');
+    }
+  }
+
+  Future<void> _chooseDeleteScope(Map<String, dynamic> message) async {
+    final mine = message['sender_id'] == supabase.auth.currentUser?.id;
+    final scope = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const ListTile(title: Text('حذف پیام', style: TextStyle(fontWeight: FontWeight.w900))),
+          ListTile(
+            leading: const Icon(Icons.person_outline_rounded),
+            title: const Text('حذف برای من'),
+            subtitle: const Text('فقط از فهرست پیام‌های شما حذف می‌شود.'),
+            onTap: () => Navigator.pop(ctx, 'me'),
+          ),
+          if (mine)
+            ListTile(
+              leading: Icon(Icons.delete_forever_rounded, color: Theme.of(ctx).colorScheme.error),
+              title: const Text('حذف برای همه'),
+              subtitle: const Text('پیام از گفتگوی همه اعضا حذف می‌شود.'),
+              onTap: () => Navigator.pop(ctx, 'everyone'),
+            ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (!mounted || scope == null) return;
+    if (scope == 'me') await deleteForMe(message);
+    if (scope == 'everyone') await deleteForEveryone(message);
+  }
+
+  Future<void> deleteForMe(Map<String, dynamic> message) async {
+    final messageId = '${message['id']}';
+    final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
+    final previousMessages = List<Map<String, dynamic>>.from(messages);
+    // Optimistic UI: remove the message immediately, then persist in the background.
+    if (mounted) setState(() {
+      timelineItems.removeWhere((item) => item['__kind'] == 'message' && '${item['id']}' == messageId);
+      messages.removeWhere((item) => '${item['id']}' == messageId);
+    });
+    try {
+      await _setLocalMessageHidden(messageId, true);
+      await supabase.from('message_user_deletions').upsert({
+        'message_id': message['id'],
+        'user_id': supabase.auth.currentUser!.id,
+      });
+      await _saveCachedChat(messages);
+      await load();
+    } catch (e) {
+      // A local "delete for me" should remain deleted on this device even if
+      // the network/RLS write fails. Keep the tombstone and filtered cache;
+      // report that cloud sync failed rather than resurrecting the message.
+      await _saveCachedChat(messages);
+      if (mounted) showMsg(context, 'پیام از این دستگاه حذف شد؛ همگام‌سازی حذف با سرور ناموفق بود. اتصال را بررسی کنید.');
+    }
+  }
+
+  Future<void> deleteForEveryone(Map<String, dynamic> message) async {
+    if (message['sender_id'] != supabase.auth.currentUser?.id) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف برای همه'),
+        content: const Text('این پیام برای همه اعضای گفتگو حذف می‌شود.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final messageId = '${message['id']}';
+    final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
+    final previousMessages = List<Map<String, dynamic>>.from(messages);
+    // Remove it from this screen immediately instead of waiting for a full chat reload.
+    if (mounted) setState(() {
+      timelineItems.removeWhere((item) => item['__kind'] == 'message' && '${item['id']}' == messageId);
+      messages.removeWhere((item) => '${item['id']}' == messageId);
+    });
+    try {
+      await _setLocalMessageHidden(messageId, true);
+      final updated = await supabase.from('messages').update({
+        'deleted_at': DateTime.now().toUtc().toIso8601String(),
+        'body': null,
+      }).eq('id', message['id']).eq('sender_id', supabase.auth.currentUser!.id)
+        .select('id').maybeSingle();
+      if (updated == null) {
+        throw StateError('پیام در سرور حذف نشد؛ دسترسی حذف برای این پیام تأیید نشد.');
+      }
+      await _saveCachedChat(messages);
+      await load();
+    } catch (e) {
+      await _setLocalMessageHidden(messageId, false);
+      if (mounted) setState(() {
+        timelineItems = previousTimeline;
+        messages = previousMessages;
+      });
+      await _saveCachedChat(previousMessages);
+      if (mounted) showMsg(context, 'حذف برای همه ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> saveMessage(Map<String, dynamic> message) async {
+    final uid = supabase.auth.currentUser?.id;
+    final sourceId = message['id']?.toString();
+    if (uid == null || sourceId == null || sourceId.startsWith('pending-')) {
+      if (mounted) showMsg(context, 'این پیام هنوز در سرور ثبت نشده است؛ کمی بعد دوباره امتحان کنید.');
+      return;
+    }
+    try {
+      final payload = <String, dynamic>{
+        'user_id': uid,
+        'source_message_id': sourceId,
+        // saved_messages.body is NOT NULL in the live database; media messages
+        // may have no textual caption, so store a useful fallback label.
+        'body': (message['body'] ?? '').toString().trim().isNotEmpty
+            ? message['body'].toString()
+            : ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[message['message_type']?.toString()] ?? 'پیام'),
+        'message_type': message['message_type'] ?? 'text',
+      };
+      // The unique key makes this one request both idempotent and race-safe.
+      await supabase.from('saved_messages').upsert(
+        payload,
+        onConflict: 'user_id,source_message_id',
+      );
+      if (mounted) showMsg(context, 'پیام در پیام‌های ذخیره‌شده ثبت شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> shareMessage(Map<String, dynamic> message) async {
+    final body = "${message['body'] ?? ''}".trim();
+    if (body.isEmpty) return;
+    try {
+      await Share.share(body);
+    } catch (e) {
+      if (mounted) showMsg(context, 'اشتراک‌گذاری ناموفق بود: $e');
+    }
+  }
+
+  Future<void> _copyGroupLink() async {
+    try {
+      final c = Map<String, dynamic>.from(await supabase.from('conversations')
+          .select('type,username,is_public').eq('id', widget.id).single());
+      if (c['type'] == 'direct') return;
+      final username = (c['username'] ?? '').toString().trim();
+      if (c['is_public'] == true && username.isNotEmpty) {
+        final link = 'arad://group/${Uri.encodeComponent(username)}';
+        await Clipboard.setData(ClipboardData(text: link));
+        if (mounted) showMsg(context, 'لینک عمومی گروه کپی شد. با زدن روی آن در آراد، صفحه گروه باز می‌شود.');
+        return;
+      }
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ConversationInvitePage(
+          conversationId: widget.id,
+          title: widget.title,
+          type: c['type']?.toString() ?? 'group',
+        ),
+      ));
+    } catch (e) {
+      if (mounted) showMsg(context, 'ساخت لینک گروه ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> copyMessageLink(Map<String, dynamic> message) async {
+    final link = "arad://chat/${widget.id}/message/${message['id']}";
+    await Clipboard.setData(ClipboardData(text: link));
+    if (mounted) showMsg(context, 'لینک پیام کپی شد.');
+  }
+
+  Future<void> forwardMessage(Map<String, dynamic> message) async {
+    final rawBody = message['body']?.toString() ?? '';
+    String? sourceOriginalSenderId;
+    String? sourceOriginalSender;
+    var body = rawBody;
+    if (rawBody.startsWith('[[ARAD_FORWARD]]')) {
+      final lineEnd = rawBody.indexOf('\n');
+      if (lineEnd >= 0) {
+        final metadata = rawBody.substring(16, lineEnd);
+        final separator = metadata.indexOf('|');
+        if (separator >= 0) {
+          sourceOriginalSenderId = metadata.substring(0, separator).trim();
+          sourceOriginalSender = metadata.substring(separator + 1).trim();
+          body = rawBody.substring(lineEnd + 1);
+        }
+      }
+    }
+    body = body.trim();
+    if (body.isEmpty || message['deleted_at'] != null) {
+      if (mounted) showMsg(context, 'این پیام قابل فوروارد نیست.');
+      return;
+    }
+    try {
+      final uid = supabase.auth.currentUser!.id;
+      final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
+      final ids = (memberRows as List).map((e) => e['conversation_id']).where((id) => id != null).toList();
+      if (ids.isEmpty) {
+        if (mounted) showMsg(context, 'گفتگویی برای فوروارد وجود ندارد.');
+        return;
+      }
+      final rows = await supabase.from('conversations').select('id,title,type,avatar_url,created_at').inFilter('id', ids).order('created_at', ascending: false);
+      final rawTargets = List<Map<String, dynamic>>.from(rows).where((c) => '${c['id']}' != '${widget.id}').toList();
+      final targets = <Map<String, dynamic>>[];
+      for (final c in rawTargets) {
+        var displayTitle = '${c['title'] ?? ''}'.trim();
+        if (displayTitle.isEmpty && '${c['type']}' == 'direct') {
+          final other = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']).neq('user_id', uid).maybeSingle();
+          if (other != null) {
+            final p = await supabase.from('profiles').select('display_name,username,avatar_url').eq('id', other['user_id']).maybeSingle();
+            displayTitle = '${p?['display_name'] ?? p?['username'] ?? 'کاربر'}';
+            c['_peer_avatar_url'] = p?['avatar_url'];
+          }
+        }
+        if (displayTitle.isEmpty) {
+          final type = '${c['type']}';
+          displayTitle = type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو';
+        }
+        targets.add({...c, '_display_title': displayTitle});
+      }
+      if (targets.isEmpty) {
+        if (mounted) showMsg(context, 'گفتگوی دیگری برای فوروارد پیدا نشد.');
+        return;
+      }
+
+      final target = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        showDragHandle: true,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * .62,
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('ارسال فوروارد به...', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: targets.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+                    itemBuilder: (_, index) {
+                      final c = targets[index];
+                      final type = '${c['type']}';
+                      final title = '${c['_display_title'] ?? c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
+                      final icon = type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      final avatarUrl = '${c['_peer_avatar_url'] ?? c['avatar_url'] ?? ''}'.trim();
+                      return ListTile(
+                        leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
+                        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text(type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی شخصی'),
+                        trailing: const Icon(Icons.chevron_left_rounded),
+                        onTap: () => Navigator.pop(sheetContext, c),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (target == null) return;
+
+      // Preserve the original author and source conversation in the forwarded
+      // message itself. This does not depend on a separate database column.
+      var originalAuthor = sourceOriginalSender ?? '';
+      final originalSenderId = (sourceOriginalSenderId?.isNotEmpty == true)
+          ? sourceOriginalSenderId!
+          : message['sender_id']?.toString() ?? '';
+      if (originalAuthor.isEmpty && originalSenderId.isNotEmpty) {
+        try {
+          final originalProfile = await supabase
+              .from('profiles')
+              .select('display_name,username')
+              .eq('id', originalSenderId)
+              .maybeSingle();
+          originalAuthor = (originalProfile?['display_name'] ??
+                  originalProfile?['username'] ??
+                  'کاربر')
+              .toString()
+              .trim();
+        } catch (_) {
+          // Fall back to the sender name already loaded for the original message.
+        }
+      }
+      if (originalAuthor.isEmpty) originalAuthor = _senderName(message);
+      // Keep attribution separate from the visible message text.
+      final safeAuthor = originalAuthor.replaceAll('|', ' ').replaceAll(RegExp(r'[\r\n]+'), ' ').trim();
+      final attributionName = safeAuthor.isEmpty ? 'کاربر' : safeAuthor;
+      final forwardedBody = '[[ARAD_FORWARD]]$originalSenderId|$attributionName\n$body';
+
+      final inserted = await supabase.from('messages').insert({
+        'conversation_id': target['id'],
+        'sender_id': uid,
+        'body': forwardedBody,
+        'message_type': message['message_type'] ?? 'text',
+        'reply_to': null,
+      }).select().single();
+
+      final type = '${message['message_type'] ?? 'text'}';
+      var attachmentCopied = true;
+      if (type != 'text') {
+        try {
+          final attachment = await supabase.from('message_attachments')
+              .select('storage_path,file_name,file_size,mime_type,duration_ms')
+              .eq('message_id', message['id'])
+              .maybeSingle();
+          if (attachment != null) {
+            await supabase.from('message_attachments').insert({
+              'message_id': inserted['id'],
+              'storage_path': attachment['storage_path'],
+              'file_name': attachment['file_name'],
+              'file_size': attachment['file_size'],
+              'mime_type': attachment['mime_type'],
+              if (attachment['duration_ms'] != null) 'duration_ms': attachment['duration_ms'],
+            });
+          } else {
+            attachmentCopied = false;
+          }
+        } catch (_) {
+          // The message row has already been inserted. Don't misreport it as
+          // a failed forward; explain that the attachment metadata needs attention.
+          attachmentCopied = false;
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ChatPage(id: '${target['id']}', title: '${target['_display_title'] ?? target['title'] ?? 'گفتگو'}'),
+        ));
+        showMsg(context, attachmentCopied
+          ? 'پیام با موفقیت فوروارد شد.'
+          : 'متن پیام فوروارد شد، اما پیوست منتقل نشد؛ تنظیمات پیوست و دسترسی Supabase باید بررسی شود.');
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'فوروارد پیام ناموفق بود: $e');
+    }
+  }
+
+  Future<void> showMessageActions(Map<String, dynamic> message) async {
+    // Message actions must never activate the composer or leave the IME visible.
+    if (_composerFocus.hasFocus) _composerFocus.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+    final scheme = Theme.of(context).colorScheme;
+    await showGeneralDialog<void>(
+      context: context,
+      barrierLabel: 'عملیات پیام',
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) => Align(
+        alignment: Alignment.bottomCenter,
+        child: Material(
+          color: Colors.transparent,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: _messageActionsContent(context, message),
+              ),
+            ),
+          ),
+        ),
+      ),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, .18),
+              end: Offset.zero,
+            ).animate(curved),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: .96, end: 1).animate(curved),
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _messageActionsContent(BuildContext context, Map<String, dynamic> message) {
+    const emojis = ['❤️', '👍', '😂', '🔥', '😍'];
+    final scheme = Theme.of(context).colorScheme;
+    final mine = message['sender_id'] == supabase.auth.currentUser?.id;
+    final canEdit = mine && message['message_type'] == 'text' && message['deleted_at'] == null;
+    final body = (message['body'] ?? '').toString();
+    void runAction(FutureOr<void> Function() action) {
+      HapticFeedback.selectionClick();
+      Navigator.pop(context);
+      action();
+    }
+
+    Widget action(IconData icon, String label, FutureOr<void> Function() callback) {
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => runAction(callback),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, color: scheme.onSurface, size: 21),
+              const SizedBox(height: 4),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: scheme.onSurface, fontSize: 11)),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 38, height: 4, decoration: BoxDecoration(color: scheme.onSurfaceVariant.withValues(alpha: .45), borderRadius: BorderRadius.circular(4))),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .65), borderRadius: BorderRadius.circular(24)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            ...emojis.map((e) => InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () { HapticFeedback.selectionClick(); Navigator.pop(context); reactTo(message, e); },
+              child: Padding(padding: const EdgeInsets.all(6), child: Text(e, style: const TextStyle(fontSize: 23))),
+            )),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              onPressed: () { Navigator.pop(context); _showMoreReactions(message); },
+              icon: Icon(Icons.add_reaction_outlined, color: scheme.onSurface, size: 20),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 5),
+        Row(children: [
+          action(Icons.reply_rounded, 'پاسخ', () => setReply(message)),
+          action(Icons.bookmark_add_rounded, 'ذخیره', () => saveMessage(message)),
+          action(Icons.forward_rounded, 'فوروارد', () => forwardMessage(message)),
+        ]),
+        const SizedBox(height: 2),
+        Row(children: [
+          if (body.trim().isNotEmpty)
+            action(Icons.copy_rounded, 'کپی متن', () async {
+              await Clipboard.setData(ClipboardData(text: body));
+              if (mounted) showMsg(this.context, 'متن پیام کپی شد.');
+            }),
+          if (canEdit) action(Icons.edit_outlined, 'ویرایش', () => editMessage(message)),
+          if (_chatType == 'group' && !mine)
+            action(Icons.shield_outlined, 'مدیریت عضو', () => _showGroupMemberActions(message)),
+          action(Icons.delete_outline_rounded, 'حذف', () => _chooseDeleteScope(message)),
+        ]),
+      ]),
+    );
+  }
+
+  Future<void> _showMoreReactions(Map<String, dynamic> message) async {
+    const more = ['😂','😍','😎','😢','😡','👏','🎉','❤️‍🔥','💯','🙏','🤝','👀','🚀','⭐','⚡','😮','🥳','🤩','💖','🤣','😇','💪','✨','🫶','🤯'];
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      showDragHandle: false,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return SafeArea(child: Container(
+          margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+              colors: [scheme.surface, scheme.surfaceContainerHighest]),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: scheme.primary.withValues(alpha: .22)),
+            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .18), blurRadius: 28, offset: const Offset(0, -5))],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 42, height: 4, decoration: BoxDecoration(color: scheme.onSurface.withValues(alpha: .22), borderRadius: BorderRadius.circular(4))),
+            const SizedBox(height: 12),
+            const Text('واکنش به پیام', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 14),
+            GridView.count(
+              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 5, padding: EdgeInsets.zero,
+              mainAxisSpacing: 10, crossAxisSpacing: 10,
+              children: more.map((e) => TweenAnimationBuilder<double>(
+                key: ValueKey(e), tween: Tween(begin: .72, end: 1),
+                duration: const Duration(milliseconds: 260), curve: Curves.easeOutBack,
+                builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                child: Material(
+                  color: scheme.surface, borderRadius: BorderRadius.circular(17),
+                  elevation: 3, shadowColor: scheme.primary.withValues(alpha: .24),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(17),
+                    onTap: () => Navigator.pop(sheetContext, e),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(17),
+                        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          colors: [scheme.surface, scheme.primary.withValues(alpha: .09)]),
+                        border: Border.all(color: scheme.outline.withValues(alpha: .12)),
+                      ),
+                      child: Center(child: Text(e, style: const TextStyle(fontSize: 29, shadows: [Shadow(color: Color(0x33000000), blurRadius: 5, offset: Offset(0, 2))]))),
+                    ),
+                  ),
+                ),
+              )).toList(),
+            ),
+          ]),
+        ));
+      },
+    );
+    if (selected != null && mounted) await reactTo(message, selected);
+  }
+
+  Future<void> _showMessageInfo(Map<String, dynamic> message) async {
+    final created = message['created_at']?.toString() ?? 'نامشخص';
+    final edited = message['edited_at'] != null;
+    final sentAt = DateTime.tryParse(created)?.toLocal();
+    final readAt = DateTime.tryParse('${message['read_at'] ?? ''}')?.toLocal();
+    String stamp(DateTime? value) => value == null ? 'نامشخص' : '${value.year}/${value.month.toString().padLeft(2, '0')}/${value.day.toString().padLeft(2, '0')} - ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}:${value.second.toString().padLeft(2, '0')}';
+    final pending = message['__pending'] == true;
+    final receipts = readReceipts['${message['id']}'] ?? <Map<String, dynamic>>[];
+    final readerIds = receipts.map((r) => r['reader_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
+    final readerNames = readerIds.map((id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر')).join('، ');
+    final isMine = message['sender_id'] == supabase.auth.currentUser?.id;
+    await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('جزئیات پیام'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('فرستنده: ' + _senderName(message)), const SizedBox(height: 8), Text('نوع پیام: ' + (message['message_type']?.toString() ?? 'text')), const SizedBox(height: 8), Text('زمان ارسال: ' + stamp(sentAt)), const SizedBox(height: 8), Text('وضعیت: ' + (pending ? 'در حال ارسال' : readerIds.isNotEmpty || message['read_at'] != null ? 'خوانده شده توسط ${readerIds.isNotEmpty ? readerIds.length : 'حداقل یک نفر'} نفر' : (isMine ? 'ارسال شده؛ هنوز رسید خواندن ثبت نشده' : 'دریافت شده'))), if (readerIds.isNotEmpty && isMine) ...[const SizedBox(height: 8), const Text('خوانده‌شده توسط:'), const SizedBox(height: 4), Text(readerNames)], if (readAt != null) ...[const SizedBox(height: 8), Text('زمان خواندن: ' + stamp(readAt))], if (edited) ...[const SizedBox(height: 8), const Text('وضعیت: ویرایش شده')], const SizedBox(height: 8), SelectableText('شناسه پیام: ${message['id'] ?? 'نامشخص'}', style: TextStyle(fontSize: 11, color: Theme.of(dialogContext).colorScheme.onSurfaceVariant))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))]));
+  }
+  Widget _actionTile(
+    BuildContext sheetContext,
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool enabled = true,
+  }) {
+    return ListTile(
+      dense: true,
+      enabled: enabled,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Icon(icon, color: enabled ? Colors.white : Colors.white38, size: 27),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: enabled ? Colors.white : Colors.white38,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      onTap: enabled
+          ? () {
+              Navigator.pop(sheetContext);
+              onTap();
+            }
+          : null,
+    );
+  }
+
+  Widget _replyPreview(Map<String, dynamic> message) {
+    final id = '${message['reply_to'] ?? ''}';
+    if (id.isEmpty) return const SizedBox.shrink();
+    Map<String, dynamic>? parent;
+    for (final item in messages) {
+      if ('${item['id']}' == id) {
+        parent = item;
+        break;
+      }
+    }
+    if (parent == null) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+      child: Text('${_senderName(parent!)}: ${parent['body'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _reactionRow(Map<String, dynamic> message) {
+    final list = reactions['${message['id']}'] ?? const <Map<String, dynamic>>[];
+    if (list.isEmpty) return const SizedBox.shrink();
+    final uid = supabase.auth.currentUser?.id;
+    final counts = <String, int>{};
+    for (final r in list) {
+      final emoji = '${r['reaction']}';
+      counts[emoji] = (counts[emoji] ?? 0) + 1;
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 5,
+        runSpacing: 4,
+        children: counts.entries.map((e) {
+          final mine = list.any((r) => r['user_id']?.toString() == uid && r['reaction']?.toString() == e.key);
+          final color = _reactionAccent(e.key);
+          return TweenAnimationBuilder<double>(
+            key: ValueKey('${message['id']}-${e.key}-${e.value}'),
+            tween: Tween(begin: .72, end: 1),
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.elasticOut,
+            builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => reactTo(message, e.key),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    colors: mine
+                      ? [color.withValues(alpha: .30), color.withValues(alpha: .10)]
+                      : [Theme.of(context).colorScheme.surface.withValues(alpha: .96), color.withValues(alpha: .10)]),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: color.withValues(alpha: mine ? .82 : .36), width: mine ? 1.35 : .8),
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: mine ? .24 : .10), blurRadius: mine ? 13 : 6, spreadRadius: mine ? 1 : 0)],
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(e.key, style: const TextStyle(fontSize: 16, height: 1.0)),
+                  const SizedBox(width: 5),
+                  Text('${e.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: mine ? color : Theme.of(context).colorScheme.onSurface)),
+                  if (mine) ...[
+                    const SizedBox(width: 3),
+                    Icon(Icons.check_rounded, size: 12, color: color),
+                  ],
+                ]),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Color _reactionAccent(String emoji) {
+    if (emoji.contains('😂') || emoji.contains('🤣') || emoji.contains('😆')) return const Color(0xFFFFB52E);
+    if (emoji.contains('❤️') || emoji.contains('😍') || emoji.contains('🥰') || emoji.contains('💖')) return const Color(0xFFFF4F87);
+    if (emoji.contains('🔥') || emoji.contains('😡') || emoji.contains('💥')) return const Color(0xFFFF6A3D);
+    if (emoji.contains('⭐') || emoji.contains('✨') || emoji.contains('🌟')) return const Color(0xFFFFD45E);
+    if (emoji.contains('😢') || emoji.contains('😭') || emoji.contains('💙')) return const Color(0xFF58B9FF);
+    if (emoji.contains('👍') || emoji.contains('👏') || emoji.contains('💚')) return const Color(0xFF47D7A0);
+    if (emoji.contains('🚀') || emoji.contains('⚡') || emoji.contains('🤯')) return const Color(0xFF9B83FF);
+    return const Color(0xFF73C8FF);
+  }
+
+  void _showReactionBurst(String emoji) {
+    final overlay = Overlay.of(context);
+    late final OverlayEntry entry;
+    final accent = _reactionAccent(emoji);
+    const sparks = <String>['✦', '✨', '✧', '•', '✦', '✨', '✧', '•'];
+    entry = OverlayEntry(builder: (overlayContext) => Positioned.fill(
+      child: IgnorePointer(
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 1050),
+            curve: Curves.easeOutCubic,
+            builder: (context, progress, child) => Opacity(
+              opacity: (1 - progress * progress).clamp(0.0, 1.0),
+              child: SizedBox(
+                width: 220,
+                height: 220,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Transform.scale(
+                      scale: .35 + progress * 1.1,
+                      child: Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(colors: [
+                            accent.withValues(alpha: .34 * (1 - progress)),
+                            accent.withValues(alpha: .10 * (1 - progress)),
+                            Colors.transparent,
+                          ]),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accent.withValues(alpha: .25 * (1 - progress)),
+                              blurRadius: 28,
+                              spreadRadius: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Small sparkles travel outward instead of showing a static glow.
+                    for (var i = 0; i < sparks.length; i++)
+                      Transform.translate(
+                        offset: Offset(
+                          (i.isEven ? 1.0 : -1.0) *
+                              (18 + (i % 3) * 12) * progress,
+                          (i < 4 ? -1.0 : 1.0) *
+                              (24 + (i % 4) * 9) * progress,
+                        ),
+                        child: Transform.rotate(
+                          angle: progress * (i.isEven ? 1.4 : -1.4),
+                          child: Opacity(
+                            opacity: (1 - progress).clamp(0.0, 1.0),
+                            child: Text(
+                              sparks[i],
+                              style: TextStyle(
+                                color: i.isEven ? accent : Colors.white,
+                                fontSize: 13 + (i % 3) * 5,
+                                fontWeight: FontWeight.w900,
+                                shadows: [Shadow(color: accent.withValues(alpha: .8), blurRadius: 10)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    Transform.scale(
+                      scale: progress < .22
+                          ? .72 + (progress / .22) * .48
+                          : 1.20 - ((progress - .22) / .78) * .20,
+                      child: Text(
+                        emoji,
+                        style: const TextStyle(
+                          fontSize: 62,
+                          shadows: [
+                            Shadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 5)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    overlay.insert(entry);
+    Future<void>.delayed(const Duration(milliseconds: 1100), () {
+      if (entry.mounted) entry.remove();
+    });
+  }
+
+  Widget _imageAttachment(Map<String, dynamic> m) {
+    final a = attachments['${m['id']}'];
+    final path = a?['storage_path']?.toString() ?? '';
+    if (path.isEmpty) return const Icon(Icons.image_rounded, size: 42);
+    return FutureBuilder<String?>(
+      future: _attachmentUrl(path),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
+        final url = snapshot.data;
+        if (url == null || url.isEmpty) return const Icon(Icons.broken_image_rounded, size: 42);
+        return GestureDetector(
+          onTap: () => _openImage(m),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.network(
+              url,
+              width: 220,
+              height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox(width: 220, height: 120, child: Center(child: Icon(Icons.broken_image_rounded, size: 42))),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _videoAttachment(Map<String, dynamic> m) {
+    final a = attachments['${m['id']}'];
+    final path = a?['storage_path']?.toString();
+    if (path == null || path.isEmpty) return const Icon(Icons.video_file_rounded, size: 42);
+    return _ChatVideoAttachment(storagePath: path);
+  }
+
+  Widget _fileAttachment(Map<String, dynamic> m) {
+    final a = attachments['${m['id']}'];
+    final name = (a?['file_name'] ?? m['body'] ?? 'فایل').toString();
+    final mime = (a?['mime_type'] ?? '').toString();
+    final path = a?['storage_path']?.toString();
+    if (mime.startsWith('audio/') && path != null && path.isNotEmpty) {
+      return VoiceMessagePlayer(
+        initialDurationMs: int.tryParse('${a?['duration_ms'] ?? 0}') ?? 0,
+        mine: m['sender_id'] == supabase.auth.currentUser?.id,
+        mimeType: mime,
+        loadAudio: () async {
+          final bytes = await supabase.storage.from('chat-media').download(path);
+          if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
+          return bytes;
+        },
+      );
+    }
+    final icon = mime == 'application/pdf' ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 32),
+      const SizedBox(width: 8),
+      Flexible(child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+    ]);
+  }
+
+  String _callDuration(Map<String, dynamic> c) {
+    final a = DateTime.tryParse('${c['accepted_at'] ?? ''}');
+    final e = DateTime.tryParse('${c['ended_at'] ?? ''}');
+    if (a == null || e == null || e.isBefore(a)) return '';
+    final d = e.difference(a);
+    if (d.inHours > 0) return '${d.inHours}س ${d.inMinutes.remainder(60)}د';
+    if (d.inMinutes > 0) return '${d.inMinutes}د ${d.inSeconds.remainder(60)}ث';
+    return '${d.inSeconds}ث';
+  }
+
+  Widget _callHistoryTile(Map<String, dynamic> c) {
+    final uid = supabase.auth.currentUser?.id;
+    final incoming = c['callee_id']?.toString() == uid;
+    final video = c['call_type']?.toString() == 'video';
+    final status = c['status']?.toString() ?? '';
+    final missed = status == 'missed';
+    final color = missed ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary;
+    final title = missed
+        ? 'تماس ${video ? 'تصویری' : 'صوتی'} بی‌پاسخ'
+        : status == 'failed'
+            ? 'تماس ناموفق'
+            : status == 'rejected'
+                ? 'تماس رد شد'
+                : incoming
+                    ? 'تماس ${video ? 'تصویری' : 'صوتی'} دریافتی'
+                    : 'تماس ${video ? 'تصویری' : 'صوتی'} خروجی';
+    final duration = _callDuration(c);
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.only(top: 5, bottom: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .10),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: .18)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(missed ? Icons.phone_missed_rounded : (incoming ? Icons.call_received_rounded : Icons.call_made_rounded), size: 19, color: color),
+            const SizedBox(width: 7),
+            Icon(video ? Icons.videocam_rounded : Icons.call_rounded, size: 18, color: color),
+            const SizedBox(width: 7),
+            Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+            if (duration.isNotEmpty) ...[
+              const SizedBox(width: 7),
+              Text('• $duration', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+            const SizedBox(width: 7),
+            Text(_time(c['created_at'] ?? c['started_at']), style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _glassMessageBubble(Map<String, dynamic> m) {
+    final mine = m['sender_id'] == supabase.auth.currentUser!.id;
+    final sender = _senderName(m);
+    final avatarUrl = profiles['${m['sender_id']}']?['avatar_url']?.toString() ?? '';
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    // Use the active app accent in both light and dark modes so selecting a
+    // palette changes real message bubbles, not just the settings preview.
+    final myBubble = scheme.primary.withValues(alpha: dark ? .88 : .82);
+    final otherBubble = scheme.surfaceContainerHighest.withValues(alpha: dark ? .94 : .92);
+    final textColor = mine
+        ? Colors.white
+        : scheme.onSurface;
+    final rawBody = (m['body'] ?? '').toString();
+    String? forwardedSender;
+    var body = rawBody;
+    if (rawBody.startsWith('[[ARAD_FORWARD]]')) {
+      final lineEnd = rawBody.indexOf('\n');
+      if (lineEnd >= 0) {
+        final metadata = rawBody.substring(16, lineEnd);
+        final separator = metadata.indexOf('|');
+        if (separator >= 0) {
+          forwardedSender = metadata.substring(separator + 1).trim();
+          body = rawBody.substring(lineEnd + 1);
+        }
+      }
+    }
+    final internalLinkMatch = RegExp(r'arad://(?:invite\?code=[^\s]+|group/[^\s]+|chat/[^\s]+)').firstMatch(body);
+    final urlMatch = RegExp(r'https?://\S+').firstMatch(body);
+    final isGroup = _chatType != 'direct';
+    // Show group sender details only at the beginning of a consecutive message run.
+    final timelineIndex = timelineItems.indexWhere((item) => item['__kind'] == 'message' && '${item['id']}' == '${m['id']}');
+    final previousTimelineItem = timelineIndex > 0 ? timelineItems[timelineIndex - 1] : null;
+    final showGroupSender = isGroup && !mine &&
+        (previousTimelineItem == null ||
+         previousTimelineItem['__kind'] != 'message' ||
+         '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
+
+    Widget content;
+    final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
+    if (stickerMatch != null) {
+      final art = stickerMatch.group(1) ?? '✨';
+      final caption = stickerMatch.group(2) ?? '';
+      content = Container(
+        constraints: const BoxConstraints(minWidth: 118, minHeight: 112, maxWidth: 190),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [Color(0xFF352064), Color(0xFF7951C7), Color(0xFF1C315C)]),
+          border: Border.all(color: Colors.white.withValues(alpha: .28)),
+          boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: const Offset(0, 5))],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(art, style: const TextStyle(fontSize: 58, shadows: [Shadow(color: Color(0xAAFFFFFF), blurRadius: 12, offset: Offset(0, 2))])),
+          const SizedBox(height: 4),
+          Text(caption, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+        ]),
+      );
+    } else if (m['message_type'] == 'image') {
+      content = _imageAttachment(m);
+    } else if (m['message_type'] == 'video') {
+      content = _videoAttachment(m);
+    } else if (m['message_type'] == 'audio') {
+      content = _voicePlayButton(m['id'].toString());
+    } else if (m['message_type'] == 'file') {
+      content = _fileAttachment(m);
+    } else if (internalLinkMatch != null && internalLinkMatch.start == 0) {
+      final link = internalLinkMatch.group(0)!;
+      content = InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => openAradLink(context, Uri.parse(link)),
+        child: Container(
+          width: 235,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (mine ? Colors.white : scheme.primary).withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.link_rounded, size: 28),
+            const SizedBox(height: 4),
+            Text(link, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
+            Text('باز کردن لینک در آراد', style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
+          ]),
+        ),
+      );
+    } else if (urlMatch != null && urlMatch.start == 0) {
+      final url = urlMatch.group(0)!;
+      final parsedUrl = Uri.tryParse(url);
+      final inviteCode = parsedUrl?.queryParameters['code'];
+      final isConversationInvite = parsedUrl != null &&
+          (parsedUrl.path.contains('conversation-invite') || parsedUrl.path.contains('invite-redirect')) &&
+          inviteCode != null && inviteCode.trim().isNotEmpty;
+      content = InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: isConversationInvite
+            ? () => openAradLink(context, Uri(scheme: 'arad', host: 'invite', queryParameters: {'code': inviteCode}))
+            : null,
+        child: Container(
+          width: 235,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (mine ? Colors.white : scheme.primary).withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.link_rounded, size: 28),
+              const SizedBox(height: 4),
+              Text(url, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
+              Text(isConversationInvite ? 'باز کردن دعوت و پیوستن به گروه' : (parsedUrl?.host ?? 'لینک'),
+                  style: TextStyle(fontSize: 11, color: mine ? Colors.white70 : scheme.primary)),
+            ],
+          ),
+        ),
+      );
+    } else {
+      content = Text(body, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 14.8, height: 1.48, letterSpacing: .05, color: textColor));
+    }
+
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () {
+          if (_composerFocus.hasFocus) _composerFocus.unfocus();
+          showMessageActions(m);
+        },
+        onLongPress: () {
+          if (_composerFocus.hasFocus) _composerFocus.unfocus();
+          showMessageActions(m);
+        },
+        onDoubleTap: () => reactTo(m, '❤️'),
+        onHorizontalDragEnd: (details) {
+          if ((details.primaryVelocity ?? 0).abs() > 450) setReply(m);
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (showGroupSender) ...[
+              GestureDetector(
+                onTap: () => _openGroupMemberProfile('${m['sender_id']}'),
+                onLongPress: () => _showGroupMemberActions(m),
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl.isEmpty ? const Icon(Icons.person, size: 17) : null,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ] else if (!mine && isGroup) const SizedBox(width: 38),
+            Flexible(
+              child: Container(
+                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * (isGroup ? .79 : .82)),
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.fromLTRB(15, 11, 13, 9),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: mine
+                        ? [
+                            myBubble,
+                            Color.lerp(myBubble, Colors.white, dark ? .08 : .14)!,
+                          ]
+                        : [
+                            otherBubble,
+                            Color.lerp(otherBubble, scheme.primary, dark ? .06 : .035)!,
+                          ],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(22),
+                    topRight: const Radius.circular(22),
+                    bottomLeft: Radius.circular(mine ? 22 : 7),
+                    bottomRight: Radius.circular(mine ? 7 : 22),
+                  ),
+                  border: Border.all(
+                    color: mine
+                        ? Colors.white.withValues(alpha: dark ? .13 : .26)
+                        : scheme.primary.withValues(alpha: dark ? .18 : .10),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (mine ? myBubble : Colors.black).withValues(alpha: dark ? .34 : .13),
+                      blurRadius: 14,
+                      spreadRadius: -5,
+                      offset: const Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: dark ? .025 : .70),
+                      blurRadius: 2,
+                      offset: const Offset(0, -1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showGroupSender)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: InkWell(
+                          onTap: () => _openGroupMemberProfile('${m['sender_id']}'),
+                          onLongPress: () => _showGroupMemberActions(m),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(sender, style: TextStyle(fontWeight: FontWeight.w900, color: scheme.primary)),
+                          ),
+                        ),
+                      ),
+                    if (forwardedSender != null && forwardedSender.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.forward_rounded, size: 14, color: mine ? Colors.white70 : scheme.primary),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                forwardedSender,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: mine ? Colors.white70 : scheme.primary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    _replyPreview(m),
+                    content,
+                    const SizedBox(height: 3),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${_dateLabel(m['created_at'])}  ${_time(m['created_at'])}', style: TextStyle(fontSize: 10,  color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant)),
+                        if (m['edited_at'] != null) ...[
+                          const SizedBox(width: 4),
+                          Text('ویرایش‌شده', style: TextStyle(fontSize: 9, color: mine ? textColor.withValues(alpha: .75) : scheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
+                        ],
+                        if (mine) ...[
+                          const SizedBox(width: 4),
+                          Icon(m['__pending'] == true ? Icons.schedule_rounded : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .7)),
+                          const SizedBox(width: 2),
+                          Text(
+                            m['__pending'] == true ? 'در حال ارسال' : ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? (_chatType == 'group' && readReceipts['${m['id']}'] != null ? 'دیده‌شده ${readReceipts['${m['id']}']!.length}' : 'خوانده شد') : 'ارسال شد',
+                            style: TextStyle(fontSize: 9, color: ((readReceipts['${m['id']}']?.isNotEmpty ?? false) || m['read_at'] != null) ? scheme.onPrimary : textColor.withValues(alpha: .72), fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ],
+                    ),
+                    _reactionRow(m),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Timer? _chatReloadDebounce;
+  final Map<String, Timer> _reactionRefreshTimers = <String, Timer>{};
+
+  void _scheduleReactionRefresh(dynamic payload) {
+    try {
+      final newer = payload.newRecord;
+      final older = payload.oldRecord;
+      final row = newer is Map && newer.isNotEmpty ? newer : older;
+      if (row is! Map) return;
+      final messageId = row['message_id']?.toString();
+      if (messageId == null || messageId.isEmpty ||
+          !messages.any((message) => '${message['id']}' == messageId)) return;
+      _reactionRefreshTimers.remove(messageId)?.cancel();
+      _reactionRefreshTimers[messageId] = Timer(const Duration(milliseconds: 260), () async {
+        _reactionRefreshTimers.remove(messageId);
+        try {
+          final rows = List<Map<String, dynamic>>.from(
+            await supabase.from('message_reactions')
+              .select('message_id,user_id,reaction,created_at')
+              .eq('message_id', messageId),
+          );
+          if (mounted && messages.any((message) => '${message['id']}' == messageId)) {
+            setState(() => reactions[messageId] = rows);
+          }
+        } catch (_) {
+          // The optimistic reaction remains visible if the refresh is unavailable.
+        }
+      });
+    } catch (_) {
+      // Realtime metadata is best-effort and must not interrupt chat interactions.
+    }
+  }
+
+  void _scheduleChatReload() {
+    _chatReloadDebounce?.cancel();
+    _chatReloadDebounce = Timer(const Duration(milliseconds: 350), () { if (mounted) unawaited(load()); });
+  }
+
+  void _scheduleChatReloadForMessageMetadata(dynamic payload) {
+    try {
+      final newer = payload.newRecord;
+      final older = payload.oldRecord;
+      final row = newer is Map && newer.isNotEmpty ? newer : older;
+      if (row is! Map) return;
+      final messageId = row['message_id']?.toString();
+      if (messageId == null || messageId.isEmpty) return;
+      if (messages.any((message) => '${message['id']}' == messageId)) {
+        _scheduleChatReload();
+      }
+    } catch (_) {
+      // Metadata updates are best-effort; a malformed payload must not break chat.
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _openChatConversationCounts.update(widget.id, (count) => count + 1, ifAbsent: () => 1);
+    _composerFocus.addListener(_onComposerFocus);
+    _messagesScroll.addListener(_onMessagesScroll);
+    _loadChatNotificationPreference();
+    load();
+    _loadChatType();
+    channel = supabase.channel('chat-${widget.id}')
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'messages',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'messages',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      // Refresh immediately when another client physically deletes a message.
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete,
+        schema: 'public',
+        table: 'messages',
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_reactions',
+        callback: (payload) => _scheduleReactionRefresh(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_read_receipts',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'message_attachments',
+        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'call_sessions',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'call_sessions',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'conversation_members',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete,
+        schema: 'public',
+        table: 'conversation_members',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'group_audit_logs',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'conversation_id', value: widget.id),
+        callback: (_) => _scheduleChatReload(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'message_user_deletions',
+        callback: (_) => _scheduleChatReload(),
+      )
+      .subscribe();  }
+
+  @override
+  void dispose() {
+    final openCount = _openChatConversationCounts[widget.id] ?? 0;
+    if (openCount <= 1) {
+      _openChatConversationCounts.remove(widget.id);
+    } else {
+      _openChatConversationCounts[widget.id] = openCount - 1;
+    }
+    _chatReloadDebounce?.cancel();
+    for (final timer in _reactionRefreshTimers.values) {
+      timer.cancel();
+    }
+    _reactionRefreshTimers.clear();
+    _keyboardScrollTimer?.cancel();
+    // Stop voice UI timers/subscriptions before disposing the recorder. Without
+    // this, leaving a chat while recording can leave periodic callbacks alive.
+    _voiceTimer?.cancel();
+    _voiceTimer = null;
+    _voiceStartedAt = null;
+    unawaited(_voiceAmplitudeSub?.cancel());
+    _voiceAmplitudeSub = null;
+    if (channel != null) supabase.removeChannel(channel!);
+    _voiceRecorder.dispose();
+    _voicePlayer.dispose();
+    _messagesScroll.removeListener(_onMessagesScroll);
+    _messagesScroll.dispose();
+    _composerFocus.dispose();
+    text.dispose();
+    super.dispose();
+  }
+
+  Future<bool> _isGroupAdmin() async {
+    try {
+      final uid=supabase.auth.currentUser!.id;
+      final r=await supabase.from('conversation_admins').select('role').eq('conversation_id',widget.id).eq('user_id',uid).maybeSingle();
+      return r!=null;
+    } catch (_) { return false; }
+  }
+  Future<void> _showGroupMemberActions(Map<String, dynamic> message) async {
+    if (_chatType != 'group') return;
+    final targetId = (message['sender_id'] ?? '').toString();
+    final uid = supabase.auth.currentUser?.id;
+    if (targetId.isEmpty || uid == null || targetId == uid) return;
+    try {
+      final c = await supabase.from('conversations').select('created_by').eq('id', widget.id).single();
+      final isOwner = c['created_by']?.toString() == uid;
+      final mine = await supabase.from('conversation_members').select('role').eq('conversation_id', widget.id).eq('user_id', uid).maybeSingle();
+      final isAdmin = isOwner || ['admin','owner'].contains(mine?['role']);
+      var canModerate = isOwner;
+      if (isAdmin && !isOwner) {
+        final p = await supabase.from('group_admin_permissions').select('can_remove_members').eq('conversation_id', widget.id).eq('user_id', uid).maybeSingle();
+        canModerate = p?['can_remove_members'] == true;
+      }
+      final target = await supabase.from('conversation_members').select('role').eq('conversation_id', widget.id).eq('user_id', targetId).maybeSingle();
+      if (target == null) {
+        if (mounted) showMsg(context, 'این کاربر دیگر عضو گروه نیست.');
+        return;
+      }
+      if (c['created_by']?.toString() == targetId || target['role'] == 'owner') canModerate = false;
+      final choice = await showModalBottomSheet<String>(
+        context: context, showDragHandle: true,
+        builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
+          if (canModerate) ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
+          if (canModerate) ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
+        ])),
+      );
+      if (choice == 'profile') await _openGroupMemberProfile(targetId);
+      if (choice != 'remove' && choice != 'ban') return;
+      final profile = await supabase.from('profiles').select('display_name,username').eq('id', targetId).maybeSingle();
+      final name = (profile?['display_name'] ?? profile?['username'] ?? 'این کاربر').toString();
+      final reasonController = TextEditingController();
+      final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
+        title: Text(choice == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
+        content: choice == 'ban' ? TextField(controller: reasonController, maxLines: 3, decoration: const InputDecoration(labelText: 'دلیل محرومیت (اختیاری)')) : Text('$name از گروه خارج شود؟ او می‌تواند دوباره درخواست عضویت بدهد.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(choice == 'ban' ? 'محروم و اخراج' : 'اخراج')),
+        ],
+      )) ?? false;
+      final reason = reasonController.text.trim();
+      reasonController.dispose();
+      if (!confirmed) return;
+      if (choice == 'ban') {
+        await supabase.rpc('ban_group_member', params: {'p_conversation_id': widget.id, 'p_user_id': targetId, 'p_reason': reason.isEmpty ? null : reason});
+      } else {
+        await supabase.rpc('remove_group_member', params: {'p_conversation_id': widget.id, 'p_user_id': targetId});
+      }
+      if (mounted) showMsg(context, choice == 'ban' ? '$name از گروه محروم شد.' : '$name از گروه اخراج شد.');
+      await load();
+    } catch (e) {
+      if (mounted) showMsg(context, 'عملیات مدیریت عضو ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> _openGroupMemberProfile(String userId) async {
+    final id = userId.trim();
+    if (id.isEmpty) return;
+    try {
+      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at').eq('id', id).maybeSingle();
+      if (row == null || !mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
+      ));
+    } catch (e) {
+      if (mounted) showMsg(context, 'باز کردن پروفایل ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> _openChatProfile() async {
+    if (_chatType != 'direct') {
+      if (mounted) await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title),
+      ));
+      return;
+    }
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final members = await supabase.from('conversation_members')
+          .select('user_id').eq('conversation_id', widget.id);
+      final peerId = (members as List)
+          .map((m) => m['user_id']?.toString() ?? '')
+          .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
+      if (peerId.isEmpty) throw Exception('پروفایل مخاطب پیدا نشد.');
+      final row = await supabase.from('profiles').select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at')
+          .eq('id', peerId).maybeSingle();
+      if (row == null) throw Exception('پروفایل مخاطب در دسترس نیست.');
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
+      ));
+      final prefs = await SharedPreferences.getInstance();
+      final alias = (prefs.getString('contact_alias_${uid}_${peerId}') ?? '').trim();
+      if (mounted) setState(() => _localChatTitle = alias.isEmpty
+          ? (row['display_name'] ?? row['username'] ?? widget.title).toString()
+          : alias);
+    } catch (e) {
+      if (mounted) showMsg(context, 'باز کردن پروفایل ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  Future<void> _openGroupManagement() async {
+    if (!await _isGroupAdmin()) { if(mounted) showMsg(context,'فقط مدیر گروه یا کانال می‌تواند مدیریت کند.'); return; }
+    if (mounted) await Navigator.push(context,MaterialPageRoute(builder:(_)=>GroupManagementPage(conversationId:widget.id,title:widget.title)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    if ((keyboardInset - _lastKeyboardInset).abs() > 1) {
+      final keyboardJustOpened = _lastKeyboardInset <= 0 && keyboardInset > 0;
+      if (keyboardJustOpened && _messagesScroll.hasClients) {
+        final position = _messagesScroll.position;
+        _keepLatestVisibleOnKeyboard =
+            position.maxScrollExtent - position.pixels < 110;
+      }
+      _lastKeyboardInset = keyboardInset;
+      if (keyboardInset > 0 && _keepLatestVisibleOnKeyboard) _scheduleKeyboardScroll();
+    }
+    final displayItems = _displayTimelineItems;
+    return Scaffold(
+      // The chat body manages IME space explicitly below. This prevents
+      // Flutter's Scaffold resize and our keyboard animation from fighting
+      // each other, which was causing the last bubble to sit under the IME.
+      resizeToAvoidBottomInset: false,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: scheme.surface.withValues(alpha: .88),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 54,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    scheme.surface.withValues(alpha: .90),
+                    scheme.surface.withValues(alpha: .78),
+                  ],
+                ),
+                border: Border(
+                  bottom: BorderSide(color: scheme.primary.withValues(alpha: .12)),
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          if (_chatType == 'direct')
+            IconButton(
+              tooltip: 'تماس تصویری',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                conversationId: widget.id, title: widget.title, video: true,
+              ))),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              padding: const EdgeInsets.all(7),
+              icon: Icon(Icons.videocam_rounded, color: scheme.primary, size: 21),
+            ),
+          if (_chatType == 'direct')
+            IconButton(
+              tooltip: 'تماس صوتی',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                conversationId: widget.id, title: widget.title, video: false,
+              ))),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              padding: const EdgeInsets.all(7),
+              icon: Icon(Icons.call_rounded, color: scheme.primary, size: 20),
+            ),
+          if (_chatType == 'group')
+            FutureBuilder<bool>(
+              future: _isGroupAdmin(),
+              builder: (_, snap) => snap.data == true
+                  ? IconButton(
+                      tooltip: 'شروع تماس گروهی',
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallSessionPage(
+                        conversationId: widget.id, title: widget.title, video: false,
+                      ))),
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                      padding: const EdgeInsets.all(7),
+                      icon: Icon(Icons.groups_rounded, color: scheme.primary, size: 21),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          PopupMenuButton<String>(
+            tooltip: 'ابزارها و تنظیمات چت',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              switch (value) {
+                case 'search':
+                  showSearch(context: context, delegate: MessageSearchDelegate(widget.id));
+                  break;
+                case 'media':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => SharedMediaPage(conversationId: widget.id)));
+                  break;
+                case 'info':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+                  break;
+                case 'settings':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatSettingsPage()));
+                  break;
+                case 'saved':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedMessagesPage()));
+                  break;
+                case 'appearance':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AppAppearancePage()));
+                  break;
+                case 'notifications':
+                  _toggleChatNotifications();
+                  break;
+                case 'link':
+                  _copyGroupLink();
+                  break;
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'search', child: ListTile(dense: true, leading: Icon(Icons.search_rounded), title: Text('جستجوی پیام‌ها'))),
+              PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text('رسانه‌ها و فایل‌ها'))),
+              PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text('اطلاعات گفتگو'))),
+              PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text('تنظیمات گفتگو'))),
+              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text('پیام‌های ذخیره‌شده'))),
+            ],
+          ),
+          FutureBuilder<bool>(
+            future: _isGroupAdmin(),
+            builder: (_,snap) => snap.data==true
+                ? IconButton(onPressed:_openGroupManagement,tooltip:'مدیریت گروه/کانال',icon:const Icon(Icons.admin_panel_settings_rounded))
+                : const SizedBox.shrink(),
+          ),
+        ],
+        titleSpacing: 2,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openChatProfile,
+          onLongPress: _copyChatUsername,
+          child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 17,
+                  backgroundColor: scheme.primaryContainer,
+                  foregroundColor: scheme.primary,
+                  child: ClipOval(
+                    child: (() {
+                      final avatar = _chatType == 'direct'
+                          ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim()
+                          : (_chatType == 'group' ? _groupAvatarUrl.trim() : '');
+                      if (avatar.isEmpty) {
+                        return Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 18, color: scheme.primary);
+                      }
+                      return Image.network(
+                        avatar,
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(_chatType == 'group' ? Icons.groups_rounded : Icons.person_rounded, size: 20, color: scheme.primary),
+                      );
+                    })(),
+                  ),
+                ),
+                if (_chatType == 'direct')
+                  Positioned(
+                    right: -1,
+                    bottom: -1,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF35C759),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: scheme.surface, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_localChatTitle ?? widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, height: 1.1, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+                  Text(
+                    _isSyncing
+                        ? 'در حال اتصال…'
+                        : (_chatType == 'direct'
+                            ? 'گفتگوی خصوصی'
+                            : (_chatType == 'group'
+                                ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
+                                : 'کانال')),
+                    style: TextStyle(
+                      fontSize: 10,
+                      height: 1.1,
+                      color: _isSyncing ? scheme.primary : scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        ),
+      ),
+      floatingActionButton: _showJumpToLatest
+          ? Padding(
+              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 104 : 86),
+              child: FloatingActionButton.small(
+                heroTag: 'jump-to-latest-${widget.id}',
+                onPressed: _jumpToLatest,
+                tooltip: 'رفتن به آخرین پیام',
+                backgroundColor: scheme.surface.withValues(alpha: .72),
+                foregroundColor: scheme.primary,
+                elevation: 2,
+                child: const Icon(Icons.keyboard_double_arrow_down_rounded),
+              ),
+            )
+          : null,
+      body: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: Container(
+        decoration: BoxDecoration(
+          // BoxDecoration forbids setting both color and gradient. The old
+          // combination asserted during chat rendering, hiding the wallpaper
+          // and its ambient effects on some builds.
+          color: appTheme.backgroundEffects ? null : Color(appTheme.backgroundSeed),
+          image: appTheme.backgroundImageBase64 == null ? null : DecorationImage(
+            image: MemoryImage(base64Decode(appTheme.backgroundImageBase64!)),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode((dark ? Colors.black : Colors.white).withValues(alpha: dark ? .22 : .08), BlendMode.darken),
+          ),
+          gradient: appTheme.backgroundEffects ? LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
+              Color.alphaBlend(scheme.primary.withValues(alpha: .045), dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed)),
+              dark ? Color.alphaBlend(Color(appTheme.backgroundSeed).withValues(alpha: .48), const Color(0xFF090A0F)) : Color(appTheme.backgroundSeed),
+            ],
+          ) : null,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _AmbientChatGlow(enabled: appTheme.backgroundEffects, primary: scheme.primary),
+            Column(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  if (_composerFocus.hasFocus) FocusScope.of(context).unfocus();
+                },
+                child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : messages.isEmpty
+                      ? const Center(child: Text('هنوز پیامی یا سابقه تماسی وجود ندارد.'))
+                      : ListView.builder(
+                          controller: _messagesScroll,
+                          physics: const BouncingScrollPhysics(),
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                          // Keep a real breathing zone below the last bubble.
+                          // It scales with the IME instead of using a fixed value,
+                          // so tall keyboards cannot cover the final message.
+                          // The body itself is lifted by the IME inset.
+                          // Keep only enough content space for the composer so
+                          // the final bubble can always scroll above it.
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 68),
+                          reverse: false,
+                          itemCount: displayItems.length,
+                          itemBuilder: (context, i) {
+                            final item = displayItems[i];
+                            final child = item['__kind'] == 'date_separator'
+                                ? _dateSeparator((item['label'] ?? '').toString())
+                                : item['__kind'] == 'system'
+                                    ? _systemTimelineTile(item)
+                                    : item['__kind'] == 'call' ? _callHistoryTile(item) : _glassMessageBubble(item);
+                            final messageId = item['id']?.toString();
+                            final itemKey = messageId == null ? null : _messageKeys.putIfAbsent(messageId, () => GlobalKey());
+                            return KeyedSubtree(
+                              key: i == displayItems.length - 1 ? _latestMessageKey : itemKey,
+                              child: child,
+                            );
+                          },
+                        ),
+              ),
+            ),
+            if (_mentionSuggestions.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                decoration: BoxDecoration(
+                  color: scheme.surface.withValues(alpha: .97),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scheme.outline.withValues(alpha: .15)),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, -3))],
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: _mentionSuggestions.length,
+                  separatorBuilder: (_, __) => Divider(height: 1, color: scheme.outline.withValues(alpha: .08)),
+                  itemBuilder: (context, index) {
+                    final profile = _mentionSuggestions[index];
+                    final avatar = '${profile['avatar_url'] ?? ''}'.trim();
+                    return ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 17,
+                        backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                        child: avatar.isEmpty ? const Icon(Icons.person_outline_rounded, size: 18) : null,
+                      ),
+                      title: Text('${profile['display_name'] ?? profile['username'] ?? 'کاربر'}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text('@${profile['username']}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      onTap: () => _insertMention(profile),
+                    );
+                  },
+                ),
+              ),
+            if (!recordingVoice && replyMessage != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
+                    decoration: BoxDecoration(
+                      color: scheme.surface.withValues(alpha: .78),
+                      border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: .08))),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.reply_rounded, size: 20, color: scheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${_senderName(replyMessage!)}: ${replyMessage!['body'] ?? ''}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() => replyMessage = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            if (!recordingVoice && keyboardInset <= 0 && !_composerFocus.hasFocus)
+              SizedBox(
+                height: 44,
+                child: ListView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                children: [
+                  for (final suggestion in _quickMessageSuggestions)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 8),
+                      child: Material(
+                        color: scheme.surfaceContainerHighest.withValues(alpha: .96),
+                        shape: const StadiumBorder(),
+                        child: InkWell(
+                          customBorder: const StadiumBorder(),
+                          onTap: () {
+                            if (sending) return;
+                            _composerFocus.unfocus();
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            text.value = TextEditingValue(
+                              text: suggestion.message,
+                              selection: TextSelection.collapsed(offset: suggestion.message.length),
+                            );
+                            sendText(keepKeyboardOpen: false);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                            child: Text(suggestion.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              ),
+            if (recordingVoice)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(12, 3, 12, 6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: scheme.surface.withValues(alpha: dark ? .94 : .98),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: scheme.primary.withValues(alpha: .28)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: .10),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.fiber_manual_record_rounded, color: scheme.error, size: 13),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${voiceSeconds ~/ 60}:${(voiceSeconds % 60).toString().padLeft(2, '0')}',
+                        style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          height: 26,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              for (final level in (voiceWaveform.isEmpty ? <double>[.08, .12, .08, .18, .1, .14, .08] : voiceWaveform.skip(voiceWaveform.length > 12 ? voiceWaveform.length - 12 : 0)))
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 1.2),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 100),
+                                    width: 3,
+                                    height: 5 + level.clamp(.06, 1.0).toDouble() * 20,
+                                    decoration: BoxDecoration(
+                                      color: scheme.primary.withValues(alpha: .55 + level.clamp(.06, 1.0).toDouble() * .45),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'لغو ضبط',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(cancel: true),
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        color: scheme.error,
+                      ),
+                      IconButton(
+                        tooltip: voiceLocked ? 'باز کردن کنترل ضبط' : 'قفل ضبط',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => setState(() => voiceLocked = !voiceLocked),
+                        icon: Icon(voiceLocked ? Icons.lock_rounded : Icons.lock_open_rounded),
+                        color: voiceLocked ? scheme.primary : scheme.onSurfaceVariant,
+                      ),
+                      IconButton.filled(
+                        tooltip: 'پایان ضبط و ارسال ویس',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: sending || _voiceFinishing ? null : () => _finishVoiceRecording(),
+                        icon: const Icon(Icons.send_rounded, size: 19),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (!recordingVoice)
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 2, 6, 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            scheme.surface.withValues(alpha: dark ? .58 : .66),
+                            scheme.primary.withValues(alpha: dark ? .13 : .08),
+                            scheme.surface.withValues(alpha: dark ? .46 : .56),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: scheme.primary.withValues(alpha: dark ? .24 : .14),
+                          width: 1.1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: scheme.primary.withValues(alpha: dark ? .12 : .07),
+                            blurRadius: 14,
+                            spreadRadius: -5,
+                            offset: const Offset(0, 3),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: dark ? .035 : .62),
+                            blurRadius: 2,
+                            offset: const Offset(0, -1),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: scheme.onSurfaceVariant,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(10),
+                            ),
+                            onPressed: _showChatEmojiPicker,
+                            tooltip: 'اموجی',
+                            icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: text,
+                              focusNode: _composerFocus,
+                              onChanged: (value) {
+                                _updateMentionSuggestions(value);
+                                // Rebuild the composer immediately so the right-hand
+                                // action switches between microphone and send.
+                                if (mounted) setState(() {});
+                              },
+                              // Send-button taps must not unfocus the composer or dismiss the keyboard.
+                              onTapOutside: (_) {},
+                              minLines: 1,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.newline,
+                              decoration: InputDecoration(
+                                hintText: {'en':'Write a message…','ar':'اكتب رسالة…'}[aradLanguageController.locale.languageCode] ?? 'پیام خود را بنویسید…',
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                hintStyle: TextStyle(
+                                  color: scheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(19),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: scheme.surface.withValues(alpha: dark ? .20 : .28),
+                              foregroundColor: scheme.primary,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(10),
+                            ),
+                            onPressed: _showAttachmentPanel,
+                            tooltip: {'en':'Attachments','ar':'المرفقات'}[aradLanguageController.locale.languageCode] ?? 'پیوست‌ها',
+                            icon: Icon(Icons.attach_file_rounded, color: scheme.primary, size: 27),
+                          ),
+                          // Telegram-style single action at the far right:
+                          // send replaces the microphone as soon as text is entered.
+                          if (text.text.trim().isNotEmpty)
+                            IconButton(
+                              tooltip: {'en':'Send message','ar':'إرسال الرسالة'}[aradLanguageController.locale.languageCode] ?? 'ارسال پیام',
+                              style: IconButton.styleFrom(
+                                backgroundColor: scheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: const CircleBorder(),
+                                minimumSize: const Size(48, 48),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.all(11),
+                              ),
+                              onPressed: sending ? null : sendText,
+                              icon: sending
+                                  ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.send_rounded, size: 24),
+                            )
+                          else
+                            IconButton(
+                              style: IconButton.styleFrom(
+                                backgroundColor: scheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: const CircleBorder(),
+                                minimumSize: const Size(48, 48),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.all(11),
+                              ),
+                              onPressed: _voiceStarting
+                                  ? null
+                                  : (recordingVoice
+                                      ? (sending || _voiceFinishing || voiceLocked ? null : () => _finishVoiceRecording())
+                                      : toggleVoiceRecording),
+                              tooltip: _voiceStarting
+                                  ? 'در حال آماده‌سازی میکروفون'
+                                  : (recordingVoice
+                                      ? (voiceLocked ? 'ضبط قفل است؛ از دکمه ارسال استفاده کنید' : 'پایان ضبط و ارسال ویس')
+                                      : ({'en':'Record voice','ar':'تسجيل صوت'}[aradLanguageController.locale.languageCode] ?? 'ضبط ویس')),
+                              icon: _voiceStarting
+                                  ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : Icon(recordingVoice ? Icons.send_rounded : Icons.mic_rounded, color: Colors.white, size: 27),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+            ),
+          ],
+        ),
+        ),
+      ),
+    );
+  }}
+class _ChatVideoAttachment extends StatefulWidget {
+  final String storagePath;
+  const _ChatVideoAttachment({required this.storagePath});
+  @override State<_ChatVideoAttachment> createState() => _ChatVideoAttachmentState();
+}
+
+class _ChatVideoAttachmentState extends State<_ChatVideoAttachment> {
+  VideoPlayerController? _controller;
+  String? _error;
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final url = await supabase.storage.from('chat-media').createSignedUrl(widget.storagePath, 3600);
+      final c = VideoPlayerController.networkUrl(Uri.parse(url));
+      await c.initialize();
+      await c.setLooping(false);
+      if (mounted) setState(() => _controller = c);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'پخش ویدئو ناموفق بود');
+    }
+  }
+
+  @override Widget build(BuildContext context) {
+    final c = _controller;
+    if (_error != null) return Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.video_file_rounded), const SizedBox(width: 8), Text(_error!)]);
+    if (c == null || !c.value.isInitialized) return const SizedBox(width: 250, height: 150, child: Center(child: CircularProgressIndicator()));
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: 270,
+        child: AspectRatio(
+          aspectRatio: c.value.aspectRatio,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              VideoPlayer(c),
+              IconButton.filledTonal(
+                onPressed: () async {
+                  if (c.value.isPlaying) { await c.pause(); } else { await c.play(); }
+                  if (mounted) setState(() {});
+                },
+                icon: Icon(c.value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+              ),
+              Positioned(
+                left: 8, right: 8, bottom: 4,
+                child: VideoProgressIndicator(c, allowScrubbing: true, padding: const EdgeInsets.symmetric(vertical: 5)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override void dispose() { _controller?.dispose(); super.dispose(); }
+}
+
+class _SearchSectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SearchSectionHeader({required this.title, required this.icon});
+  @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(8, 14, 8, 6), child: Row(children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w900))]));
+}
+
+class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
+  final String conversationId;
+
+  String contentType = 'all';
+  String? senderId;
+  DateTime? fromDate;
+  DateTime? toDate;
+
+  late final Future<List<Map<String,dynamic>>> _sendersFuture = _loadSenders();
+
+  MessageSearchDelegate(this.conversationId);
+
+  Future<List<Map<String,dynamic>>> _loadSenders() async {
+    final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', conversationId);
+    final ids = (members as List).map((e) => e['user_id'].toString()).toSet().toList();
+    if (ids.isEmpty) return [];
+    final rows = await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids);
+    final result = List<Map<String,dynamic>>.from(rows);
+    result.sort((a,b) => '${a['display_name'] ?? a['username'] ?? ''}'.compareTo('${b['display_name'] ?? b['username'] ?? ''}'));
+    return result;
+  }
+
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+    if (_hasFilters)
+      IconButton(
+        tooltip: 'حذف فیلترها',
+        onPressed: () {
+          contentType = 'all';
+          senderId = null;
+          fromDate = null;
+          toDate = null;
+          showSuggestions(context);
+        },
+        icon: const Icon(Icons.filter_alt_off_rounded),
+      ),
+    IconButton(
+      tooltip: 'فیلتر جستجو',
+      onPressed: () => _openFilters(context),
+      icon: Badge(isLabelVisible: _hasFilters, smallSize: 7, child: const Icon(Icons.tune_rounded)),
+    ),
+    if (query.isNotEmpty)
+      IconButton(tooltip: 'پاک کردن متن', onPressed: () => query = '', icon: const Icon(Icons.clear)),
+  ];
+
+  bool get _hasFilters => contentType != 'all' || senderId != null || fromDate != null || toDate != null;
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case 'image': return 'تصویر';
+      case 'video': return 'ویدئو';
+      case 'audio': return 'صوت';
+      case 'file': return 'فایل';
+      default: return 'متن';
+    }
+  }
+
+  String _dateValue(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+
+  Future<List<Map<String,dynamic>>> _search() async {
+    final term = query.trim();
+    dynamic request = supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id', conversationId).isFilter('deleted_at', null);
+    if (term.isNotEmpty) request = request.ilike('body', '%$term%');
+    if (contentType != 'all') request = request.eq('message_type', contentType);
+    if (senderId != null) request = request.eq('sender_id', senderId!);
+    if (fromDate != null) {
+      request = request.gte('created_at', DateTime(fromDate!.year, fromDate!.month, fromDate!.day).toUtc().toIso8601String());
+    }
+    if (toDate != null) {
+      request = request.lt('created_at', DateTime(toDate!.year, toDate!.month, toDate!.day + 1).toUtc().toIso8601String());
+    }
+    final results = List<Map<String,dynamic>>.from(
+      await request.order('created_at', ascending: false).limit(100),
+    );
+    // Search must honor "delete for me" too; otherwise an old message can
+    // reappear when the user finds it through search after removing it.
+    final uid = supabase.auth.currentUser?.id;
+    if (uid != null && results.isNotEmpty) {
+      try {
+        final hiddenRows = await supabase
+            .from('message_user_deletions')
+            .select('message_id')
+            .eq('user_id', uid)
+            .inFilter('message_id', results.map((m) => '${m['id']}').toList())
+            .timeout(const Duration(seconds: 5));
+        final hiddenIds = {
+          for (final row in List<Map<String, dynamic>>.from(hiddenRows))
+            '${row['message_id']}'
+        };
+        results.removeWhere((m) => hiddenIds.contains('${m['id']}'));
+      } catch (_) {
+        // Keep search available if deletion metadata is temporarily offline.
+      }
+    }
+    return results;
+  }
+
+  Future<void> _openFilters(BuildContext context) async {
+    var nextType = contentType;
+    var nextSender = senderId;
+    var nextFrom = fromDate;
+    var nextTo = toDate;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final scheme = Theme.of(context).colorScheme;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(child: Text('فیلتر پیشرفته جستجو', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+                        TextButton(
+                          onPressed: () => setSheetState(() {
+                            nextType = 'all';
+                            nextSender = null;
+                            nextFrom = null;
+                            nextTo = null;
+                          }),
+                          child: const Text('پاک کردن'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text('نوع محتوا', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ['all', 'همه', Icons.all_inclusive_rounded],
+                        ['text', 'متن', Icons.chat_bubble_outline_rounded],
+                        ['image', 'عکس', Icons.image_outlined],
+                        ['video', 'ویدئو', Icons.videocam_outlined],
+                        ['audio', 'صوت', Icons.mic_none_rounded],
+                        ['file', 'فایل', Icons.attach_file_rounded],
+                      ].map((item) {
+                        final selected = nextType == item[0];
+                        return ChoiceChip(
+                          selected: selected,
+                          avatar: Icon(item[2] as IconData, size: 17),
+                          label: Text(item[1] as String),
+                          onSelected: (_) => setSheetState(() => nextType = item[0] as String),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+                    Text('فرستنده', style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    FutureBuilder<List<Map<String,dynamic>>>(
+                      future: _sendersFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
+                        final people = snapshot.data ?? [];
+                        return DropdownButtonFormField<String?>(
+                           value: nextSender,
+                          isExpanded: true,
+                          decoration: const InputDecoration(prefixIcon: Icon(Icons.person_search_rounded), hintText: 'همه فرستنده‌ها'),
+                          items: [
+                            const DropdownMenuItem<String?>(value: null, child: Text('همه فرستنده‌ها')),
+                            ...people.map((p) => DropdownMenuItem<String?>(
+                              value: p['id'].toString(),
+                              child: Text('${p['display_name'] ?? p['username'] ?? 'کاربر'}', overflow: TextOverflow.ellipsis),
+                            )),
+                          ],
+                          onChanged: (v) => setSheetState(() => nextSender = v),
+                          );
+                        },
+                    ),
+                    const SizedBox(height: 14),
+                    ListTile(
+                      leading: const Icon(Icons.date_range_rounded),
+                      title: Text(nextFrom == null ? 'از تاریخ' : 'از ${nextFrom!.year}/${nextFrom!.month}/${nextFrom!.day}'),
+                      onTap: () async {
+                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextFrom ?? DateTime.now());
+                        if (d != null) setSheetState(() => nextFrom = d);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.event_rounded),
+                      title: Text(nextTo == null ? 'تا تاریخ' : 'تا ${nextTo!.year}/${nextTo!.month}/${nextTo!.day}'),
+                      onTap: () async {
+                        final d = await showDatePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: nextTo ?? DateTime.now());
+                        if (d != null) setSheetState(() => nextTo = d);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        contentType = nextType;
+                        senderId = nextSender;
+                        fromDate = nextFrom;
+                        toDate = nextTo;
+                        Navigator.pop(sheetContext);
+                        showSuggestions(context);
+                      },
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('اعمال فیلتر'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) => _messageResults(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _messageResults(context);
+
+  Widget _messageResults(BuildContext context) => FutureBuilder<List<Map<String,dynamic>>>(
+    future: _search(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+      if (snapshot.hasError) return Center(child: Text('جستجو ناموفق بود: ' + _friendlyError('${snapshot.error}')));
+      final rows = snapshot.data ?? const <Map<String,dynamic>>[];
+      if (rows.isEmpty) return const Center(child: Text('نتیجه‌ای پیدا نشد.'));
+      return ListView.builder(
+        itemCount: rows.length,
+        itemBuilder: (context, index) {
+          final m = rows[index];
+          return ListTile(
+            leading: const CircleAvatar(child: Icon(Icons.message_rounded)),
+            title: Text((m['body'] ?? 'پیام').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Text('${m['message_type'] ?? 'text'} • ${m['created_at'] ?? ''}'),
+            onTap: () => close(context, m),
+          );
+        },
+      );
+    },
+  );
+
+  @override
+  Widget? buildLeading(BuildContext context) => IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () => close(context, null),
+  );
+}
+
+class AppLockGate extends StatefulWidget {
+  final Widget child;
+  const AppLockGate({super.key, required this.child});
+  @override State<AppLockGate> createState()=>_AppLockGateState();
+}
+class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
+  final _secure=const FlutterSecureStorage();
+  final _auth=LocalAuthentication();
+  bool locked=false, checking=true, authenticating=false;
+  DateTime? _backgroundAt;
+
+  @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);_check();}
+  @override void dispose(){WidgetsBinding.instance.removeObserver(this);super.dispose();}
+
+  Future<void> _check() async {
+    final enabled=(await SharedPreferences.getInstance()).getBool('app_lock_enabled')??false;
+    if(!enabled){if(mounted)setState(()=>checking=false);return;}
+    if(mounted)setState(()=>locked=true);
+    await _unlock();
+  }
+
+  @override void didChangeAppLifecycleState(AppLifecycleState state){
+    if(state==AppLifecycleState.paused||state==AppLifecycleState.inactive) _backgroundAt=DateTime.now();
+    if(state==AppLifecycleState.resumed&&_backgroundAt!=null){
+      final elapsed=DateTime.now().difference(_backgroundAt!);
+      if(elapsed.inSeconds>=5) _check();
+      _backgroundAt=null;
+    }
+  }
+
+  Future<void> _unlock() async {
+    if(authenticating)return;
+    authenticating=true;
+    try {
+      final p=await SharedPreferences.getInstance();
+      final bio=p.getBool('app_lock_biometric')??false;
+      if(bio){
+        try {
+          final ok=await _auth.authenticate(localizedReason:'برای ورود به Arad Messenger احراز هویت کنید',options:const AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
+          if(ok){if(mounted)setState(()=>locked=false);return;}
+        } catch(_){}
+      }
+      final pin=await _secure.read(key:'app_lock_pin');
+      if(pin!=null&&mounted) await _showPin(pin);
+    } finally {authenticating=false;}
+  }
+
+  Future<void> _showPin(String pin) async {
+    final c=TextEditingController();
+    String? error;
+    while(mounted&&locked){
+      final entered=await showDialog<String>(context:context,barrierDismissible:false,builder:(ctx)=>AlertDialog(
+        title:const Text('قفل برنامه'),
+        content:TextField(controller:c,autofocus:true,keyboardType:TextInputType.number,obscureText:true,maxLength:6,decoration:InputDecoration(labelText:'PIN',errorText:error)),
+        actions:[FilledButton(onPressed:()=>Navigator.pop(ctx,c.text),child:const Text('باز کردن'))]));
+      if(entered==null)break;
+      if(entered==pin){if(mounted)setState(()=>locked=false);break;}
+      error='PIN نادرست است.'; c.clear();
+    }
+    c.dispose();
+  }
+
+  @override Widget build(BuildContext context){
+    if(checking)return const Scaffold(body:Center(child:CircularProgressIndicator()));
+    if(!locked)return widget.child;
+    return Scaffold(body:Center(child:Padding(padding:const EdgeInsets.all(28),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+      const Icon(Icons.lock_rounded,size:64),const SizedBox(height:18),
+      const Text('Arad Messenger قفل است',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+      const SizedBox(height:8),const Text('برای ادامه، PIN یا احراز هویت بیومتریک را تأیید کنید.'),
+      const SizedBox(height:20),FilledButton.icon(onPressed:_unlock,icon:const Icon(Icons.lock_open_rounded),label:const Text('باز کردن'))
+    ]))));
+  }
+}
+
+).hasMatch(username)) {
+            showMsg(ctx, 'نام کاربری باید ۳ تا ۳۲ حرف و فقط شامل حروف انگلیسی، عدد یا _ باشد.');
+            return;
+          }
+          if (group['is_public'] == true && username.isEmpty) {
+            showMsg(ctx, 'برای گروه عمومی باید نام کاربری وارد شود.');
+            return;
+          }
+          Navigator.pop(ctx, {'title': title, 'description': descriptionController.text.trim(), 'username': username});
         }, child: const Text('ذخیره')),
       ],
     ));
@@ -6616,7 +11307,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   }
 
   Future<void> _manageMember(Map<String, dynamic> member) async {
-    if (!canRemoveMembers || saving) return;
+    if ((!canRemoveMembers && !isCreator) || saving) return;
     final targetId = (member['user_id'] ?? '').toString();
     final targetRole = (member['role'] ?? 'member').toString();
     final uid = supabase.auth.currentUser?.id;
@@ -6631,8 +11322,17 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(leading: avatar(profile), title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('@${profile['username'] ?? ''}')),
         ListTile(leading: const Icon(Icons.person_outline_rounded), title: const Text('مشاهده پروفایل'), onTap: () => Navigator.pop(sheet, 'profile')),
-        ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
-        ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
+        if (isCreator)
+          ListTile(
+            leading: Icon(targetRole == 'admin' ? Icons.person_rounded : Icons.admin_panel_settings_rounded),
+            title: Text(targetRole == 'admin' ? 'عزل از مدیریت' : 'تعیین به‌عنوان مدیر'),
+            subtitle: Text(targetRole == 'admin' ? 'دسترسی‌های مدیریتی این عضو برداشته می‌شود' : 'امکان تنظیم اختیارات مدیر پس از ارتقا'),
+            onTap: () => Navigator.pop(sheet, 'role'),
+          ),
+        if (canRemoveMembers) ...[
+          ListTile(leading: const Icon(Icons.person_remove_alt_1_rounded), title: const Text('اخراج از گروه'), onTap: () => Navigator.pop(sheet, 'remove')),
+          ListTile(leading: Icon(Icons.block_rounded, color: Theme.of(sheet).colorScheme.error), title: Text('محروم کردن از گروه', style: TextStyle(color: Theme.of(sheet).colorScheme.error)), onTap: () => Navigator.pop(sheet, 'ban')),
+        ],
       ])),
     );
     if (!mounted || action == null) return;
@@ -6640,6 +11340,40 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       await Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: {...profile, 'id': targetId})));
       return;
     }
+    if (action == 'role') {
+      final nextRole = targetRole == 'admin' ? 'member' : 'admin';
+      final promote = nextRole == 'admin';
+      final confirmedRole = await showDialog<bool>(
+        context: context,
+        builder: (d) => AlertDialog(
+          title: Text(promote ? 'مدیر کردن $name' : 'عزل $name از مدیریت'),
+          content: Text(promote
+              ? 'این عضو مدیر گروه می‌شود. بعداً می‌توانی اختیاراتش را جداگانه تنظیم کنی.'
+              : 'نقش این کاربر به عضو عادی تغییر می‌کند.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('انصراف')),
+            FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(promote ? 'تأیید و مدیر کردن' : 'عزل از مدیریت')),
+          ],
+        ),
+      ) ?? false;
+      if (!confirmedRole) return;
+      setState(() => saving = true);
+      try {
+        await supabase.rpc('set_group_member_role', params: {
+          'p_conversation_id': widget.conversationId,
+          'p_user_id': targetId,
+          'p_role': nextRole,
+        });
+        await _load();
+        if (mounted) showMsg(context, promote ? '$name مدیر گروه شد.' : 'مدیریت $name لغو شد.');
+      } catch (e) {
+        if (mounted) showMsg(context, 'تغییر نقش ناموفق بود: ${_friendlyError(e.toString())}');
+      } finally {
+        if (mounted) setState(() => saving = false);
+      }
+      return;
+    }
+    if (!canRemoveMembers) return;
     final reasonController = TextEditingController();
     final confirmed = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
       title: Text(action == 'ban' ? 'محروم کردن $name' : 'اخراج $name'),
