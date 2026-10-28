@@ -2132,7 +2132,7 @@ class AradMessenger extends StatelessWidget {
                   ),
                 ),
                 Directionality(
-                  textDirection: ['fa', 'prs', 'haz', 'ps', 'ar'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
+                  textDirection: ['fa', 'prs', 'haz', 'ps', 'ar', 'ur'].contains(aradLanguageController.locale.languageCode) ? TextDirection.rtl : TextDirection.ltr,
                   child: MediaQuery(
                     data: MediaQuery.of(context).copyWith(
                       textScaler: TextScaler.linear(appAccessibility.textScale),
