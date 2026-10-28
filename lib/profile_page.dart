@@ -124,7 +124,42 @@ class _ProfilePageState extends State<ProfilePage> {
         await prefs.setString(cacheKey, jsonEncode(profile));
       } catch (_) {}
     } catch (e) {
-      if (mounted && loading) showMsg(context, 'اتصال پروفایل کند است؛ اطلاعات ذخیره‌شده نمایش داده می‌شود.');
+      // A profile/network/schema failure must not leave the account screen blank.
+      // Keep the cached row when available; otherwise construct a usable local
+      // profile from the authenticated user's metadata and email.
+      debugPrint('Profile refresh failed; keeping a local fallback: $e');
+      final metadata = user.userMetadata ?? <String, dynamic>{};
+      final metadataName = (metadata['full_name'] ?? metadata['name'] ??
+          user.email?.split('@').first ?? 'کاربر').toString();
+      final metadataAvatar = (metadata['avatar_url'] ?? metadata['picture'] ?? '').toString();
+      if (profile.isEmpty) {
+        profile = <String, dynamic>{
+          'id': user.id,
+          'display_name': metadataName,
+          'username': '',
+          'bio': '',
+          'avatar_url': metadataAvatar,
+        };
+      } else {
+        if ('${profile['display_name'] ?? ''}'.trim().isEmpty) {
+          profile['display_name'] = metadataName;
+        }
+        if ('${profile['avatar_url'] ?? ''}'.trim().isEmpty && metadataAvatar.isNotEmpty) {
+          profile['avatar_url'] = metadataAvatar;
+        }
+      }
+      name.text = '${profile['display_name'] ?? metadataName}';
+      username.text = '${profile['username'] ?? ''}';
+      bio.text = '${profile['bio'] ?? ''}';
+      final fallbackAvatar = '${profile['avatar_url'] ?? ''}'.trim();
+      avatarImage = fallbackAvatar.isNotEmpty ? NetworkImage(fallbackAvatar) : null;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(cacheKey, jsonEncode(profile));
+      } catch (_) {}
+      if (mounted && loading) {
+        showMsg(context, 'نمایش پروفایل محلی؛ برای به‌روزرسانی اطلاعات اینترنت را بررسی کنید.');
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
