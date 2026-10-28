@@ -7851,13 +7851,37 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
 class StickersPage extends StatelessWidget { StickersPage({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('استیکر و ایموجی'))),body:ListView(padding:const EdgeInsets.all(16),children:[
 ]));}
 
-class SecurityPage extends StatefulWidget { SecurityPage({super.key}); @override State<SecurityPage> createState()=>_SecurityPageState(); }
-class _SecurityPageState extends State<SecurityPage>{bool two=true,self=false; @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('امنیت پیشرفته'))),body:ListView(padding:const EdgeInsets.all(16),children:[
- Card(child:SwitchListTile(value:two,onChanged:(v)=>setState(()=>two=v),title:Text(trUi('تأیید دومرحله‌ای')))),
- Card(child:ListTile(leading:Icon(Icons.devices_rounded),title:Text(trUi('دستگاه‌های متصل')))),
- Card(child:ListTile(leading:Icon(Icons.block_rounded),title:Text(trUi('مخاطبین مسدودشده')))),
- Card(child:SwitchListTile(value:self,onChanged:(v)=>setState(()=>self=v),title:Text(trUi('پیام‌های خودتخریب‌شونده')))),
-]));}
+class SecurityPage extends StatelessWidget {
+  const SecurityPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(trUi('امنیت پیشرفته'))),
+    body: ListView(padding: const EdgeInsets.all(16), children: [
+      Card(child: ListTile(
+        leading: const Icon(Icons.lock_open_rounded),
+        title: Text(trUi('قفل برنامه')),
+        subtitle: Text(trUi('قفل PIN برنامه غیرفعال است.')),
+        trailing: const Icon(Icons.chevron_left_rounded),
+        onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const AppLockSettingsPage())),
+      )),
+      Card(child: ListTile(
+        leading: const Icon(Icons.timer_outlined),
+        title: Text(trUi('پیام‌های خودتخریب‌شونده')),
+        subtitle: Text(trUi('تنظیم زمان حذف خودکار پیام‌های جدید در گفتگوها')),
+        trailing: const Icon(Icons.chevron_left_rounded),
+        onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const MessageAutoDeletePage())),
+      )),
+      Card(child: ListTile(
+        leading: const Icon(Icons.verified_user_outlined),
+        title: Text(trUi('تأیید دومرحله‌ای')),
+        subtitle: Text(trUi('این قابلیت هنوز به فرایند ورود حساب متصل نشده است.')),
+      )),
+    ]),
+  );
+}
 
 class CallsPage extends StatefulWidget {
   CallsPage({super.key});
