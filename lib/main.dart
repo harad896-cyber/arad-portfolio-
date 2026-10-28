@@ -5262,6 +5262,8 @@ class _HomePageState extends State<HomePage> {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _inviteLinkSubscription;
   final Map<String, DateTime> _recentInviteCodes = <String, DateTime>{};
+  StreamSubscription<AuthState>? _homeAuthSubscription;
+  String? _observedAuthUserId;
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -5812,7 +5814,22 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _observedAuthUserId = supabase.auth.currentUser?.id;
     load();
+    // Auth restoration/refresh can finish after this page first builds. Reload
+    // the private conversation list when Supabase supplies a valid session.
+    _homeAuthSubscription = supabase.auth.onAuthStateChange.listen((state) {
+      final nextUserId = state.session?.user.id;
+      if (nextUserId == null) return;
+      final sessionReady = state.event == AuthChangeEvent.initialSession ||
+          state.event == AuthChangeEvent.signedIn ||
+          state.event == AuthChangeEvent.tokenRefreshed ||
+          nextUserId != _observedAuthUserId;
+      if (sessionReady) {
+        _observedAuthUserId = nextUserId;
+        unawaited(load());
+      }
+    });
     unawaited(_initInviteLinks());
     _homeChannel = supabase.channel('home-' + (supabase.auth.currentUser?.id ?? 'guest'))
       .onPostgresChanges(
@@ -6077,6 +6094,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _homeAuthSubscription?.cancel();
     _homeRefreshTimer?.cancel();
     _messageNotificationTimer?.cancel();
     _messageNotificationEntry?.remove();
