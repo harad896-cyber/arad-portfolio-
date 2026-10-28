@@ -5389,27 +5389,47 @@ class _HomePageState extends State<HomePage> {
         } catch (fallbackError) {
           debugPrint('Home membership reconciliation failed; retaining RPC/cache results: $fallbackError');
         }
-        final enriched = rpcRows.map((r) {
+        // RPC versions in older deployments may return `id` instead of
+        // `conversation_id`. Normalize both shapes and discard rows without
+        // a usable ID before writing the cache; otherwise every item can render
+        // with a null ID and taps silently do nothing.
+        final normalizedById = <String, Map<String, dynamic>>{};
+        for (final r in rpcRows) {
+          final rawId = r['conversation_id'] ?? r['id'];
+          final id = rawId?.toString().trim() ?? '';
+          if (id.isEmpty || id == 'null') continue;
           final last = r['last_message'] is Map
               ? Map<String, dynamic>.from(r['last_message']) : null;
           final peer = r['peer'] is Map
               ? Map<String, dynamic>.from(r['peer']) : null;
-          return <String, dynamic>{
-            'id': r['conversation_id'],
-            'type': r['type'],
-            'title': r['title'],
-            'avatar_url': r['avatar_url'],
+          final type = (r['type'] ?? 'direct').toString();
+          final fallbackTitle = type == 'group'
+              ? 'گروه' : type == 'channel' ? 'کانال'
+              : (peer?['display_name'] ?? peer?['username'] ?? 'گفتگوی شخصی').toString();
+          final rawTitle = (r['title'] ?? peer?['display_name'] ??
+              peer?['username'] ?? r['username'] ?? fallbackTitle).toString().trim();
+          normalizedById[id] = <String, dynamic>{
+            'id': id,
+            'type': type,
+            'title': rawTitle.isEmpty ? fallbackTitle : rawTitle,
+            'avatar_url': r['avatar_url'] ?? peer?['avatar_url'],
             'description': r['description'],
-            'username': r['username'],
-            'is_public': r['is_public'],
+            'username': r['username'] ?? peer?['username'],
+            'is_public': r['is_public'] ?? false,
             'created_at': r['created_at'],
             '_peer': peer,
             '_last': last,
-            '_preview': r['preview'] ?? 'هنوز پیامی ارسال نشده',
+            '_preview': r['preview'] ?? last?['content'] ?? 'هنوز پیامی ارسال نشده',
             'unread_count': int.tryParse('${r['unread_count'] ?? 0}') ?? 0,
             'is_online': peer?['is_online'] == true,
           };
-        }).toList();
+        }
+        final enriched = normalizedById.values.toList()
+          ..sort((a, b) {
+            final aTime = (a['_last']?['created_at'] ?? a['created_at'] ?? '').toString();
+            final bTime = (b['_last']?['created_at'] ?? b['created_at'] ?? '').toString();
+            return bTime.compareTo(aTime);
+          });
 
         if (mounted) {
           setState(() {
