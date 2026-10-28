@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/services.dart';
@@ -30,12 +31,31 @@ class _ProfilePageState extends State<ProfilePage> {
   final username = TextEditingController();
   final bio = TextEditingController();
   ImageProvider? avatarImage;
+  StreamSubscription<AuthState>? _profileAuthSubscription;
+  String? _observedProfileUserId;
 
   @override
-  void initState() { super.initState(); loadProfile(); }
+  void initState() {
+    super.initState();
+    _observedProfileUserId = supabase.auth.currentUser?.id;
+    loadProfile();
+    // If the auth session is restored or refreshed after the profile page
+    // opens, retry profile loading for that authenticated account.
+    _profileAuthSubscription = supabase.auth.onAuthStateChange.listen((state) {
+      final nextUserId = state.session?.user.id;
+      if (nextUserId == null) return;
+      if (nextUserId != _observedProfileUserId ||
+          state.event == AuthChangeEvent.signedIn ||
+          state.event == AuthChangeEvent.tokenRefreshed) {
+        _observedProfileUserId = nextUserId;
+        loadProfile();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _profileAuthSubscription?.cancel();
     name.dispose();
     username.dispose();
     bio.dispose();
