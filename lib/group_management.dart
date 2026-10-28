@@ -26,6 +26,27 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
   void toast(String s) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s))); }
 
+  String auditActionLabel(String action) {
+    const labels = <String, String>{
+      'member_added': 'عضو توسط مدیر اضافه شد',
+      'joined_by_link': 'عضویت با لینک دعوت',
+      'join_requested_by_link': 'درخواست عضویت با لینک',
+      'joined_by_public_username': 'عضویت از طریق نام گروه',
+      'join_requested_by_public_username': 'درخواست عضویت از نام گروه',
+      'joined_after_approval': 'درخواست عضویت تأیید شد',
+      'member_removed': 'عضو از گروه حذف شد',
+      'member_banned': 'عضو محروم شد',
+      'member_unbanned': 'محرومیت عضو برداشته شد',
+      'admin_promoted': 'عضو مدیر شد',
+      'admin_demoted': 'دسترسی مدیریت برداشته شد',
+      'group_updated': 'تنظیمات گروه تغییر کرد',
+      'message_pinned': 'پیام سنجاق شد',
+      'message_unpinned': 'سنجاق پیام برداشته شد',
+      'join_request_rejected': 'درخواست عضویت رد شد',
+    };
+    return labels[action] ?? action.replaceAll('_', ' ');
+  }
+
   Future<void> load() async {
     try {
       final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id', widget.conversationId).single());
@@ -273,6 +294,22 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         const Divider(height: 1),
         ListTile(leading: Icon(owner ? Icons.delete_forever_rounded : Icons.logout_rounded), title: Text(owner ? 'حذف کامل گروه' : 'خروج از گروه', style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(owner ? 'برای همه حذف می‌شود' : 'فقط شما خارج می‌شوید'), onTap: owner ? deleteGroup : leaveGroup),
       ])),
+      if (admin && auditEvents.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [const Icon(Icons.history_rounded), const SizedBox(width: 8), const Expanded(child: Text('فعالیت‌های اخیر گروه', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))), Text('${auditEvents.length}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))]),
+          const SizedBox(height: 8),
+          ...auditEvents.take(8).map((e) {
+            final action = (e['action'] ?? '').toString();
+            final actor = (e['actor_id'] ?? '').toString();
+            final target = (e['target_user_id'] ?? '').toString();
+            final at = DateTime.tryParse('${e['created_at'] ?? ''}')?.toLocal();
+            final time = at == null ? '' : '${at.month.toString().padLeft(2, '0')}/${at.day.toString().padLeft(2, '0')} ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
+            final details = (e['details'] ?? '').toString().trim();
+            return ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: const CircleAvatar(radius: 17, child: Icon(Icons.bolt_rounded, size: 17)), title: Text(auditActionLabel(action), style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text('${actor.isEmpty ? 'سیستم' : nameOf(actor)}${target.isEmpty ? '' : ' · عضو: ${nameOf(target)}'}${details.isEmpty ? '' : '\\n$details'}'), trailing: Text(time, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)));
+          }),
+        ]))),
+      ],
       if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
     ]));
   }
