@@ -40,6 +40,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       'admin_promoted': 'عضو مدیر شد',
       'admin_demoted': 'دسترسی مدیریت برداشته شد',
       'group_updated': 'تنظیمات گروه تغییر کرد',
+      'settings_updated': 'تنظیمات گروه یا کانال تغییر کرد',
       'message_pinned': 'پیام سنجاق شد',
       'message_unpinned': 'سنجاق پیام برداشته شد',
       'join_request_rejected': 'درخواست عضویت رد شد',
