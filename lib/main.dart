@@ -5285,7 +5285,7 @@ class _HomePageState extends State<HomePage> {
       final isArchived = archivedChatIds.contains(c['id'].toString());
       return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread) &&
           (q.isEmpty || title.contains(q) || username.contains(q) || last.contains(q));
-    }).toList()..sort((a,b) { final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
+    }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
   String get _homeCacheKey {
@@ -5541,8 +5541,32 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _togglePin(Map<String,dynamic> chat) async {
-    // Intentionally disabled: chat pinning is not available in this app version.
-    return;
+    final uid = supabase.auth.currentUser?.id;
+    final id = chat['id']?.toString();
+    if (uid == null || id == null || id.isEmpty) return;
+    final pinned = pinnedChatIds.contains(id);
+    try {
+      if (pinned) {
+        await supabase.from('chat_pins').delete()
+            .eq('user_id', uid).eq('conversation_id', id);
+      } else {
+        await supabase.from('chat_pins').insert({
+          'user_id': uid,
+          'conversation_id': id,
+        });
+      }
+      if (!mounted) return;
+      setState(() {
+        if (pinned) {
+          pinnedChatIds.remove(id);
+        } else {
+          pinnedChatIds.add(id);
+        }
+      });
+      showMsg(context, pinned ? 'سنجاق گفتگو برداشته شد.' : 'گفتگو سنجاق شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر سنجاق گفتگو ناموفق بود: ${_friendlyError(e.toString())}');
+    }
   }
 
   Future<void> _toggleArchive(Map<String,dynamic> chat) async {
@@ -6228,7 +6252,7 @@ class _HomePageState extends State<HomePage> {
                       final lastAt = last?['created_at'];
                       final unreadCount = int.tryParse(c['unread_count']?.toString() ?? '0') ?? 0;
                       final unread = unreadCount > 0 || manuallyUnreadChatIds.contains(id);
-                      const isPinned = false; // Pinning is disabled in the messenger UI.
+                      final isPinned = pinnedChatIds.contains(id);
                       final archived = archivedChatIds.contains(id);
 
                       return Material(
@@ -6301,11 +6325,13 @@ class _HomePageState extends State<HomePage> {
                                   if (action == 'info') Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: id, fallbackTitle: title)));
                                   if (action == 'archive') _toggleArchive(c);
                                   if (action == 'unread') _toggleManualUnread(c);
+                                  if (action == 'pin') _togglePin(c);
                                 },
                                 itemBuilder: (_) => [
                                   PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
                                   PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
                                   PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
+                                  PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن گفتگو')),
                                   PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
                                 ],
                               ),
