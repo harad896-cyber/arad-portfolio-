@@ -13577,11 +13577,13 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance()
           .timeout(Duration(seconds: 4));
-      final enabled = prefs.getBool('app_lock_enabled') ?? false;
-      if (!enabled) {
-        if (mounted) setState(() { checking = false; locked = false; });
-        return;
-      }
+      // App PIN has been disabled by the user request. Clear any previous
+      // local lock state so the gate never prompts for an old PIN.
+      await prefs.setBool('app_lock_enabled', false);
+      await prefs.setBool('app_lock_biometric', false);
+      await _secure.delete(key: 'app_lock_pin');
+      if (mounted) setState(() { checking = false; locked = false; });
+      return;
       // Important: stop the startup spinner before asking for the PIN.
       // Otherwise a correct PIN can unlock the gate while build() keeps
       // returning the loading screen forever.
