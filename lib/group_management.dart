@@ -21,6 +21,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Map<String, Map<String, dynamic>> profiles = {};
   int onlineCount = 0;
   bool loading = true, admin = false, owner = false, busy = false, canAddMembers = false, canEditGroup = false;
+  String? loadError;
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
@@ -49,6 +50,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   }
 
   Future<void> load() async {
+    if (mounted && group == null) setState(() { loading = true; loadError = null; });
     try {
       final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id', widget.conversationId).single());
       final ms = List<Map<String, dynamic>>.from(await db.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId).order('joined_at'));
@@ -57,7 +59,20 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       final ids = ms.map((m) => m['user_id'].toString()).toSet();
       for (final event in events) { if (event['actor_id'] != null) ids.add(event['actor_id'].toString()); if (event['target_user_id'] != null) ids.add(event['target_user_id'].toString()); }
       final idList = ids.toList();
-      final ps = idList.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified,is_online,last_seen').inFilter('id', idList));
+      List<Map<String, dynamic>> ps = [];
+      if (idList.isNotEmpty) {
+        // Optional presence/verification columns may not exist in older Supabase schemas.
+        // Keep the group page usable even if those optional profile fields are unavailable.
+        try {
+          ps = List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified,is_online,last_seen').inFilter('id', idList));
+        } catch (_) {
+          try {
+            ps = List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', idList));
+          } catch (_) {
+            ps = [];
+          }
+        }
+      }
       final uid = db.auth.currentUser?.id;
       final isOwner = uid != null && g['created_by']?.toString() == uid;
       final isAdmin = isOwner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
@@ -70,7 +85,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       }
       if (!mounted) return;
       setState(() {
-        group = g; members = ms; auditEvents = events;
+        group = g; members = ms; auditEvents = events; loadError = null;
         final memberIds = ms.map((m) => m['user_id'].toString()).toSet();
         onlineCount = ps.where((p) => memberIds.contains(p['id'].toString()) && p['is_online'] == true).length;
         profiles = {for (final p in ps) p['id'].toString(): p};
@@ -80,8 +95,11 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
-    } catch (_) {
-      if (mounted) { setState(() => loading = false); toast('پروفایل گروه بارگذاری نشد.'); }
+    } catch (e) {
+      if (mounted) {
+        setState(() { loading = false; loadError = e.toString(); });
+        toast('پروفایل گروه بارگذاری نشد؛ اتصال یا دسترسی گروه را بررسی کنید.');
+      }
     }
   }
 
@@ -334,6 +352,24 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
 
   @override Widget build(BuildContext context) {
     if (loading) return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: const AppSkeletonList(count: 6));
+    if (group == null) return Scaffold(
+      appBar: AppBar(title: const Text('پروفایل گروه')),
+      body: Center(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.cloud_off_rounded, size: 48),
+          const SizedBox(height: 12),
+          const Text('اطلاعات گروه بارگذاری نشد. اتصال اینترنت و دسترسی عضویت را بررسی کنید.', textAlign: TextAlign.center),
+          if ((loadError ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(loadError!, maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+          const SizedBox(height: 16),
+          FilledButton.icon(onPressed: load, icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره')),
+        ]),
+      )),
+    );
     final g = group!; final title = (g['title'] ?? widget.title).toString(); final desc = (g['description'] ?? '').toString().trim(); final image = (g['avatar_url'] ?? '').toString();
     return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: ListView(padding: const EdgeInsets.all(16), children: [
       Card(child: Padding(padding: const EdgeInsets.all(22), child: Column(children: [
