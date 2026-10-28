@@ -5356,15 +5356,35 @@ class _HomePageState extends State<HomePage> {
           final missingIds = ids.where((id) => !knownIds.contains('$id')).toList();
           if (missingIds.isNotEmpty) {
             final directRows = await supabase.from('conversations')
-                .select('id,type,title,avatar_url,description,username,is_public,created_at')
+                .select('id,type,title,avatar_url,created_at')
                 .inFilter('id', missingIds).timeout(Duration(seconds: 4));
             rpcRows.addAll(List<Map<String, dynamic>>.from(directRows).map((row) => <String, dynamic>{
               'conversation_id': row['id'], 'type': row['type'],
               'title': row['title'], 'avatar_url': row['avatar_url'],
-              'description': row['description'], 'username': row['username'],
-              'is_public': row['is_public'], 'created_at': row['created_at'],
+              'description': null, 'username': null,
+              'is_public': false, 'created_at': row['created_at'],
               'preview': 'گفتگو', 'unread_count': 0,
             }));
+          }
+          // If the RPC responds successfully but returns an empty list, don't
+          // treat that as proof the account has no chats. Recover conversations
+          // created by this account using only stable base columns.
+          if (rpcRows.isEmpty) {
+            try {
+              final ownedRows = await supabase.from('conversations')
+                  .select('id,type,title,avatar_url,created_at')
+                  .eq('created_by', uid)
+                  .timeout(Duration(seconds: 4));
+              rpcRows.addAll(List<Map<String, dynamic>>.from(ownedRows).map((row) => <String, dynamic>{
+                'conversation_id': row['id'], 'type': row['type'],
+                'title': row['title'], 'avatar_url': row['avatar_url'],
+                'description': null, 'username': null, 'is_public': false,
+                'created_at': row['created_at'], 'preview': 'گفتگو',
+                'unread_count': 0,
+              }));
+            } catch (ownedError) {
+              debugPrint('Owned conversation fallback unavailable: $ownedError');
+            }
           }
         } catch (fallbackError) {
           debugPrint('Home membership reconciliation failed; retaining RPC/cache results: $fallbackError');
@@ -5471,7 +5491,7 @@ class _HomePageState extends State<HomePage> {
           }
           final ownedRows = await supabase
               .from('conversations')
-              .select('id,type,title,avatar_url,description,username,is_public,created_at')
+              .select('id,type,title,avatar_url,created_at')
               .eq('created_by', uid)
               .timeout(Duration(seconds: 4));
           final owned = List<Map<String, dynamic>>.from(ownedRows);
@@ -5481,7 +5501,7 @@ class _HomePageState extends State<HomePage> {
           if (ids.isNotEmpty) {
             final conversationRows = await supabase
                 .from('conversations')
-                .select('id,type,title,avatar_url,description,username,is_public,created_at')
+                .select('id,type,title,avatar_url,created_at')
                 .inFilter('id', ids)
                 .timeout(Duration(seconds: 4));
             for (final row in List<Map<String, dynamic>>.from(conversationRows)) {
@@ -8707,7 +8727,7 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
         'public_chats': List<Map<String,dynamic>>.from(results[1] as List),
       };
     }
-    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,description,username,is_public,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
+    final chatsFuture = supabase.from('conversations').select('id,type,title,avatar_url,created_at').inFilter('id', ids.toList()).or('title.ilike.%$q%,username.ilike.%$q%').limit(30).then((value) => value);
     final messagesFuture = supabase.from('messages')
         .select('id,conversation_id,body,message_type,created_at,sender_id')
         .inFilter('conversation_id', ids.toList())
