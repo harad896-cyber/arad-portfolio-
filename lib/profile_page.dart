@@ -67,13 +67,54 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (_) {}
     try {
-      final row = await supabase.from('profiles')
-          .select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at')
-          .eq('id', user.id).maybeSingle()
-          .timeout(const Duration(seconds: 6));
-      final fresh = row == null ? <String, dynamic>{} : Map<String, dynamic>.from(row);
+      Map<String, dynamic>? row;
+      // Keep the profile screen compatible with databases where newer optional
+      // columns have not been migrated yet. A missing joined_at/is_verified
+      // column must not blank the entire account page.
+      try {
+        row = await supabase.from('profiles')
+            .select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at')
+            .eq('id', user.id).maybeSingle()
+            .timeout(const Duration(seconds: 6));
+      } catch (schemaError) {
+        debugPrint('Profile optional columns unavailable; retrying minimal profile query: $schemaError');
+        row = await supabase.from('profiles')
+            .select('id,username,display_name,avatar_url,bio')
+            .eq('id', user.id).maybeSingle()
+            .timeout(const Duration(seconds: 6));
+      }
+      final metadata = user.userMetadata ?? <String, dynamic>{};
+      final metadataName = (metadata['full_name'] ?? metadata['name'] ?? user.email?.split('@').first ?? '').toString();
+      final metadataAvatar = (metadata['avatar_url'] ?? metadata['picture'] ?? '').toString();
+      if (row == null) {
+        // A verified account can exist before its profile row is created.
+        // Create a minimal row where permitted, but keep the page usable if
+        // database policy/schema prevents that insert.
+        try {
+          await supabase.from('profiles').upsert({
+            'id': user.id,
+            'display_name': metadataName,
+          }).timeout(const Duration(seconds: 4));
+        } catch (createError) {
+          debugPrint('Could not bootstrap missing profile row: $createError');
+        }
+        row = <String, dynamic>{
+          'id': user.id,
+          'display_name': metadataName,
+          'avatar_url': metadataAvatar,
+          'username': '',
+          'bio': '',
+        };
+      }
+      final fresh = Map<String, dynamic>.from(row);
+      if ((fresh['display_name'] ?? '').toString().trim().isEmpty && metadataName.trim().isNotEmpty) {
+        fresh['display_name'] = metadataName;
+      }
+      if ((fresh['avatar_url'] ?? '').toString().trim().isEmpty && metadataAvatar.trim().isNotEmpty) {
+        fresh['avatar_url'] = metadataAvatar;
+      }
       profile = fresh;
-      name.text = '${profile['display_name'] ?? user.userMetadata?['full_name'] ?? ''}';
+      name.text = '${profile['display_name'] ?? metadataName}';
       username.text = '${profile['username'] ?? ''}';
       bio.text = '${profile['bio'] ?? ''}';
       final url = '${profile['avatar_url'] ?? ''}'.trim();
