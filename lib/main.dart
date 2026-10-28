@@ -18,7 +18,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13169,12 +13168,6 @@ class MessageSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
     onPressed: () => close(context, null),
   );
 }
-
-String _normalizePinDigits(String value) => value.runes.map((rune) {
-  if (rune >= 0x06F0 && rune <= 0x06F9) return String.fromCharCode(0x30 + rune - 0x06F0);
-  if (rune >= 0x0660 && rune <= 0x0669) return String.fromCharCode(0x30 + rune - 0x0660);
-  return String.fromCharCode(rune);
-}).join();
 
 class AppLockGate extends StatefulWidget {
   final Widget child;
