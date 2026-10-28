@@ -85,6 +85,88 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     }
   }
 
+  Future<void> showMembers() async {
+    final search = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => StatefulBuilder(builder: (sheet, setSheet) {
+        final q = search.text.trim().toLowerCase();
+        final visible = members.where((m) {
+          final id = (m['user_id'] ?? '').toString();
+          final profile = profiles[id] ?? {};
+          final name = (profile['display_name'] ?? '').toString().toLowerCase();
+          final username = (profile['username'] ?? '').toString().toLowerCase();
+          return q.isEmpty || name.contains(q) || username.contains(q) || id.toLowerCase().contains(q);
+        }).toList();
+        return SafeArea(child: SizedBox(
+          height: MediaQuery.sizeOf(sheet).height * .8,
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('اعضای گروه • ${members.length} نفر • ${onlineCount} فعال',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: search,
+                  autofocus: true,
+                  onChanged: (_) => setSheet(() {}),
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search_rounded),
+                    hintText: 'جستجوی نام، آیدی یا نام کاربری',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ]),
+            ),
+            Expanded(child: visible.isEmpty
+              ? const Center(child: Text('عضوی با این مشخصات پیدا نشد.'))
+              : ListView.builder(
+                  itemCount: visible.length,
+                  itemBuilder: (context, index) {
+                    final m = visible[index];
+                    final id = (m['user_id'] ?? '').toString();
+                    final profile = profiles[id] ?? {};
+                    final avatar = (profile['avatar_url'] ?? '').toString();
+                    final isOwner = group?['created_by']?.toString() == id;
+                    final role = isOwner ? 'مالک' : (m['role'] == 'admin' ? 'مدیر' : 'عضو');
+                    final joined = DateTime.tryParse('${m['joined_at'] ?? ''}')?.toLocal();
+                    final joinedText = joined == null ? '' : 'عضویت: ${joined.year}/${joined.month.toString().padLeft(2, '0')}/${joined.day.toString().padLeft(2, '0')}';
+                    final online = profile['is_online'] == true;
+                    return ListTile(
+                      leading: Stack(children: [
+                        CircleAvatar(
+                          backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                          child: avatar.isEmpty ? const Icon(Icons.person_outline_rounded) : null,
+                        ),
+                        if (online) Positioned(
+                          right: 0, bottom: 0,
+                          child: Container(width: 11, height: 11,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                            ),
+                          ),
+                        ),
+                      ]),
+                      title: Text(nameOf(id), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text('$role${(profile['username'] ?? '').toString().trim().isEmpty ? '' : ' • @${profile['username']}'}${joinedText.isEmpty ? '' : ' • $joinedText'}'),
+                      trailing: profile['is_verified'] == true
+                        ? Icon(Icons.verified_rounded, color: Theme.of(context).colorScheme.primary, size: 20)
+                        : null,
+                    );
+                  },
+                )),
+          ]),
+        ));
+      }),
+    );
+    search.dispose();
+  }
+
   Future<void> leaveGroup() async {
     if (owner) { toast('مالک نمی‌تواند خارج شود؛ برای مالک فقط حذف کامل گروه فعال است.'); return; }
     final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(
@@ -264,15 +346,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       ]))),
       const SizedBox(height: 12),
       Card(child: Column(children: [
-        ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو • ${onlineCount} فعال'), trailing: const Icon(Icons.chevron_left), onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => ListView(padding: const EdgeInsets.all(16), children: [Text('اعضای گروه • ${members.length} نفر • ${onlineCount} فعال', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), const SizedBox(height: 8), ...members.map((m) { final id = m['user_id'].toString(); final a = avatarOf(id); final o = g['created_by']?.toString() == id; return ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(() {
-            final joined = DateTime.tryParse('${m['joined_at'] ?? ''}')?.toLocal();
-            final date = joined == null ? '' : '${joined.year}/${joined.month.toString().padLeft(2, '0')}/${joined.day.toString().padLeft(2, '0')} ${joined.hour.toString().padLeft(2, '0')}:${joined.minute.toString().padLeft(2, '0')}';
-            final history = auditEvents.where((e) => e['target_user_id']?.toString() == id && ['member_added','joined_by_link','join_requested_by_link','joined_by_public_username','join_requested_by_public_username','joined_after_approval'].contains(e['action'])).toList();
-            history.sort((a,b) => (DateTime.tryParse('${b['created_at'] ?? ''}') ?? DateTime(1970)).compareTo(DateTime.tryParse('${a['created_at'] ?? ''}') ?? DateTime(1970)));
-            final event = history.isEmpty ? null : history.first;
-            final source = event == null ? '' : event['action'] == 'joined_by_link' ? ' • از طریق لینک دعوت' : event['action'] == 'join_requested_by_link' ? ' • درخواست از طریق لینک' : event['action'] == 'joined_by_public_username' ? ' • از طریق نام کاربری عمومی' : event['action'] == 'join_requested_by_public_username' ? ' • درخواست از نام کاربری عمومی' : event['action'] == 'joined_after_approval' ? ' • عضویت پس از تأیید مدیر' : ' • افزوده‌شده توسط ${nameOf((event['actor_id'] ?? '').toString())}';
-            return '${o ? '👑 مالک' : (m['role'] ?? 'عضو').toString()}${date.isEmpty ? '' : ' • عضویت: $date'}$source';
-          }())); })]))),
+        ListTile(leading: const Icon(Icons.people_alt_rounded), title: const Text('اعضای گروه'), subtitle: Text('${members.length} عضو • ${onlineCount} فعال'), trailing: const Icon(Icons.chevron_left), onTap: showMembers),
         if (canAddMembers) ListTile(leading: const Icon(Icons.person_add_alt_1_rounded), title: const Text('افزودن اعضا از مخاطبین'), subtitle: const Text('انتخاب مخاطب و افزودن مستقیم به گروه'), trailing: const Icon(Icons.chevron_left), onTap: addMembersFromContacts),
         if (admin) const Divider(height: 1),
         if (admin) ListTile(leading: const Icon(Icons.link_rounded), title: const Text('لینک گروه'), subtitle: const Text('ساخت، کپی، اشتراک‌گذاری و باطل کردن لینک دعوت'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInvitePage(conversationId: widget.conversationId, title: title, type: 'group')))),
