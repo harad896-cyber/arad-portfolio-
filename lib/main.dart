@@ -6925,11 +6925,50 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                 ),
               ),
               SizedBox(height: 14),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Flexible(child: Text(displayName, textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
-                if (verified) ...[SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
-              ]),
-              if (username.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text(trUi('@$username'), style: TextStyle(color: s.primary, fontSize: 14, fontWeight: FontWeight.w800))),
+              Tooltip(
+                message: trUi('برای کپی نام لمس کنید'),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () async {
+                    final value = displayName.trim();
+                    if (value.isEmpty) return;
+                    try {
+                      await Clipboard.setData(ClipboardData(text: value));
+                      if (context.mounted) showMsg(context, 'نام کاربر کپی شد: $value');
+                    } catch (_) {
+                      if (context.mounted) showMsg(context, 'کپی نام ناموفق بود.');
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+                      Flexible(child: Text(displayName, textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+                      SizedBox(width: 6),
+                      Icon(Icons.copy_rounded, size: 15, color: s.onSurfaceVariant),
+                      if (verified) ...[SizedBox(width: 7), AnimatedVerifiedBadge(size: 19)],
+                    ]),
+                  ),
+                ),
+              ),
+              if (username.isNotEmpty) Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () async {
+                    final value = '@$username';
+                    try {
+                      await Clipboard.setData(ClipboardData(text: value));
+                      if (context.mounted) showMsg(context, 'نام کاربری کپی شد: $value');
+                    } catch (_) {
+                      if (context.mounted) showMsg(context, 'کپی نام کاربری ناموفق بود.');
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    child: Text(trUi('@$username'), style: TextStyle(color: s.primary, fontSize: 14, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ),
               SizedBox(height: 4),
               Text(isSelf ? 'پروفایل شما' : (isFriend ? 'دوست شما' : (isContact ? 'در فهرست مخاطبین شما' : 'پروفایل کاربر')), style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
             ]),
