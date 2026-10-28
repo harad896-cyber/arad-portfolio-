@@ -8395,6 +8395,7 @@ class GroupProfilePage extends StatefulWidget {
 
 class _GroupProfilePageState extends State<GroupProfilePage> {
   bool loading = true, saving = false;
+  String? loadError;
   Map<String,dynamic> group = {};
   List<Map<String,dynamic>> members = [];
   String myRole = 'member';
@@ -8404,6 +8405,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   @override void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
+    if (mounted) setState(() { loading = true; loadError = null; });
     try {
       final uid = supabase.auth.currentUser!.id;
       final groupRows = await Future.wait<dynamic>([
@@ -8413,7 +8415,17 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       final c = Map<String,dynamic>.from(groupRows[0] as Map);
       final rows = List<Map<String,dynamic>>.from(groupRows[1] as List);
       final ids = rows.map((e) => e['user_id'].toString()).toList();
-      final profiles = ids.isEmpty ? <Map<String,dynamic>>[] : List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online').inFilter('id', ids));
+      List<Map<String,dynamic>> profiles = [];
+      if (ids.isNotEmpty) {
+        // Presence/bio fields are optional in older schemas; do not let them hide the group.
+        try {
+          profiles = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url,bio,is_online').inFilter('id', ids));
+        } catch (_) {
+          try {
+            profiles = List<Map<String,dynamic>>.from(await supabase.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
+          } catch (_) { profiles = []; }
+        }
+      }
       final byId = {for(final p in profiles) p['id'].toString():p};
       final enriched = rows.map((m)=>{...m,'_profile':byId[m['user_id'].toString()] ?? <String,dynamic>{}}).toList()
         ..sort((a,b) => (a['role']=='owner' ? 0 : a['role']=='admin' ? 1 : 2).compareTo(b['role']=='owner' ? 0 : b['role']=='admin' ? 1 : 2));
@@ -8431,7 +8443,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
       }
       if(!mounted)return;
       setState(() {
-        group=Map<String,dynamic>.from(c); members=enriched; myRole=resolvedRole;
+        group=Map<String,dynamic>.from(c); members=enriched; myRole=resolvedRole; loadError=null;
         canAddMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_add_members']==true;
         canRemoveMembers=creatorNow || resolvedRole=='owner' || adminPermissions['can_remove_members']==true;
         canManageMembers=canAddMembers || canRemoveMembers;
@@ -8439,7 +8451,8 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         loading=false;
       });
     } catch(e) {
-      if(!mounted)return; setState(()=>loading=false);
+      if(!mounted)return;
+      setState(() { loading=false; loadError=e.toString(); });
       showMsg(context,'بارگذاری پروفایل گروه ناموفق بود: '+_friendlyError(e.toString()));
     }
   }
@@ -8711,6 +8724,17 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
 
   @override Widget build(BuildContext context) {
     final scheme=Theme.of(context).colorScheme;
+    if (loading) return Scaffold(appBar: AppBar(title: Text(trUi('پروفایل گروه'))), body: Center(child: CircularProgressIndicator()));
+    if (group.isEmpty) return Scaffold(
+      appBar: AppBar(title: Text(trUi('پروفایل گروه'))),
+      body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.cloud_off_rounded, size: 48, color: scheme.onSurfaceVariant),
+        SizedBox(height: 12),
+        Text(trUi('اطلاعات گروه بارگذاری نشد. اتصال اینترنت و دسترسی عضویت را بررسی کنید.'), textAlign: TextAlign.center),
+        if ((loadError ?? '').isNotEmpty) ...[SizedBox(height: 8), Text(loadError!, maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant))],
+        SizedBox(height: 16), FilledButton.icon(onPressed: _load, icon: Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+      ]))),
+    );
     final title='${group['title']??widget.title}';
     final image='${group['avatar_url']??''}';
     final description='${group['description']??''}'.trim();
