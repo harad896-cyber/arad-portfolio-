@@ -999,6 +999,48 @@ final Map<String, String> _hazaragiUi = <String, String>{
   'انتخاب فایل':'فایل ره انتخاب کو',
   'انتخاب تصویر':'عکس ره انتخاب کو',
   'ارسال تصویر':'عکس ره بفرست',
+  'گفتگوها':'گپ‌ها',
+  'گفتگو':'گپ',
+  'مخاطبین':'مخاطب‌ها',
+  'گروه‌ها':'گروپ‌ها',
+  'پروفایل':'پروفایل',
+  'تنظیمات':'تنظیمات',
+  'زبان':'زبان',
+  'زبان رابط کاربری':'زبان برنامه',
+  'حساب کاربری':'حساب کاربری',
+  'حریم خصوصی':'محرمیت',
+  'امنیت':'امنیت',
+  'ظاهر':'نما',
+  'اعلان‌ها':'خبرتیاها',
+  'تماس‌ها':'تماس‌ها',
+  'ذخیره تغییرات':'تغییرات ره ذخیره کو',
+  'جستجو در تنظیمات':'تنظیمات ره جستجو کو',
+  'جستجوی پیام‌ها':'پیغام‌ها ره جستجو کو',
+  'پیام خود را بنویسید…':'پیغام خود ره بنویسین…',
+  'ارسال پیام':'پیغام ره بفرست',
+  'پیام جدید':'پیغام نو',
+  'پیام‌ها':'پیغام‌ها',
+  'حذف':'پاک کو',
+  'حذف برای من':'برای مه پاک کو',
+  'حذف برای همه':'برای همه پاک کو',
+  'پاسخ':'جواب',
+  'پاسخ دادن':'جواب بده',
+  'ویرایش پیام':'پیغام ره جور کو',
+  'گروه جدید':'گروپ نو',
+  'ساخت گروه جدید':'گروپ نو جور کو',
+  'نام گروه':'نام گروپ',
+  'توضیحات گروه':'شرح گروپ',
+  'افزودن عضو':'عضو اضافه کو',
+  'افزودن مخاطب':'مخاطب اضافه کو',
+  'آنلاین':'آنلاین',
+  'در حال بارگذاری…':'د حال بارگذاری…',
+  'خطا':'خطا',
+  'بستن':'بسته کو',
+  'بازگشت':'پس برو',
+  'لغو':'لغو کو',
+  'ذخیره':'ذخیره کو',
+  'روشن':'روشن',
+  'تاریک':'تاریک',
 
 };
 
@@ -2707,10 +2749,55 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);await saveUserSettings({'theme_mode':'dark'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('تاریک'))),
     RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('روشن'))),
   ])));
-  void _showLanguageSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Padding(padding:const EdgeInsets.all(18),child:Text(trUi('زبان'),style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
-    ...AppStrings.supported.map((code)=>RadioListTile<String>(value:code,groupValue:aradLanguageController.locale.languageCode,title:Text(AppStrings.names[code]??code),onChanged:(v)async{if(v==null)return;await aradLanguageController.setLocale(v);await saveUserSettings({'language_code':v});if(mounted){setState(()=>language=AppStrings.names[v]??v);Navigator.pop(context);}})),
-  ])));
+  void _showLanguageSheet() => showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(sheetContext).size.height * .72,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+              child: Row(children: [
+                Expanded(child: Text(trUi('زبان رابط کاربری'),
+                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+                IconButton(
+                  tooltip: trUi('بستن'),
+                  onPressed: () => Navigator.pop(sheetContext),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ]),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                itemCount: AppStrings.supported.length,
+                itemBuilder: (context, index) {
+                  final code = AppStrings.supported[index];
+                  return RadioListTile<String>(
+                    key: ValueKey('language-$code'),
+                    value: code,
+                    groupValue: aradLanguageController.locale.languageCode,
+                    title: Text(AppStrings.names[code] ?? code),
+                    onChanged: (value) async {
+                      if (value == null) return;
+                      await aradLanguageController.setLocale(value);
+                      await saveUserSettings({'language_code': value});
+                      if (mounted) {
+                        setState(() => language = AppStrings.names[value] ?? value);
+                        Navigator.pop(sheetContext);
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
   Future<void> _signOut()async{
     final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
       title:Text(trUi('خروج از حساب؟')),content:Text(trUi('نشست این دستگاه پایان داده می‌شود.')),
