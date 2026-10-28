@@ -6685,6 +6685,7 @@ class PublicUserProfilePage extends StatefulWidget {
 }
 
 class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
+  double _profilePullOffset = 0;
   bool busy = false;
   bool isContact = false;
   bool isFriend = false;
@@ -6888,7 +6889,19 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
           ),
         ],
       ),
-      body: ListView(
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          final next = notification.metrics.pixels;
+          // A downward pull at the top expands the portrait; scrolling up
+          // smoothly returns it to its compact size.
+          final clamped = next < 0 ? next.clamp(-110.0, 0.0).toDouble() : 0.0;
+          if ((clamped - _profilePullOffset).abs() > 1.5 && mounted) {
+            setState(() => _profilePullOffset = clamped);
+          }
+          return false;
+        },
+        child: ListView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
           Container(
@@ -6920,7 +6933,13 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(shape: BoxShape.circle, color: s.surface),
-                    child: avatar(profile, size: 104),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      width: (104 + (-_profilePullOffset * 0.42)).clamp(104.0, 150.0),
+                      height: (104 + (-_profilePullOffset * 0.42)).clamp(104.0, 150.0),
+                      child: avatar(profile, size: (104 + (-_profilePullOffset * 0.42)).clamp(104.0, 150.0)),
+                    ),
                   ),
                 ),
               ),
@@ -7023,6 +7042,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
             ListTile(leading: Icon(Icons.perm_media_outlined), title: Text(trUi('رسانه‌های مشترک')), subtitle: Text(trUi('عکس‌ها، ویدیوها، فایل‌ها و صداها')), trailing: Icon(Icons.chevron_left_rounded), onTap: busy ? null : _openChatMedia),
           ])),
         ],
+      ),
       ),
     );
   }
