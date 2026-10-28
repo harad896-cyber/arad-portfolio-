@@ -13154,110 +13154,30 @@ String _normalizePinDigits(String value) => value.runes.map((rune) {
 
 class AppLockGate extends StatefulWidget {
   final Widget child;
-  AppLockGate({super.key, required this.child});
-  @override State<AppLockGate> createState()=>_AppLockGateState();
+  const AppLockGate({super.key, required this.child});
+
+  @override
+  State<AppLockGate> createState() => _AppLockGateState();
 }
-class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
-  final _secure=FlutterSecureStorage();
-  final _auth=LocalAuthentication();
-  bool locked=false, checking=true, authenticating=false;
-  DateTime? _backgroundAt;
 
-  @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);_check();}
-  @override void dispose(){WidgetsBinding.instance.removeObserver(this);super.dispose();}
+class _AppLockGateState extends State<AppLockGate> {
+  @override
+  void initState() {
+    super.initState();
+    _disableLocalAppLock();
+  }
 
-  Future<void> _check() async {
+  Future<void> _disableLocalAppLock() async {
     try {
-      final prefs = await SharedPreferences.getInstance()
-          .timeout(Duration(seconds: 4));
-      // App PIN has been disabled by the user request. Clear any previous
-      // local lock state so the gate never prompts for an old PIN.
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('app_lock_enabled', false);
       await prefs.setBool('app_lock_biometric', false);
-      await _secure.delete(key: 'app_lock_pin');
-      if (mounted) setState(() { checking = false; locked = false; });
-      return;
-      // Important: stop the startup spinner before asking for the PIN.
-      // Otherwise a correct PIN can unlock the gate while build() keeps
-      // returning the loading screen forever.
-      if (mounted) setState(() { locked = true; checking = false; });
-      await _unlock();
-    } catch (e) {
-      debugPrint('App lock check failed: $e');
-      // A local-preferences failure must not permanently strand the user
-      // on the startup spinner. Let the app open and report the issue.
-      if (mounted) setState(() { checking = false; locked = false; });
+      await const FlutterSecureStorage().delete(key: 'app_lock_pin');
+    } catch (error) {
+      debugPrint('Could not clear disabled app PIN settings: $error');
     }
   }
 
-  @override void didChangeAppLifecycleState(AppLifecycleState state){
-    if(state==AppLifecycleState.paused||state==AppLifecycleState.inactive) _backgroundAt=DateTime.now();
-    if(state==AppLifecycleState.resumed&&_backgroundAt!=null){
-      final elapsed=DateTime.now().difference(_backgroundAt!);
-      if(elapsed.inSeconds>=5) _check();
-      _backgroundAt=null;
-    }
-  }
-
-  Future<void> _unlock() async {
-    if(authenticating)return;
-    authenticating=true;
-    try {
-      final p=await SharedPreferences.getInstance();
-      final bio=p.getBool('app_lock_biometric')??false;
-      if(bio){
-        try {
-          final ok=await _auth.authenticate(localizedReason:'برای ورود به Arad Messenger احراز هویت کنید',options:AuthenticationOptions(biometricOnly:true,useErrorDialogs:true,stickyAuth:true));
-          if(ok){if(mounted)setState(()=>locked=false);return;}
-        } catch(_){}
-      }
-      final storedPin = await _secure.read(key: 'app_lock_pin')
-          .timeout(Duration(seconds: 4));
-      final pin = storedPin == null ? null : _normalizePinDigits(storedPin);
-      if (pin != null && pin.isNotEmpty && mounted) {
-        await _showPin(pin);
-      } else if (mounted) {
-        // Lock enabled without a saved PIN is an invalid configuration;
-        // don't trap the user behind a gate that cannot be unlocked.
-        setState(() => locked = false);
-        showMsg(context, 'رمز قفل ذخیره نشده بود؛ قفل برنامه غیرفعال شد.');
-      }
-    } catch (e) {
-      debugPrint('App unlock failed: $e');
-      if (mounted) {
-        setState(() => locked = false);
-        showMsg(context, 'بازکردن قفل ناموفق بود؛ دوباره از تنظیمات امنیتی تلاش کنید.');
-      }
-    } finally {authenticating=false;}
-  }
-
-  Future<void> _showPin(String pin) async {
-    final c=TextEditingController();
-    String? error;
-    while(mounted&&locked){
-      final entered=await showDialog<String>(context:context,barrierDismissible:false,builder:(ctx)=>AlertDialog(
-        title:Text(trUi('قفل برنامه')),
-        content:TextField(controller:c,autofocus:true,keyboardType:TextInputType.number,obscureText:true,maxLength:6,decoration:InputDecoration(labelText:'PIN',errorText:error)),
-        actions:[FilledButton(onPressed:()=>Navigator.pop(ctx,c.text),child:Text(trUi('باز کردن')))]));
-      if(entered==null)break;
-      if (entered != null && _normalizePinDigits(entered.trim()) == pin) {
-        if (mounted) setState(() => locked = false);
-        break;
-      }
-      error='PIN نادرست است.'; c.clear();
-    }
-    c.dispose();
-  }
-
-  @override Widget build(BuildContext context){
-    if(checking)return Scaffold(body:Center(child:CircularProgressIndicator()));
-    if(!locked)return widget.child;
-    return Scaffold(body:Center(child:Padding(padding:const EdgeInsets.all(28),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
-      Icon(Icons.lock_rounded,size:64),SizedBox(height:18),
-      Text(trUi('Arad Messenger قفل است'),style:TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
-      SizedBox(height:8),Text(trUi('برای ادامه، PIN یا احراز هویت بیومتریک را تأیید کنید.')),
-      SizedBox(height:20),FilledButton.icon(onPressed:_unlock,icon:Icon(Icons.lock_open_rounded),label:Text(trUi('باز کردن')))
-    ]))));
-  }
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
-
