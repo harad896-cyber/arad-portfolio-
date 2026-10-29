@@ -6346,12 +6346,17 @@ class _HomePageState extends State<HomePage> {
                                       width: unread || isPinned ? 2 : 1,
                                     ),
                                   ),
-                                  child: CircleAvatar(
-                                    radius: 25,
-                                    backgroundColor: scheme.primaryContainer,
-                                    backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                                    child: avatarUrl.isEmpty ? Icon(icon, color: scheme.primary, size: 25) : null,
-                                  ),
+                                  child: type == 'direct'
+                                      ? avatar(peer ?? <String, dynamic>{}, size: 50)
+                                      : CircleAvatar(
+                                          radius: 25,
+                                          backgroundColor: scheme.primaryContainer,
+                                          backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                                          onBackgroundImageError: avatarUrl.isEmpty ? null : (_, __) {},
+                                          child: avatarUrl.isEmpty
+                                              ? Icon(icon, color: scheme.primary, size: 25)
+                                              : null,
+                                        ),
                                 ),
                                 if (c['is_online'] == true)
                                   Positioned(right: -1, bottom: -1, child: Container(width: 13, height: 13, decoration: BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 2.3)))),
