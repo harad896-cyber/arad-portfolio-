@@ -606,6 +606,8 @@ class _ProfilePageState extends State<ProfilePage> {
     final b = '${profile['bio'] ?? ''}'.trim();
     final verified = profile['is_verified'] == true;
     final owner = profile['is_owner'] == true || supabase.auth.currentUser?.email?.toLowerCase() == 'harad896@gmail.com';
+    final profileAvatarUrl = '${profile['avatar_url'] ?? ''}'.trim();
+    final profileAvatarFallbackUrl = supabase.auth.currentUser?.id == null ? '' : supabase.storage.from('avatars').getPublicUrl('${supabase.auth.currentUser!.id}/avatar.jpg');
 
     final email = supabase.auth.currentUser?.email?.trim() ?? '';
     final phone = supabase.auth.currentUser?.phone?.trim() ?? '';
@@ -649,23 +651,39 @@ class _ProfilePageState extends State<ProfilePage> {
                     // Render the image as a child so a broken remote URL
                     // cannot leave a blank avatar with no recovery affordance.
                     backgroundImage: null,
-                    child: avatarImage == null
-                        ? Icon(Icons.person_rounded, size: 58, color: s.onSurfaceVariant)
-                        : ClipOval(
-                            child: SizedBox(
-                              width: 116,
-                              height: 116,
-                              child: Image(
-                                image: avatarImage!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Icon(
-                                  Icons.person_rounded,
-                                  size: 58,
-                                  color: s.onSurfaceVariant,
+                    child: profileAvatarUrl.startsWith('emoji:')
+                        ? Text(profileAvatarUrl.substring(6), style: const TextStyle(fontSize: 58))
+                        : avatarImage == null
+                            ? Icon(Icons.person_rounded, size: 58, color: s.onSurfaceVariant)
+                            : ClipOval(
+                                child: SizedBox(
+                                  width: 116,
+                                  height: 116,
+                                  child: Image(
+                                    image: avatarImage!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      if (profileAvatarFallbackUrl.isNotEmpty &&
+                                          profileAvatarFallbackUrl != profileAvatarUrl) {
+                                        return Image.network(
+                                          profileAvatarFallbackUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Icon(
+                                            Icons.person_rounded,
+                                            size: 58,
+                                            color: s.onSurfaceVariant,
+                                          ),
+                                        );
+                                      }
+                                      return Icon(
+                                        Icons.person_rounded,
+                                        size: 58,
+                                        color: s.onSurfaceVariant,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
                   ),
                 ),
                 Positioned(
