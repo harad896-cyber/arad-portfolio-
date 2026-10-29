@@ -9527,24 +9527,46 @@ class _ChatPageState extends State<ChatPage> {
     try {
       // Conversation metadata and recent messages are independent reads.
       // Run them together so opening a chat waits for one network round-trip, not two.
-      final initialRows = await Future.wait<dynamic>([
-        supabase.from('conversations')
+      // Read conversation metadata separately from messages. If metadata is
+      // blocked by a stale schema or an RLS policy, the message history should
+      // still load instead of the whole chat failing before its bubbles render.
+      var conversation = <String, dynamic>{
+        'id': widget.id,
+        'type': _chatType,
+        'title': widget.title,
+        'avatar_url': _groupAvatarUrl,
+        'created_by': null,
+        'created_at': null,
+      };
+      try {
+        final row = await supabase.from('conversations')
             .select('id,type,title,avatar_url,created_by,created_at')
-            .eq('id', widget.id).single()
-            .timeout(Duration(seconds: 8)),
-        supabase.from('messages')
-            .select()
-            .eq('conversation_id', widget.id)
-            .isFilter('deleted_at', null)
-            .order('created_at', ascending: false)
-            .limit(120)
-            .timeout(Duration(seconds: 8)),
-      ]);
-      final conversation = Map<String, dynamic>.from(initialRows[0] as Map);
+            .eq('id', widget.id).maybeSingle()
+            .timeout(Duration(seconds: 8));
+        if (row != null) conversation = <String, dynamic>{...conversation, ...Map<String, dynamic>.from(row)};
+      } catch (metadataError) {
+        debugPrint('Full conversation metadata unavailable; trying stable columns: $metadataError');
+        try {
+          final row = await supabase.from('conversations')
+              .select('id,type,title,avatar_url,created_at')
+              .eq('id', widget.id).maybeSingle()
+              .timeout(Duration(seconds: 5));
+          if (row != null) conversation = <String, dynamic>{...conversation, ...Map<String, dynamic>.from(row)};
+        } catch (stableMetadataError) {
+          debugPrint('Conversation metadata fallback unavailable; rendering with chat header values: $stableMetadataError');
+        }
+      }
+      final messageRows = await supabase.from('messages')
+          .select()
+          .eq('conversation_id', widget.id)
+          .isFilter('deleted_at', null)
+          .order('created_at', ascending: false)
+          .limit(120)
+          .timeout(Duration(seconds: 10));
       // Deduplicate by server ID before composing the timeline. This guards
       // against repeated rows returned during reconnects or overlapping writes.
       final loadedById = <String, Map<String, dynamic>>{};
-      for (final row in List<Map<String, dynamic>>.from(initialRows[1] as List).reversed) {
+      for (final row in List<Map<String, dynamic>>.from(messageRows as List).reversed) {
         final id = row['id']?.toString() ?? '';
         if (id.isNotEmpty) loadedById[id] = row;
       }
@@ -9675,8 +9697,18 @@ class _ChatPageState extends State<ChatPage> {
       }
       final senderIdList = senderIds.toList();
       if (senderIdList.isNotEmpty) {
-        final people = await supabase.from('profiles').select('id,display_name,username,avatar_url,is_online,last_seen').inFilter('id', senderIdList);
-        profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
+        // Profile hydration is supplementary. A profile RLS/schema/network
+        // failure must never discard the messages already fetched above.
+        try {
+          final people = await supabase.from('profiles')
+              .select('id,display_name,username,avatar_url,is_online,last_seen')
+              .inFilter('id', senderIdList)
+              .timeout(Duration(seconds: 6));
+          profiles = {for (final p in List<Map<String, dynamic>>.from(people)) '${p['id']}': p};
+        } catch (profileError) {
+          debugPrint('Chat profiles unavailable; keeping message history visible: $profileError');
+          profiles = {};
+        }
       }
       final ids = loaded.map((m) => '${m['id']}').toList();
       final loadedReactions = <String, List<Map<String, dynamic>>>{};
