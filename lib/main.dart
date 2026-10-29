@@ -5301,6 +5301,7 @@ class _HomePageState extends State<HomePage> {
   final Map<String, DateTime> _recentInviteCodes = <String, DateTime>{};
   StreamSubscription<AuthState>? _homeAuthSubscription;
   String? _observedAuthUserId;
+  DateTime? _lastBackPressedAt;
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -6776,7 +6777,29 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      // Keep the app open on the first system-back press, like common messengers.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop || !mounted) return;
+        final now = DateTime.now();
+        final previous = _lastBackPressedAt;
+        if (previous != null && now.difference(previous) <= const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+          return;
+        }
+        _lastBackPressedAt = now;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('برای خروج، دوباره دکمهٔ برگشت را بزنید'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+      },
+      child: Scaffold(
       body: SafeArea(child: AnimatedSwitcher(duration: Duration(milliseconds: 180), child: KeyedSubtree(
         key: ValueKey('$navIndex-$showContacts'),
         child: showContacts
@@ -6823,6 +6846,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
