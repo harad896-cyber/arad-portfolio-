@@ -4,91 +4,172 @@ import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'polish_widgets.dart';
+import 'chat_background_page.dart';
 import 'secret_chat.dart';
 
-class AdvancedFeaturesPage extends StatefulWidget {
+class AdvancedFeaturesPage extends StatelessWidget {
   const AdvancedFeaturesPage({super.key});
-  @override
-  State<AdvancedFeaturesPage> createState() => _AdvancedFeaturesPageState();
-}
-
-class _AdvancedFeaturesPageState extends State<AdvancedFeaturesPage> {
-  final supabase = Supabase.instance.client;
-  final wallpapers = <String>['پیش‌فرض', 'آرام', 'تیره', 'شفاف'];
-  bool notifications = true;
-  bool readReceipts = true;
-  bool autoBackup = false;
-  String wallpaper = 'پیش‌فرض';
-  String search = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final p = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      notifications = p.getBool('notifications') ?? true;
-      readReceipts = p.getBool('read_receipts') ?? true;
-      autoBackup = p.getBool('auto_backup') ?? false;
-      wallpaper = p.getString('chat_wallpaper') ?? 'پیش‌فرض';
-    });
-  }
-
-  Future<void> _save(String key, Object value) async {
-    final p = await SharedPreferences.getInstance();
-    if (value is bool) await p.setBool(key, value);
-    if (value is String) await p.setString(key, value);
-  }
 
   @override
   Widget build(BuildContext context) {
-    final items = <_FeatureItem>[
-      _FeatureItem(Icons.lock_open_rounded, 'قفل برنامه', 'غیرفعال؛ قفل PIN و اثر انگشت برای ورود خاموش است', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppLockSettingsPage()))),
-      _FeatureItem(Icons.wallpaper_outlined, 'والپیپر گفتگو', 'تنظیم ظاهر گفتگو روی دستگاه', () => _showWallpaper()),
-      _FeatureItem(Icons.folder_copy_outlined, 'پوشه‌های واقعی گفتگو', 'ساخت، ویرایش و دسته‌بندی گفتگوها با همگام‌سازی حساب', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatFolderManagerPage()))),
-      _FeatureItem(Icons.lock_rounded, 'Secret Chat', 'گفتگوی محرمانه برای چت‌های دونفره', () => _openSecretChat()),
-      _FeatureItem(Icons.timer_outlined, 'حذف خودکار پیام‌ها', 'تعیین زمان حذف واقعی پیام‌های جدید در هر گفتگو', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageAutoDeletePage()))),
+    final items = <({IconData icon, String title, String subtitle, Widget page})>[
+      (
+        icon: Icons.wallpaper_outlined,
+        title: 'پس‌زمینهٔ گفتگو',
+        subtitle: 'انتخاب رنگ، عکس و افکت‌های واقعی گفتگو',
+        page: const ChatBackgroundPage(),
+      ),
+      (
+        icon: Icons.folder_copy_outlined,
+        title: 'پوشه‌های گفتگو',
+        subtitle: 'ساخت و دسته‌بندی گفتگوها برای حساب شما',
+        page: const ChatFolderManagerPage(),
+      ),
+      (
+        icon: Icons.lock_rounded,
+        title: 'گفتگوی محرمانه',
+        subtitle: 'باز کردن گفتگوی دونفره در حالت محرمانه',
+        page: const _SecretChatEntryPage(),
+      ),
+      (
+        icon: Icons.timer_outlined,
+        title: 'حذف خودکار پیام‌ها',
+        subtitle: 'تنظیم زمان انقضای پیام‌های جدید',
+        page: const MessageAutoDeletePage(),
+      ),
     ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('قابلیت‌های برنامه')),
+      appBar: AppBar(title: const Text('قابلیت‌های فعال')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(kPolishRadius), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Messenger Plus', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), SizedBox(height: 6), Text('همه قابلیت‌ها بجز کیف پول در یک بخش قابل دسترس هستند.')])) ,
-          const SizedBox(height: 14),
-          ...items.where((e) => search.isEmpty || e.title.contains(search)).map((e) => Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(leading: Icon(e.icon), title: Text(e.title), subtitle: Text(e.subtitle), trailing: const Icon(Icons.chevron_left), onTap: e.action))),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Text(
+                'قابلیت‌هایی که از این بخش باز می‌شوند به صفحه و عملکرد واقعی متصل هستند.',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...items.map((item) => Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: CircleAvatar(child: Icon(item.icon)),
+              title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(item.subtitle),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => item.page),
+              ),
+            ),
+          )),
+          const SizedBox(height: 8),
+          Text(
+            'قفل برنامه و گزینه‌های دیگری که هنوز کامل فعال نیستند عمداً نمایش داده نشده‌اند.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
   }
-
-  Future<void> _openSecretChat() async {
-    final uid = supabase.auth.currentUser?.id;
-    if (uid == null) return;
-    final members = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid));
-    final directIds = <String>[];
-    for (final row in members) {
-      final id = row['conversation_id'].toString();
-      final cm = List<Map<String,dynamic>>.from(await supabase.from('conversation_members').select('user_id').eq('conversation_id', id));
-      if (cm.length == 2) directIds.add(id);
-    }
-    if (!mounted) return;
-    if (directIds.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('هنوز گفتگوی دونفره‌ای ندارید.'))); return; }
-    String? selected = directIds.first;
-    final title = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: const Text('انتخاب گفتگوی محرمانه'), content: DropdownButtonFormField<String>(value: selected, items: directIds.map((id) => DropdownMenuItem(value: id, child: Text(id))).toList(), onChanged: (v) => selected = v), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لغو')), FilledButton(onPressed: () => Navigator.pop(ctx, selected), child: const Text('باز کردن'))]));
-    if (title == null || !mounted) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => SecretChatPage(conversationId: title, title: 'Secret Chat')));
-  }
-
-  void _showWallpaper() => showModalBottomSheet(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [for (final w in wallpapers) RadioListTile<String>(value: w, groupValue: wallpaper, title: Text(w), onChanged: (v) async { if (v == null) return; setState(() => wallpaper = v); await _save('chat_wallpaper', v); if (mounted) Navigator.pop(context); })])));
-
 }
 
+class _SecretChatEntryPage extends StatelessWidget {
+  const _SecretChatEntryPage();
 
+  @override
+  Widget build(BuildContext context) => const _SecretChatLauncher();
+}
+
+class _SecretChatLauncher extends StatefulWidget {
+  const _SecretChatLauncher();
+
+  @override
+  State<_SecretChatLauncher> createState() => _SecretChatLauncherState();
+}
+
+class _SecretChatLauncherState extends State<_SecretChatLauncher> {
+  final supabase = Supabase.instance.client;
+  bool loading = false;
+
+  Future<void> _openSecretChat() async {
+    if (loading) return;
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('برای باز کردن گفتگوی محرمانه ابتدا وارد حساب شوید.')),
+      );
+      return;
+    }
+    setState(() => loading = true);
+    try {
+      final memberships = List<Map<String, dynamic>>.from(
+        await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid),
+      );
+      final directIds = <String>[];
+      for (final row in memberships) {
+        final id = row['conversation_id'].toString();
+        final members = List<Map<String, dynamic>>.from(
+          await supabase.from('conversation_members').select('user_id').eq('conversation_id', id),
+        );
+        if (members.length == 2) directIds.add(id);
+      }
+      if (!mounted) return;
+      if (directIds.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('هنوز گفتگوی دونفره‌ای ندارید.')),
+        );
+        return;
+      }
+      String? selected = directIds.first;
+      final id = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('انتخاب گفتگوی محرمانه'),
+          content: DropdownButtonFormField<String>(
+            value: selected,
+            items: directIds.map((id) => DropdownMenuItem(value: id, child: Text('گفتگو • ${id.substring(0, id.length > 8 ? 8 : id.length)}'))).toList(),
+            onChanged: (value) => selected = value,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('لغو')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, selected), child: const Text('باز کردن')),
+          ],
+        ),
+      );
+      if (id == null || !mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => SecretChatPage(conversationId: id, title: 'گفتگوی محرمانه')),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('باز کردن گفتگوی محرمانه ناموفق بود: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('گفتگوی محرمانه')),
+    body: Center(
+      child: FilledButton.icon(
+        onPressed: loading ? null : _openSecretChat,
+        icon: loading
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.lock_rounded),
+        label: const Text('انتخاب گفتگوی دونفره'),
+      ),
+    ),
+  );
+}
 
 class MessageAutoDeletePage extends StatefulWidget {
   const MessageAutoDeletePage({super.key});
