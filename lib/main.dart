@@ -5421,7 +5421,7 @@ class _HomePageState extends State<HomePage> {
             'created_at': r['created_at'],
             '_peer': peer,
             '_last': last,
-            '_preview': r['preview'] ?? last?['content'] ?? 'هنوز پیامی ارسال نشده',
+            '_preview': r['preview'] ?? last?['body'] ?? last?['content'] ?? 'هنوز پیامی ارسال نشده',
             'unread_count': int.tryParse('${r['unread_count'] ?? 0}') ?? 0,
             'is_online': peer?['is_online'] == true,
           };
@@ -6301,7 +6301,7 @@ class _HomePageState extends State<HomePage> {
                       final id = c['id'].toString();
                       final type = c['type'].toString();
                       final peer = c['_peer'] as Map<String,dynamic>?;
-                      final title = (type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? 'گفتگو') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
+                      final title = (type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? c['title'] ?? 'گفتگوی شخصی') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
                       final avatarUrl = (type == 'direct' ? (peer?['avatar_url'] ?? '') : (c['avatar_url'] ?? '')).toString();
                       final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                       final last = c['_last'] as Map<String,dynamic>?;
@@ -6348,14 +6348,38 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   child: type == 'direct'
                                       ? avatar(peer ?? <String, dynamic>{}, size: 50)
-                                      : CircleAvatar(
-                                          radius: 25,
-                                          backgroundColor: scheme.primaryContainer,
-                                          backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                                          onBackgroundImageError: avatarUrl.isEmpty ? null : (_, __) {},
-                                          child: avatarUrl.isEmpty
-                                              ? Icon(icon, color: scheme.primary, size: 25)
-                                              : null,
+                                      : ClipOval(
+                                          child: SizedBox(
+                                            width: 50,
+                                            height: 50,
+                                            child: avatarUrl.isEmpty
+                                                ? CircleAvatar(
+                                                    radius: 25,
+                                                    backgroundColor: scheme.primaryContainer,
+                                                    child: Icon(icon, color: scheme.primary, size: 25),
+                                                  )
+                                                : Image.network(
+                                                    avatarUrl,
+                                                    fit: BoxFit.cover,
+                                                    gaplessPlayback: true,
+                                                    errorBuilder: (context, error, stackTrace) => Container(
+                                                      color: scheme.primaryContainer,
+                                                      alignment: Alignment.center,
+                                                      child: Icon(icon, color: scheme.primary, size: 25),
+                                                    ),
+                                                    loadingBuilder: (context, child, progress) => progress == null
+                                                        ? child
+                                                        : Container(
+                                                            color: scheme.primaryContainer,
+                                                            alignment: Alignment.center,
+                                                            child: SizedBox(
+                                                              width: 16,
+                                                              height: 16,
+                                                              child: CircularProgressIndicator(strokeWidth: 1.6, color: scheme.primary),
+                                                            ),
+                                                          ),
+                                                  ),
+                                          ),
                                         ),
                                 ),
                                 if (c['is_online'] == true)
