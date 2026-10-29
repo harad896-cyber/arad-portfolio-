@@ -5586,7 +5586,10 @@ class _HomePageState extends State<HomePage> {
             final id = '${row['id'] ?? ''}';
             final type = '${row['type'] ?? 'direct'}';
             final members = membersByConversation[id] ?? <String>[];
-            final peerId = members.where((memberId) => memberId != uid).firstOrNull;
+            String? peerId;
+            for (final memberId in members) {
+              if (memberId != uid) { peerId = memberId; break; }
+            }
             final peer = peerId == null ? null : fallbackProfiles[peerId];
             final last = latestByConversation[id];
             final rawTitle = (type == 'direct'
