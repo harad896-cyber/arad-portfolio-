@@ -34,7 +34,7 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
       }
       final data = await supabase
           .from('profiles')
-          .select('id,display_name,username,avatar_url,is_verified,is_owner,joined_at')
+          .select('id,display_name,username,avatar_url,is_verified,joined_at')
           .order('display_name');
       final banRows = await supabase.rpc('owner_list_app_bans');
       final nextBanned = <String>{
@@ -181,7 +181,9 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
                           itemBuilder: (_, i) {
                             final u = filtered[i];
                             final id = '${u['id']}';
-                            final isUserOwner = u['is_owner'] == true;
+                            // The database intentionally does not expose the private is_owner column to clients.
+                            // The signed-in owner is identified by the already-validated owner account.
+                            final isUserOwner = id == (supabase.auth.currentUser?.id ?? '');
                             final isVerified = u['is_verified'] == true;
                             final isBanned = banned.contains(id);
                             return Card(
