@@ -5530,12 +5530,83 @@ class _HomePageState extends State<HomePage> {
               unique['${row['id']}'] = row;
             }
           }
-          final fallbackChats = unique.values.map((row) => <String, dynamic>{
-            ...row,
-            '_preview': 'گفتگو',
-            'unread_count': 0,
+          // Hydrate fallback rows with peer profiles and latest messages as well.
+          // Without this, an RPC outage showed generic "personal chat" rows and
+          // hid the conversation preview even though the base tables were available.
+          final fallbackIds = unique.keys.where((id) => id.isNotEmpty && id != 'null').toList();
+          final membersByConversation = <String, List<String>>{};
+          final fallbackProfiles = <String, Map<String, dynamic>>{};
+          final latestByConversation = <String, Map<String, dynamic>>{};
+          if (fallbackIds.isNotEmpty) {
+            try {
+              final membershipRows = await supabase.from('conversation_members')
+                  .select('conversation_id,user_id')
+                  .inFilter('conversation_id', fallbackIds)
+                  .timeout(Duration(seconds: 4));
+              for (final member in List<Map<String, dynamic>>.from(membershipRows as List)) {
+                final cid = '${member['conversation_id'] ?? ''}';
+                final memberId = '${member['user_id'] ?? ''}';
+                if (cid.isNotEmpty && memberId.isNotEmpty) {
+                  (membersByConversation[cid] ??= <String>[]).add(memberId);
+                }
+              }
+              final peerIds = membersByConversation.values.expand((v) => v)
+                  .where((id) => id != uid).toSet().toList();
+              if (peerIds.isNotEmpty) {
+                final profileRows = await supabase.from('profiles')
+                    .select('id,username,display_name,avatar_url,is_online')
+                    .inFilter('id', peerIds)
+                    .timeout(Duration(seconds: 4));
+                for (final profile in List<Map<String, dynamic>>.from(profileRows as List)) {
+                  fallbackProfiles['${profile['id']}'] = profile;
+                }
+              }
+            } catch (profileFallbackError) {
+              debugPrint('Fallback peer hydration unavailable: $profileFallbackError');
+            }
+            try {
+              final recentRows = await supabase.from('messages')
+                  .select('id,conversation_id,sender_id,body,message_type,created_at,read_at,deleted_at')
+                  .inFilter('conversation_id', fallbackIds)
+                  .isFilter('deleted_at', null)
+                  .order('created_at', ascending: false)
+                  .limit(200)
+                  .timeout(Duration(seconds: 5));
+              for (final message in List<Map<String, dynamic>>.from(recentRows as List)) {
+                final cid = '${message['conversation_id'] ?? ''}';
+                if (cid.isNotEmpty && !latestByConversation.containsKey(cid)) {
+                  latestByConversation[cid] = message;
+                }
+              }
+            } catch (messageFallbackError) {
+              debugPrint('Fallback message previews unavailable: $messageFallbackError');
+            }
+          }
+          final fallbackChats = unique.values.map((row) {
+            final id = '${row['id'] ?? ''}';
+            final type = '${row['type'] ?? 'direct'}';
+            final members = membersByConversation[id] ?? <String>[];
+            final peerId = members.where((memberId) => memberId != uid).firstOrNull;
+            final peer = peerId == null ? null : fallbackProfiles[peerId];
+            final last = latestByConversation[id];
+            final rawTitle = (type == 'direct'
+                ? (peer?['display_name'] ?? peer?['username'] ?? row['title'] ?? 'گفتگوی شخصی')
+                : (row['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
+            return <String, dynamic>{
+              ...row,
+              'title': rawTitle.trim().isEmpty ? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگوی شخصی') : rawTitle,
+              'avatar_url': row['avatar_url'] ?? peer?['avatar_url'],
+              '_peer': peer,
+              '_last': last,
+              '_preview': last?['body'] ?? 'هنوز پیامی ارسال نشده',
+              'unread_count': 0,
+            };
           }).toList()
-            ..sort((a, b) => '${b['created_at'] ?? ''}'.compareTo('${a['created_at'] ?? ''}'));
+            ..sort((a, b) {
+              final at = (a['_last']?['created_at'] ?? a['created_at'] ?? '').toString();
+              final bt = (b['_last']?['created_at'] ?? b['created_at'] ?? '').toString();
+              return bt.compareTo(at);
+            });
           if (mounted) {
             setState(() {
               chats = fallbackChats;
