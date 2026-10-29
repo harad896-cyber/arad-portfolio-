@@ -3397,7 +3397,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                             errorBuilder: (context, error, stackTrace) {
                                               final peerId = (peer['id'] ?? '').toString();
                                               if (peerId.isNotEmpty) {
-                                                final fallback = supabase.storage.from('avatars').getPublicUrl('\${peerId}/avatar.jpg');
+                                                final fallback = supabase.storage.from('avatars').getPublicUrl('${peerId}/avatar.jpg');
                                                 if (fallback != avatar) {
                                                   return Image.network(
                                                     fallback,
@@ -5474,7 +5474,7 @@ class _HomePageState extends State<HomePage> {
                   .inFilter('id', peerIds).timeout(Duration(seconds: 4));
               final profilesById = <String, Map<String, dynamic>>{
                 for (final profileRow in List<Map<String, dynamic>>.from(profileRows as List))
-                  '\${profileRow['id']}': profileRow,
+                  '${profileRow['id']}': profileRow,
               };
               for (final entry in peerByConversation.entries) {
                 final row = normalizedById[entry.key];
