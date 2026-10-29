@@ -632,8 +632,26 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: CircleAvatar(
                     radius: 58,
                     backgroundColor: s.surfaceContainerHighest,
-                    backgroundImage: avatarImage,
-                    child: avatarImage == null ? const Icon(Icons.person_rounded, size: 58) : null,
+                    // Render the image as a child so a broken remote URL
+                    // cannot leave a blank avatar with no recovery affordance.
+                    backgroundImage: null,
+                    child: avatarImage == null
+                        ? Icon(Icons.person_rounded, size: 58, color: s.onSurfaceVariant)
+                        : ClipOval(
+                            child: SizedBox(
+                              width: 116,
+                              height: 116,
+                              child: Image(
+                                image: avatarImage!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  Icons.person_rounded,
+                                  size: 58,
+                                  color: s.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(
@@ -817,7 +835,12 @@ class _ProfilePageState extends State<ProfilePage> {
             title: const Text('شخصی و مخاطبین', style: TextStyle(fontWeight: FontWeight.w800)),
             subtitle: const Text('دسترسی به مخاطبین و مدیریت ارتباط‌ها'),
             trailing: const Icon(Icons.chevron_left_rounded),
-            onTap: widget.onOpenContacts,
+            onTap: widget.onOpenContacts ?? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ContactsToolsPage()),
+              );
+            },
           ),
           const Divider(height: 1),
           ListTile(
