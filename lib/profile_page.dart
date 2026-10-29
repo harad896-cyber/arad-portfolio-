@@ -62,6 +62,59 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  /// Resolve profile avatar values saved as a URL or a legacy Storage object path.
+  /// The avatars bucket is public in the current Supabase project; if it is made
+  /// private later, create a short-lived signed URL instead.
+  Future<String> _resolveProfileAvatarUrl(String rawValue, String userId) async {
+    final raw = rawValue.trim();
+    if (raw.isEmpty || raw.startsWith('emoji:')) return '';
+    final uri = Uri.tryParse(raw);
+    String? objectPath;
+
+    if (uri != null && (uri.scheme == 'https' || uri.scheme == 'http')) {
+      final segments = uri.pathSegments;
+      final publicIndex = segments.indexOf('public');
+      final signIndex = segments.indexOf('sign');
+      if (segments.length >= 4 && publicIndex >= 0 &&
+          publicIndex + 1 < segments.length && segments[publicIndex + 1] == 'avatars') {
+        objectPath = segments.skip(publicIndex + 2).join('/');
+      } else if (segments.length >= 4 && signIndex >= 0 &&
+          signIndex + 1 < segments.length && segments[signIndex + 1] == 'avatars') {
+        objectPath = segments.skip(signIndex + 2).join('/');
+      } else {
+        // OAuth/provider avatars and other external HTTPS URLs are already usable.
+        return raw;
+      }
+    } else {
+      objectPath = raw.replaceFirst(RegExp(r'^/?avatars/'), '');
+    }
+
+    objectPath = (objectPath ?? '').split('?').first.trim();
+    if (objectPath.isEmpty) objectPath = '$userId/avatar.jpg';
+
+    try {
+      final dynamic buckets = await supabase.storage.listBuckets()
+          .timeout(const Duration(seconds: 4));
+      dynamic avatarBucket;
+      for (final dynamic bucket in buckets) {
+        if (bucket.id.toString() == 'avatars') {
+          avatarBucket = bucket;
+          break;
+        }
+      }
+      if (avatarBucket != null && avatarBucket.public == false) {
+        return await supabase.storage.from('avatars')
+            .createSignedUrl(objectPath, 3600)
+            .timeout(const Duration(seconds: 5));
+      }
+    } catch (error) {
+      // Bucket listing may be restricted. The known project bucket is public,
+      // so continue with its canonical public URL.
+      debugPrint('Could not inspect avatars bucket visibility: $error');
+    }
+    return supabase.storage.from('avatars').getPublicUrl(objectPath);
+  }
+
   Future<void> loadProfile() async {
     var user = supabase.auth.currentUser;
     // On some cold starts the auth SDK restores the token just after this page
@@ -94,7 +147,12 @@ class _ProfilePageState extends State<ProfilePage> {
           username.text = '${profile['username'] ?? ''}';
           bio.text = '${profile['bio'] ?? ''}';
           final cachedUrl = '${profile['avatar_url'] ?? ''}'.trim();
-          if (cachedUrl.isNotEmpty) avatarImage = NetworkImage(cachedUrl);
+          if (cachedUrl.startsWith('emoji:')) {
+            avatarImage = null;
+          } else if (cachedUrl.isNotEmpty) {
+            final resolved = await _resolveProfileAvatarUrl(cachedUrl, user.id);
+            avatarImage = resolved.isEmpty ? null : NetworkImage(resolved);
+          }
           if (mounted) setState(() => loading = false);
         }
       }
@@ -151,7 +209,12 @@ class _ProfilePageState extends State<ProfilePage> {
       username.text = '${profile['username'] ?? ''}';
       bio.text = '${profile['bio'] ?? ''}';
       final url = '${profile['avatar_url'] ?? ''}'.trim();
-      avatarImage = url.isNotEmpty ? NetworkImage(url) : null;
+      if (url.startsWith('emoji:')) {
+        avatarImage = null;
+      } else {
+        final resolved = await _resolveProfileAvatarUrl(url, user.id);
+        avatarImage = resolved.isEmpty ? null : NetworkImage(resolved);
+      }
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(cacheKey, jsonEncode(profile));
@@ -185,7 +248,16 @@ class _ProfilePageState extends State<ProfilePage> {
       username.text = '${profile['username'] ?? ''}';
       bio.text = '${profile['bio'] ?? ''}';
       final fallbackAvatar = '${profile['avatar_url'] ?? ''}'.trim();
-      avatarImage = fallbackAvatar.isNotEmpty ? NetworkImage(fallbackAvatar) : null;
+      if (fallbackAvatar.startsWith('emoji:')) {
+        avatarImage = null;
+      } else {
+        try {
+          final resolved = await _resolveProfileAvatarUrl(fallbackAvatar, user.id);
+          avatarImage = resolved.isEmpty ? null : NetworkImage(resolved);
+        } catch (_) {
+          avatarImage = null;
+        }
+      }
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(cacheKey, jsonEncode(profile));
@@ -324,14 +396,17 @@ class _ProfilePageState extends State<ProfilePage> {
       final uid = supabase.auth.currentUser!.id;
       final path = '$uid/avatar.jpg';
       await supabase.storage.from('avatars').uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
-      final url = '${supabase.storage.from('avatars').getPublicUrl(path)}?v=${DateTime.now().millisecondsSinceEpoch}';
-      await supabase.from('profiles').upsert({'id': uid, 'avatar_url': url});
-      profile['avatar_url'] = url;
+      final canonicalUrl = supabase.storage.from('avatars').getPublicUrl(path);
+      // Store a stable Storage URL in profiles; resolve public/signed URL at read time
+      // so private bucket changes and cached signed URLs do not break the profile.
+      await supabase.from('profiles').upsert({'id': uid, 'avatar_url': canonicalUrl});
+      profile['avatar_url'] = canonicalUrl;
+      final resolvedUrl = await _resolveProfileAvatarUrl(canonicalUrl, uid);
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('arad_profile_cache_${uid}', jsonEncode(profile));
       } catch (_) {}
-      if (mounted) setState(() { avatarImage = NetworkImage(url); });
+      if (mounted) setState(() { avatarImage = resolvedUrl.isEmpty ? null : NetworkImage(resolvedUrl); });
     } catch (e) {
       if (mounted) showMsg(context, 'تغییر عکس ناموفق بود: $e');
     }
