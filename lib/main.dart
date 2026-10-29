@@ -9729,6 +9729,21 @@ class _ChatPageState extends State<ChatPage> {
           }
         }
       }
+      // Publish the actual message history before loading optional profiles,
+      // receipts, reactions, attachments, call records, or group audit data.
+      // A failure in any of those secondary requests must never leave a chat
+      // looking empty when its messages were already fetched successfully.
+      if (mounted) {
+        setState(() {
+          messages = List<Map<String, dynamic>>.from(loaded);
+          timelineItems = loaded
+              .map((message) => <String, dynamic>{...message, '__kind': 'message'})
+              .toList();
+          loading = false;
+          _isSyncing = false;
+        });
+        unawaited(_saveCachedChat(loaded));
+      }
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
       List<Map<String, dynamic>> groupMembers = [];
       List<Map<String, dynamic>> groupEvents = [];
