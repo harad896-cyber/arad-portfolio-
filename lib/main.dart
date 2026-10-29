@@ -3385,8 +3385,32 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                               leading: CircleAvatar(
                                 backgroundColor: scheme.primaryContainer,
-                                backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                                child: avatar.isEmpty ? Icon(icon, color: scheme.primary) : null,
+                                child: avatar.isEmpty
+                                    ? Icon(icon, color: scheme.primary)
+                                    : ClipOval(
+                                        child: SizedBox(
+                                          width: 48,
+                                          height: 48,
+                                          child: Image.network(
+                                            avatar,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              final peerId = (peer['id'] ?? '').toString();
+                                              if (peerId.isNotEmpty) {
+                                                final fallback = supabase.storage.from('avatars').getPublicUrl('\${peerId}/avatar.jpg');
+                                                if (fallback != avatar) {
+                                                  return Image.network(
+                                                    fallback,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (_, __, ___) => Icon(icon, color: scheme.primary),
+                                                  );
+                                                }
+                                              }
+                                              return Icon(icon, color: scheme.primary);
+                                            },
+                                          ),
+                                        ),
+                                      ),
                               ),
                               title: Text((row['title'] ?? 'گفتگو').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800)),
                               subtitle: Text((row['_preview'] ?? 'پیام جدید').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -5426,6 +5450,49 @@ class _HomePageState extends State<HomePage> {
             'is_online': peer?['is_online'] == true,
           };
         }
+        // Hydrate direct-chat participants when the RPC omits peer JSON.
+        try {
+          final needsPeer = normalizedById.values.where((row) =>
+              row['type'] == 'direct' && (row['_peer'] is! Map || (row['_peer'] as Map).isEmpty))
+              .map((row) => row['id'].toString()).toList();
+          if (needsPeer.isNotEmpty) {
+            final memberships = await supabase.from('conversation_members')
+                .select('conversation_id,user_id')
+                .inFilter('conversation_id', needsPeer)
+                .timeout(Duration(seconds: 4));
+            final currentUid = supabase.auth.currentUser?.id ?? '';
+            final peerByConversation = <String, String>{};
+            for (final member in List<Map<String, dynamic>>.from(memberships as List)) {
+              final cid = member['conversation_id']?.toString() ?? '';
+              final memberUid = member['user_id']?.toString() ?? '';
+              if (cid.isNotEmpty && memberUid.isNotEmpty && memberUid != currentUid) peerByConversation[cid] = memberUid;
+            }
+            final peerIds = peerByConversation.values.toSet().toList();
+            if (peerIds.isNotEmpty) {
+              final profileRows = await supabase.from('profiles')
+                  .select('id,username,display_name,avatar_url,is_online')
+                  .inFilter('id', peerIds).timeout(Duration(seconds: 4));
+              final profilesById = <String, Map<String, dynamic>>{
+                for (final profileRow in List<Map<String, dynamic>>.from(profileRows as List))
+                  '\${profileRow['id']}': profileRow,
+              };
+              for (final entry in peerByConversation.entries) {
+                final row = normalizedById[entry.key];
+                final peer = profilesById[entry.value];
+                if (row != null && peer != null) {
+                  row['_peer'] = peer;
+                  final peerName = (peer['display_name'] ?? peer['username'] ?? '').toString().trim();
+                  if (peerName.isNotEmpty && (row['title'] == 'گفتگوی شخصی' || row['title'] == 'گفتگو')) row['title'] = peerName;
+                  if ((row['avatar_url'] ?? '').toString().trim().isEmpty) row['avatar_url'] = peer['avatar_url'];
+                  row['is_online'] = peer['is_online'] == true;
+                }
+              }
+            }
+          }
+        } catch (peerHydrationError) {
+          debugPrint('Direct chat participant hydration failed: $peerHydrationError');
+        }
+
         final enriched = normalizedById.values.toList()
           ..sort((a, b) {
             final aTime = (a['_last']?['created_at'] ?? a['created_at'] ?? '').toString();
