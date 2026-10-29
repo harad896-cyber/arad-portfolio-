@@ -198,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> saveProfile() async {
+  Future<void> saveProfile([BuildContext? editorContext]) async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
     final display = name.text.trim();
@@ -226,7 +226,8 @@ class _ProfilePageState extends State<ProfilePage> {
         await prefs.setString('arad_profile_cache_${user.id}', jsonEncode(profile));
       } catch (_) {}
       if (mounted) {
-        Navigator.pop(context);
+        // Dismiss the editor sheet, not the profile page behind it.
+        Navigator.of(editorContext ?? context).pop();
         showMsg(context, 'پروفایل ذخیره شد.');
         setState(() {});
       }
@@ -582,7 +583,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 18),
                     SizedBox(width: double.infinity, child: FilledButton.icon(
                       style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      onPressed: saving ? null : saveProfile,
+                      onPressed: saving ? null : () => saveProfile(sheet),
                       icon: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check_rounded),
                       label: Text(saving ? 'در حال ذخیره…' : 'ذخیره تغییرات', style: const TextStyle(fontWeight: FontWeight.w800)),
                     )),
