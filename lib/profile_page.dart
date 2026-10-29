@@ -63,15 +63,28 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> loadProfile() async {
-    final user = supabase.auth.currentUser;
+    var user = supabase.auth.currentUser;
+    // On some cold starts the auth SDK restores the token just after this page
+    // is constructed. Ask Supabase to restore/validate it once instead of
+    // immediately rendering an empty profile.
     if (user == null) {
-      if (mounted) setState(() => loading = false);
+      try {
+        user = (await supabase.auth.getUser().timeout(const Duration(seconds: 5))).user;
+      } catch (authError) {
+        debugPrint('Profile auth restore failed: $authError');
+      }
+    }
+    if (user == null) {
+      if (mounted) {
+        setState(() => loading = false);
+        showMsg(context, 'حساب واردشده پیدا نشد؛ یک‌بار از حساب خارج و دوباره وارد شوید.');
+      }
       return;
     }
     final cacheKey = 'arad_profile_cache_${user.id}';
     // Paint the last known profile immediately; refresh from Supabase in the background.
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
       final cached = prefs.getString(cacheKey);
       if (cached != null && cached.isNotEmpty) {
         final decoded = jsonDecode(cached);
