@@ -5340,6 +5340,30 @@ class _HomePageState extends State<HomePage> {
 
       // 1) Membership is the source of truth: never expose conversations
       // simply because the current user created them.
+      // Restore the last known list first. A temporary RLS/network failure
+      // must never make the user's chat history disappear from the UI.
+      try {
+        final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 3));
+        final cached = prefs.getString('arad_home_chats_cache_$uid');
+        if (chats.isEmpty && cached != null && cached.isNotEmpty) {
+          final decoded = jsonDecode(cached);
+          if (decoded is List) {
+            final restored = decoded
+                .whereType<Map>()
+                .map((row) => Map<String, dynamic>.from(row))
+                .toList();
+            if (restored.isNotEmpty && mounted) {
+              setState(() {
+                chats = restored;
+                loading = false;
+              });
+            }
+          }
+        }
+      } catch (cacheError) {
+        debugPrint('Cached chat restore failed: $cacheError');
+      }
+
       final membershipResponse = await supabase
           .from('conversation_members')
           .select('conversation_id')
@@ -5352,18 +5376,15 @@ class _HomePageState extends State<HomePage> {
           .toList();
 
       if (conversationIds.isEmpty) {
+        // An empty response can be caused by session/RLS timing. Keep any
+        // restored history rather than deleting the user's local cache.
         if (mounted) {
           setState(() {
-            chats = [];
             loading = false;
-            homeLoadError = null;
+            homeLoadError = chats.isEmpty
+                ? null
+                : 'گفتگوهای ذخیره‌شده نمایش داده می‌شوند؛ برای همگام‌سازی دوباره تلاش کنید.';
           });
-        }
-        try {
-          final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
-          await prefs.remove(_homeCacheKey);
-        } catch (cacheError) {
-          debugPrint('Empty chat cache cleanup failed: $cacheError');
         }
         await _loadChatListPreferences(uid);
         return;
@@ -5387,7 +5408,16 @@ class _HomePageState extends State<HomePage> {
       // clickable phantom item.
       final visibleIds = conversationsById.keys.toList();
       if (visibleIds.isEmpty) {
-        if (mounted) setState(() { chats = []; loading = false; homeLoadError = null; });
+        // The membership table may briefly be hidden while the session settles.
+        // Do not replace a previously restored list with an empty screen.
+        if (mounted) {
+          setState(() {
+            loading = false;
+            homeLoadError = chats.isEmpty
+                ? 'گفتگویی از سرور برنگشت. برای بررسی اتصال و دسترسی دوباره تلاش کنید.'
+                : 'گفتگوهای ذخیره‌شده نمایش داده می‌شوند؛ همگام‌سازی سرور ناموفق بود.';
+          });
+        }
         await _loadChatListPreferences(uid);
         return;
       }
@@ -5396,54 +5426,70 @@ class _HomePageState extends State<HomePage> {
       // non-deleted message per conversation. Missing previews are fetched
       // individually below so older but active conversations still show their
       // true latest message.
-      final messageResponse = await supabase
-          .from('messages')
-          .select('id,conversation_id,sender_id,body,message_type,created_at,read_at,deleted_at')
-          .inFilter('conversation_id', visibleIds)
-          .isFilter('deleted_at', null)
-          .order('created_at', ascending: false)
-          .limit(1000)
-          .timeout(const Duration(seconds: 10));
       final latestByConversation = <String, Map<String, dynamic>>{};
-      for (final row in List<Map<String, dynamic>>.from(messageResponse as List)) {
-        final id = row['conversation_id']?.toString() ?? '';
-        if (id.isNotEmpty) latestByConversation.putIfAbsent(id, () => row);
+      // Preview queries are optional: if messages have an RLS/schema/network
+      // issue, still show the conversations instead of failing the whole page.
+      try {
+        final messageResponse = await supabase
+            .from('messages')
+            .select('id,conversation_id,sender_id,body,message_type,created_at,read_at,deleted_at')
+            .inFilter('conversation_id', visibleIds)
+            .isFilter('deleted_at', null)
+            .order('created_at', ascending: false)
+            .limit(1000)
+            .timeout(const Duration(seconds: 10));
+        for (final row in List<Map<String, dynamic>>.from(messageResponse as List)) {
+          final id = row['conversation_id']?.toString() ?? '';
+          if (id.isNotEmpty) latestByConversation.putIfAbsent(id, () => row);
+        }
+      } catch (messageError) {
+        debugPrint('Latest-message preview query failed; keeping chat list: $messageError');
       }
 
-      // For conversations outside the recent-message window, fetch only their
-      // latest message, in small batches to avoid a huge unbounded request.
+      // For chats without a preview, try one lightweight request per chat.
+      // Failure to read a preview must not hide that chat from the list.
       final missingLatestIds = visibleIds.where((id) => !latestByConversation.containsKey(id)).toList();
       for (var offset = 0; offset < missingLatestIds.length; offset += 8) {
         final batch = missingLatestIds.skip(offset).take(8);
         final results = await Future.wait(batch.map((id) async {
-          final rows = await supabase.from('messages')
-              .select('id,conversation_id,sender_id,body,message_type,created_at,read_at,deleted_at')
-              .eq('conversation_id', id)
-              .isFilter('deleted_at', null)
-              .order('created_at', ascending: false)
-              .limit(1)
-              .timeout(const Duration(seconds: 6));
-          final list = List<Map<String, dynamic>>.from(rows as List);
-          return list.isEmpty ? null : list.first;
+          try {
+            final rows = await supabase.from('messages')
+                .select('id,conversation_id,sender_id,body,message_type,created_at,read_at,deleted_at')
+                .eq('conversation_id', id)
+                .isFilter('deleted_at', null)
+                .order('created_at', ascending: false)
+                .limit(1)
+                .timeout(const Duration(seconds: 4));
+            final list = List<Map<String, dynamic>>.from(rows as List);
+            return list.isEmpty ? null : list.first;
+          } catch (messageError) {
+            debugPrint('Latest message lookup failed for $id: $messageError');
+            return null;
+          }
         }));
         for (final row in results) {
           if (row != null) latestByConversation[row['conversation_id'].toString()] = row;
         }
       }
 
-      // 4) Hydrate the other participant for direct chats.
-      final memberResponse = await supabase
-          .from('conversation_members')
-          .select('conversation_id,user_id')
-          .inFilter('conversation_id', visibleIds)
-          .timeout(const Duration(seconds: 8));
+      // 4) Peer names are optional too. If membership/profile hydration fails,
+      // keep each chat visible using the conversation's own title as fallback.
       final peerByConversation = <String, String>{};
-      for (final row in List<Map<String, dynamic>>.from(memberResponse as List)) {
-        final conversationId = row['conversation_id']?.toString() ?? '';
-        final memberId = row['user_id']?.toString() ?? '';
-        if (conversationId.isNotEmpty && memberId.isNotEmpty && memberId != uid) {
-          peerByConversation.putIfAbsent(conversationId, () => memberId);
+      try {
+        final memberResponse = await supabase
+            .from('conversation_members')
+            .select('conversation_id,user_id')
+            .inFilter('conversation_id', visibleIds)
+            .timeout(const Duration(seconds: 8));
+        for (final row in List<Map<String, dynamic>>.from(memberResponse as List)) {
+          final conversationId = row['conversation_id']?.toString() ?? '';
+          final memberId = row['user_id']?.toString() ?? '';
+          if (conversationId.isNotEmpty && memberId.isNotEmpty && memberId != uid) {
+            peerByConversation.putIfAbsent(conversationId, () => memberId);
+          }
         }
+      } catch (memberError) {
+        debugPrint('Peer membership lookup failed; keeping chat list: $memberError');
       }
       final peerIds = peerByConversation.values.toSet().toList();
       final profilesById = <String, Map<String, dynamic>>{};
