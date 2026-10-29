@@ -9637,8 +9637,8 @@ class _ChatPageState extends State<ChatPage> {
       // Read conversation metadata separately from messages. If metadata is
       // blocked by a stale schema or an RLS policy, the message history should
       // still load instead of the whole chat failing before its bubbles render.
-      // Start the history request immediately. Metadata is useful for the header,
-      // but it must not delay the first visible message bubbles.
+      // Start history and metadata together. The first visible messages should
+      // never wait for a slower optional conversation-header request.
       final messageRowsFuture = supabase.from('messages')
           .select()
           .eq('conversation_id', widget.id)
@@ -9647,32 +9647,36 @@ class _ChatPageState extends State<ChatPage> {
           .limit(120)
           .timeout(Duration(seconds: 10));
 
-      var conversation = <String, dynamic>{
-        'id': widget.id,
-        'type': _chatType,
-        'title': widget.title,
-        'avatar_url': _groupAvatarUrl,
-        'created_by': null,
-        'created_at': null,
-      };
-      try {
-        final row = await supabase.from('conversations')
-            .select('id,type,title,avatar_url,created_by,created_at')
-            .eq('id', widget.id).maybeSingle()
-            .timeout(Duration(seconds: 8));
-        if (row != null) conversation = <String, dynamic>{...conversation, ...Map<String, dynamic>.from(row)};
-      } catch (metadataError) {
-        debugPrint('Full conversation metadata unavailable; trying stable columns: $metadataError');
+      final conversationFuture = (() async {
+        var conversation = <String, dynamic>{
+          'id': widget.id,
+          'type': _chatType,
+          'title': widget.title,
+          'avatar_url': _groupAvatarUrl,
+          'created_by': null,
+          'created_at': null,
+        };
         try {
           final row = await supabase.from('conversations')
-              .select('id,type,title,avatar_url,created_at')
+              .select('id,type,title,avatar_url,created_by,created_at')
               .eq('id', widget.id).maybeSingle()
-              .timeout(Duration(seconds: 5));
+              .timeout(Duration(seconds: 8));
           if (row != null) conversation = <String, dynamic>{...conversation, ...Map<String, dynamic>.from(row)};
-        } catch (stableMetadataError) {
-          debugPrint('Conversation metadata fallback unavailable; rendering with chat header values: $stableMetadataError');
+        } catch (metadataError) {
+          debugPrint('Full conversation metadata unavailable; trying stable columns: $metadataError');
+          try {
+            final row = await supabase.from('conversations')
+                .select('id,type,title,avatar_url,created_at')
+                .eq('id', widget.id).maybeSingle()
+                .timeout(Duration(seconds: 5));
+            if (row != null) conversation = <String, dynamic>{...conversation, ...Map<String, dynamic>.from(row)};
+          } catch (stableMetadataError) {
+            debugPrint('Conversation metadata fallback unavailable; rendering with chat header values: $stableMetadataError');
+          }
         }
-      }
+        return conversation;
+      })();
+
       final messageRows = await messageRowsFuture;
       // Deduplicate by server ID before composing the timeline. This guards
       // against repeated rows returned during reconnects or overlapping writes.
@@ -9781,6 +9785,7 @@ class _ChatPageState extends State<ChatPage> {
         });
         unawaited(_saveCachedChat(loaded));
       }
+      final conversation = await conversationFuture;
       final senderIds = loaded.map((m) => '${m['sender_id']}').toSet();
       List<Map<String, dynamic>> groupMembers = [];
       List<Map<String, dynamic>> groupEvents = [];
