@@ -5359,9 +5359,12 @@ class _HomePageState extends State<HomePage> {
             homeLoadError = null;
           });
         }
-        final prefs = await SharedPreferences.getInstance()
-            .timeout(const Duration(seconds: 2)).catchError((_) => null);
-        if (prefs != null) await prefs.remove(_homeCacheKey);
+        try {
+          final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
+          await prefs.remove(_homeCacheKey);
+        } catch (cacheError) {
+          debugPrint('Empty chat cache cleanup failed: $cacheError');
+        }
         await _loadChatListPreferences(uid);
         return;
       }
