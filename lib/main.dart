@@ -9637,6 +9637,16 @@ class _ChatPageState extends State<ChatPage> {
       // Read conversation metadata separately from messages. If metadata is
       // blocked by a stale schema or an RLS policy, the message history should
       // still load instead of the whole chat failing before its bubbles render.
+      // Start the history request immediately. Metadata is useful for the header,
+      // but it must not delay the first visible message bubbles.
+      final messageRowsFuture = supabase.from('messages')
+          .select()
+          .eq('conversation_id', widget.id)
+          .isFilter('deleted_at', null)
+          .order('created_at', ascending: false)
+          .limit(120)
+          .timeout(Duration(seconds: 10));
+
       var conversation = <String, dynamic>{
         'id': widget.id,
         'type': _chatType,
@@ -9663,13 +9673,7 @@ class _ChatPageState extends State<ChatPage> {
           debugPrint('Conversation metadata fallback unavailable; rendering with chat header values: $stableMetadataError');
         }
       }
-      final messageRows = await supabase.from('messages')
-          .select()
-          .eq('conversation_id', widget.id)
-          .isFilter('deleted_at', null)
-          .order('created_at', ascending: false)
-          .limit(120)
-          .timeout(Duration(seconds: 10));
+      final messageRows = await messageRowsFuture;
       // Deduplicate by server ID before composing the timeline. This guards
       // against repeated rows returned during reconnects or overlapping writes.
       final loadedById = <String, Map<String, dynamic>>{};
@@ -10977,7 +10981,8 @@ class _ChatPageState extends State<ChatPage> {
         'user_id': supabase.auth.currentUser!.id,
       });
       await _saveCachedChat(messages);
-      await load();
+      // The current screen is already updated optimistically; a full history
+      // reload here only adds latency and another round-trip.
     } catch (e) {
       // A local "delete for me" should remain deleted on this device even if
       // the network/RLS write fails. Keep the tombstone and filtered cache;
@@ -11020,7 +11025,8 @@ class _ChatPageState extends State<ChatPage> {
         throw StateError('پیام در سرور حذف نشد؛ دسترسی حذف برای این پیام تأیید نشد.');
       }
       await _saveCachedChat(messages);
-      await load();
+      // Realtime propagates the deletion to other members; avoid blocking this
+      // screen on a redundant full history reload.
     } catch (e) {
       await _setLocalMessageHidden(messageId, false);
       if (mounted) setState(() {
