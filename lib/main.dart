@@ -11984,7 +11984,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
     } else {
-      content = Text(body, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 14.8, height: 1.48, letterSpacing: .05, color: textColor));
+      content = _buildMessageText(body, textColor, mine);
     }
 
     return Align(
@@ -12390,6 +12390,70 @@ class _ChatPageState extends State<ChatPage> {
       await load();
     } catch (e) {
       if (mounted) showMsg(context, 'عملیات مدیریت عضو ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  // Render @usernames as real profile links, not plain message text.
+  // WidgetSpan keeps each username inline and gives it its own tap target.
+  Widget _buildMessageText(String body, Color textColor, bool mine) {
+    final matches = RegExp(r'(?<![A-Za-z0-9._%+-])@([A-Za-z0-9_]{2,32})')
+        .allMatches(body).toList();
+    if (matches.isEmpty) {
+      return Text(body, textDirection: TextDirection.rtl,
+          style: TextStyle(fontSize: 14.8, height: 1.48, letterSpacing: .05, color: textColor));
+    }
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final match in matches) {
+      if (match.start > cursor) spans.add(TextSpan(text: body.substring(cursor, match.start)));
+      final username = match.group(1)!;
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(7),
+          onTap: () => _openUsernameProfile(username),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: (mine ? Colors.white : Theme.of(context).colorScheme.primary)
+                  .withValues(alpha: mine ? .17 : .12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: (mine ? Colors.white : Theme.of(context).colorScheme.primary)
+                    .withValues(alpha: .30),
+              ),
+            ),
+            child: Text('@$username',
+              style: TextStyle(fontSize: 14.4, height: 1.35,
+                fontWeight: FontWeight.w900,
+                color: mine ? Colors.white : Theme.of(context).colorScheme.primary)),
+          ),
+        ),
+      ));
+      cursor = match.end;
+    }
+    if (cursor < body.length) spans.add(TextSpan(text: body.substring(cursor)));
+    return Text.rich(TextSpan(children: spans),
+      textDirection: TextDirection.rtl,
+      style: TextStyle(fontSize: 14.8, height: 1.48, letterSpacing: .05, color: textColor));
+  }
+
+  Future<void> _openUsernameProfile(String username) async {
+    final value = username.trim().replaceFirst(RegExp(r'^@'), '');
+    if (value.isEmpty) return;
+    try {
+      final row = await supabase.from('profiles')
+          .select('id,username,display_name,avatar_url,bio,is_online,last_seen,is_verified,created_at,joined_at')
+          .eq('username', value).maybeSingle();
+      if (row == null || !mounted) {
+        if (mounted) showMsg(context, 'این نام کاربری پیدا نشد.');
+        return;
+      }
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PublicUserProfilePage(profile: Map<String, dynamic>.from(row)),
+      ));
+    } catch (e) {
+      if (mounted) showMsg(context, 'باز کردن حساب ناموفق بود: ${_friendlyError(e.toString())}');
     }
   }
 
