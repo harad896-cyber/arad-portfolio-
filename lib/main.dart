@@ -5387,6 +5387,7 @@ class _HomePageState extends State<HomePage> {
           .where((id) => id.isNotEmpty && id != 'null')
           .toSet()
           .toList();
+      debugPrint('Chat list membership read user=${uid.substring(0, uid.length > 8 ? 8 : uid.length)} rows=${(membershipResponse as List).length} unique_conversations=${conversationIds.length}');
 
       if (conversationIds.isEmpty) {
         // An empty response can be caused by session/RLS timing. Keep any
@@ -5578,7 +5579,11 @@ class _HomePageState extends State<HomePage> {
       }
       await _loadChatListPreferences(uid);
     } catch (error) {
-      debugPrint('Chat list load failed: $error');
+      if (error is PostgrestException) {
+        debugPrint('Chat list Supabase failure user=${uid == null ? 'none' : uid.substring(0, uid.length > 8 ? 8 : uid.length)} code=${error.code} message=${error.message} details=${error.details}');
+      } else {
+        debugPrint('Chat list load failed: $error');
+      }
       if (mounted) {
         setState(() {
           loading = false;
@@ -6522,6 +6527,50 @@ class _HomePageState extends State<HomePage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _openContactChat(Map<String, dynamic> contact) async {
+    final uid = supabase.auth.currentUser?.id;
+    final peerId = contact['id']?.toString() ?? '';
+    if (uid == null || peerId.isEmpty) {
+      if (mounted) showMsg(context, 'حساب یا شناسهٔ مخاطب در دسترس نیست؛ دوباره وارد شوید.');
+      return;
+    }
+    if (peerId == uid) {
+      if (mounted) showMsg(context, 'نمی‌توانید با حساب خودتان گفتگوی شخصی باز کنید.');
+      return;
+    }
+    try {
+      // Resolve/create the direct conversation on the server. The contact list
+      // may not have a cached conversation_id (e.g. a newly accepted contact).
+      final result = await supabase.rpc(
+        'create_direct_conversation',
+        params: {'p_peer_id': peerId},
+      ).timeout(const Duration(seconds: 10));
+      final conversationId = result?.toString() ?? '';
+      if (conversationId.isEmpty || conversationId == 'null') {
+        throw StateError('شناسهٔ گفتگوی شخصی از سرور دریافت نشد.');
+      }
+      final title = (contact['_local_name']?.toString().trim().isNotEmpty ?? false)
+          ? contact['_local_name'].toString()
+          : (contact['display_name'] ?? contact['username'] ?? 'گفتگو').toString();
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ChatPage(id: conversationId, title: title),
+      ));
+      if (mounted) {
+        setState(() => _contactsFuture = null);
+        unawaited(load());
+      }
+    } catch (error) {
+      if (error is PostgrestException) {
+        debugPrint('Open contact chat Supabase failure code=${error.code} message=${error.message} details=${error.details}');
+      } else {
+        debugPrint('Open contact chat failed: $error');
+      }
+      if (mounted) showMsg(context,
+        'گفتگو باز نشد: ${_friendlyError(error.toString())}');
+    }
+  }
+
   Future<void> _openContactSearch() async {
     await showSearch(context: context, delegate: ContactSearchDelegate());
     if (mounted) setState(() => _contactsFuture = null);
@@ -6630,7 +6679,7 @@ class _HomePageState extends State<HomePage> {
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicUserProfilePage(profile: p))),
                   trailing: IconButton.filledTonal(
                     tooltip: 'پیام',
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: p['_conversation_id'].toString(), title: title))),
+                    onPressed: () => _openContactChat(p),
                     icon: Icon(Icons.chat_bubble_rounded),
                   ),
                 ),
@@ -6649,14 +6698,15 @@ class _HomePageState extends State<HomePage> {
     try {
       prefs = await SharedPreferences.getInstance().timeout(Duration(seconds: 2));
     } catch (error) {
-      debugPrint('Contacts local cache unavailable: $error');
+      debugPrint('Contacts local cache unavailable; querying server without cache: $error');
       try {
         return await _refreshContactsWithoutCache(uid).timeout(
           Duration(seconds: 8),
-          onTimeout: () => <Map<String, dynamic>>[],
+          onTimeout: () => throw TimeoutException('بارگذاری مخاطبین بیش از حد طول کشید.'),
         );
-      } catch (_) {
-        return <Map<String, dynamic>>[];
+      } catch (refreshError) {
+        debugPrint('Contacts server fallback failed: $refreshError');
+        rethrow;
       }
     }
     final cacheKey = 'arad_contacts_cache_$uid';
@@ -6747,14 +6797,25 @@ class _HomePageState extends State<HomePage> {
       await prefs.setString(cacheKey, jsonEncode(result));
       return result;
     } catch (error) {
-      debugPrint('Contacts refresh failed; using cached contacts: $error');
+      if (error is PostgrestException) {
+        debugPrint('Contacts Supabase failure code=${error.code} message=${error.message} details=${error.details}');
+      } else {
+        debugPrint('Contacts refresh failed: $error');
+      }
       final raw = prefs.getString(cacheKey);
       if (raw != null && raw.isNotEmpty) {
-        return (jsonDecode(raw) as List)
-            .map((item) => Map<String, dynamic>.from(item as Map))
-            .toList();
+        try {
+          final cached = (jsonDecode(raw) as List)
+              .map((item) => Map<String, dynamic>.from(item as Map))
+              .toList();
+          debugPrint('Contacts fallback returned ${cached.length} cached rows');
+          return cached;
+        } catch (cacheError) {
+          debugPrint('Contacts cache decode failed: $cacheError');
+        }
       }
-      return <Map<String, dynamic>>[];
+      // Do not misreport a failed Supabase request as "you have no contacts".
+      rethrow;
     }
   }
 
