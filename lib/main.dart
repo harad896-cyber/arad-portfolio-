@@ -8076,7 +8076,29 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
   Future<void> _load() async {
     final id=widget.conversationId; if(id.isEmpty){if(mounted)setState(()=>loading=false);return;}
     try{
-      final ms=List<Map<String,dynamic>>.from(await supabase.from('messages').select('id,body,message_type,created_at,sender_id').eq('conversation_id',id).order('created_at',ascending:false).limit(200));
+      final ms=List<Map<String,dynamic>>.from(await supabase.from('messages')
+          .select('id,body,message_type,created_at,sender_id')
+          .eq('conversation_id',id)
+          .isFilter('deleted_at', null)
+          .order('created_at',ascending:false)
+          .limit(200));
+      // Shared media must follow the same per-user "delete for me" rule as chat.
+      final currentUid = supabase.auth.currentUser?.id;
+      if (currentUid != null && ms.isNotEmpty) {
+        final messageIds = ms.map((m) => '${m['id']}').toList();
+        try {
+          final hiddenRows = await supabase.from('message_user_deletions')
+              .select('message_id')
+              .eq('user_id', currentUid)
+              .inFilter('message_id', messageIds);
+          final hiddenIds = (hiddenRows as List)
+              .map((r) => '${r['message_id']}')
+              .toSet();
+          ms.removeWhere((m) => hiddenIds.contains('${m['id']}'));
+        } catch (visibilityError) {
+          debugPrint('Shared-media deletion filter unavailable: $visibilityError');
+        }
+      }
       final ids=ms.map((m)=>'${m['id']}').toList();
       final aa=<String,Map<String,dynamic>>{};
       if(ids.isNotEmpty){ final ar=await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id',ids); for(final a in List<Map<String,dynamic>>.from(ar)) aa['${a['message_id']}']=a; }
@@ -10273,22 +10295,29 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> sendFile() async {
     if (sending) return;
+    String? uploadedPath;
+    String? createdMessageId;
+    setState(() => sending = true);
     try {
+      // Lock the action before opening the picker to prevent multiple pickers
+      // and duplicate uploads when the user taps the attachment button quickly.
       final result = await FilePicker.platform.pickFiles(withData: true);
-      if (result == null) return;
+      if (result == null || !mounted) return;
       final f = result.files.single;
       final localPath = f.path;
       final bytes = f.bytes ?? (localPath == null || localPath.isEmpty
           ? null
           : await XFile(localPath).readAsBytes());
       if (bytes == null || bytes.isEmpty) throw Exception('خواندن فایل ناموفق بود');
-      if (bytes.isEmpty) throw Exception('فایل خالی است');
       final mime = _mimeType(f.name);
       final isAudio = mime.startsWith('audio/');
       final isImage = mime.startsWith('image/');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${f.name}';
-      setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: mime, upsert: false));
+      final safeName = f.name.trim().replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+      final path = '${widget.id}/${DateTime.now().microsecondsSinceEpoch}_${safeName.isEmpty ? 'attachment' : safeName}';
+      uploadedPath = path;
+      await supabase.storage.from('chat-media').uploadBinary(
+        path, bytes, fileOptions: FileOptions(contentType: mime, upsert: false));
+      if (!mounted) return;
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
         'sender_id': supabase.auth.currentUser!.id,
@@ -10296,6 +10325,7 @@ class _ChatPageState extends State<ChatPage> {
         'message_type': isAudio ? 'audio' : (isImage ? 'image' : 'file'),
         'reply_to': replyMessage?['id'],
       }).select().single();
+      createdMessageId = msg['id']?.toString();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
         'storage_path': path,
@@ -10307,7 +10337,14 @@ class _ChatPageState extends State<ChatPage> {
       await load();
       _restoreComposerFocus();
     } catch (e) {
-      if (mounted) showMsg(context, 'فایل ارسال نشد: $e');
+      // Avoid leaving an orphaned object/message when a later upload step fails.
+      if (createdMessageId != null) {
+        try { await supabase.from('messages').delete().eq('id', createdMessageId!); } catch (_) {}
+      }
+      if (uploadedPath != null) {
+        try { await supabase.storage.from('chat-media').remove([uploadedPath!]); } catch (_) {}
+      }
+      if (mounted) showMsg(context, 'فایل ارسال نشد: ${_friendlyError(e.toString())}');
     } finally {
       if (mounted) setState(() => sending = false);
     }
@@ -12439,7 +12476,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openUsernameProfile(String username) async {
-    final value = username.trim().replaceFirst(RegExp(r'^@'), '');
+    final value = username.trim().replaceFirst(RegExp(r'^@'), '').toLowerCase();
     if (value.isEmpty) return;
     try {
       final row = await supabase.from('profiles')
