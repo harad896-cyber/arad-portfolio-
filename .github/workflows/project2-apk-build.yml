@@ -101,7 +101,7 @@ jobs:
               extra_data = '\n                      <data android:scheme="arad" android:host="group" />\n                      <data android:scheme="arad" android:host="chat" />\n                      <data android:scheme="arad" android:host="story" />'
               if invite_data in s and 'android:host="group"' not in s:
                   s = s.replace(invite_data, invite_data + extra_data, 1)
-          p.write_text(chr(10).join(lines) + chr(10))
+          p.write_text(s)
           PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test --no-pub
