@@ -1,4 +1,5 @@
 name: Project 2 APK Build
+# Rebuild latest Project 2 branding changes after cancelled run
 
 concurrency:
   group: project2-apk-build
