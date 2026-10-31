@@ -25,6 +25,30 @@ jobs:
           cache: true
       - name: Generate supported Android project
         run: flutter create --platforms=android --project-name arad_messenger .
+      - name: Ensure Android plugin repositories are available
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('android/settings.gradle.kts')
+          s = p.read_text()
+          # Kotlin/Gradle plugins and their transitive artifacts are published
+          # across Google's Maven repository and Maven Central, not only the
+          # Gradle Plugin Portal.
+          match = re.search(r'(pluginManagement\\s*\\{.*?repositories\\s*\\{)(.*?)(\\n\\s*\\})', s, re.S)
+          if not match:
+              raise SystemExit('Could not locate pluginManagement.repositories in android/settings.gradle.kts')
+          body = match.group(2)
+          additions = []
+          if 'google()' not in body:
+              additions.append('google()')
+          if 'mavenCentral()' not in body:
+              additions.append('mavenCentral()')
+          if additions:
+              s = s[:match.start(2)] + '\\n        ' + '\\n        '.join(additions) + s[match.start(2):]
+              p.write_text(s)
+          print('Android plugin repositories:', ', '.join(additions) if additions else 'already configured')
+          PY
       - run: flutter pub get
       - name: Apply GapResan app branding
         run: |
