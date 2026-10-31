@@ -40,7 +40,7 @@ jobs:
           close_line = next((i for i in range(repo_line + 1, len(lines)) if lines[i].strip() == '}'), None)
           if close_line is None:
               raise SystemExit('Could not find end of pluginManagement.repositories')
-          body = '\\n'.join(lines[repo_line + 1:close_line])
+          body = ''.join(lines[repo_line + 1:close_line])
           additions = []
           if 'google()' not in body:
               additions.append('google()')
