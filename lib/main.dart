@@ -1655,7 +1655,7 @@ Future<void> main() async {
       ),
     );
   } catch (error, stack) {
-    debugPrint('Arad Messenger startup failed: $error');
+    debugPrint('گپ‌رسان startup failed: $error');
     debugPrintStack(stackTrace: stack);
     runApp(StartupFailureApp(message: _friendlyError(error.toString())));
     return;
@@ -1706,10 +1706,10 @@ class StartupLoadingApp extends StatelessWidget {
                       color: Color(0xFF00C2A8).withValues(alpha: .14),
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: Icon(Icons.forum_rounded, size: 42, color: Color(0xFF00C2A8)),
+                    child: ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/app_icon.jpg', width: 76, height: 76, fit: BoxFit.cover)),
                   ),
                   SizedBox(height: 18),
-                  Text(trUi('Arad Messenger'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  Text(trUi('گپ‌رسان'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
                   SizedBox(height: 12),
                   SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
                   SizedBox(height: 12),
@@ -1741,10 +1741,10 @@ class StartupFailureApp extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.cloud_off_rounded, size: 56, color: Color(0xFF8B5CF6)),
+                  ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.asset('assets/app_icon.jpg', width: 88, height: 88, fit: BoxFit.cover)),
                   SizedBox(height: 16),
                   Text(
-                    'Arad Messenger',
+                    'گپ‌رسان',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 12),
@@ -1939,7 +1939,7 @@ class AradMessenger extends StatelessWidget {
         );
       },
       debugShowCheckedModeBanner: false,
-      title: 'Arad Messenger',
+      title: 'گپ‌رسان',
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
@@ -3883,7 +3883,7 @@ class AboutAppPage extends StatelessWidget {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(trUi('درباره برنامه'))),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      Card(child:ListTile(title:Text(trUi('Arad Messenger')),subtitle:Text(trUi('نسخه $kAppVersion')))),
+      Card(child:ListTile(title:Text(trUi('گپ‌رسان')),subtitle:Text(trUi('نسخه $kAppVersion')))),
       Card(child:ListTile(title:Text(trUi('معماری')),subtitle:Text(trUi('Flutter + Supabase + GitHub Actions')))),
       Card(child:ListTile(title:Text(trUi('اصل محصول')),subtitle:Text(trUi('بدون دکمه یا قابلیت جعلی؛ هر عملیات باید به وضعیت یا سرویس واقعی متصل باشد.')))),
     ]),
@@ -4600,7 +4600,7 @@ class _LoginPageState extends State<LoginPage>{
       child: Column(
         children: [
           Text(
-            'Arad Messenger',
+            'گپ‌رسان',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 27,
@@ -8324,7 +8324,7 @@ class _SavedMessagesPageState extends State<SavedMessagesPage> {
           final type = '${m['message_type'] ?? 'text'}';
           final body = '${m['body'] ?? ''}';
           final title = body.isEmpty ? (type == 'image' ? 'تصویر' : type == 'audio' ? 'پیام صوتی' : 'پیام') : body;
-          return Card(child: ListTile(leading: Icon(Icons.bookmark_rounded), title: Text(title, maxLines: 3, overflow: TextOverflow.ellipsis), subtitle: Text(trUi('ذخیره‌شده در Arad Messenger')), trailing: IconButton(icon: Icon(Icons.delete_outline_rounded), onPressed: () => _remove('${m['id']}'))));
+          return Card(child: ListTile(leading: Icon(Icons.bookmark_rounded), title: Text(title, maxLines: 3, overflow: TextOverflow.ellipsis), subtitle: Text(trUi('ذخیره‌شده در گپ‌رسان')), trailing: IconButton(icon: Icon(Icons.delete_outline_rounded), onPressed: () => _remove('${m['id']}'))));
         }),
   );
 }
