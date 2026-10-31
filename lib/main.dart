@@ -1744,7 +1744,7 @@ class StartupFailureApp extends StatelessWidget {
                   ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.asset('assets/app_icon.jpg', width: 88, height: 88, fit: BoxFit.cover)),
                   SizedBox(height: 16),
                   Text(
-                    'گپ‌رسان',
+                    'پیام رسان',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 12),
