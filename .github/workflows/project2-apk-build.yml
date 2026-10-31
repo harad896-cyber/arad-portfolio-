@@ -77,7 +77,7 @@ jobs:
           if re.search(r'<string name="app_name">.*?</string>', x, re.S):
               x = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">پیام رسان</string>', x, flags=re.S)
           else:
-              x = x.replace('</resources>', '    <string name="app_name">گپ‌رسان</string>\n</resources>')
+              x = x.replace('</resources>', '    <string name="app_name">پیام رسان</string>\n</resources>')
           strings.write_text(x)
           import cairosvg
           cairosvg.svg2png(url='assets/app_icon.svg', write_to='assets/app_icon.png', output_width=1024, output_height=1024)
