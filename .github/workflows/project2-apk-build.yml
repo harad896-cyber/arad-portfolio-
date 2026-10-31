@@ -81,6 +81,7 @@ jobs:
           import cairosvg
           cairosvg.svg2png(url='assets/app_icon.svg', write_to='assets/app_icon.png', output_width=1024, output_height=1024)
           source = Image.open('assets/app_icon.png').convert('RGBA')
+          source.convert('RGB').save('assets/app_icon.jpg', quality=95)
           sizes = {'mipmap-mdpi':48,'mipmap-hdpi':72,'mipmap-xhdpi':96,'mipmap-xxhdpi':144,'mipmap-xxxhdpi':192}
           for folder, size in sizes.items():
               d = root / 'res' / folder
