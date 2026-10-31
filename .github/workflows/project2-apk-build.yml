@@ -54,7 +54,7 @@ jobs:
       - run: flutter pub get
       - name: Apply GapResan app branding and adaptive launcher icons
         run: |
-          python3 -m pip install --quiet pillow
+          python3 -m pip install --quiet pillow cairosvg
           python3 - <<'PY'
           from pathlib import Path
           from PIL import Image
@@ -62,7 +62,7 @@ jobs:
           root = Path('android/app/src/main')
           manifest = root / 'AndroidManifest.xml'
           s = manifest.read_text()
-          s = re.sub(r'android:label="[^"]+"', 'android:label="گپ‌رسان"', s, count=1)
+          s = re.sub(r'android:label="[^"]+"', 'android:label="پیام رسان"', s, count=1)
           s = re.sub(r'android:icon="[^"]+"', 'android:icon="@mipmap/ic_launcher"', s, count=1)
           if 'android:roundIcon=' in s:
               s = re.sub(r'android:roundIcon="[^"]+"', 'android:roundIcon="@mipmap/ic_launcher_round"', s, count=1)
@@ -74,11 +74,13 @@ jobs:
           strings = values / 'strings.xml'
           x = strings.read_text() if strings.exists() else '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n</resources>\n'
           if re.search(r'<string name="app_name">.*?</string>', x, re.S):
-              x = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">گپ‌رسان</string>', x, flags=re.S)
+              x = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">پیام رسان</string>', x, flags=re.S)
           else:
               x = x.replace('</resources>', '    <string name="app_name">گپ‌رسان</string>\n</resources>')
           strings.write_text(x)
-          source = Image.open('assets/app_icon.jpg').convert('RGBA')
+          import cairosvg
+          cairosvg.svg2png(url='assets/app_icon.svg', write_to='assets/app_icon.png', output_width=1024, output_height=1024)
+          source = Image.open('assets/app_icon.png').convert('RGBA')
           sizes = {'mipmap-mdpi':48,'mipmap-hdpi':72,'mipmap-xhdpi':96,'mipmap-xxhdpi':144,'mipmap-xxxhdpi':192}
           for folder, size in sizes.items():
               d = root / 'res' / folder
