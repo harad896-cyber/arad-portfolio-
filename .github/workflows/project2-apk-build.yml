@@ -48,7 +48,7 @@ jobs:
               additions.append('mavenCentral()')
           for item in reversed(additions):
               lines.insert(repo_line + 1, '        ' + item)
-          p.write_text('\\n'.join(lines) + '\\n')
+          p.write_text(chr(10).join(lines) + chr(10))
           print('Android plugin repositories verified; added:', ', '.join(additions) if additions else 'none needed')
           PY
       - run: flutter pub get
@@ -101,7 +101,7 @@ jobs:
               extra_data = '\n                      <data android:scheme="arad" android:host="group" />\n                      <data android:scheme="arad" android:host="chat" />\n                      <data android:scheme="arad" android:host="story" />'
               if invite_data in s and 'android:host="group"' not in s:
                   s = s.replace(invite_data, invite_data + extra_data, 1)
-          p.write_text(s)
+          p.write_text(chr(10).join(lines) + chr(10))
           PY
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test --no-pub
