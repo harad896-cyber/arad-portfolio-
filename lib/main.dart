@@ -1709,7 +1709,7 @@ class StartupLoadingApp extends StatelessWidget {
                     child: ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/app_icon.jpg', width: 76, height: 76, fit: BoxFit.cover)),
                   ),
                   SizedBox(height: 18),
-                  Text(trUi('گپ‌رسان'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  Text(trUi('پیام رسان'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
                   SizedBox(height: 12),
                   SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
                   SizedBox(height: 12),
@@ -1939,7 +1939,7 @@ class AradMessenger extends StatelessWidget {
         );
       },
       debugShowCheckedModeBanner: false,
-      title: 'گپ‌رسان',
+      title: 'پیام رسان',
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
