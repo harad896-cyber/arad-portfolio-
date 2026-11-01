@@ -1,18 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
- <linearGradient id="field" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172554"/><stop offset=".52" stop-color="#3156A5"/><stop offset="1" stop-color="#087E9B"/></linearGradient>
- <linearGradient id="plane" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCEBFF"/></linearGradient>
- <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFB36B"/><stop offset="1" stop-color="#FF6B6B"/></linearGradient>
- <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+ <linearGradient id="field" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#087A46"/><stop offset=".52" stop-color="#12A765"/><stop offset="1" stop-color="#075B42"/></linearGradient>
+ <linearGradient id="plane" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#EAFBF2"/></linearGradient>
+ <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#B8F4D4"/><stop offset="1" stop-color="#FFFFFF"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="20"/></filter>
 </defs>
 <rect width="1024" height="1024" rx="220" fill="#F7F9FC"/>
-<rect x="106" y="106" width="812" height="812" rx="406" fill="#102044" opacity=".18" filter="url(#shadow)"/>
-<circle cx="512" cy="492" r="390" fill="#FFFFFF" stroke="#E4EAF3" stroke-width="16"/>
-<circle cx="512" cy="492" r="365" fill="url(#field)"/>
-<circle cx="512" cy="492" r="350" fill="none" stroke="#B9D8FF" stroke-opacity=".36" stroke-width="7"/>
-<path d="M322 470 702 320Q724 311 715 340L598 702Q589 729 568 708L475 615 420 669Q401 688 397 660L385 558 319 500Q297 480 322 470Z" fill="url(#plane)"/>
-<path d="m385 558 320-218-230 275Z" fill="#B9D0F1" opacity=".92"/>
-<path d="m475 615 230-275-137 362q-9 27-30 6Z" fill="#FFFFFF"/>
-<path d="M278 706Q330 766 414 778" fill="none" stroke="url(#accent)" stroke-width="22" stroke-linecap="round"/>
-<circle cx="278" cy="706" r="13" fill="#FFB36B"/>
+<circle cx="512" cy="512" r="402" fill="#0B2440" opacity=".16" filter="url(#shadow)"/>
+<!-- Broad white outer rim; the green disc is deliberately smaller. -->
+<circle cx="512" cy="492" r="390" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18"/>
+<circle cx="512" cy="492" r="330" fill="url(#field)"/>
+<circle cx="512" cy="492" r="315" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="7"/>
+<g transform="translate(512 492) scale(.90) translate(-512 -492)">
+ <path d="M322 470 702 320Q724 311 715 340L598 702Q589 729 568 708L475 615 420 669Q401 688 397 660L385 558 319 500Q297 480 322 470Z" fill="url(#plane)"/>
+ <path d="m385 558 320-218-230 275Z" fill="#C9F0DC" opacity=".92"/>
+ <path d="m475 615 230-275-137 362q-9 27-30 6Z" fill="#FFFFFF"/>
+</g>
+<path d="M294 735Q342 782 407 790" fill="none" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+<circle cx="294" cy="735" r="11" fill="#FFFFFF"/>
 </svg>
