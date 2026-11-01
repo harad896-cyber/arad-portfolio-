@@ -6186,24 +6186,28 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
             child: Material(
               color: glass,
-          borderRadius: BorderRadius.circular(15),
-          child: TextField(
-            controller: chatSearch,
-            onChanged: (v) => setState(() => chatQuery = v),
-            textDirection: TextDirection.rtl,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: trUi('جستجو در گفتگوهای فعلی'),
-              prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
-              suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(tooltip: trUi('پاک کردن'), onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); }, icon: Icon(Icons.close_rounded, size: 19)),
-              isDense: true,
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
-            ),
+              child: TextField(
+                controller: chatSearch,
+                onChanged: (v) => setState(() => chatQuery = v),
+                textDirection: TextDirection.rtl,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: trUi('جستجو در گفتگوهای فعلی'),
+                  prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
+                  suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(
+                    tooltip: trUi('پاک کردن'),
+                    onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); },
+                    icon: Icon(Icons.close_rounded, size: 19),
+                  ),
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.transparent,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
+                ),
+              ),
             ),
           ),
         ),
@@ -6781,52 +6785,50 @@ class _HomePageState extends State<HomePage> {
             alignment: Alignment.bottomCenter,
             heightFactor: _homeChromeVisible ? 1 : 0,
             child: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 7),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .55)),
-              ),
-              child: NavigationBar(
-                height: 62,
-                backgroundColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
-                indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .14),
-                elevation: 0,
-                selectedIndex: navIndex,
-                onDestinationSelected: (i) {
-                  HapticFeedback.selectionClick();
-                  if (i == navIndex) {
-                    if (i == 1) {
-                      setState(() => showContacts = false);
-                    }
-                    if (i == 0) {
-                      setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
-                      unawaited(load());
-                    }
-                    return;
-                  }
-                  setState(() { navIndex = i; showContacts = false; });
-                },
-                destinations: [
-                  NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
-                  NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
-                ],
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(12, 0, 12, 7),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .55)),
+                    ),
+                    child: NavigationBar(
+                      height: 62,
+                      backgroundColor: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .14),
+                      elevation: 0,
+                      selectedIndex: navIndex,
+                      onDestinationSelected: (i) {
+                        HapticFeedback.selectionClick();
+                        if (i == navIndex) {
+                          if (i == 1) {
+                            setState(() => showContacts = false);
+                          }
+                          if (i == 0) {
+                            setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
+                            unawaited(load());
+                          }
+                          return;
+                        }
+                        setState(() { navIndex = i; showContacts = false; });
+                      },
+                      destinations: [
+                        NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
+                        NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
-            ),
-          ),
-        ),
-      ),
       ),
     );
   }
