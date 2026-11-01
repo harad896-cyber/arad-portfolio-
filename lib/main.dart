@@ -6158,7 +6158,7 @@ class _HomePageState extends State<HomePage> {
             tooltip: trUi('منوی اصلی'),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
-            icon: Icon(Icons.menu_rounded, size: 31),
+            icon: Container(width: 48, height: 48, decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .62), shape: BoxShape.circle), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 32, color: scheme.primary)),
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
@@ -6182,7 +6182,7 @@ class _HomePageState extends State<HomePage> {
       ),
       Center(
         child: SizedBox(
-          width: MediaQuery.sizeOf(context).width * .90,
+          width: (MediaQuery.sizeOf(context).width * .84).clamp(260.0, 520.0),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
             child: Material(
@@ -6247,13 +6247,11 @@ class _HomePageState extends State<HomePage> {
                   notification.metrics.pixels <= 8) {
                 visible = true;
               }
-              if (visible != null &&
-                  (visible != _chatTopGlowVisible || visible != _homeChromeVisible) &&
-                  mounted) {
-                setState(() {
-                  _chatTopGlowVisible = visible!;
-                  _homeChromeVisible = visible;
-                });
+              if (visible != null && mounted) {
+                final showBars = visible == true;
+                if (showBars != _chatTopGlowVisible || showBars != _homeChromeVisible) {
+                  setState(() { _chatTopGlowVisible = showBars; _homeChromeVisible = showBars; });
+                }
               }
             }
             return false;
@@ -6291,7 +6289,7 @@ class _HomePageState extends State<HomePage> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(11, 5, 11, 96),
                     itemCount: filteredChats.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 7),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (context, i) {
                       final c = filteredChats[i];
                       final id = c['id'].toString();
@@ -6318,7 +6316,7 @@ class _HomePageState extends State<HomePage> {
                         shadowColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(20),
                           side: BorderSide(
                             color: unread || isPinned
                                 ? scheme.primary.withValues(alpha: dark ? .65 : .42)
@@ -6330,7 +6328,7 @@ class _HomePageState extends State<HomePage> {
                         child: InkWell(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load()),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 7, 5, 7),
+                            padding: const EdgeInsets.fromLTRB(11, 9, 7, 9),
                             child: Row(children: [
                               Stack(clipBehavior: Clip.none, children: [
                                 Container(
@@ -6775,7 +6773,7 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
                   child: Row(children: [
-                    IconButton(onPressed: () => setState(() => showContacts = false), icon: Icon(Icons.arrow_back_rounded)),
+                    IconButton(onPressed: () => setState(() { showContacts = false; _homeChromeVisible = true; _chatTopGlowVisible = true; }), icon: Icon(Icons.arrow_back_rounded)),
                     Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
                   ]),
                 ),
@@ -6783,9 +6781,9 @@ class _HomePageState extends State<HomePage> {
               ])
             : navIndex == 0
                 ? chatsView()
-                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; })),
+                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; })),
       ))),
-      floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: Icon(Icons.chat_rounded)) : null,
+      floatingActionButton: navIndex == 0 ? IgnorePointer(ignoring: !_homeChromeVisible, child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: _homeChromeVisible ? 1 : 0, child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _homeChromeVisible ? 1 : .78, child: FloatingActionButton(tooltip: trUi('گفتگوی جدید'), onPressed: createDirect, child: Icon(Icons.edit_rounded))))) : null,
       bottomNavigationBar: AnimatedSize(
         duration: const Duration(milliseconds: 230),
         curve: Curves.easeInOutCubic,
@@ -6826,7 +6824,7 @@ class _HomePageState extends State<HomePage> {
                           }
                           return;
                         }
-                        setState(() { navIndex = i; showContacts = false; });
+                        setState(() { navIndex = i; showContacts = false; _homeChromeVisible = true; _chatTopGlowVisible = true; });
                       },
                       destinations: [
                         NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
