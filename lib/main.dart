@@ -6879,35 +6879,58 @@ class _HomePageState extends State<HomePage> {
                 : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; })),
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: Icon(Icons.chat_rounded)) : null,
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: NavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedIndex: navIndex,
-            onDestinationSelected: (i) {
-              HapticFeedback.selectionClick();
-              if (i == navIndex) {
-                if (i == 1) {
-                  setState(() => showContacts = false);
-                }
-                if (i == 0) {
-                  setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
-                  unawaited(load());
-                }
-                return;
-              }
-              setState(() { navIndex = i; showContacts = false; });
-            },
-            destinations: [
-              NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
-              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')), 
-            ],
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 7),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: .58),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .16),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .10),
+                    blurRadius: 20,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: NavigationBar(
+                height: 68,
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
+                elevation: 0,
+                selectedIndex: navIndex,
+                onDestinationSelected: (i) {
+                  HapticFeedback.selectionClick();
+                  if (i == navIndex) {
+                    if (i == 1) {
+                      setState(() => showContacts = false);
+                    }
+                    if (i == 0) {
+                      setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
+                      unawaited(load());
+                    }
+                    return;
+                  }
+                  setState(() { navIndex = i; showContacts = false; });
+                },
+                destinations: [
+                  NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
+                  NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
       ),
     );
   }
