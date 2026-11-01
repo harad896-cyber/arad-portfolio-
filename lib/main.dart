@@ -6233,15 +6233,24 @@ class _HomePageState extends State<HomePage> {
           ]),
         ),
       ),
+      ),
       Expanded(
         child: NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            if (notification.metrics.axis == Axis.vertical &&
-                (notification is ScrollUpdateNotification || notification is UserScrollNotification)) {
-              final visible = notification.metrics.pixels <= 8;
-              if ((visible != _chatTopGlowVisible || visible != _homeChromeVisible) && mounted) {
+            if (notification.metrics.axis == Axis.vertical) {
+              bool? visible;
+              if (notification is UserScrollNotification) {
+                if (notification.direction == ScrollDirection.reverse) visible = false;
+                if (notification.direction == ScrollDirection.forward) visible = true;
+              } else if (notification is ScrollUpdateNotification &&
+                  notification.metrics.pixels <= 8) {
+                visible = true;
+              }
+              if (visible != null &&
+                  (visible != _chatTopGlowVisible || visible != _homeChromeVisible) &&
+                  mounted) {
                 setState(() {
-                  _chatTopGlowVisible = visible;
+                  _chatTopGlowVisible = visible!;
                   _homeChromeVisible = visible;
                 });
               }
@@ -6829,6 +6838,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
