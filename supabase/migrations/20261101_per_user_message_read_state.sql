@@ -2,6 +2,12 @@
 -- message_reads already exists in the live schema; do not create a parallel table.
 -- The legacy messages.read_at column is shared and must not drive unread counts.
 
+-- Preserve previously recorded per-reader receipts as private read markers.
+insert into public.message_reads (message_id, user_id, read_at)
+select message_id, reader_id, read_at
+  from public.message_read_receipts
+on conflict (message_id, user_id) do nothing;
+
 create or replace function public.get_unread_counts()
 returns table(conversation_id uuid, unread_count bigint)
 language sql
