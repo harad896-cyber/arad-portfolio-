@@ -17,6 +17,16 @@ fi
 git config --global --add safe.directory "/vercel/path0/${FLUTTER_DIR}" 2>/dev/null || true
 git config --global --add safe.directory "$(pwd)/${FLUTTER_DIR}" 2>/dev/null || true
 
+# Keep the Flutter asset used by splash/UI in sync with the launcher SVG.
+python3 -m pip install --quiet pillow cairosvg
+python3 - <<'PY'
+import cairosvg
+from PIL import Image
+cairosvg.svg2png(url='assets/app_icon.svg', write_to='/tmp/gapresan_icon.png', output_width=1024, output_height=1024)
+Image.open('/tmp/gapresan_icon.png').convert('RGB').save('assets/app_icon.jpg', quality=95)
+print('Regenerated assets/app_icon.jpg from assets/app_icon.svg')
+PY
+
 "${FLUTTER_DIR}/bin/flutter" config --enable-web
 "${FLUTTER_DIR}/bin/flutter" pub get
 
