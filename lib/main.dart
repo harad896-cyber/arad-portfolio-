@@ -5302,6 +5302,7 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<AuthState>? _homeAuthSubscription;
   String? _observedAuthUserId;
   DateTime? _lastBackPressedAt;
+  bool _chatTopGlowVisible = true;
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -6234,7 +6235,25 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
-      SizedBox(height: 4),
+      AnimatedOpacity(
+        opacity: _chatTopGlowVisible ? 1 : 0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          height: 5,
+          margin: const EdgeInsets.fromLTRB(34, 0, 34, 3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(colors: [
+              scheme.primary.withValues(alpha: .02),
+              scheme.primary.withValues(alpha: dark ? .50 : .32),
+              scheme.tertiary.withValues(alpha: dark ? .34 : .22),
+              scheme.primary.withValues(alpha: .02),
+            ]),
+            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: _chatTopGlowVisible ? .20 : 0), blurRadius: 17, spreadRadius: 1)],
+          ),
+        ),
+      ),
       SizedBox(height: 56, child: StoriesTray()),
       Container(
         margin: const EdgeInsets.fromLTRB(10, 2, 10, 8),
@@ -6375,7 +6394,15 @@ class _HomePageState extends State<HomePage> {
       ),
       SizedBox(height: 2),
       Expanded(
-        child: loading
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.axis == Axis.vertical) {
+              final visible = notification.metrics.pixels <= 8;
+              if (visible != _chatTopGlowVisible && mounted) setState(() => _chatTopGlowVisible = visible);
+            }
+            return false;
+          },
+          child: loading
             ? ListView.builder(padding: const EdgeInsets.fromLTRB(12, 5, 12, 96), itemCount: 7, itemBuilder: (_, __) => const _ChatSkeleton())
             : homeLoadError != null && chats.isEmpty
                 ? Center(child: Padding(
@@ -6540,6 +6567,8 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
+          ),
+        ),
       ),
     ]);
   }
@@ -6912,18 +6941,12 @@ class _HomePageState extends State<HomePage> {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: .58),
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: .64),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .16),
-                  width: 1,
-                ),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .21), width: 1.1),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .10),
-                    blurRadius: 20,
-                    offset: const Offset(0, 5),
-                  ),
+                  BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 22, offset: const Offset(0, 6)),
+                  BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: .10), blurRadius: 18, spreadRadius: -5, offset: const Offset(0, -2)),
                 ],
               ),
               child: NavigationBar(
