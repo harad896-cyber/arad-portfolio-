@@ -6259,51 +6259,10 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
-      AnimatedOpacity(
-        opacity: _chatTopGlowVisible ? 1 : 0,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-        child: Container(
-          height: 8,
-          margin: const EdgeInsets.fromLTRB(30, 1, 30, 7),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            gradient: LinearGradient(colors: [
-              scheme.primary.withValues(alpha: .02),
-              scheme.primary.withValues(alpha: dark ? .78 : .62),
-              scheme.tertiary.withValues(alpha: dark ? .58 : .42),
-              scheme.primary.withValues(alpha: .02),
-            ]),
-            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: _chatTopGlowVisible ? .38 : 0), blurRadius: 24, spreadRadius: 2)],
-          ),
-        ),
-      ),
       SizedBox(height: 56, child: StoriesTray()),
-      Container(
-        margin: const EdgeInsets.fromLTRB(10, 2, 10, 8),
-        padding: const EdgeInsets.fromLTRB(6, 3, 6, 8),
-        decoration: BoxDecoration(
-          color: scheme.surface.withValues(alpha: dark ? .34 : .48),
-          borderRadius: BorderRadius.circular(19),
-          border: Border.all(color: scheme.outline.withValues(alpha: .18)),
-          boxShadow: [
-            BoxShadow(color: scheme.shadow.withValues(alpha: .035), blurRadius: 12, offset: const Offset(0, 3)),
-          ],
-        ),
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
-            child: Row(children: [
-              Container(width: 26, height: 3, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .58), borderRadius: BorderRadius.circular(4))),
-              const SizedBox(width: 7),
-              Expanded(child: Divider(height: 1, color: scheme.outline.withValues(alpha: .24))),
-              const SizedBox(width: 7),
-              Container(width: 26, height: 3, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .58), borderRadius: BorderRadius.circular(4))),
-            ]),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 0, 4, 0),
-            child: Row(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+        child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             SizedBox(height: 2),
@@ -6348,7 +6307,6 @@ class _HomePageState extends State<HomePage> {
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
               else if (value == 'folders') _openFolderManager();
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
-              else if (value == 'notifications') Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsCenterPage()));
               else if (value == 'group') createGroup();
               else if (value == 'chat') createDirect();
               else if (value == 'join') _joinGroupByInviteCode();
@@ -6358,10 +6316,8 @@ class _HomePageState extends State<HomePage> {
               PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
               PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
               PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
-              PopupMenuItem(value: 'notifications', child: ListTile(dense: true, leading: Icon(Icons.notifications_none_rounded), title: Text(trUi('مرکز اعلان‌ها')))),
               PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
               PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
-              PopupMenuItem(value: 'chat', child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text(trUi('گفتگوی جدید')))),
               PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
               PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: Icon(Icons.auto_stories_outlined), title: Text(trUi('دیدن استوری‌ها')))),
             ],
@@ -6369,9 +6325,7 @@ class _HomePageState extends State<HomePage> {
           SizedBox(width: 6),
           actionButton(icon: Icons.search_rounded, tooltip: trUi('جستجوی سراسری پیام‌ها و کاربران'), onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
           SizedBox(width: 6),
-          actionButton(icon: Icons.add_rounded, tooltip: trUi('گفتگوی جدید'), onTap: createDirect),
         ]),
-          ),
         ]),
       ),
       Padding(
@@ -6658,8 +6612,7 @@ class _HomePageState extends State<HomePage> {
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 14, 6),
         child: Row(children: [
-          Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
-          IconButton.filledTonal(onPressed: () => _openContactSearch(), icon: Icon(Icons.person_add_alt_1_rounded)),
+          Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800))),
         ]),
       ),
       Padding(
@@ -6964,27 +6917,15 @@ class _HomePageState extends State<HomePage> {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Theme.of(context).colorScheme.surface.withValues(alpha: .91),
-                    Theme.of(context).colorScheme.surface.withValues(alpha: .72),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .30), width: 1.25),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 22, offset: const Offset(0, 6)),
-                  BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: .24), blurRadius: 25, spreadRadius: -3, offset: const Offset(0, -3)),
-                  BoxShadow(color: Colors.white.withValues(alpha: .10), blurRadius: 1, spreadRadius: 0, offset: const Offset(0, 1)),
-                ],
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .55)),
               ),
               child: NavigationBar(
-                height: 72,
+                height: 62,
                 backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
-                indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .25),
+                indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .14),
                 elevation: 0,
                 selectedIndex: navIndex,
                 onDestinationSelected: (i) {
