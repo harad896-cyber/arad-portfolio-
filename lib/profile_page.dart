@@ -704,17 +704,17 @@ class _ProfilePageState extends State<ProfilePage> {
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOutCubic,
           child: Container(
-            height: 5,
-            margin: const EdgeInsets.fromLTRB(30, 0, 30, 9),
+            height: 8,
+            margin: const EdgeInsets.fromLTRB(26, 1, 26, 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               gradient: LinearGradient(colors: [
                 s.primary.withValues(alpha: .02),
-                s.primary.withValues(alpha: .46),
-                s.tertiary.withValues(alpha: .30),
+                s.primary.withValues(alpha: .78),
+                s.tertiary.withValues(alpha: .58),
                 s.primary.withValues(alpha: .02),
               ]),
-              boxShadow: [BoxShadow(color: s.primary.withValues(alpha: _profileTopGlowVisible ? .18 : 0), blurRadius: 16, spreadRadius: 1)],
+              boxShadow: [BoxShadow(color: s.primary.withValues(alpha: _profileTopGlowVisible ? .36 : 0), blurRadius: 24, spreadRadius: 2)],
             ),
           ),
         ),
