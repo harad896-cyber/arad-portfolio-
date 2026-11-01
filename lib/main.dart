@@ -54,7 +54,7 @@ bool _isNetworkFailure(Object error) {
 }
 
 String _friendlyError(String message) {
-  final raw = message.replaceFirst(RegExp(r'^Exception:\\s*'), '').trim();
+  final raw = message.replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
   final lower = raw.toLowerCase();
   if (lower.contains('socketexception') ||
       lower.contains('failed host lookup') ||
