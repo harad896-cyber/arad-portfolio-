@@ -33,6 +33,7 @@ class _ProfilePageState extends State<ProfilePage> {
   ImageProvider? avatarImage;
   StreamSubscription<AuthState>? _profileAuthSubscription;
   String? _observedProfileUserId;
+  bool _profileTopGlowVisible = true;
 
   @override
   void initState() {
@@ -686,10 +687,37 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final email = supabase.auth.currentUser?.email?.trim() ?? '';
     final phone = supabase.auth.currentUser?.phone?.trim() ?? '';
-    return ListView(
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification.metrics.axis == Axis.vertical) {
+          final visible = notification.metrics.pixels <= 8;
+          if (visible != _profileTopGlowVisible && mounted) setState(() => _profileTopGlowVisible = visible);
+        }
+        return false;
+      },
+      child: ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 110),
       children: [
+        AnimatedOpacity(
+          opacity: _profileTopGlowVisible ? 1 : 0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          child: Container(
+            height: 5,
+            margin: const EdgeInsets.fromLTRB(30, 0, 30, 9),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(colors: [
+                s.primary.withValues(alpha: .02),
+                s.primary.withValues(alpha: .46),
+                s.tertiary.withValues(alpha: .30),
+                s.primary.withValues(alpha: .02),
+              ]),
+              boxShadow: [BoxShadow(color: s.primary.withValues(alpha: _profileTopGlowVisible ? .18 : 0), blurRadius: 16, spreadRadius: 1)],
+            ),
+          ),
+        ),
         Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
@@ -994,6 +1022,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ])),
       ],
+      ),
     );
   }
 }
