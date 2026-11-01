@@ -6236,9 +6236,31 @@ class _HomePageState extends State<HomePage> {
     return Column(children: [
       SizedBox(height: 4),
       SizedBox(height: 56, child: StoriesTray()),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 14, 7),
-        child: Row(children: [
+      Container(
+        margin: const EdgeInsets.fromLTRB(10, 2, 10, 8),
+        padding: const EdgeInsets.fromLTRB(6, 3, 6, 8),
+        decoration: BoxDecoration(
+          color: scheme.surface.withValues(alpha: dark ? .34 : .48),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(color: scheme.outline.withValues(alpha: .18)),
+          boxShadow: [
+            BoxShadow(color: scheme.shadow.withValues(alpha: .035), blurRadius: 12, offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+            child: Row(children: [
+              Container(width: 26, height: 3, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .58), borderRadius: BorderRadius.circular(4))),
+              const SizedBox(width: 7),
+              Expanded(child: Divider(height: 1, color: scheme.outline.withValues(alpha: .24))),
+              const SizedBox(width: 7),
+              Container(width: 26, height: 3, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .58), borderRadius: BorderRadius.circular(4))),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 0, 4, 0),
+            child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             SizedBox(height: 2),
@@ -6305,6 +6327,8 @@ class _HomePageState extends State<HomePage> {
           actionButton(icon: Icons.search_rounded, tooltip: trUi('جستجوی سراسری پیام‌ها و کاربران'), onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
           SizedBox(width: 6),
           actionButton(icon: Icons.add_rounded, tooltip: trUi('گفتگوی جدید'), onTap: createDirect),
+        ]),
+          ),
         ]),
       ),
       Padding(
