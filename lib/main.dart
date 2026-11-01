@@ -6295,12 +6295,32 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
-      Padding(padding: const EdgeInsets.fromLTRB(8, 1, 8, 0), child: SizedBox(height: 46, child: StoriesTray())),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+        padding: const EdgeInsets.fromLTRB(8, 1, 8, 0),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: MediaQuery.sizeOf(context).width * .68,
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: ClipRect(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: _chatTopGlowVisible ? 1 : 0,
+                  child: SizedBox(height: 46, child: StoriesTray()),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      Padding(
+        padding: EdgeInsets.fromLTRB(16, _chatTopGlowVisible ? 8 : 5, 12, _chatTopGlowVisible ? 8 : 5),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: _chatTopGlowVisible ? 22 : 19, fontWeight: FontWeight.w800, letterSpacing: -.2)),
             SizedBox(height: 2),
             Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
