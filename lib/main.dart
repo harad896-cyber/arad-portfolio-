@@ -5359,6 +5359,7 @@ class _HomePageState extends State<HomePage> {
       try {
         final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 3));
         final cached = prefs.getString('arad_home_chats_cache_$uid');
+        if (supabase.auth.currentUser?.id != uid) return;
         if (chats.isEmpty && cached != null && cached.isNotEmpty) {
           final decoded = jsonDecode(cached);
           if (decoded is List) {
@@ -5589,6 +5590,9 @@ class _HomePageState extends State<HomePage> {
         return bt.compareTo(at);
       });
 
+      // A user can sign out or switch accounts while the network requests above
+      // are still running. Never publish or cache one account's chats for another.
+      if (supabase.auth.currentUser?.id != uid) return;
       if (mounted) {
         setState(() {
           chats = nextChats;
@@ -5598,7 +5602,8 @@ class _HomePageState extends State<HomePage> {
       }
       try {
         final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
-        await prefs.setString(_homeCacheKey, jsonEncode(nextChats)).timeout(const Duration(seconds: 2));
+        if (supabase.auth.currentUser?.id != uid) return;
+        await prefs.setString('arad_home_chats_cache_$uid', jsonEncode(nextChats)).timeout(const Duration(seconds: 2));
       } catch (cacheError) {
         debugPrint('Conversation cache save failed: $cacheError');
       }
