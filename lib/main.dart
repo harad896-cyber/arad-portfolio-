@@ -5460,50 +5460,21 @@ class _HomePageState extends State<HomePage> {
         debugPrint('Latest-message preview query failed; keeping chat list: $messageError');
       }
 
-      // Unread state is private to the signed-in account. Never use the
-      // legacy messages.read_at column here: it is shared by every member and
-      // one person's read action must not clear another person's unread badge.
+      // The RPC counts messages against message_reads for auth.uid(), so
+      // unread badges remain private to the signed-in account and require one
+      // bounded request rather than fetching every message receipt.
       try {
-        final unreadRows = await supabase
-            .from('messages')
-            .select('id,conversation_id')
-            .inFilter('conversation_id', visibleIds)
-            .neq('sender_id', uid)
-            .isFilter('deleted_at', null)
-            .order('created_at', ascending: false)
-            .limit(5000)
+        final unreadRows = await supabase.rpc('get_unread_counts')
             .timeout(const Duration(seconds: 8));
-        final unreadMessages = List<Map<String, dynamic>>.from(unreadRows as List);
-        final unreadMessageIds = unreadMessages
-            .map((row) => row['id']?.toString() ?? '')
-            .where((id) => id.isNotEmpty)
-            .toList();
-        final readForThisUser = <String>{};
-        for (var offset = 0; offset < unreadMessageIds.length; offset += 500) {
-          final batch = unreadMessageIds.skip(offset).take(500).toList();
-          final receipts = await supabase
-              .from('message_user_reads')
-              .select('message_id')
-              .eq('user_id', uid)
-              .inFilter('message_id', batch)
-              .timeout(const Duration(seconds: 8));
-          readForThisUser.addAll((receipts as List)
-              .map((row) => row['message_id']?.toString() ?? '')
-              .where((id) => id.isNotEmpty));
-        }
-        for (final row in unreadMessages) {
-          final messageId = row['id']?.toString() ?? '';
+        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
           final conversationId = row['conversation_id']?.toString() ?? '';
-          if (messageId.isNotEmpty &&
-              conversationId.isNotEmpty &&
-              !readForThisUser.contains(messageId)) {
-            unreadByConversation[conversationId] =
-                (unreadByConversation[conversationId] ?? 0) + 1;
+          final count = int.tryParse(row['unread_count']?.toString() ?? '0') ?? 0;
+          if (conversationId.isNotEmpty && count > 0) {
+            unreadByConversation[conversationId] = count;
           }
         }
       } catch (unreadError) {
-        // If per-user read state cannot be fetched, do not silently present a
-        // false zero count. The rest of the chat list remains usable.
+        // Keep the chat list visible if the unread-count RPC is unavailable.
         debugPrint('Per-account unread counts unavailable: $unreadError');
       }
 
@@ -9991,12 +9962,12 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> markRead() async {
     try {
       final settings = await loadUserSettings();
-      // Public read receipts respect the privacy setting, but the local
-      // account's own unread state must always be cleared when the chat opens.
+      // Store the current account's private read state even when public read
+      // receipts are disabled in privacy settings.
+      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
       if (settings['read_receipts'] != false) {
         await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
       }
-      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
     } catch (error) {
       debugPrint('Per-account message read update failed: $error');
     }
