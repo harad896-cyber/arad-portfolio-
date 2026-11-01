@@ -6308,7 +6308,6 @@ class _HomePageState extends State<HomePage> {
               else if (value == 'folders') _openFolderManager();
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
               else if (value == 'group') createGroup();
-              else if (value == 'chat') createDirect();
               else if (value == 'join') _joinGroupByInviteCode();
               else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
             },
@@ -6325,7 +6324,6 @@ class _HomePageState extends State<HomePage> {
           SizedBox(width: 6),
           actionButton(icon: Icons.search_rounded, tooltip: trUi('جستجوی سراسری پیام‌ها و کاربران'), onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
           SizedBox(width: 6),
-        ]),
         ]),
       ),
       Padding(
