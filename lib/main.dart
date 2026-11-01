@@ -3478,7 +3478,7 @@ class StickersGifsPage extends StatelessWidget {
               color: scheme.surfaceContainerLow,
               clipBehavior: Clip.antiAlias,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(18),
                 side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
               ),
               child: Padding(
@@ -6182,7 +6182,7 @@ class _HomePageState extends State<HomePage> {
       ),
       Center(
         child: SizedBox(
-          width: (MediaQuery.sizeOf(context).width * .84).clamp(260.0, 520.0),
+          width: (MediaQuery.sizeOf(context).width * .84).clamp(0.0, 520.0).toDouble(),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
             child: Material(
