@@ -7013,17 +7013,50 @@ Future<String?> _ensureDirectConversationForUser(Map<String, dynamic> profile) a
   final uid = supabase.auth.currentUser?.id;
   final targetId = profile['id']?.toString();
   if (uid == null || targetId == null || targetId.isEmpty || targetId == uid) return null;
-  final existing = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid);
-  for (final row in (existing as List)) {
-    final conversationId = row['conversation_id']?.toString();
-    if (conversationId == null) continue;
-    final members = await supabase.from('conversation_members').select('user_id').eq('conversation_id', conversationId);
-    if ((members as List).length == 2 && members.any((m) => m['user_id']?.toString() == targetId)) return conversationId;
+
+  // Read this user's conversation IDs once, then hydrate all their members in
+  // one bounded query. The previous implementation made one network roundtrip
+  // per conversation, which became increasingly slow for active accounts.
+  final existing = await supabase
+      .from('conversation_members')
+      .select('conversation_id')
+      .eq('user_id', uid)
+      .timeout(const Duration(seconds: 8));
+  final conversationIds = (existing as List)
+      .map((row) => row['conversation_id']?.toString() ?? '')
+      .where((id) => id.isNotEmpty && id != 'null')
+      .toSet()
+      .toList();
+  if (supabase.auth.currentUser?.id != uid) return null;
+  if (conversationIds.isNotEmpty) {
+    final memberRows = await supabase
+        .from('conversation_members')
+        .select('conversation_id,user_id')
+        .inFilter('conversation_id', conversationIds)
+        .timeout(const Duration(seconds: 8));
+    final membersByConversation = <String, Set<String>>{};
+    for (final row in List<Map<String, dynamic>>.from(memberRows as List)) {
+      final conversationId = row['conversation_id']?.toString() ?? '';
+      final memberId = row['user_id']?.toString() ?? '';
+      if (conversationId.isEmpty || memberId.isEmpty) continue;
+      membersByConversation.putIfAbsent(conversationId, () => <String>{}).add(memberId);
+    }
+    for (final entry in membersByConversation.entries) {
+      final members = entry.value;
+      if (members.length == 2 && members.contains(uid) && members.contains(targetId)) {
+        return entry.key;
+      }
+    }
   }
+
+  // Do not let a slow lookup started by an old account create a conversation
+  // after the user has switched or signed out.
+  if (supabase.auth.currentUser?.id != uid) return null;
   final conversationId = await supabase.rpc(
     'create_direct_conversation',
     params: {'p_peer_id': targetId},
-  );
+  ).timeout(const Duration(seconds: 10));
+  if (supabase.auth.currentUser?.id != uid) return null;
   return conversationId?.toString();
 }
 
