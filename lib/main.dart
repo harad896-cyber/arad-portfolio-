@@ -5656,7 +5656,7 @@ class _HomePageState extends State<HomePage> {
               .add(item['conversation_id'].toString());
         }
       }
-      if (mounted) {
+      if (mounted && supabase.auth.currentUser?.id == uid) {
         setState(() {
           chatFolders = folderRows;
           folderAssignments = assignmentMap;
