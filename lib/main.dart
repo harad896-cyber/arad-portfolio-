@@ -9739,6 +9739,7 @@ class _ChatPageState extends State<ChatPage> {
           .eq('conversation_id', widget.id)
           .order('created_at', ascending: true)
           .limit(80)
+          .timeout(Duration(seconds: 4))
           .then<List<Map<String, dynamic>>>((value) => List<Map<String, dynamic>>.from(value as List))
           .catchError((_) => <Map<String, dynamic>>[]);
       if (widget.targetMessageId != null &&
@@ -9841,11 +9842,13 @@ class _ChatPageState extends State<ChatPage> {
         final groupReads = await Future.wait<dynamic>([
           supabase.from('conversation_members')
               .select('user_id,role,joined_at').eq('conversation_id', widget.id)
+              .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
           supabase.from('group_audit_logs')
               .select('id,actor_id,action,target_user_id,details,created_at')
               .eq('conversation_id', widget.id).order('created_at', ascending: true).limit(100)
+              .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
         ]);
@@ -9866,7 +9869,8 @@ class _ChatPageState extends State<ChatPage> {
       if (conversation['type'] == 'direct' && uid != null) {
         try {
           final directMembers = await supabase.from('conversation_members')
-              .select('user_id').eq('conversation_id', widget.id);
+              .select('user_id').eq('conversation_id', widget.id)
+              .timeout(Duration(seconds: 5));
           directPeerId = (directMembers as List).map((m) => '${m['user_id'] ?? ''}')
               .firstWhere((id) => id.isNotEmpty && id != uid, orElse: () => '');
           if (directPeerId.isNotEmpty) senderIds.add(directPeerId);
@@ -12240,19 +12244,57 @@ class _ChatPageState extends State<ChatPage> {
     _chatReloadDebounce = Timer(Duration(milliseconds: 350), () { if (mounted) unawaited(load()); });
   }
 
-  void _scheduleChatReloadForMessageMetadata(dynamic payload) {
+  void _scheduleMessageMetadataRefresh(dynamic payload, {required bool receipts}) {
     try {
       final newer = payload.newRecord;
       final older = payload.oldRecord;
       final row = newer is Map && newer.isNotEmpty ? newer : older;
       if (row is! Map) return;
       final messageId = row['message_id']?.toString();
-      if (messageId == null || messageId.isEmpty) return;
-      if (messages.any((message) => '${message['id']}' == messageId)) {
-        _scheduleChatReload();
-      }
+      if (messageId == null || messageId.isEmpty ||
+          !messages.any((message) => '${message['id']}' == messageId)) return;
+
+      // Read receipts and attachment metadata affect only one bubble. Reloading
+      // the whole chat here caused repeated history/profile queries whenever a
+      // member opened a conversation or an attachment changed.
+      final timerKey = '${receipts ? 'receipt' : 'attachment'}:$messageId';
+      _reactionRefreshTimers.remove(timerKey)?.cancel();
+      _reactionRefreshTimers[timerKey] = Timer(Duration(milliseconds: 240), () async {
+        _reactionRefreshTimers.remove(timerKey);
+        try {
+          if (receipts) {
+            final rows = List<Map<String, dynamic>>.from(
+              await supabase.from('message_read_receipts')
+                .select('message_id,reader_id,read_at')
+                .eq('message_id', messageId)
+                .timeout(Duration(seconds: 5)),
+            );
+            if (mounted && messages.any((message) => '${message['id']}' == messageId)) {
+              setState(() => readReceipts[messageId] = rows);
+            }
+          } else {
+            final rows = List<Map<String, dynamic>>.from(
+              await supabase.from('message_attachments')
+                .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms')
+                .eq('message_id', messageId)
+                .timeout(Duration(seconds: 5)),
+            );
+            if (mounted && messages.any((message) => '${message['id']}' == messageId)) {
+              setState(() {
+                if (rows.isEmpty) {
+                  attachments.remove(messageId);
+                } else {
+                  attachments[messageId] = rows.first;
+                }
+              });
+            }
+          }
+        } catch (_) {
+          // The current bubble remains usable if this optional refresh fails.
+        }
+      });
     } catch (_) {
-      // Metadata updates are best-effort; a malformed payload must not break chat.
+      // A malformed realtime payload must not interrupt chat interactions.
     }
   }
 
@@ -12297,13 +12339,13 @@ class _ChatPageState extends State<ChatPage> {
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'message_read_receipts',
-        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+        callback: (payload) => _scheduleMessageMetadataRefresh(payload, receipts: true),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'message_attachments',
-        callback: (payload) => _scheduleChatReloadForMessageMetadata(payload),
+        callback: (payload) => _scheduleMessageMetadataRefresh(payload, receipts: false),
       )
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
