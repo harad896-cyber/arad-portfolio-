@@ -70,7 +70,7 @@ class _StoriesTrayState extends State<StoriesTray> {
     }
     final people = grouped.values.toList();
     return SizedBox(
-      height: 52,
+      height: 44,
       child: Row(
         children: [
           const SizedBox(width: 8),
@@ -124,8 +124,8 @@ class _StoryAddTile extends StatelessWidget {
   final VoidCallback onTap;
   const _StoryAddTile({required this.onTap});
   @override
-  Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: SizedBox(width: 54, child: Column(children: [
-    Container(width: 38, height: 38, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary.withValues(alpha:.18), Theme.of(context).colorScheme.secondary.withValues(alpha:.10)]), border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha:.75), width: 2), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.16), blurRadius: 12)]), child: const Icon(Icons.add_rounded, size: 30)),
+  Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: SizedBox(width: 46, child: Column(children: [
+    Container(width: 32, height: 32, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary.withValues(alpha:.18), Theme.of(context).colorScheme.secondary.withValues(alpha:.10)]), border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha:.75), width: 2), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.16), blurRadius: 12)]), child: const Icon(Icons.add_rounded, size: 30)),
     const SizedBox(height: 2), const Text('استوری من', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700))
   ])));
 }
@@ -139,8 +139,8 @@ class _StoryTile extends StatelessWidget {
     final p = Map<String, dynamic>.from(story['profile'] ?? {});
     final name = (p['display_name'] ?? p['username'] ?? 'کاربر').toString();
     final avatar = p['avatar_url']?.toString();
-    return GestureDetector(onTap: onTap, child: SizedBox(width: 54, child: Column(children: [
-      Container(width: 38, height: 38, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
+    return GestureDetector(onTap: onTap, child: SizedBox(width: 46, child: Column(children: [
+      Container(width: 32, height: 32, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha:.20), blurRadius: 13)]),
       child: Stack(clipBehavior: Clip.none, children: [
         CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -149,8 +149,8 @@ class _StoryTile extends StatelessWidget {
               : ClipOval(
                   child: Image.network(
                     avatar,
-                    width: 34,
-                    height: 34,
+                    width: 28,
+                    height: 28,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded),
                   ),
