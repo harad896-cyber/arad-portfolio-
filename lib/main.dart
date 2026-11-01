@@ -5300,6 +5300,7 @@ class _HomePageState extends State<HomePage> {
   String? _observedAuthUserId;
   DateTime? _lastBackPressedAt;
   bool _chatTopGlowVisible = true;
+  bool _homeChromeVisible = true;
 
   List<Map<String, dynamic>> get visibleChats {
     final type = selectedFilter >= 1 && selectedFilter <= 3
@@ -6114,6 +6115,15 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
+      AnimatedSize(
+        duration: const Duration(milliseconds: 230),
+        curve: Curves.easeInOutCubic,
+        alignment: Alignment.topCenter,
+        child: ClipRect(
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: _homeChromeVisible ? 1 : 0,
+            child: Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(8, 1, 8, 0),
         child: Align(
@@ -6145,7 +6155,9 @@ class _HomePageState extends State<HomePage> {
           ])),
           PopupMenuButton<String>(
             tooltip: trUi('منوی اصلی'),
-            icon: Icon(Icons.menu_rounded),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
+            icon: Icon(Icons.menu_rounded, size: 31),
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
@@ -6167,10 +6179,13 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 4),
         ]),
       ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 5),
-        child: Material(
-          color: glass,
+      Center(
+        child: SizedBox(
+          width: MediaQuery.sizeOf(context).width * .90,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
+            child: Material(
+              color: glass,
           borderRadius: BorderRadius.circular(15),
           child: TextField(
             controller: chatSearch,
@@ -6188,6 +6203,7 @@ class _HomePageState extends State<HomePage> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
+            ),
             ),
           ),
         ),
@@ -6210,12 +6226,21 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       SizedBox(height: 2),
+          ]),
+        ),
+      ),
       Expanded(
         child: NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            if (notification.metrics.axis == Axis.vertical) {
+            if (notification.metrics.axis == Axis.vertical &&
+                (notification is ScrollUpdateNotification || notification is UserScrollNotification)) {
               final visible = notification.metrics.pixels <= 8;
-              if (visible != _chatTopGlowVisible && mounted) setState(() => _chatTopGlowVisible = visible);
+              if ((visible != _chatTopGlowVisible || visible != _homeChromeVisible) && mounted) {
+                setState(() {
+                  _chatTopGlowVisible = visible;
+                  _homeChromeVisible = visible;
+                });
+              }
             }
             return false;
           },
@@ -6747,7 +6772,15 @@ class _HomePageState extends State<HomePage> {
                 : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; })),
       ))),
       floatingActionButton: navIndex == 0 ? FloatingActionButton(onPressed: createDirect, child: Icon(Icons.chat_rounded)) : null,
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: AnimatedSize(
+        duration: const Duration(milliseconds: 230),
+        curve: Curves.easeInOutCubic,
+        alignment: Alignment.bottomCenter,
+        child: ClipRect(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: _homeChromeVisible ? 1 : 0,
+            child: SafeArea(
         top: false,
         minimum: const EdgeInsets.fromLTRB(12, 0, 12, 7),
         child: ClipRRect(
@@ -6786,6 +6819,10 @@ class _HomePageState extends State<HomePage> {
                   NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
             ),
           ),
         ),
