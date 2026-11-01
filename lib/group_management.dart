@@ -440,17 +440,28 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Map<String, Map<String, dynamic>> profiles = {};
   bool loading = true, busy = false, admin = false, owner = false, canEditGroup = false, canRemoveMembers = false, canAddMembers = false, canDeleteMessages = false;
   String memberQuery = '';
+  String? loadError;
 
   String nameOf(String id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر').toString();
   String avatarOf(String id) => (profiles[id]?['avatar_url'] ?? '').toString();
   void toast(String s) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s))); }
 
   Future<void> load() async {
+    if (mounted && group == null) setState(() { loading = true; loadError = null; });
     try {
       final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id', widget.conversationId).single());
       final ms = List<Map<String, dynamic>>.from(await db.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId).order('joined_at'));
       final ids = ms.map((m) => m['user_id'].toString()).toList();
-      final ps = ids.isEmpty ? <Map<String, dynamic>>[] : List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', ids));
+      // is_verified is optional on older installations; never let that hide the
+      // entire member-management screen.
+      List<Map<String, dynamic>> ps = [];
+      if (ids.isNotEmpty) {
+        try {
+          ps = List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url,is_verified').inFilter('id', ids));
+        } catch (_) {
+          ps = List<Map<String, dynamic>>.from(await db.from('profiles').select('id,display_name,username,avatar_url').inFilter('id', ids));
+        }
+      }
       final uid = db.auth.currentUser?.id;
       final isOwner = uid != null && g['created_by']?.toString() == uid;
       final isAdmin = isOwner || (uid != null && ms.any((m) => m['user_id']?.toString() == uid && ['admin', 'owner'].contains(m['role'])));
@@ -463,7 +474,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       }
       if (!mounted) return;
       setState(() {
-        group = g; members = ms; profiles = {for (final p in ps) p['id'].toString(): p};
+        group = g; members = ms; profiles = {for (final p in ps) p['id'].toString(): p}; loadError = null;
         owner = isOwner; admin = isAdmin;
         canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false);
         canRemoveMembers = isOwner || permissions['can_remove_members'] == true;
@@ -471,7 +482,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
-    } catch (_) { if (mounted) { setState(() => loading = false); toast('مدیریت گروه بارگذاری نشد.'); } }
+    } catch (e) { if (mounted) { setState(() { loading = false; loadError = e.toString(); }); toast('مدیریت گروه بارگذاری نشد؛ برای تلاش دوباره دکمهٔ تازه‌سازی را بزنید.'); } }
   }
 
   Future<void> addMembers() async {
@@ -491,12 +502,20 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           .toList();
       final existing = members.map((m) => m['user_id'].toString()).toSet();
       final eligibleIds = contactIds.where((id) => !existing.contains(id)).toList();
-      final contactProfiles = eligibleIds.isEmpty
-          ? <Map<String, dynamic>>[]
-          : List<Map<String, dynamic>>.from(await db
+      List<Map<String, dynamic>> contactProfiles = [];
+      if (eligibleIds.isNotEmpty) {
+        try {
+          contactProfiles = List<Map<String, dynamic>>.from(await db
               .from('profiles')
               .select('id,display_name,username,avatar_url,is_verified')
               .inFilter('id', eligibleIds));
+        } catch (_) {
+          contactProfiles = List<Map<String, dynamic>>.from(await db
+              .from('profiles')
+              .select('id,display_name,username,avatar_url')
+              .inFilter('id', eligibleIds));
+        }
+      }
       contactProfiles.sort((a, b) =>
           (a['display_name'] ?? a['username'] ?? '').toString().toLowerCase()
               .compareTo((b['display_name'] ?? b['username'] ?? '').toString().toLowerCase()));
@@ -841,6 +860,24 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   @override Widget build(BuildContext context) {
     if (loading) return Scaffold(appBar: AppBar(title: const Text('مدیریت گروه')), body: const AppSkeletonList(count: 6));
+    if (group == null) return Scaffold(
+      appBar: AppBar(title: const Text('مدیریت گروه')),
+      body: Center(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.cloud_off_rounded, size: 46),
+          const SizedBox(height: 12),
+          const Text('اطلاعات مدیریت گروه بارگذاری نشد.', textAlign: TextAlign.center),
+          if ((loadError ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(loadError!, maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+          const SizedBox(height: 16),
+          FilledButton.icon(onPressed: load, icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره')),
+        ]),
+      )),
+    );
     if (!admin) return Scaffold(
       appBar: AppBar(title: const Text('مدیریت گروه')),
       body: Center(child: Padding(
