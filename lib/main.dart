@@ -5293,9 +5293,6 @@ class _HomePageState extends State<HomePage> {
   bool _homeLoadQueued = false;
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
-  final Set<String> _shownMessageNotificationIds = <String>{};
-  OverlayEntry? _messageNotificationEntry;
-  Timer? _messageNotificationTimer;
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _inviteLinkSubscription;
   final Map<String, DateTime> _recentInviteCodes = <String, DateTime>{};
@@ -5463,27 +5460,51 @@ class _HomePageState extends State<HomePage> {
         debugPrint('Latest-message preview query failed; keeping chat list: $messageError');
       }
 
-      // Unread badges are calculated for the signed-in user, not hard-coded
-      // to zero. mark_conversation_read stamps read_at for messages from peers,
-      // so this query matches the read state used by the chat screen.
+      // Unread state is private to the signed-in account. Never use the
+      // legacy messages.read_at column here: it is shared by every member and
+      // one person's read action must not clear another person's unread badge.
       try {
         final unreadRows = await supabase
             .from('messages')
-            .select('conversation_id')
+            .select('id,conversation_id')
             .inFilter('conversation_id', visibleIds)
             .neq('sender_id', uid)
-            .isFilter('read_at', null)
             .isFilter('deleted_at', null)
+            .order('created_at', ascending: false)
             .limit(5000)
             .timeout(const Duration(seconds: 8));
-        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
-          final id = row['conversation_id']?.toString() ?? '';
-          if (id.isNotEmpty) unreadByConversation[id] = (unreadByConversation[id] ?? 0) + 1;
+        final unreadMessages = List<Map<String, dynamic>>.from(unreadRows as List);
+        final unreadMessageIds = unreadMessages
+            .map((row) => row['id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toList();
+        final readForThisUser = <String>{};
+        for (var offset = 0; offset < unreadMessageIds.length; offset += 500) {
+          final batch = unreadMessageIds.skip(offset).take(500).toList();
+          final receipts = await supabase
+              .from('message_user_reads')
+              .select('message_id')
+              .eq('user_id', uid)
+              .inFilter('message_id', batch)
+              .timeout(const Duration(seconds: 8));
+          readForThisUser.addAll((receipts as List)
+              .map((row) => row['message_id']?.toString() ?? '')
+              .where((id) => id.isNotEmpty));
+        }
+        for (final row in unreadMessages) {
+          final messageId = row['id']?.toString() ?? '';
+          final conversationId = row['conversation_id']?.toString() ?? '';
+          if (messageId.isNotEmpty &&
+              conversationId.isNotEmpty &&
+              !readForThisUser.contains(messageId)) {
+            unreadByConversation[conversationId] =
+                (unreadByConversation[conversationId] ?? 0) + 1;
+          }
         }
       } catch (unreadError) {
-        // A badge failure must not hide chats. Keep a diagnostic for schema/RLS
-        // problems rather than pretending the unread count was fetched.
-        debugPrint('Unread message counts unavailable; chat list remains visible: $unreadError');
+        // If per-user read state cannot be fetched, do not silently present a
+        // false zero count. The rest of the chat list remains usable.
+        debugPrint('Per-account unread counts unavailable: $unreadError');
       }
 
       // For chats without a preview, try one lightweight request per chat.
@@ -5975,7 +5996,6 @@ class _HomePageState extends State<HomePage> {
         table: 'messages',
         callback: (payload) {
           _scheduleHomeRefresh();
-          unawaited(_handleIncomingMessage(payload.newRecord));
         },
       )
       .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'messages', callback: (_) => _scheduleHomeRefresh())
@@ -5997,170 +6017,6 @@ class _HomePageState extends State<HomePage> {
         callback: (payload) => _handleIncomingCall(payload.newRecord),
       )
       .subscribe();
-  }
-
-  void _dismissFloatingMessageNotification() {
-    _messageNotificationTimer?.cancel();
-    _messageNotificationTimer = null;
-    _messageNotificationEntry?.remove();
-    _messageNotificationEntry = null;
-  }
-
-  void _showFloatingMessageNotification({
-    required String title,
-    required String preview,
-    required VoidCallback onOpen,
-  }) {
-    if (!mounted) return;
-    _dismissFloatingMessageNotification();
-    final overlay = Overlay.of(context, rootOverlay: true);
-    late final OverlayEntry entry;
-    entry = OverlayEntry(builder: (overlayContext) {
-      final scheme = Theme.of(overlayContext).colorScheme;
-      return Positioned(
-        top: 8,
-        left: 12,
-        right: 12,
-        child: SafeArea(
-          bottom: false,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: Duration(milliseconds: 420),
-            curve: Curves.easeOutCubic,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      scheme.surface.withValues(alpha: .90),
-                      Color.alphaBlend(scheme.primary.withValues(alpha: .13), scheme.surface.withValues(alpha: .94)),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: scheme.primary.withValues(alpha: .30)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 28, offset: Offset(0, 10)),
-                    BoxShadow(color: scheme.primary.withValues(alpha: .14), blurRadius: 24, spreadRadius: -3),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: InkWell(
-                      onTap: () {
-                        _dismissFloatingMessageNotification();
-                        onOpen();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-                        child: Row(children: [
-                          Container(
-                            width: 42, height: 42,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [scheme.primary, Color.lerp(scheme.primary, Color(0xFF45B8FF), .45)!]),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(Icons.notifications_active_rounded, color: scheme.onPrimary, size: 22),
-                          ),
-                          SizedBox(width: 11),
-                          Expanded(child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                              SizedBox(height: 3),
-                              Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                            ],
-                          )),
-                          IconButton(
-                            tooltip: 'بستن اعلان',
-                            visualDensity: VisualDensity.compact,
-                            onPressed: _dismissFloatingMessageNotification,
-                            icon: Icon(Icons.close_rounded, size: 19, color: scheme.onSurfaceVariant),
-                          ),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            builder: (context, progress, child) => Opacity(
-              opacity: Curves.easeOut.transform(progress),
-              child: Transform.translate(
-                offset: Offset(0, (1 - Curves.easeOutCubic.transform(progress)) * -76),
-                child: child,
-              ),
-            ),
-          ),
-        ),
-      );
-    });
-    _messageNotificationEntry = entry;
-    overlay.insert(entry);
-    _messageNotificationTimer = Timer(Duration(seconds: 5), _dismissFloatingMessageNotification);
-  }
-
-  Future<void> _handleIncomingMessage(Map<String, dynamic> row) async {
-    final uid = supabase.auth.currentUser?.id;
-    final senderId = row['sender_id']?.toString() ?? '';
-    final conversationId = row['conversation_id']?.toString() ?? '';
-    final messageId = row['id']?.toString() ?? '';
-    if (!mounted || uid == null || senderId.isEmpty || senderId == uid ||
-        conversationId.isEmpty || messageId.isEmpty) return;
-    // A route-level check hid all notifications while any chat was open.
-    if ((_openChatConversationCounts[conversationId] ?? 0) > 0) return;
-    if (!_shownMessageNotificationIds.add(messageId)) return;
-    if (_shownMessageNotificationIds.length > 100) {
-      _shownMessageNotificationIds.remove(_shownMessageNotificationIds.first);
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool('chat_notifications_muted_${uid}_${conversationId}') == true) return;
-    } catch (_) {}
-
-    String title = 'پیام جدید';
-    for (final chat in chats) {
-      if (chat['id']?.toString() != conversationId) continue;
-      final peer = chat['_peer'] is Map ? Map<String, dynamic>.from(chat['_peer'] as Map) : <String, dynamic>{};
-      title = (chat['title'] ?? peer['display_name'] ?? peer['username'] ?? 'گفتگوی جدید').toString();
-      break;
-    }
-    if (title == 'پیام جدید' || title.trim().isEmpty) {
-      try {
-        final details = await Future.wait<dynamic>([
-          supabase.from('conversations').select('type,title').eq('id', conversationId).maybeSingle(),
-          supabase.from('profiles').select('display_name,username').eq('id', senderId).maybeSingle(),
-        ]);
-        final conversation = details[0] is Map ? Map<String, dynamic>.from(details[0] as Map) : <String, dynamic>{};
-        final sender = details[1] is Map ? Map<String, dynamic>.from(details[1] as Map) : <String, dynamic>{};
-        title = (conversation['title'] ?? sender['display_name'] ?? sender['username'] ?? 'پیام جدید').toString();
-      } catch (_) {}
-    }
-
-    final type = (row['message_type'] ?? 'text').toString().toLowerCase();
-    final body = (row['body'] ?? '').toString().trim();
-    final preview = switch (type) {
-      'image' => '📷 عکس جدید',
-      'video' => '🎬 ویدئوی جدید',
-      'audio' || 'voice' => '🎙 پیام صوتی جدید',
-      'file' => '📎 فایل جدید',
-      _ => body.isEmpty ? 'پیام جدید دریافت شد' : body,
-    };
-    if (!mounted || (_openChatConversationCounts[conversationId] ?? 0) > 0) return;
-    _showFloatingMessageNotification(
-      title: title,
-      preview: preview,
-      onOpen: () {
-        if (!mounted) return;
-        Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: conversationId, title: title)));
-      },
-    );
   }
 
   Future<void> _handleIncomingCall(Map<String, dynamic> row) async {
@@ -6233,9 +6089,6 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _homeAuthSubscription?.cancel();
     _homeRefreshTimer?.cancel();
-    _messageNotificationTimer?.cancel();
-    _messageNotificationEntry?.remove();
-    _messageNotificationEntry = null;
     _inviteLinkSubscription?.cancel();
     if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
     if (_callChannel != null) supabase.removeChannel(_callChannel!);
@@ -6249,11 +6102,6 @@ class _HomePageState extends State<HomePage> {
     final dark = theme.brightness == Brightness.dark;
     final glass = scheme.surface.withValues(alpha: dark ? .96 : .98);
     final filteredChats = visibleChats;
-    final unreadTotal = chats.fold<int>(
-      0,
-      (total, chat) => total + (int.tryParse('${chat['unread_count'] ?? 0}') ?? 0),
-    );
-
     Widget actionButton({required IconData icon, required VoidCallback onTap, String? tooltip}) => Tooltip(
       message: tooltip ?? '',
       child: Material(
@@ -6324,37 +6172,6 @@ class _HomePageState extends State<HomePage> {
             SizedBox(height: 2),
             Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                tooltip: trUi('اعلان‌ها'),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsCenterPage())),
-                icon: Icon(Icons.notifications_none_rounded),
-              ),
-              if (unreadTotal > 0)
-                Positioned(
-                  top: 2,
-                  right: 2,
-                  child: IgnorePointer(
-                    child: Container(
-                      constraints: BoxConstraints(minWidth: 17, minHeight: 17),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: scheme.error,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: scheme.surface, width: 1.5),
-                      ),
-                      child: Text(
-                        unreadTotal > 99 ? '99+' : '$unreadTotal',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: scheme.onError, fontSize: 9, fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
           PopupMenuButton<String>(
             tooltip: trUi('منوی اصلی'),
             icon: Icon(Icons.menu_rounded),
@@ -10174,10 +9991,15 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> markRead() async {
     try {
       final settings = await loadUserSettings();
-      if (settings['read_receipts'] == false) return;
-      await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
+      // Public read receipts respect the privacy setting, but the local
+      // account's own unread state must always be cleared when the chat opens.
+      if (settings['read_receipts'] != false) {
+        await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
+      }
       await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('Per-account message read update failed: $error');
+    }
   }
 
   final List<String> quickReactions = const ['❤️','👍','😂','🔥','🥰','👏','😮','😢','🙏','🎉','💯','🤔'];
