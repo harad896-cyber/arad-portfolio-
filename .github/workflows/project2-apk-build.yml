@@ -107,9 +107,9 @@ jobs:
           colors = values / 'colors.xml'
           old = colors.read_text() if colors.exists() else '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n</resources>\n'
           if '<color name="ic_launcher_background">' in old:
-              old = re.sub(r'<color name="ic_launcher_background">.*?</color>', '<color name="ic_launcher_background">#087F45</color>', old, flags=re.S)
+              old = re.sub(r'<color name="ic_launcher_background">.*?</color>', '<color name="ic_launcher_background">#172554</color>', old, flags=re.S)
           else:
-              old = old.replace('</resources>', '    <color name="ic_launcher_background">#087F45</color>\n</resources>')
+              old = old.replace('</resources>', '    <color name="ic_launcher_background">#172554</color>\n</resources>')
           colors.write_text(old)
           print('GapResan app label and legacy/adaptive launcher icons generated.')
           PY
