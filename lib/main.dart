@@ -5926,12 +5926,43 @@ class _HomePageState extends State<HomePage> {
     // the private conversation list when Supabase supplies a valid session.
     _homeAuthSubscription = supabase.auth.onAuthStateChange.listen((state) {
       final nextUserId = state.session?.user.id;
-      if (nextUserId == null) return;
+      if (nextUserId == null) {
+        _observedAuthUserId = null;
+        if (mounted) {
+          setState(() {
+            chats = [];
+            chatFolders = [];
+            folderAssignments = {};
+            archivedChatIds = <String>{};
+            manuallyUnreadChatIds = <String>{};
+            pinnedChatIds = <String>{};
+            loading = false;
+            homeLoadError = null;
+          });
+        }
+        return;
+      }
+      final accountChanged = nextUserId != _observedAuthUserId;
       final sessionReady = state.event == AuthChangeEvent.initialSession ||
           state.event == AuthChangeEvent.signedIn ||
           state.event == AuthChangeEvent.tokenRefreshed ||
-          nextUserId != _observedAuthUserId;
+          accountChanged;
       if (sessionReady) {
+        if (accountChanged && mounted) {
+          // Clear the previous account immediately; do not leave its private
+          // chat list visible while the next account is being hydrated.
+          setState(() {
+            chats = [];
+            chatFolders = [];
+            folderAssignments = {};
+            archivedChatIds = <String>{};
+            manuallyUnreadChatIds = <String>{};
+            pinnedChatIds = <String>{};
+            loading = true;
+            homeLoadError = null;
+          });
+          _contactsFuture = null;
+        }
         _observedAuthUserId = nextUserId;
         unawaited(load());
       }
