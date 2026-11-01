@@ -9960,16 +9960,21 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> markRead() async {
+    // The account's own unread state is independent from the public
+    // read-receipt preference and must be saved even if settings cannot load.
+    try {
+      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
+    } catch (error) {
+      debugPrint('Private message read update failed: $error');
+    }
+
     try {
       final settings = await loadUserSettings();
-      // Store the current account's private read state even when public read
-      // receipts are disabled in privacy settings.
-      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
       if (settings['read_receipts'] != false) {
         await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
       }
     } catch (error) {
-      debugPrint('Per-account message read update failed: $error');
+      debugPrint('Public message read receipt update failed: $error');
     }
   }
 
