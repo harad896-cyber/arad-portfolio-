@@ -688,8 +688,23 @@ class _ProfilePageState extends State<ProfilePage> {
     final phone = supabase.auth.currentUser?.phone?.trim() ?? '';
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 110),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 110),
       children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          decoration: BoxDecoration(
+            color: s.surface.withValues(alpha: .52),
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: s.outline.withValues(alpha: .20)),
+          ),
+          child: Row(children: [
+            Icon(Icons.person_outline_rounded, color: s.primary, size: 21),
+            const SizedBox(width: 9),
+            const Expanded(child: Text('پروفایل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+            Container(width: 34, height: 3, decoration: BoxDecoration(color: s.primary.withValues(alpha: .55), borderRadius: BorderRadius.circular(4))),
+          ]),
+        ),
         glass(Padding(
           padding: const EdgeInsets.fromLTRB(18, 24, 18, 20),
           child: Column(children: [
