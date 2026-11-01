@@ -6240,17 +6240,17 @@ class _HomePageState extends State<HomePage> {
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
         child: Container(
-          height: 5,
-          margin: const EdgeInsets.fromLTRB(34, 0, 34, 3),
+          height: 8,
+          margin: const EdgeInsets.fromLTRB(30, 1, 30, 7),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             gradient: LinearGradient(colors: [
               scheme.primary.withValues(alpha: .02),
-              scheme.primary.withValues(alpha: dark ? .50 : .32),
-              scheme.tertiary.withValues(alpha: dark ? .34 : .22),
+              scheme.primary.withValues(alpha: dark ? .78 : .62),
+              scheme.tertiary.withValues(alpha: dark ? .58 : .42),
               scheme.primary.withValues(alpha: .02),
             ]),
-            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: _chatTopGlowVisible ? .20 : 0), blurRadius: 17, spreadRadius: 1)],
+            boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: _chatTopGlowVisible ? .38 : 0), blurRadius: 24, spreadRadius: 2)],
           ),
         ),
       ),
@@ -6940,19 +6940,27 @@ class _HomePageState extends State<HomePage> {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: .64),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).colorScheme.surface.withValues(alpha: .91),
+                    Theme.of(context).colorScheme.surface.withValues(alpha: .72),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .21), width: 1.1),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .30), width: 1.25),
                 boxShadow: [
                   BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 22, offset: const Offset(0, 6)),
-                  BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: .10), blurRadius: 18, spreadRadius: -5, offset: const Offset(0, -2)),
+                  BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: .24), blurRadius: 25, spreadRadius: -3, offset: const Offset(0, -3)),
+                  BoxShadow(color: Colors.white.withValues(alpha: .10), blurRadius: 1, spreadRadius: 0, offset: const Offset(0, 1)),
                 ],
               ),
               child: NavigationBar(
-                height: 68,
+                height: 72,
                 backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
-                indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
+                indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: .25),
                 elevation: 0,
                 selectedIndex: navIndex,
                 onDestinationSelected: (i) {
