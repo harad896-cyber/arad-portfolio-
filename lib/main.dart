@@ -5442,6 +5442,7 @@ class _HomePageState extends State<HomePage> {
       // individually below so older but active conversations still show their
       // true latest message.
       final latestByConversation = <String, Map<String, dynamic>>{};
+      final unreadByConversation = <String, int>{};
       // Preview queries are optional: if messages have an RLS/schema/network
       // issue, still show the conversations instead of failing the whole page.
       try {
@@ -5459,6 +5460,29 @@ class _HomePageState extends State<HomePage> {
         }
       } catch (messageError) {
         debugPrint('Latest-message preview query failed; keeping chat list: $messageError');
+      }
+
+      // Unread badges are calculated for the signed-in user, not hard-coded
+      // to zero. mark_conversation_read stamps read_at for messages from peers,
+      // so this query matches the read state used by the chat screen.
+      try {
+        final unreadRows = await supabase
+            .from('messages')
+            .select('conversation_id')
+            .inFilter('conversation_id', visibleIds)
+            .neq('sender_id', uid)
+            .isFilter('read_at', null)
+            .isFilter('deleted_at', null)
+            .limit(5000)
+            .timeout(const Duration(seconds: 8));
+        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
+          final id = row['conversation_id']?.toString() ?? '';
+          if (id.isNotEmpty) unreadByConversation[id] = (unreadByConversation[id] ?? 0) + 1;
+        }
+      } catch (unreadError) {
+        // A badge failure must not hide chats. Keep a diagnostic for schema/RLS
+        // problems rather than pretending the unread count was fetched.
+        debugPrint('Unread message counts unavailable; chat list remains visible: $unreadError');
       }
 
       // For chats without a preview, try one lightweight request per chat.
@@ -5555,7 +5579,7 @@ class _HomePageState extends State<HomePage> {
           '_peer': peer ?? <String, dynamic>{},
           '_last': last,
           '_preview': preview,
-          'unread_count': 0,
+          'unread_count': unreadByConversation[id] ?? 0,
           'is_online': peer?['is_online'] == true,
         });
       }
