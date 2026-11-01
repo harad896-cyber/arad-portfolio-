@@ -6259,7 +6259,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(children: [
-      SizedBox(height: 56, child: StoriesTray()),
+      Padding(padding: const EdgeInsets.only(top: 2), child: SizedBox(height: 52, child: StoriesTray())),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
         child: Row(children: [
@@ -6304,6 +6304,7 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.menu_rounded),
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
+              else if (value == 'global_search') showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate());
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
               else if (value == 'folders') _openFolderManager();
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
@@ -6313,6 +6314,7 @@ class _HomePageState extends State<HomePage> {
             },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
+              PopupMenuItem(value: 'global_search', child: ListTile(dense: true, leading: Icon(Icons.manage_search_rounded), title: Text(trUi('جستجوی سراسری پیام‌ها و کاربران')))),
               PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
               PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
               PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
@@ -6321,9 +6323,7 @@ class _HomePageState extends State<HomePage> {
               PopupMenuItem(value: 'stories', child: ListTile(dense: true, leading: Icon(Icons.auto_stories_outlined), title: Text(trUi('دیدن استوری‌ها')))),
             ],
           ),
-          SizedBox(width: 6),
-          actionButton(icon: Icons.search_rounded, tooltip: trUi('جستجوی سراسری پیام‌ها و کاربران'), onTap: () => showSearch<Map<String,dynamic>?>(context: context, delegate: GlobalSearchDelegate())),
-          SizedBox(width: 6),
+          const SizedBox(width: 4),
         ]),
       ),
       Padding(
