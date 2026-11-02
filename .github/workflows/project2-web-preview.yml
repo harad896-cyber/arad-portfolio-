@@ -1,0 +1,57 @@
+name: Project 2 Web Preview
+
+on:
+  push:
+    branches:
+      - fix/project2-group-add-permissions
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: project2-web-preview-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project 2 branch
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # Use the same pinned Flutter build script as Vercel so the two
+      # preview paths do not silently use different SDK versions or assets.
+      - name: Build Flutter web
+        env:
+          BASE_HREF: /arad-portfolio-/
+        run: bash scripts/build_web.sh
+
+      - name: Upload web build
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/fix/project2-group-add-permissions'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+    steps:
+      - name: Deploy Project 2 preview to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1966,7 +1966,7 @@ class AradMessenger extends StatelessWidget {
           backgroundColor: Color(0xFFFCFCFE),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
           iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
@@ -1976,13 +1976,13 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .13)), 
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .16)), 
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           tileColor: Color(0xFFFFFFFF),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
           iconColor: Color(0xFF766A88),
@@ -2000,15 +2000,15 @@ class AradMessenger extends StatelessWidget {
           prefixIconColor: Color(appTheme.seed),
           suffixIconColor: Color(0xFF6C7180),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
         ),
@@ -2022,7 +2022,7 @@ class AradMessenger extends StatelessWidget {
             elevation: 0,
             shadowColor: Colors.transparent,
             minimumSize: const Size.fromHeight(46),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -2059,7 +2059,7 @@ class AradMessenger extends StatelessWidget {
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
           backgroundColor: Color(0xFF071A2D),
           surfaceTintColor: Colors.transparent,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -2068,13 +2068,13 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .24)), 
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .28)), 
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           tileColor: Color(0xFF0D2336),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
           iconColor: Color(0xFFBDB1D0),
@@ -2092,15 +2092,15 @@ class AradMessenger extends StatelessWidget {
           prefixIconColor: Color(appTheme.seed),
           suffixIconColor: Color(0xFF9DAFC0),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFF263653))
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFF2A3349)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
         ),
@@ -2114,7 +2114,7 @@ class AradMessenger extends StatelessWidget {
             elevation: 0,
             shadowColor: Colors.transparent,
             minimumSize: const Size.fromHeight(46),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -2221,7 +2221,7 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
       Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:()async{try{await supabase.from('chat_folder_items').delete().eq('folder_id',fid);if(selected.isNotEmpty){await supabase.from('chat_folder_items').insert(selected.map((id)=>{'folder_id':fid,'conversation_id':id}).toList());}if(sheet.mounted)Navigator.pop(sheet);await _load();}catch(e){if(mounted)showMsg(context,'ذخیره گفتگوهای پوشه ناموفق بود: '+_friendlyError(e.toString()));}},child:Text(trUi('ذخیره تغییرات')))),
     ])))));
   }
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('پوشه‌های گفتگو'))),body:loading?Center(child:CircularProgressIndicator()):folders.isEmpty?PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>[PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:Icon(Icons.add_rounded),label:Text(trUi('پوشه جدید'))));
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('پوشه‌های گفتگو'))),body:loading?Center(child:CircularProgressIndicator()):folders.isEmpty?PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length+1,itemBuilder:(_,i){if(i==0)return const Padding(padding:EdgeInsets.only(bottom:10),child:AppPageHero(title:'پوشه‌های گفتگو',subtitle:'گفتگوها را بر اساس موضوع یا اولویت مرتب کن',icon:Icons.folder_copy_rounded));final f=folders[i-1],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>[PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:Icon(Icons.add_rounded),label:Text(trUi('پوشه جدید'))));
 }
 class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
@@ -2280,6 +2280,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
         child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:Icon(Icons.search_rounded))),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
+        AppPageHero(title:trUi('تنظیمات'),subtitle:'مدیریت حساب، ظاهر و امکانات گپ‌رسان',icon:Icons.tune_rounded),
         Card(child:ListTile(
           leading:CircleAvatar(backgroundColor:Theme.of(context).colorScheme.primaryContainer,child:Icon(Icons.person_rounded,color:Theme.of(context).colorScheme.primary)),
           title:Text(trUi('حساب شما'),style:TextStyle(fontWeight:FontWeight.w900)),
@@ -3203,6 +3204,7 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
+          const AppPageHero(title: 'کنترل سریع برنامه', subtitle: 'ظاهر، اعلان‌ها و رفتار برنامه را یک‌جا تنظیم کن', icon: Icons.tune_rounded),
           Card(child: SwitchListTile(
             value: appTheme.dark,
             secondary: Icon(appTheme.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: scheme.primary),
@@ -5285,8 +5287,6 @@ class _HomePageState extends State<HomePage> {
   Set<String> archivedChatIds = <String>{};
   Set<String> manuallyUnreadChatIds = <String>{};
   Set<String> pinnedChatIds = <String>{};
-  final TextEditingController chatSearch = TextEditingController();
-  String chatQuery = '';
   Future<List<Map<String, dynamic>>>? _contactsFuture;
   RealtimeChannel? _homeChannel;
   Timer? _homeRefreshTimer;
@@ -5316,14 +5316,8 @@ class _HomePageState extends State<HomePage> {
       final matchesFolder = folderSet == null || folderSet.contains(c['id'].toString());
       final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
       final isUnread = unreadCount > 0 || c['unread'] == true;
-      final q = chatQuery.trim().toLowerCase();
-      final peer = c['_peer'] as Map<String,dynamic>?;
-      final title = (c['title'] ?? peer?['display_name'] ?? peer?['username'] ?? '').toString().toLowerCase();
-      final last = (c['_preview'] ?? c['last_message'] ?? '').toString().toLowerCase();
-      final username = (peer?['username'] ?? c['username'] ?? '').toString().toLowerCase();
       final isArchived = archivedChatIds.contains(c['id'].toString());
-      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread) &&
-          (q.isEmpty || title.contains(q) || username.contains(q) || last.contains(q));
+      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread);
     }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
@@ -5483,8 +5477,10 @@ class _HomePageState extends State<HomePage> {
       // For chats without a preview, try one lightweight request per chat.
       // Failure to read a preview must not hide that chat from the list.
       final missingLatestIds = visibleIds.where((id) => !latestByConversation.containsKey(id)).toList();
-      for (var offset = 0; offset < missingLatestIds.length; offset += 8) {
-        final batch = missingLatestIds.skip(offset).take(8);
+      for (var offset = 0; offset < missingLatestIds.length; offset += 12) {
+        // A slightly wider bounded batch avoids many sequential round trips
+        // for accounts with lots of chats while keeping request concurrency safe.
+        final batch = missingLatestIds.skip(offset).take(12);
         final results = await Future.wait(batch.map((id) async {
           try {
             final rows = await supabase.from('messages')
@@ -5509,21 +5505,29 @@ class _HomePageState extends State<HomePage> {
       // 4) Peer names are optional too. If membership/profile hydration fails,
       // keep each chat visible using the conversation's own title as fallback.
       final peerByConversation = <String, String>{};
-      try {
-        final memberResponse = await supabase
-            .from('conversation_members')
-            .select('conversation_id,user_id')
-            .inFilter('conversation_id', visibleIds)
-            .timeout(const Duration(seconds: 8));
-        for (final row in List<Map<String, dynamic>>.from(memberResponse as List)) {
-          final conversationId = row['conversation_id']?.toString() ?? '';
-          final memberId = row['user_id']?.toString() ?? '';
-          if (conversationId.isNotEmpty && memberId.isNotEmpty && memberId != uid) {
-            peerByConversation.putIfAbsent(conversationId, () => memberId);
+      // Only direct chats need a peer profile. Fetching every group/channel
+      // member here wastes bandwidth and can accidentally use a member's
+      // personal avatar as the group's image when the group has no photo.
+      final directConversationIds = visibleIds.where((id) =>
+          (conversationsById[id]?['type'] ?? 'direct').toString() == 'direct'
+      ).toList();
+      if (directConversationIds.isNotEmpty) {
+        try {
+          final memberResponse = await supabase
+              .from('conversation_members')
+              .select('conversation_id,user_id')
+              .inFilter('conversation_id', directConversationIds)
+              .timeout(const Duration(seconds: 8));
+          for (final row in List<Map<String, dynamic>>.from(memberResponse as List)) {
+            final conversationId = row['conversation_id']?.toString() ?? '';
+            final memberId = row['user_id']?.toString() ?? '';
+            if (conversationId.isNotEmpty && memberId.isNotEmpty && memberId != uid) {
+              peerByConversation.putIfAbsent(conversationId, () => memberId);
+            }
           }
+        } catch (memberError) {
+          debugPrint('Peer membership lookup failed; keeping chat list: $memberError');
         }
-      } catch (memberError) {
-        debugPrint('Peer membership lookup failed; keeping chat list: $memberError');
       }
       final peerIds = peerByConversation.values.toSet().toList();
       final profilesById = <String, Map<String, dynamic>>{};
@@ -6065,7 +6069,6 @@ class _HomePageState extends State<HomePage> {
     _inviteLinkSubscription?.cancel();
     if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
     if (_callChannel != null) supabase.removeChannel(_callChannel!);
-    chatSearch.dispose();
     super.dispose();
   }
 
@@ -6147,70 +6150,56 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       Padding(
-        padding: EdgeInsets.fromLTRB(16, _chatTopGlowVisible ? 8 : 5, 12, _chatTopGlowVisible ? 8 : 5),
-        child: Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: _chatTopGlowVisible ? 22 : 19, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-            SizedBox(height: 2),
-            Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
-          ])),
-          PopupMenuButton<String>(
-            tooltip: trUi('منوی اصلی'),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
-            icon: Container(width: 48, height: 48, decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .62), shape: BoxShape.circle), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 32, color: scheme.primary)),
-            onSelected: (value) {
-              if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
-              else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
-              else if (value == 'folders') _openFolderManager();
-              else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
-              else if (value == 'group') createGroup();
-              else if (value == 'join') _joinGroupByInviteCode();
-              else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
-              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
-              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
-              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
-              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
-              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
-            ],
-          ),
-          const SizedBox(width: 4),
-        ]),
-      ),
-      Center(
-        child: SizedBox(
-          width: (MediaQuery.sizeOf(context).width * .84).clamp(0.0, 520.0).toDouble(),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
-            child: Material(
-              color: glass,
-              child: TextField(
-                controller: chatSearch,
-                onChanged: (v) => setState(() => chatQuery = v),
-                textDirection: TextDirection.rtl,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: trUi('جستجو در گفتگوهای فعلی'),
-                  prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
-                  suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(
-                    tooltip: trUi('پاک کردن'),
-                    onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); },
-                    icon: Icon(Icons.close_rounded, size: 19),
-                  ),
-                  isDense: true,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
-                ),
-              ),
+        padding: EdgeInsets.fromLTRB(12, _chatTopGlowVisible ? 9 : 4, 12, _chatTopGlowVisible ? 9 : 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerRight,
+              end: Alignment.centerLeft,
+              colors: [scheme.primary.withValues(alpha: dark ? .16 : .10), scheme.surface.withValues(alpha: .15)],
             ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: scheme.primary.withValues(alpha: .12)),
           ),
+          child: Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: _chatTopGlowVisible ? 23 : 19, fontWeight: FontWeight.w900, letterSpacing: -.35)),
+              SizedBox(height: 3),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 7, height: 7, decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle)),
+                SizedBox(width: 6),
+                Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w700)),
+              ]),
+            ])),
+            PopupMenuButton<String>(
+              tooltip: trUi('منوی اصلی'),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 58, minHeight: 58),
+              icon: Container(width: 58, height: 58, decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [scheme.primary, Color.lerp(scheme.primary, scheme.tertiary, .28)!]),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .24), blurRadius: 13, offset: Offset(0, 4))],
+              ), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 38, color: scheme.onPrimary)),
+              onSelected: (value) {
+                if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
+                else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
+                else if (value == 'folders') _openFolderManager();
+                else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
+                else if (value == 'group') createGroup();
+                else if (value == 'join') _joinGroupByInviteCode();
+                else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
+                PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
+                PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
+                PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
+                PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
+                PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
+              ],
+            ),
+          ]),
         ),
       ),
       SizedBox(
@@ -6277,13 +6266,11 @@ class _HomePageState extends State<HomePage> {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Container(width: 76, height: 76, decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle), child: Icon(Icons.forum_rounded, size: 34, color: scheme.primary)),
                       SizedBox(height: 17),
-                      Text(chatQuery.trim().isNotEmpty ? trUi('نتیجه‌ای پیدا نشد') : trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      Text(trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
                       SizedBox(height: 7),
-                      Text(chatQuery.trim().isNotEmpty ? trUi('نام یا عبارت دیگری را جستجو کنید.') : trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
-                      if (chatQuery.trim().isEmpty) ...[
-                        SizedBox(height: 17),
-                        FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
-                      ],
+                      Text(trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
+                      SizedBox(height: 17),
+                      FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
                     ]),
                   ))
                 : ListView.separated(
@@ -6316,7 +6303,7 @@ class _HomePageState extends State<HomePage> {
                         shadowColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(23),
                           side: BorderSide(
                             color: unread || isPinned
                                 ? scheme.primary.withValues(alpha: dark ? .65 : .42)
@@ -6819,7 +6806,7 @@ class _HomePageState extends State<HomePage> {
                             setState(() => showContacts = false);
                           }
                           if (i == 0) {
-                            setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
+                            setState(() { selectedFolderId = null; selectedFilter = 0; });
                             unawaited(load());
                           }
                           return;
@@ -7559,6 +7546,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       appBar: AppBar(title: Text(trUi('ساخت گروه'))),
       body: Column(
         children: [
+          Padding(padding: const EdgeInsets.fromLTRB(12, 12, 12, 2), child: AppPageHero(title:trUi('ساخت گروه'),subtitle:'نام گروه را بنویس و اعضا را انتخاب کن',icon:Icons.groups_rounded)),
           Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: OutlineInputBorder()))),
           Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: InputDecoration(hintText: 'جستجو و انتخاب از مخاطبین...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
@@ -7686,6 +7674,7 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(kAppRadius)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          AppPageHero(title:trUi('ایجاد کانال'),subtitle:'کانال تازه بساز و توضیحاتش را وارد کن',icon:Icons.campaign_rounded),
           Icon(Icons.campaign_rounded, size: 58), SizedBox(height: 12),
           TextField(controller:title, onChanged:(v)=>setState(()=>channelTitleError=v.trim().isEmpty?'نام کانال را وارد کنید.':null), decoration:InputDecoration(labelText:'نام کانال',errorText:channelTitleError,prefixIcon:Icon(Icons.campaign_outlined))),
           SizedBox(height:10),
@@ -7901,10 +7890,11 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
           onRefresh: () async => _reload(),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
-            itemCount: contacts.length,
+            itemCount: contacts.length + 1,
             separatorBuilder: (_, __) => SizedBox(height: 5),
             itemBuilder: (context, index) {
-              final profile = contacts[index];
+              if (index == 0) return const AppPageHero(title: 'مخاطبین', subtitle: 'افراد موردعلاقه‌ات را پیدا کن و سریع به پروفایل‌شان برو', icon: Icons.people_alt_rounded);
+              final profile = contacts[index - 1];
               final name = (profile['display_name'] ?? profile['username'] ?? 'کاربر')
                   .toString().trim();
               return Card(
@@ -7972,6 +7962,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
     body: loading ? Center(child: CircularProgressIndicator()) : ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        AppPageHero(title:trUi('مصرف داده'),subtitle:'کنترل مصرف اینترنت و دانلود خودکار',icon:Icons.data_saver_on_rounded),
         Card(child: SwitchListTile(
           value: low,
           onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
@@ -8021,6 +8012,7 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          AppPageHero(title:trUi('دسترسی‌پذیری'),subtitle:'تنظیم اندازه و خوانایی متن در تمام برنامه',icon:Icons.accessibility_new_rounded),
           Card(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
@@ -8644,6 +8636,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final image='${group['avatar_url']??''}';
     final description='${group['description']??''}'.trim();
     return Scaffold(appBar:AppBar(title:Text(trUi('پروفایل گروه'))),body:loading?Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
+      const AppPageHero(title:'مدیریت گروه',subtitle:'مشخصات، اعضا و دسترسی‌های مدیریتی',icon:Icons.groups_rounded),
       Center(child:Column(children:[
         GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
         SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
@@ -8833,6 +8826,7 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
       body: loading ? Center(child: CircularProgressIndicator()) : ListView(
         padding: const EdgeInsets.fromLTRB(16,12,16,32),
         children: [
+          const AppPageHero(title:'اطلاعات گفتگو',subtitle:'پروفایل، اعضا و فایل‌های مشترک',icon:Icons.chat_bubble_outline_rounded),
           Center(child: Column(children: [
             CircleAvatar(radius:54,backgroundColor:scheme.primaryContainer,backgroundImage:avatarUrl.isNotEmpty?NetworkImage(avatarUrl):null,child:avatarUrl.isEmpty?Icon(type=='group'?Icons.groups_rounded:type=='channel'?Icons.campaign_rounded:Icons.person_rounded,size:46,color:scheme.primary):null),
             SizedBox(height:12),
@@ -12787,7 +12781,7 @@ class _ChatPageState extends State<ChatPage> {
                     })(),
                   ),
                 ),
-                if (_chatType == 'direct')
+                if (_chatType == 'direct' && profiles[_directPeerId]?['is_online'] == true)
                   Positioned(
                     right: -1,
                     bottom: -1,

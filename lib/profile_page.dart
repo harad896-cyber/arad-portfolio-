@@ -718,20 +718,10 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-          decoration: BoxDecoration(
-            color: s.surface.withValues(alpha: .52),
-            borderRadius: BorderRadius.circular(17),
-            border: Border.all(color: s.outline.withValues(alpha: .20)),
-          ),
-          child: Row(children: [
-            Icon(Icons.person_outline_rounded, color: s.primary, size: 21),
-            const SizedBox(width: 9),
-            const Expanded(child: Text('پروفایل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-            Container(width: 34, height: 3, decoration: BoxDecoration(color: s.primary.withValues(alpha: .55), borderRadius: BorderRadius.circular(4))),
-          ]),
+        const AppPageHero(
+          title: 'پروفایل',
+          subtitle: 'اطلاعات حساب، عکس و معرفی شما',
+          icon: Icons.person_outline_rounded,
         ),
         glass(Padding(
           padding: const EdgeInsets.fromLTRB(18, 24, 18, 20),
@@ -823,10 +813,24 @@ class _ProfilePageState extends State<ProfilePage> {
               ]),
             ),
             const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
-              if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
-            ]),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final value = display.trim();
+                if (value.isEmpty) return;
+                await Clipboard.setData(ClipboardData(text: value));
+                if (mounted) showMsg(context, 'نام نمایشی کپی شد.');
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+                  if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
+                  const SizedBox(width: 5),
+                  Icon(Icons.copy_rounded, size: 14, color: s.onSurfaceVariant.withValues(alpha: .7)),
+                ]),
+              ),
+            ),
             if (un.isNotEmpty) ...[
               const SizedBox(height: 4),
               Container(
