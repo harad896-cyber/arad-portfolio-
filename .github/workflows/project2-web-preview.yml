@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,17 +25,15 @@ jobs:
       - name: Checkout Project 2 branch
         uses: actions/checkout@v4
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
-      - name: Install dependencies
-        run: flutter pub get
-
+      # Use the same pinned Flutter build script as Vercel so the two
+      # preview paths do not silently use different SDK versions or assets.
       - name: Build Flutter web
-        run: flutter build web --release --base-href /arad-portfolio-/
+        env:
+          BASE_HREF: /arad-portfolio-/
+        run: bash scripts/build_web.sh
 
       - name: Upload web build
         if: github.event_name != 'pull_request'
