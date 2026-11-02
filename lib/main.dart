@@ -5483,8 +5483,10 @@ class _HomePageState extends State<HomePage> {
       // For chats without a preview, try one lightweight request per chat.
       // Failure to read a preview must not hide that chat from the list.
       final missingLatestIds = visibleIds.where((id) => !latestByConversation.containsKey(id)).toList();
-      for (var offset = 0; offset < missingLatestIds.length; offset += 8) {
-        final batch = missingLatestIds.skip(offset).take(8);
+      for (var offset = 0; offset < missingLatestIds.length; offset += 12) {
+        // A slightly wider bounded batch avoids many sequential round trips
+        // for accounts with lots of chats while keeping request concurrency safe.
+        final batch = missingLatestIds.skip(offset).take(12);
         final results = await Future.wait(batch.map((id) async {
           try {
             final rows = await supabase.from('messages')
