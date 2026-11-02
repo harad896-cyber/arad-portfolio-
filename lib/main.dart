@@ -2280,6 +2280,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
         child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:Icon(Icons.search_rounded))),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
+        AppPageHero(title:trUi('تنظیمات'),subtitle:'مدیریت حساب، ظاهر و امکانات گپ‌رسان',icon:Icons.tune_rounded),
         Card(child:ListTile(
           leading:CircleAvatar(backgroundColor:Theme.of(context).colorScheme.primaryContainer,child:Icon(Icons.person_rounded,color:Theme.of(context).colorScheme.primary)),
           title:Text(trUi('حساب شما'),style:TextStyle(fontWeight:FontWeight.w900)),
@@ -7544,6 +7545,7 @@ class _GroupCreatePageState extends State<GroupCreatePage> {
       appBar: AppBar(title: Text(trUi('ساخت گروه'))),
       body: Column(
         children: [
+          Padding(padding: const EdgeInsets.fromLTRB(12, 12, 12, 2), child: AppPageHero(title:trUi('ساخت گروه'),subtitle:'نام گروه را بنویس و اعضا را انتخاب کن',icon:Icons.groups_rounded)),
           Padding(padding: const EdgeInsets.all(12), child: TextField(controller: title, onChanged: (v) => setState(() => titleError = v.trim().isEmpty ? 'نام گروه را وارد کنید.' : null), decoration: InputDecoration(labelText: 'نام گروه', errorText: titleError, border: OutlineInputBorder()))),
           Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: TextField(controller: search, onChanged: findUsers, decoration: InputDecoration(hintText: 'جستجو و انتخاب از مخاطبین...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()))),
           if (selected.isNotEmpty)
@@ -7671,6 +7673,7 @@ class _ChannelCreatePageState extends State<ChannelCreatePage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha:.76), borderRadius: BorderRadius.circular(kAppRadius)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          AppPageHero(title:trUi('ایجاد کانال'),subtitle:'کانال تازه بساز و توضیحاتش را وارد کن',icon:Icons.campaign_rounded),
           Icon(Icons.campaign_rounded, size: 58), SizedBox(height: 12),
           TextField(controller:title, onChanged:(v)=>setState(()=>channelTitleError=v.trim().isEmpty?'نام کانال را وارد کنید.':null), decoration:InputDecoration(labelText:'نام کانال',errorText:channelTitleError,prefixIcon:Icon(Icons.campaign_outlined))),
           SizedBox(height:10),
@@ -7957,6 +7960,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
     body: loading ? Center(child: CircularProgressIndicator()) : ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        AppPageHero(title:trUi('مصرف داده'),subtitle:'کنترل مصرف اینترنت و دانلود خودکار',icon:Icons.data_saver_on_rounded),
         Card(child: SwitchListTile(
           value: low,
           onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
@@ -8006,6 +8010,7 @@ class _AccessibilityPageState extends State<AccessibilityPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          AppPageHero(title:trUi('دسترسی‌پذیری'),subtitle:'تنظیم اندازه و خوانایی متن در تمام برنامه',icon:Icons.accessibility_new_rounded),
           Card(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
