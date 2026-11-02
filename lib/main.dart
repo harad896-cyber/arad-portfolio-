@@ -1976,13 +1976,13 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .13)), 
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .16)), 
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           tileColor: Color(0xFFFFFFFF),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
           iconColor: Color(0xFF766A88),
@@ -2000,7 +2000,7 @@ class AradMessenger extends StatelessWidget {
           prefixIconColor: Color(appTheme.seed),
           suffixIconColor: Color(0xFF6C7180),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           enabledBorder: OutlineInputBorder(
@@ -2022,7 +2022,7 @@ class AradMessenger extends StatelessWidget {
             elevation: 0,
             shadowColor: Colors.transparent,
             minimumSize: const Size.fromHeight(46),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -2068,13 +2068,13 @@ class AradMessenger extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .24)), 
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(appTheme.seed).withValues(alpha: .28)), 
           ),
         ),
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           tileColor: Color(0xFF0D2336),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
           iconColor: Color(0xFFBDB1D0),
@@ -2092,7 +2092,7 @@ class AradMessenger extends StatelessWidget {
           prefixIconColor: Color(appTheme.seed),
           suffixIconColor: Color(0xFF9DAFC0),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFF263653))
           ),
           enabledBorder: OutlineInputBorder(
@@ -2114,7 +2114,7 @@ class AradMessenger extends StatelessWidget {
             elevation: 0,
             shadowColor: Colors.transparent,
             minimumSize: const Size.fromHeight(46),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             textStyle: GoogleFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -2221,7 +2221,7 @@ class _ChatFoldersPageState extends State<ChatFoldersPage> {
       Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:()async{try{await supabase.from('chat_folder_items').delete().eq('folder_id',fid);if(selected.isNotEmpty){await supabase.from('chat_folder_items').insert(selected.map((id)=>{'folder_id':fid,'conversation_id':id}).toList());}if(sheet.mounted)Navigator.pop(sheet);await _load();}catch(e){if(mounted)showMsg(context,'ذخیره گفتگوهای پوشه ناموفق بود: '+_friendlyError(e.toString()));}},child:Text(trUi('ذخیره تغییرات')))),
     ])))));
   }
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('پوشه‌های گفتگو'))),body:loading?Center(child:CircularProgressIndicator()):folders.isEmpty?PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length,itemBuilder:(_,i){final f=folders[i],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>[PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:Icon(Icons.add_rounded),label:Text(trUi('پوشه جدید'))));
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(trUi('پوشه‌های گفتگو'))),body:loading?Center(child:CircularProgressIndicator()):folders.isEmpty?PremiumEmptyState(icon:Icons.folder_open_rounded,title:'هنوز پوشه‌ای نساخته‌اید',subtitle:'پوشه‌ها در حساب شما ذخیره می‌شوند و گفتگوها را می‌توانید داخل آن‌ها دسته‌بندی کنید.'):ListView.builder(padding:const EdgeInsets.fromLTRB(12,8,12,100),itemCount:folders.length+1,itemBuilder:(_,i){if(i==0)return const Padding(padding:EdgeInsets.only(bottom:10),child:AppPageHero(title:'پوشه‌های گفتگو',subtitle:'گفتگوها را بر اساس موضوع یا اولویت مرتب کن',icon:Icons.folder_copy_rounded));final f=folders[i-1],id=f['id']?.toString()??'';final count=(membersByFolder[id]??const <String>{}).length;return Card(child:ListTile(leading:CircleAvatar(child:Icon(Icons.folder_rounded)),title:Text(f['name']?.toString()??'پوشه',style:TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(count.toString()+' گفتگو'),onTap:()=>_manageChats(f),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')_editFolder(f);if(v=='delete')_deleteFolder(f);},itemBuilder:(_)=>[PopupMenuItem(value:'edit',child:Text(trUi('ویرایش'))),PopupMenuItem(value:'delete',child:Text(trUi('حذف')))])));}),floatingActionButton:FloatingActionButton.extended(onPressed:_createFolder,icon:Icon(Icons.add_rounded),label:Text(trUi('پوشه جدید'))));
 }
 class PremiumEmptyState extends StatelessWidget {
   final IconData icon; final String title, subtitle;
@@ -3204,6 +3204,7 @@ class _QuickControlsPageState extends State<QuickControlsPage> {
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
+          const AppPageHero(title: 'کنترل سریع برنامه', subtitle: 'ظاهر، اعلان‌ها و رفتار برنامه را یک‌جا تنظیم کن', icon: Icons.tune_rounded),
           Card(child: SwitchListTile(
             value: appTheme.dark,
             secondary: Icon(appTheme.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: scheme.primary),
@@ -7889,10 +7890,11 @@ class _ContactsToolsPageState extends State<ContactsToolsPage> {
           onRefresh: () async => _reload(),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
-            itemCount: contacts.length,
+            itemCount: contacts.length + 1,
             separatorBuilder: (_, __) => SizedBox(height: 5),
             itemBuilder: (context, index) {
-              final profile = contacts[index];
+              if (index == 0) return const AppPageHero(title: 'مخاطبین', subtitle: 'افراد موردعلاقه‌ات را پیدا کن و سریع به پروفایل‌شان برو', icon: Icons.people_alt_rounded);
+              final profile = contacts[index - 1];
               final name = (profile['display_name'] ?? profile['username'] ?? 'کاربر')
                   .toString().trim();
               return Card(
@@ -8634,6 +8636,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     final image='${group['avatar_url']??''}';
     final description='${group['description']??''}'.trim();
     return Scaffold(appBar:AppBar(title:Text(trUi('پروفایل گروه'))),body:loading?Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.fromLTRB(16,12,16,28),children:[
+      const AppPageHero(title:'مدیریت گروه',subtitle:'مشخصات، اعضا و دسترسی‌های مدیریتی',icon:Icons.groups_rounded),
       Center(child:Column(children:[
         GestureDetector(onTap: canEditRules ? _changeGroupPhoto : null, child: Stack(alignment: Alignment.bottomRight, children:[CircleAvatar(radius:52,backgroundColor:scheme.primaryContainer,backgroundImage:image.isNotEmpty?NetworkImage(image):null,child:image.isEmpty?Icon(Icons.groups_rounded,size:42,color:scheme.primary):null),if(canEditRules)Container(padding:const EdgeInsets.all(8),decoration:BoxDecoration(color:Colors.black54,shape:BoxShape.circle),child:Icon(Icons.camera_alt_rounded,color:Colors.white,size:17))])),
         SizedBox(height:12),Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
@@ -8823,6 +8826,7 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
       body: loading ? Center(child: CircularProgressIndicator()) : ListView(
         padding: const EdgeInsets.fromLTRB(16,12,16,32),
         children: [
+          const AppPageHero(title:'اطلاعات گفتگو',subtitle:'پروفایل، اعضا و فایل‌های مشترک',icon:Icons.chat_bubble_outline_rounded),
           Center(child: Column(children: [
             CircleAvatar(radius:54,backgroundColor:scheme.primaryContainer,backgroundImage:avatarUrl.isNotEmpty?NetworkImage(avatarUrl):null,child:avatarUrl.isEmpty?Icon(type=='group'?Icons.groups_rounded:type=='channel'?Icons.campaign_rounded:Icons.person_rounded,size:46,color:scheme.primary):null),
             SizedBox(height:12),
