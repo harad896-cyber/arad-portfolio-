@@ -8,7 +8,9 @@ concurrency:
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
+      - fix/project2-group-add-permissions
 
 jobs:
   build:
