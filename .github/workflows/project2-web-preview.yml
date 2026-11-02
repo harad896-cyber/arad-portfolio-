@@ -27,6 +27,8 @@ jobs:
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       # Use the same pinned Flutter build script as Vercel so the two
       # preview paths do not silently use different SDK versions or assets.
