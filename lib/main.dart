@@ -1966,7 +1966,7 @@ class AradMessenger extends StatelessWidget {
           backgroundColor: Color(0xFFFCFCFE),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
           iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
@@ -2004,11 +2004,11 @@ class AradMessenger extends StatelessWidget {
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFFE2E6F0)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
         ),
@@ -2059,7 +2059,7 @@ class AradMessenger extends StatelessWidget {
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
           backgroundColor: Color(0xFF071A2D),
           surfaceTintColor: Colors.transparent,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -2096,11 +2096,11 @@ class AradMessenger extends StatelessWidget {
             borderSide: BorderSide(color: Color(0xFF263653))
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(0xFF2A3349)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
             borderSide: BorderSide(color: Color(appTheme.seed), width: 2),
           ),
         ),
@@ -12781,7 +12781,7 @@ class _ChatPageState extends State<ChatPage> {
                     })(),
                   ),
                 ),
-                if (_chatType == 'direct')
+                if (_chatType == 'direct' && profiles[_directPeerId]?['is_online'] == true)
                   Positioned(
                     right: -1,
                     bottom: -1,
