@@ -823,10 +823,24 @@ class _ProfilePageState extends State<ProfilePage> {
               ]),
             ),
             const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
-              if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
-            ]),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final value = display.trim();
+                if (value.isEmpty) return;
+                await Clipboard.setData(ClipboardData(text: value));
+                if (mounted) showMsg(context, 'نام نمایشی کپی شد.');
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+                  if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
+                  const SizedBox(width: 5),
+                  Icon(Icons.copy_rounded, size: 14, color: s.onSurfaceVariant.withValues(alpha: .7)),
+                ]),
+              ),
+            ),
             if (un.isNotEmpty) ...[
               const SizedBox(height: 4),
               Container(
