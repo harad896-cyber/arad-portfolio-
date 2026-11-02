@@ -91,7 +91,7 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
         profiles = {for (final p in ps) p['id'].toString(): p};
         owner = isOwner;
         admin = isAdmin;
-        canAddMembers = isOwner || (isAdmin && permissions['can_add_members'] != false) || g['only_admins_can_add'] != true;
+        canAddMembers = isOwner || (isAdmin ? permissions['can_add_members'] != false : g['only_admins_can_add'] != true);
         canEditGroup = isOwner || permissions['can_edit_group'] == true;
         loading = false;
       });
