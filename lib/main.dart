@@ -5285,8 +5285,6 @@ class _HomePageState extends State<HomePage> {
   Set<String> archivedChatIds = <String>{};
   Set<String> manuallyUnreadChatIds = <String>{};
   Set<String> pinnedChatIds = <String>{};
-  final TextEditingController chatSearch = TextEditingController();
-  String chatQuery = '';
   Future<List<Map<String, dynamic>>>? _contactsFuture;
   RealtimeChannel? _homeChannel;
   Timer? _homeRefreshTimer;
@@ -5316,14 +5314,8 @@ class _HomePageState extends State<HomePage> {
       final matchesFolder = folderSet == null || folderSet.contains(c['id'].toString());
       final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
       final isUnread = unreadCount > 0 || c['unread'] == true;
-      final q = chatQuery.trim().toLowerCase();
-      final peer = c['_peer'] as Map<String,dynamic>?;
-      final title = (c['title'] ?? peer?['display_name'] ?? peer?['username'] ?? '').toString().toLowerCase();
-      final last = (c['_preview'] ?? c['last_message'] ?? '').toString().toLowerCase();
-      final username = (peer?['username'] ?? c['username'] ?? '').toString().toLowerCase();
       final isArchived = archivedChatIds.contains(c['id'].toString());
-      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread) &&
-          (q.isEmpty || title.contains(q) || username.contains(q) || last.contains(q));
+      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread);
     }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
@@ -6075,7 +6067,6 @@ class _HomePageState extends State<HomePage> {
     _inviteLinkSubscription?.cancel();
     if (_homeChannel != null) supabase.removeChannel(_homeChannel!);
     if (_callChannel != null) supabase.removeChannel(_callChannel!);
-    chatSearch.dispose();
     super.dispose();
   }
 
@@ -6209,39 +6200,6 @@ class _HomePageState extends State<HomePage> {
           ]),
         ),
       ),
-      Center(
-        child: SizedBox(
-          width: (MediaQuery.sizeOf(context).width * .64).clamp(0.0, 390.0).toDouble(),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
-            child: Material(
-              color: glass,
-              child: TextField(
-                controller: chatSearch,
-                onChanged: (v) => setState(() => chatQuery = v),
-                textDirection: TextDirection.rtl,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: trUi('جستجو در گفتگوهای فعلی'),
-                  prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
-                  suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(
-                    tooltip: trUi('پاک کردن'),
-                    onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); },
-                    icon: Icon(Icons.close_rounded, size: 19),
-                  ),
-                  isDense: true,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
       SizedBox(
         height: 40,
         child: ListView(
@@ -6306,10 +6264,10 @@ class _HomePageState extends State<HomePage> {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Container(width: 76, height: 76, decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle), child: Icon(Icons.forum_rounded, size: 34, color: scheme.primary)),
                       SizedBox(height: 17),
-                      Text(chatQuery.trim().isNotEmpty ? trUi('نتیجه‌ای پیدا نشد') : trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      Text(trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
                       SizedBox(height: 7),
-                      Text(chatQuery.trim().isNotEmpty ? trUi('نام یا عبارت دیگری را جستجو کنید.') : trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
-                      if (chatQuery.trim().isEmpty) ...[
+                      Text(trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
+                      ...[
                         SizedBox(height: 17),
                         FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
                       ],
@@ -6848,7 +6806,7 @@ class _HomePageState extends State<HomePage> {
                             setState(() => showContacts = false);
                           }
                           if (i == 0) {
-                            setState(() { selectedFolderId = null; selectedFilter = 0; chatQuery = ''; chatSearch.clear(); });
+                            setState(() { selectedFolderId = null; selectedFilter = 0; });
                             unawaited(load());
                           }
                           return;
