@@ -5511,21 +5511,29 @@ class _HomePageState extends State<HomePage> {
       // 4) Peer names are optional too. If membership/profile hydration fails,
       // keep each chat visible using the conversation's own title as fallback.
       final peerByConversation = <String, String>{};
-      try {
-        final memberResponse = await supabase
-            .from('conversation_members')
-            .select('conversation_id,user_id')
-            .inFilter('conversation_id', visibleIds)
-            .timeout(const Duration(seconds: 8));
-        for (final row in List<Map<String, dynamic>>.from(memberResponse as List)) {
-          final conversationId = row['conversation_id']?.toString() ?? '';
-          final memberId = row['user_id']?.toString() ?? '';
-          if (conversationId.isNotEmpty && memberId.isNotEmpty && memberId != uid) {
-            peerByConversation.putIfAbsent(conversationId, () => memberId);
+      // Only direct chats need a peer profile. Fetching every group/channel
+      // member here wastes bandwidth and can accidentally use a member's
+      // personal avatar as the group's image when the group has no photo.
+      final directConversationIds = visibleIds.where((id) =>
+          (conversationsById[id]?['type'] ?? 'direct').toString() == 'direct'
+      ).toList();
+      if (directConversationIds.isNotEmpty) {
+        try {
+          final memberResponse = await supabase
+              .from('conversation_members')
+              .select('conversation_id,user_id')
+              .inFilter('conversation_id', directConversationIds)
+              .timeout(const Duration(seconds: 8));
+          for (final row in List<Map<String, dynamic>>.from(memberResponse as List)) {
+            final conversationId = row['conversation_id']?.toString() ?? '';
+            final memberId = row['user_id']?.toString() ?? '';
+            if (conversationId.isNotEmpty && memberId.isNotEmpty && memberId != uid) {
+              peerByConversation.putIfAbsent(conversationId, () => memberId);
+            }
           }
+        } catch (memberError) {
+          debugPrint('Peer membership lookup failed; keeping chat list: $memberError');
         }
-      } catch (memberError) {
-        debugPrint('Peer membership lookup failed; keeping chat list: $memberError');
       }
       final peerIds = peerByConversation.values.toSet().toList();
       final profilesById = <String, Map<String, dynamic>>{};
