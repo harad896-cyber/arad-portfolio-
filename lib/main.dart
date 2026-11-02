@@ -6267,10 +6267,8 @@ class _HomePageState extends State<HomePage> {
                       Text(trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
                       SizedBox(height: 7),
                       Text(trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
-                      ...[
-                        SizedBox(height: 17),
-                        FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
-                      ],
+                      SizedBox(height: 17),
+                      FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
                     ]),
                   ))
                 : ListView.separated(
