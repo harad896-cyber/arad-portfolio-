@@ -7949,7 +7949,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
       if (!mounted) return;
       setState(() {
         low = values['low_data_mode'] ?? false;
-        wifi = values['wifi_only_downloads'] ?? true;
+        wifi = values['wifi_only'] ?? true;
         loading = false;
       });
     } catch (_) {
@@ -7981,7 +7981,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
         )),
         Card(child: SwitchListTile(
           value: wifi,
-          onChanged: (v) => _change('wifi_only_downloads', v, wifi, (next) => wifi = next),
+          onChanged: (v) => _change('wifi_only', v, wifi, (next) => wifi = next),
           title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
           subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
           secondary: Icon(Icons.wifi_rounded),
