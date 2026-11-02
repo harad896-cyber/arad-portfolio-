@@ -47,10 +47,11 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/fix/project2-group-add-permissions'
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy Project 2 preview to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
