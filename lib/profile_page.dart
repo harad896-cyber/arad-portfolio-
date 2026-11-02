@@ -78,7 +78,9 @@ class _ProfilePageState extends State<ProfilePage> {
       final signIndex = segments.indexOf('sign');
       if (segments.length >= 4 && publicIndex >= 0 &&
           publicIndex + 1 < segments.length && segments[publicIndex + 1] == 'avatars') {
-        objectPath = segments.skip(publicIndex + 2).join('/');
+        // Public Storage URLs are already canonical and cacheable. Return them
+        // directly instead of calling listBuckets() on every profile load.
+        return raw;
       } else if (segments.length >= 4 && signIndex >= 0 &&
           signIndex + 1 < segments.length && segments[signIndex + 1] == 'avatars') {
         objectPath = segments.skip(signIndex + 2).join('/');
