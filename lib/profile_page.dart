@@ -1111,8 +1111,10 @@ class _VerificationAdminPageState extends State<VerificationAdminPage> {
 
   Future<void> decide(Map<String, dynamic> row, bool approve) async {
     try {
-      await supabase.from('verification_requests').update({'status': approve ? 'approved' : 'rejected'}).eq('id', row['id']);
-      await supabase.from('profiles').update({'is_verified': approve}).eq('id', row['user_id']);
+      await supabase.rpc('owner_set_verification', params: {
+        'p_user_id': row['user_id'],
+        'p_verified': approve,
+      });
       await load();
     } catch (e) {
       if (mounted) showMsg(context, 'عملیات ناموفق بود: $e');
