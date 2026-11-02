@@ -5029,7 +5029,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         'display_name': displayName,
         'username': userName,
         'bio': bio.text.trim(),
-        'country': '${supabase.auth.currentUser?.userMetadata?['country'] ?? ''}',
         'is_online': true,
         'last_seen': DateTime.now().toIso8601String(),
       };
