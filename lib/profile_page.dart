@@ -766,15 +766,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     boxShadow: [BoxShadow(color: s.primary.withValues(alpha: .22), blurRadius: 22, spreadRadius: 1)],
                   ),
                   child: CircleAvatar(
-                    radius: 58,
+                    radius: 52,
                     backgroundColor: s.surfaceContainerHighest,
                     // Render the image as a child so a broken remote URL
                     // cannot leave a blank avatar with no recovery affordance.
                     backgroundImage: null,
                     child: profileAvatarUrl.startsWith('emoji:')
-                        ? Text(profileAvatarUrl.substring(6), style: const TextStyle(fontSize: 58))
+                        ? Text(profileAvatarUrl.substring(6), style: const TextStyle(fontSize: 52))
                         : avatarImage == null
-                            ? Icon(Icons.person_rounded, size: 58, color: s.onSurfaceVariant)
+                            ? Icon(Icons.person_rounded, size: 52, color: s.onSurfaceVariant)
                             : ClipOval(
                                 child: SizedBox(
                                   width: 116,
@@ -826,7 +826,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+              Flexible(child: Text(display, textAlign: TextAlign.center, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900))),
               if (verified) ...[const SizedBox(width: 6), Icon(Icons.verified_rounded, color: s.primary, size: 22)],
             ]),
             if (un.isNotEmpty) ...[
