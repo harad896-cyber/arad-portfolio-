@@ -6160,7 +6160,7 @@ class _HomePageState extends State<HomePage> {
             tooltip: trUi('منوی اصلی'),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
-            icon: Container(width: 48, height: 48, decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .62), shape: BoxShape.circle), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 32, color: scheme.primary)),
+            icon: Container(width: 56, height: 56, decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .78), shape: BoxShape.circle, border: Border.all(color: scheme.primary.withValues(alpha: .16), width: 1)), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 37, color: scheme.primary)),
             onSelected: (value) {
               if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
@@ -6184,7 +6184,7 @@ class _HomePageState extends State<HomePage> {
       ),
       Center(
         child: SizedBox(
-          width: (MediaQuery.sizeOf(context).width * .84).clamp(0.0, 520.0).toDouble(),
+          width: (MediaQuery.sizeOf(context).width * .72).clamp(0.0, 440.0).toDouble(),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
             child: Material(
