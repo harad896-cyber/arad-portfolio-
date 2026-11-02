@@ -372,9 +372,9 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
     );
     final g = group!; final title = (g['title'] ?? widget.title).toString(); final desc = (g['description'] ?? '').toString().trim(); final image = (g['avatar_url'] ?? '').toString();
     return Scaffold(appBar: AppBar(title: const Text('پروفایل گروه')), body: ListView(padding: const EdgeInsets.all(16), children: [
-      Card(child: Padding(padding: const EdgeInsets.all(22), child: Column(children: [
-        GestureDetector(onTap: canEditGroup ? changeGroupAvatar : null, child: Stack(alignment: Alignment.bottomRight, children: [CircleAvatar(radius: 54, backgroundImage: image.isNotEmpty ? NetworkImage(image) : null, child: image.isEmpty ? const Icon(Icons.groups_rounded, size: 50) : null), if (canEditGroup) Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18))])),
-        const SizedBox(height: 12), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+      Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+        GestureDetector(onTap: canEditGroup ? changeGroupAvatar : null, child: Stack(alignment: Alignment.bottomRight, children: [CircleAvatar(radius: 48, backgroundImage: image.isNotEmpty ? NetworkImage(image) : null, child: image.isEmpty ? const Icon(Icons.groups_rounded, size: 44) : null), if (canEditGroup) Container(padding: const EdgeInsets.all(7), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 17))])),
+        const SizedBox(height: 10), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
         if ((g['username'] ?? '').toString().trim().isNotEmpty) Text('@${g['username']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8), Text(desc.isEmpty ? 'بدون توضیحات' : desc, textAlign: TextAlign.center),
         const SizedBox(height: 10), Text('${members.length} عضو • ${onlineCount} فعال', style: const TextStyle(fontWeight: FontWeight.w800)),
