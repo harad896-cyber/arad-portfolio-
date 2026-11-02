@@ -777,8 +777,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ? Icon(Icons.person_rounded, size: 52, color: s.onSurfaceVariant)
                             : ClipOval(
                                 child: SizedBox(
-                                  width: 116,
-                                  height: 116,
+                                  width: 104,
+                                  height: 104,
                                   child: Image(
                                     image: avatarImage!,
                                     fit: BoxFit.cover,
@@ -790,15 +790,15 @@ class _ProfilePageState extends State<ProfilePage> {
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) => Icon(
                                             Icons.person_rounded,
-                                            size: 58,
-                                            color: s.onSurfaceVariant,
+                                            size: 52,
+                                             color: s.onSurfaceVariant,
                                           ),
                                         );
                                       }
                                       return Icon(
                                         Icons.person_rounded,
-                                        size: 58,
-                                        color: s.onSurfaceVariant,
+                                        size: 52,
+                                             color: s.onSurfaceVariant,
                                       );
                                     },
                                   ),
