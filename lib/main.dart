@@ -6157,42 +6157,61 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       Padding(
-        padding: EdgeInsets.fromLTRB(16, _chatTopGlowVisible ? 8 : 5, 12, _chatTopGlowVisible ? 8 : 5),
-        child: Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: _chatTopGlowVisible ? 22 : 19, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-            SizedBox(height: 2),
-            Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
-          ])),
-          PopupMenuButton<String>(
-            tooltip: trUi('منوی اصلی'),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
-            icon: Container(width: 56, height: 56, decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .78), shape: BoxShape.circle, border: Border.all(color: scheme.primary.withValues(alpha: .16), width: 1)), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 37, color: scheme.primary)),
-            onSelected: (value) {
-              if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
-              else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
-              else if (value == 'folders') _openFolderManager();
-              else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
-              else if (value == 'group') createGroup();
-              else if (value == 'join') _joinGroupByInviteCode();
-              else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
-              PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
-              PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
-              PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
-              PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
-              PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
-            ],
+        padding: EdgeInsets.fromLTRB(12, _chatTopGlowVisible ? 9 : 4, 12, _chatTopGlowVisible ? 9 : 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerRight,
+              end: Alignment.centerLeft,
+              colors: [scheme.primary.withValues(alpha: dark ? .16 : .10), scheme.surface.withValues(alpha: .15)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: scheme.primary.withValues(alpha: .12)),
           ),
-          const SizedBox(width: 4),
-        ]),
+          child: Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(activeFolder == null ? trUi('گفتگوها') : activeFolder['name']?.toString() ?? trUi('گفتگوها'), style: TextStyle(fontSize: _chatTopGlowVisible ? 23 : 19, fontWeight: FontWeight.w900, letterSpacing: -.35)),
+              SizedBox(height: 3),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 7, height: 7, decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle)),
+                SizedBox(width: 6),
+                Text(selectedFilter == 5 ? trUi('آرشیو گفتگوها') : '${filteredChats.length} ${trUi('گفتگو')}', style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w700)),
+              ]),
+            ])),
+            PopupMenuButton<String>(
+              tooltip: trUi('منوی اصلی'),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 58, minHeight: 58),
+              icon: Container(width: 58, height: 58, decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [scheme.primary, Color.lerp(scheme.primary, scheme.tertiary, .28)!]),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .24), blurRadius: 13, offset: Offset(0, 4))],
+              ), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 38, color: scheme.onPrimary)),
+              onSelected: (value) {
+                if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
+                else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
+                else if (value == 'folders') _openFolderManager();
+                else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
+                else if (value == 'group') createGroup();
+                else if (value == 'join') _joinGroupByInviteCode();
+                else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
+                PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
+                PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
+                PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
+                PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
+                PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
+              ],
+            ),
+          ]),
+        ),
       ),
       Center(
         child: SizedBox(
-          width: (MediaQuery.sizeOf(context).width * .72).clamp(0.0, 440.0).toDouble(),
+          width: (MediaQuery.sizeOf(context).width * .64).clamp(0.0, 390.0).toDouble(),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
             child: Material(
@@ -6326,7 +6345,7 @@ class _HomePageState extends State<HomePage> {
                         shadowColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(23),
                           side: BorderSide(
                             color: unread || isPinned
                                 ? scheme.primary.withValues(alpha: dark ? .65 : .42)
