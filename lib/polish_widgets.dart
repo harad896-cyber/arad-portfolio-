@@ -127,3 +127,67 @@ class _AnimatedVerifiedBadgeState extends State<AnimatedVerifiedBadge> with Sing
     );
   }
 }
+
+
+/// Shared visual header for secondary pages, keeping the messenger's internal
+/// screens visually consistent without changing their underlying actions.
+class AppPageHero extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const AppPageHero({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            s.primary.withValues(alpha: .15),
+            s.tertiary.withValues(alpha: .08),
+          ],
+        ),
+        border: Border.all(color: s.primary.withValues(alpha: .16)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: s.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: s.primary, size: 25),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12, height: 1.35, color: s.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
