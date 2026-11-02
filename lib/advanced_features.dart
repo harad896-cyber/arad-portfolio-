@@ -44,6 +44,11 @@ class AdvancedFeaturesPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const AppPageHero(
+            title: 'قابلیت‌های پیشرفته',
+            subtitle: 'ابزارهای بیشتر برای مدیریت گفتگوها',
+            icon: Icons.auto_awesome_rounded,
+          ),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(18),
