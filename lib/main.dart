@@ -6288,7 +6288,7 @@ class _HomePageState extends State<HomePage> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(11, 5, 11, 96),
                     itemCount: filteredChats.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 6),
                     itemBuilder: (context, i) {
                       final c = filteredChats[i];
                       final id = c['id'].toString();
@@ -6315,7 +6315,7 @@ class _HomePageState extends State<HomePage> {
                         shadowColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                           side: BorderSide(
                             color: unread || isPinned
                                 ? scheme.primary.withValues(alpha: dark ? .65 : .42)
@@ -6327,7 +6327,7 @@ class _HomePageState extends State<HomePage> {
                         child: InkWell(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load()),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(11, 9, 7, 9),
+                            padding: const EdgeInsets.fromLTRB(10, 7, 6, 7),
                             child: Row(children: [
                               Stack(clipBehavior: Clip.none, children: [
                                 Container(
@@ -6340,14 +6340,14 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   child: type == 'direct'
-                                      ? avatar(peer ?? <String, dynamic>{}, size: 50)
+                                      ? avatar(peer ?? <String, dynamic>{}, size: 46)
                                       : ClipOval(
                                           child: SizedBox(
                                             width: 50,
                                             height: 50,
                                             child: avatarUrl.isEmpty
                                                 ? CircleAvatar(
-                                                    radius: 25,
+                                                    radius: 23,
                                                     backgroundColor: scheme.primaryContainer,
                                                     child: Icon(icon, color: scheme.primary, size: 25),
                                                   )
@@ -6382,7 +6382,7 @@ class _HomePageState extends State<HomePage> {
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Row(children: [
                                   Expanded(child: Row(children: [
-                                    Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: unread ? FontWeight.w900 : FontWeight.w800, fontSize: 15.5, color: unread ? scheme.primary : scheme.onSurface))),
+                                    Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: unread ? FontWeight.w900 : FontWeight.w800, fontSize: 15, color: unread ? scheme.primary : scheme.onSurface))),
                                     if (type == 'direct' && peer?['is_verified'] == true) Padding(padding: EdgeInsets.only(right: 4), child: AnimatedVerifiedBadge(size: 16)),
                                   ])),
                                   if (lastAt != null) Text(_homeTime(lastAt), style: TextStyle(fontSize: 10.5, color: unread ? scheme.primary : scheme.onSurfaceVariant, fontWeight: unread ? FontWeight.w800 : FontWeight.w500)),
