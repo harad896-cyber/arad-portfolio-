@@ -6179,39 +6179,6 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 4),
         ]),
       ),
-      Center(
-        child: SizedBox(
-          width: (MediaQuery.sizeOf(context).width * .84).clamp(0.0, 520.0).toDouble(),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
-            child: Material(
-              color: glass,
-              child: TextField(
-                controller: chatSearch,
-                onChanged: (v) => setState(() => chatQuery = v),
-                textDirection: TextDirection.rtl,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: trUi('جستجو در گفتگوهای فعلی'),
-                  prefixIcon: Icon(Icons.search_rounded, size: 21, color: scheme.onSurfaceVariant),
-                  suffixIcon: chatQuery.trim().isEmpty ? null : IconButton(
-                    tooltip: trUi('پاک کردن'),
-                    onPressed: () { chatSearch.clear(); setState(() => chatQuery = ''); },
-                    icon: Icon(Icons.close_rounded, size: 19),
-                  ),
-                  isDense: true,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .10))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: scheme.primary.withValues(alpha: .45), width: 1.2)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
       SizedBox(
         height: 40,
         child: ListView(
