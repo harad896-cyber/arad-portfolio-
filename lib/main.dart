@@ -9114,6 +9114,11 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
   Future<Map<String,dynamic>> _search(String value) async {
     final q = value.trim();
     if (q.isEmpty) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
+    // Debounce live search so a burst of keystrokes produces one network request.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (q != query.trim()) {
+      return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
+    }
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return {'messages': <Map<String,dynamic>>[], 'users': <Map<String,dynamic>>[], 'chats': <Map<String,dynamic>>[], 'public_chats': <Map<String,dynamic>>[]};
     final memberRows = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid).limit(150);
