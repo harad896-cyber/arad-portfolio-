@@ -1,0 +1,52 @@
+name: Project 2 Theme Foundation CI
+
+on:
+  push:
+    branches:
+      - 'project2/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project2-theme-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Test
+        run: flutter test --no-pub
+      - name: Build web preview artifact
+        env:
+          BASE_HREF: /arad-portfolio-/
+        run: bash scripts/build_web.sh
+      - name: Verify web build
+        run: test -s build/web/index.html && test -s build/web/flutter_bootstrap.js
+      - name: Generate Android project
+        run: flutter create --platforms=android --project-name arad_messenger .
+      - name: Build release APK
+        run: flutter build apk --release --dart-define=APP_VERSION=theme-foundation
+      - name: Verify APK
+        run: test -s build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload APK and web preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: project2-theme-foundation-build
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/web/
+          if-no-files-found: error
+          retention-days: 14
