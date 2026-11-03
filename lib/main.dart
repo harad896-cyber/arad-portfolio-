@@ -6864,6 +6864,7 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
   bool isContact = false;
   bool isFriend = false;
   bool friendRequestPending = false;
+  bool isBlocked = false;
   String localName = '';
   Map<String, dynamic> get profile => widget.profile;
   String get displayName => localName.trim().isNotEmpty
@@ -6886,6 +6887,8 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
       final alias = prefs.getString('contact_alias_${uid}_${targetId}') ?? '';
       final row = await supabase.from('contacts').select('id')
           .eq('user_id', uid).eq('contact_id', targetId).maybeSingle();
+      final blockRow = await supabase.from('user_blocks').select('id')
+          .eq('blocker_id', uid).eq('blocked_id', targetId).maybeSingle();
       dynamic sentRequest;
       dynamic receivedRequest;
       try {
@@ -6899,8 +6902,9 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
       if (mounted) setState(() {
         localName = alias;
         isContact = row != null;
-        isFriend = accepted;
-        friendRequestPending = !accepted && pending;
+        isBlocked = blockRow != null;
+        isFriend = accepted && blockRow == null;
+        friendRequestPending = !accepted && pending && blockRow == null;
       });
     } catch (_) {}
   }
@@ -6961,7 +6965,55 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
     }
   }
 
+  Future<void> _toggleBlock() async {
+    final uid = supabase.auth.currentUser?.id;
+    final targetId = profile['id']?.toString();
+    if (uid == null || targetId == null || uid == targetId || busy) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isBlocked ? 'رفع مسدودی کاربر' : 'مسدود کردن کاربر'),
+        content: Text(isBlocked
+            ? 'این کاربر دوباره می‌تواند برای شما درخواست دوستی بفرستد و در گفتگوی شخصی پیام بدهد.'
+            : 'این کاربر نمی‌تواند برای شما درخواست دوستی بفرستد یا در گفتگوی شخصی پیام ارسال کند. هر دو طرف از ارسال پیام مستقیم و درخواست دوستی به یکدیگر منع می‌شوند.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(trUi('انصراف'))),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isBlocked ? 'رفع مسدودی' : 'مسدود کردن'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      if (isBlocked) {
+        await supabase.from('user_blocks').delete()
+            .eq('blocker_id', uid).eq('blocked_id', targetId);
+        if (mounted) setState(() => isBlocked = false);
+        if (mounted) showMsg(context, 'مسدودی کاربر برداشته شد.');
+      } else {
+        await supabase.from('user_blocks').insert({
+          'blocker_id': uid,
+          'blocked_id': targetId,
+        });
+        if (mounted) setState(() {
+          isBlocked = true;
+          isFriend = false;
+          friendRequestPending = false;
+        });
+        if (mounted) showMsg(context, 'کاربر مسدود شد؛ ارسال پیام مستقیم و درخواست دوستی متوقف شد.');
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر وضعیت مسدودی ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
   Future<void> _sendFriendRequest() async {
+    if (isBlocked) {
+      showMsg(context, 'ابتدا مسدودی این کاربر را بردارید.');
+      return;
+    }
     final uid = supabase.auth.currentUser?.id;
     final targetId = profile['id']?.toString();
     if (uid == null || targetId == null || uid == targetId) return;
@@ -6991,6 +7043,10 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
   }
 
   Future<void> _openChat() async {
+    if (isBlocked) {
+      showMsg(context, 'برای گفتگو، ابتدا مسدودی این کاربر را بردارید.');
+      return;
+    }
     if (!isFriend) {
       showMsg(context, friendRequestPending
           ? 'درخواست دوستی هنوز پذیرفته نشده است.'
@@ -7012,6 +7068,10 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
   }
 
   Future<void> _startCall({required bool video}) async {
+    if (isBlocked) {
+      showMsg(context, 'برای تماس، ابتدا مسدودی این کاربر را بردارید.');
+      return;
+    }
     if (!isFriend) {
       showMsg(context, friendRequestPending
           ? 'درخواست دوستی هنوز پذیرفته نشده است.'
@@ -7054,11 +7114,13 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
               if (value == 'rename') await _editLocalName();
               if (value == 'friend') await _sendFriendRequest();
               if (value == 'contact') await _toggleContact();
+              if (value == 'block') await _toggleBlock();
             },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'rename', child: ListTile(dense: true, leading: Icon(Icons.edit_rounded), title: Text(trUi('نام‌گذاری مخاطب')))),
               PopupMenuItem(value: 'friend', child: ListTile(dense: true, leading: Icon(Icons.person_add_alt_rounded), title: Text(trUi('درخواست دوستی')))),
               PopupMenuItem(value: 'contact', child: ListTile(dense: true, leading: Icon(isContact ? Icons.person_remove_alt_1_rounded : Icons.person_add_alt_1_rounded), title: Text(isContact ? 'حذف از مخاطبین' : 'افزودن به مخاطبین'))),
+              PopupMenuItem(value: 'block', child: ListTile(dense: true, leading: Icon(isBlocked ? Icons.lock_open_rounded : Icons.block_rounded), title: Text(isBlocked ? 'رفع مسدودی' : 'مسدود کردن کاربر'))),
             ],
           ),
         ],
@@ -7168,7 +7230,9 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
           ),
           SizedBox(height: 14),
           if (!isSelf) Row(children: [
-            if (isFriend) ...[
+            if (isBlocked)
+              Expanded(child: _profileAction(context, Icons.block_rounded, 'این کاربر مسدود است', null))
+            else if (isFriend) ...[
               Expanded(child: _profileAction(context, Icons.chat_bubble_rounded, 'پیام', busy ? null : _openChat)),
               SizedBox(width: 8),
               Expanded(child: _profileAction(context, Icons.call_rounded, 'تماس صوتی', busy ? null : () => _startCall(video: false))),
