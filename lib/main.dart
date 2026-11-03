@@ -2716,6 +2716,18 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                   onChanged: (v) => setState(() => p2pVisibility = v),
                 ),
 
+                Card(
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: .12),
+                      child: Icon(Icons.block_rounded, color: Theme.of(context).colorScheme.primary),
+                    ),
+                    title: Text(trUi('کاربران مسدودشده'), style: TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text(trUi('مدیریت افرادی که نمی‌توانند به شما پیام مستقیم بدهند')),
+                    trailing: Icon(Icons.chevron_left_rounded),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlockedUsersPage())),
+                  ),
+                ),
                 SizedBox(height: 12),
                 Card(
                   child: Padding(
@@ -2740,6 +2752,135 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+
+class BlockedUsersPage extends StatefulWidget {
+  const BlockedUsersPage({super.key});
+  @override
+  State<BlockedUsersPage> createState() => _BlockedUsersPageState();
+}
+
+class _BlockedUsersPageState extends State<BlockedUsersPage> {
+  bool loading = true;
+  String? error;
+  List<Map<String, dynamic>> rows = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (mounted) setState(() { loading = true; error = null; });
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) throw Exception('برای دیدن این بخش وارد حساب شوید.');
+      final data = await supabase.from('user_blocks')
+          .select('id,blocked_id,created_at')
+          .eq('blocker_id', uid)
+          .order('created_at', ascending: false);
+      if (!mounted) return;
+      setState(() {
+        rows = List<Map<String, dynamic>>.from(data);
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { error = _friendlyError(e.toString()); loading = false; });
+    }
+  }
+
+  Future<void> _unblock(Map<String, dynamic> row) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('رفع مسدودی'),
+        content: Text('این کاربر دوباره می‌تواند برای شما درخواست دوستی بفرستد و پیام مستقیم ارسال کند.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(trUi('انصراف'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('رفع مسدودی')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await supabase.from('user_blocks').delete()
+          .eq('blocker_id', uid).eq('blocked_id', row['blocked_id']);
+      await _load();
+      if (mounted) showMsg(context, 'مسدودی کاربر برداشته شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'رفع مسدودی ناموفق بود: ${_friendlyError(e.toString())}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: Text(trUi('کاربران مسدودشده')), actions: [
+        IconButton(onPressed: loading ? null : _load, icon: Icon(Icons.refresh_rounded), tooltip: trUi('تازه‌سازی')),
+      ]),
+      body: loading
+          ? Center(child: CircularProgressIndicator())
+          : error != null
+              ? Center(child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.error_outline_rounded, size: 42, color: scheme.error),
+                    SizedBox(height: 10),
+                    Text(error!, textAlign: TextAlign.center),
+                    SizedBox(height: 12),
+                    FilledButton.icon(onPressed: _load, icon: Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+                  ]),
+                ))
+              : rows.isEmpty
+                  ? Center(child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.shield_outlined, size: 54, color: scheme.onSurfaceVariant),
+                        SizedBox(height: 12),
+                        Text('فهرست مسدودی خالی است', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                        SizedBox(height: 6),
+                        Text('کاربرانی که از صفحه پروفایل مسدود می‌کنید، اینجا نمایش داده می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
+                      ]),
+                    ))
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: rows.length,
+                      separatorBuilder: (_, __) => SizedBox(height: 7),
+                      itemBuilder: (context, index) {
+                        final row = rows[index];
+                        final id = row['blocked_id'].toString();
+                        return FutureBuilder<Map<String, dynamic>?>(
+                          future: supabase.from('profiles')
+                              .select('id,username,display_name,avatar_url')
+                              .eq('id', id).maybeSingle(),
+                          builder: (context, snap) {
+                            final profile = snap.data;
+                            final name = (profile?['display_name'] ?? profile?['username'] ?? 'کاربر مسدودشده').toString();
+                            return Card(
+                              child: ListTile(
+                                leading: profile == null
+                                    ? CircleAvatar(child: Icon(Icons.person_outline_rounded))
+                                    : avatar(profile, size: 42),
+                                title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                subtitle: Text(profile?['username'] == null ? id : '@${profile!['username']}'),
+                                trailing: TextButton(
+                                  onPressed: () => _unblock(row),
+                                  child: Text('رفع مسدودی'),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
     );
   }
 }
