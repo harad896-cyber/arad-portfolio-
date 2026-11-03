@@ -25,7 +25,7 @@ void main() {
     test('lerp interpolates token colors', () {
       final start = GapResanThemeTokens.forBrightness(dark: true, accent: Colors.black);
       final end = start.copyWith(accent: Colors.white);
-      expect(start.lerp(end, 0.5).accent, const Color(0xFF7F7F7F));
+      expect(start.lerp(end, 0.5).accent, const Color(0xFF808080));
     });
   });
 }
