@@ -70,6 +70,7 @@ String _friendlyError(String message) {
       lower.contains('timeout')) {
     return 'ارتباط با سرور برقرار نشد یا پاسخ سرور دیر رسید. چند لحظه بعد دوباره تلاش کنید.';
   }
+  if (lower.contains('interaction_blocked')) return 'ارسال پیام یا درخواست دوستی ممکن نیست؛ یکی از دو طرف، دیگری را مسدود کرده است.';
   if (lower.contains('413') || lower.contains('payload too large') || lower.contains('file too large')) return 'این فایل خیلی بزرگ است.';
   if (lower.contains('permission denied') || lower.contains('not authorized') || lower.contains('unauthorized')) return 'دسترسی لازم برای انجام این کار را ندارید.';
   if (lower.contains('duplicate') || lower.contains('already exists')) return 'این مورد قبلاً وجود دارد.';
