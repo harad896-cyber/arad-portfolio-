@@ -5314,12 +5314,8 @@ class _HomePageState extends State<HomePage> {
       final unreadCount = int.tryParse('${c['unread_count'] ?? c['unread'] ?? 0}') ?? 0;
       final isUnread = unreadCount > 0 || c['unread'] == true;
       final peer = c['_peer'] as Map<String,dynamic>?;
-      final title = (c['title'] ?? peer?['display_name'] ?? peer?['username'] ?? '').toString().toLowerCase();
-      final last = (c['_preview'] ?? c['last_message'] ?? '').toString().toLowerCase();
-      final username = (peer?['username'] ?? c['username'] ?? '').toString().toLowerCase();
       final isArchived = archivedChatIds.contains(c['id'].toString());
-      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread) &&
-          true;
+      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread);
     }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
@@ -6242,10 +6238,8 @@ class _HomePageState extends State<HomePage> {
                       Text(trUi('هنوز گفتگویی ندارید'), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
                       SizedBox(height: 7),
                       Text(trUi('یک گفتگوی جدید شروع کنید یا از مخاطبین انتخاب کنید.'), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45)),
-                      if (true) ...[
-                        SizedBox(height: 17),
-                        FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
-                      ],
+                      SizedBox(height: 17),
+                      FilledButton.icon(onPressed: createDirect, icon: Icon(Icons.add_comment_rounded), label: Text(trUi('گفتگوی جدید'))),
                     ]),
                   ))
                 : ListView.separated(
