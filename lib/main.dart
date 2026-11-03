@@ -1640,6 +1640,19 @@ String? authRedirectUrl() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Keep unexpected framework/async failures visible in device logs instead
+  // of letting an unhandled callback silently terminate a user interaction.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('گپ‌رسان Flutter error: ${details.exceptionAsString()}');
+    debugPrintStack(stackTrace: details.stack);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('گپ‌رسان async error: $error');
+    debugPrintStack(stackTrace: stack);
+    return true;
+  };
+
   // Paint a real first frame immediately; do not leave users staring at white
   // while Supabase restores the session or a slow connection times out.
   runApp(StartupLoadingApp());
@@ -1795,7 +1808,14 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
   void initState() {
     super.initState();
     _check();
-    _subscription = _connectivity.onConnectivityChanged.listen(_update);
+    _subscription = _connectivity.onConnectivityChanged.listen(
+      _update,
+      onError: (Object error, StackTrace stack) {
+        debugPrint('گپ‌رسان connectivity stream error: $error');
+        debugPrintStack(stackTrace: stack);
+      },
+      cancelOnError: false,
+    );
   }
 
   Future<void> _check() async {
@@ -3417,7 +3437,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     final generation = ++_generation;
     if (showLoading && mounted) setState(() { loading = true; error = null; });
     try {
-      final raw = await supabase.rpc('get_home_conversations');
+      final raw = await supabase.rpc('get_home_conversations').timeout(Duration(seconds: 10));
       final conversations = List<Map<String, dynamic>>.from(raw as List);
       final next = <Map<String, dynamic>>[];
       for (final row in conversations) {
@@ -9910,7 +9930,8 @@ class _ChatPageState extends State<ChatPage> {
         try {
           final target = await supabase.from('messages').select()
               .eq('id', widget.targetMessageId!).eq('conversation_id', widget.id)
-              .isFilter('deleted_at', null).maybeSingle();
+              .isFilter('deleted_at', null).maybeSingle()
+              .timeout(Duration(seconds: 5));
           // A deep link must obey the same "delete for me" tombstones as the
           // regular message page; otherwise opening an old link can resurrect
           // a message that the current user already removed from their chat.
@@ -9922,7 +9943,8 @@ class _ChatPageState extends State<ChatPage> {
                   .select('message_id')
                   .eq('message_id', widget.targetMessageId!)
                   .eq('user_id', currentUid)
-                  .maybeSingle();
+                  .maybeSingle()
+                  .timeout(Duration(seconds: 5));
               hiddenForCurrentUser = deletion != null;
             } catch (_) {
               // If deletion status cannot be verified, prefer not to resurrect
@@ -10063,14 +10085,17 @@ class _ChatPageState extends State<ChatPage> {
         final messageMeta = await Future.wait<dynamic>([
           supabase.from('message_read_receipts')
               .select('message_id,reader_id,read_at').inFilter('message_id', ids)
+              .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
           supabase.from('message_reactions')
               .select('message_id,user_id,reaction,created_at').inFilter('message_id', ids)
+              .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
           supabase.from('message_attachments')
               .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
+              .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
         ]);
@@ -10177,7 +10202,8 @@ class _ChatPageState extends State<ChatPage> {
     // The account's own unread state is independent from the public
     // read-receipt preference and must be saved even if settings cannot load.
     try {
-      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id});
+      await supabase.rpc('mark_conversation_read', params: {'p_conversation_id': widget.id})
+          .timeout(Duration(seconds: 5));
     } catch (error) {
       debugPrint('Private message read update failed: $error');
     }
@@ -10185,7 +10211,8 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final settings = await loadUserSettings();
       if (settings['read_receipts'] != false) {
-        await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id});
+        await supabase.rpc('mark_messages_read', params: {'p_conversation_id': widget.id})
+            .timeout(Duration(seconds: 5));
       }
     } catch (error) {
       debugPrint('Public message read receipt update failed: $error');
@@ -10430,7 +10457,7 @@ class _ChatPageState extends State<ChatPage> {
         'body': value,
         'message_type': 'text',
         'reply_to': replyId,
-      }).select().single());
+      }).select().single().timeout(Duration(seconds: 15)));
 
       if (!mounted) return;
       setState(() {
