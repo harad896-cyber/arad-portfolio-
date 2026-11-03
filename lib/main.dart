@@ -36,6 +36,7 @@ import 'chat_background_page.dart';
 import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
+import 'app_theme.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
 
@@ -1971,6 +1972,9 @@ class AradMessenger extends StatelessWidget {
           brightness: Brightness.light,
           surface: Color(0xFFFCFCFE),
         ),
+        extensions: <ThemeExtension<dynamic>>[
+          GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed)),
+        ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
@@ -2065,6 +2069,9 @@ class AradMessenger extends StatelessWidget {
           brightness: Brightness.dark,
           surface: Color(0xFF071A2D),
         ),
+        extensions: <ThemeExtension<dynamic>>[
+          GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed)),
+        ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
