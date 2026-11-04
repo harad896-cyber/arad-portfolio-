@@ -17,9 +17,13 @@ fi
 git config --global --add safe.directory "/vercel/path0/${FLUTTER_DIR}" 2>/dev/null || true
 git config --global --add safe.directory "$(pwd)/${FLUTTER_DIR}" 2>/dev/null || true
 
-# Keep the Flutter asset used by splash/UI in sync with the launcher SVG.
-python3 -m pip install --quiet pillow cairosvg
-python3 - <<'PY'
+# Install image tooling in an isolated virtual environment; Vercel's system
+# Python is PEP 668 externally managed and must not be modified with pip.
+PYTHON_ENV="/tmp/gapresan-build-venv"
+python3 -m venv "${PYTHON_ENV}"
+"${PYTHON_ENV}/bin/python" -m pip install --quiet --upgrade pip
+"${PYTHON_ENV}/bin/python" -m pip install --quiet pillow cairosvg
+"${PYTHON_ENV}/bin/python" - <<'PY'
 import cairosvg
 from PIL import Image
 cairosvg.svg2png(url='assets/app_icon.svg', write_to='/tmp/gapresan_icon.png', output_width=1024, output_height=1024)
