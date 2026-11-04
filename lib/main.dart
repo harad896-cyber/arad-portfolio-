@@ -2960,6 +2960,10 @@ class AppAppearancePage extends StatefulWidget {
 }
 class _AppAppearancePageState extends State<AppAppearancePage> {
   bool picking = false;
+  String _presetFilter = 'همه';
+
+  bool _isLightPreset(({String name, int color, int accent}) preset) =>
+      Color(preset.color).computeLuminance() >= .38;
   static const presets = <({String name, int color, int accent})>[
     (name: 'شب آرام', color: 0xFF10131C, accent: 0xFF229ED9),
     (name: 'آبی اقیانوسی', color: 0xFF102B3A, accent: 0xFF2A9D8F),
@@ -3017,6 +3021,11 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
     final dark = appTheme.dark;
     final scheme = Theme.of(context).colorScheme;
     final hasImage = appTheme.backgroundImageBase64 != null && appTheme.backgroundImageBase64!.isNotEmpty;
+    final visiblePresets = presets.where((preset) {
+      if (_presetFilter == 'تیره') return !_isLightPreset(preset);
+      if (_presetFilter == 'روشن') return _isLightPreset(preset);
+      return true;
+    }).toList(growable: false);
     return Scaffold(
       appBar: AppBar(title: Text(trUi('قالب و پس‌زمینهٔ چت'))),
       body: ListView(
@@ -3187,57 +3196,85 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
             onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
             title: Text(trUi('تاریک')), secondary: Icon(Icons.dark_mode_rounded),
           )),
-          SizedBox(height: 18),
-          Text(trUi('قالب‌های آمادهٔ پس‌زمینه'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-          SizedBox(height: 10),
+          SizedBox(height: 20),
+          Text(trUi('قالب‌های آمادهٔ پس‌زمینه'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          SizedBox(height: 5),
+          Text(
+            trUi('قالب‌ها بر اساس روشنایی مرتب شده‌اند؛ با انتخاب هر قالب، رنگ گفتگو و رنگ تأکیدی هماهنگ می‌شود.'),
+            style: TextStyle(color: scheme.onSurfaceVariant, height: 1.45, fontSize: 12),
+          ),
+          SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final filter in ['همه', 'تیره', 'روشن'])
+                ChoiceChip(
+                  label: Text(filter == 'همه' ? 'همه (${presets.length})' : filter == 'تیره'
+                      ? 'تیره (${presets.where((p) => !_isLightPreset(p)).length})'
+                      : 'روشن (${presets.where((p) => _isLightPreset(p)).length})'),
+                  selected: _presetFilter == filter,
+                  onSelected: (_) => setState(() => _presetFilter = filter),
+                  showCheckmark: true,
+                ),
+            ],
+          ),
+          SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            itemCount: presets.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.15),
+            itemCount: visiblePresets.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.05),
             itemBuilder: (context, i) {
-              final p = presets[i];
+              final p = visiblePresets[i];
               final selected = appTheme.backgroundSeed == p.color && !hasImage;
-              return InkWell(
+              final foreground = _isLightPreset(p) ? const Color(0xFF20232B) : Colors.white;
+              return Material(
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
-                onTap: () async {
-                  await appTheme.setBackgroundImage(null);
-                  await appTheme.setSeed(p.accent);
-                  await appTheme.setBackgroundSeed(p.color);
-                  if (mounted) setState(() {});
-                },
-                child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(p.color), Color.lerp(Color(p.color), Color(p.accent), .22)!],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: selected ? Color(p.accent) : Colors.white.withValues(alpha: .14),
-                      width: selected ? 2.5 : 1,
-                    ),
-                    boxShadow: selected ? [
-                      BoxShadow(color: Color(p.accent).withValues(alpha: .24), blurRadius: 14, spreadRadius: 1),
-                    ] : const [],
-                  ),
-                  child: Row(children: [
-                    SizedBox(width: 12),
-                    Icon(selected ? Icons.check_circle : Icons.palette_outlined, color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text(p.name, style: TextStyle(color: p.color == 0xFFF2F3F7 || p.color == 0xFFF6EAF0 || p.color == 0xFFE8F2FA ? Colors.black87 : Colors.white, fontWeight: FontWeight.w800))),
-                    Container(
-                      width: 11,
-                      height: 11,
-                      decoration: BoxDecoration(
-                        color: Color(p.accent),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: .8), width: 1.5),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    await appTheme.setBackgroundImage(null);
+                    await appTheme.setSeed(p.accent);
+                    await appTheme.setBackgroundSeed(p.color);
+                    if (mounted) setState(() {});
+                  },
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(p.color), Color.lerp(Color(p.color), Color(p.accent), .22)!],
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: selected ? Color(p.accent) : scheme.outlineVariant.withValues(alpha: .55),
+                        width: selected ? 2.5 : 1,
+                      ),
+                      boxShadow: selected ? [
+                        BoxShadow(color: Color(p.accent).withValues(alpha: .22), blurRadius: 12, spreadRadius: 1),
+                      ] : const [],
                     ),
-                    SizedBox(width: 8),
-                  ]),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                      child: Row(children: [
+                        Icon(selected ? Icons.check_circle_rounded : Icons.palette_outlined, color: foreground, size: 19),
+                        SizedBox(width: 8),
+                        Expanded(child: Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: foreground, fontWeight: FontWeight.w800, fontSize: 12))),
+                        Container(
+                          width: 13,
+                          height: 13,
+                          decoration: BoxDecoration(
+                            color: Color(p.accent),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: foreground.withValues(alpha: .85), width: 1.5),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
                 ),
               );
             },
