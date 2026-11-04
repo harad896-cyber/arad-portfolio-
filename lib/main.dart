@@ -4473,24 +4473,14 @@ class _ProfileGateState extends State<ProfileGate> {
   }
 
   Future<bool> _hasProfile() async {
-    // Auth state can finish restoring a persisted session a moment after the
-    // login route is replaced, especially for accounts with an older session.
-    // Recover the server-validated user once before treating the account as missing.
-    var user = supabase.auth.currentUser;
-    if (user == null) {
-      try {
-        user = (await supabase.auth.getUser().timeout(const Duration(seconds: 8))).user;
-      } catch (restoreError) {
-        debugPrint('ProfileGate auth restore failed: $restoreError');
-      }
-    }
-    if (user == null) {
-      // One short yield lets the auth-state listener finish a pending restore.
-      await Future<void>.delayed(const Duration(milliseconds: 350));
-      user = supabase.auth.currentUser;
-    }
-    if (user == null) {
-      throw StateError('نشست این حساب بازیابی نشد. اینترنت را بررسی کنید و دوباره وارد شوید.');
+    // AuthGate only opens this route after Supabase has restored a session.
+    // Read the user from that already-restored local session instead of making
+    // a second network request to auth.getUser(). A slow/offline profile check
+    // must not hold the whole app behind an unnecessary spinner.
+    final session = supabase.auth.currentSession;
+    final user = session?.user ?? supabase.auth.currentUser;
+    if (session == null || user == null) {
+      throw StateError('نشست معتبر پیدا نشد. دوباره وارد حساب شوید.');
     }
     final meta = user.appMetadata;
     final role = meta['role']?.toString().toLowerCase();
