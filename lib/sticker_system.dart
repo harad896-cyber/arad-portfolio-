@@ -104,6 +104,7 @@ class _StickerPickerSheetState extends State<StickerPickerSheet> {
   String _stickerError = '';
   String _query = '';
   String _provider = 'Tenor';
+  int _stickerShelf = 0;
   final TextEditingController _gifSearch = TextEditingController();
   List<Map<String, dynamic>> _stickers = [];
   List<Map<String, dynamic>> _gifs = [];
@@ -172,11 +173,14 @@ class _StickerPickerSheetState extends State<StickerPickerSheet> {
 
   List<Map<String, dynamic>> get _visibleStickers {
     final byId = {for (final item in _stickers) item['id'].toString(): item};
-    final recent = _recentIds.map((id) => byId[id]).whereType<Map<String, dynamic>>().toList();
-    if (recent.isNotEmpty) return recent;
+    if (_stickerShelf == 0) {
+      return _recentIds.map((id) => byId[id]).whereType<Map<String, dynamic>>().toList();
+    }
     final sorted = List<Map<String, dynamic>>.from(_stickers);
-    sorted.sort((a, b) => (_usage[b['id'].toString()] ?? 0)
-      .compareTo(_usage[a['id'].toString()] ?? 0));
+    if (_stickerShelf == 1) {
+      sorted.sort((a, b) => (_usage[b['id'].toString()] ?? 0)
+        .compareTo(_usage[a['id'].toString()] ?? 0));
+    }
     return sorted;
   }
 
@@ -236,7 +240,7 @@ class _StickerPickerSheetState extends State<StickerPickerSheet> {
     final scheme = Theme.of(context).colorScheme;
     final height = MediaQuery.of(context).size.height * .76;
     return SafeArea(top: false, child: Container(
-      height: height.clamp(360.0, 680.0),
+      height: height.clamp(360.0, 680.0).toDouble(),
       decoration: BoxDecoration(color: scheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
         border: Border(top: BorderSide(color: scheme.primary.withValues(alpha: .3)))),
@@ -283,7 +287,21 @@ class _StickerPickerSheetState extends State<StickerPickerSheet> {
       'هنوز بستهٔ استیکری منتشر نشده است.\nپس از بارگذاری فایل‌های Lottie در Storage، استیکرها اینجا نمایش داده می‌شوند.',
       textAlign: TextAlign.center));
     final items = _visibleStickers;
-    return GridView.builder(
+    return Column(children: [
+      Row(children: [
+        ChoiceChip(label: const Text('تازه'), selected: _stickerShelf == 0,
+          onSelected: (_) => setState(() => _stickerShelf = 0)),
+        const SizedBox(width: 6),
+        ChoiceChip(label: const Text('پرمصرف'), selected: _stickerShelf == 1,
+          onSelected: (_) => setState(() => _stickerShelf = 1)),
+        const SizedBox(width: 6),
+        ChoiceChip(label: const Text('همه'), selected: _stickerShelf == 2,
+          onSelected: (_) => setState(() => _stickerShelf = 2)),
+      ]),
+      const SizedBox(height: 6),
+      Expanded(child: items.isEmpty
+        ? const Center(child: Text('در این بخش هنوز استیکری نیست.'))
+        : GridView.builder(
       itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3, mainAxisSpacing: 8, crossAxisSpacing: 8),
@@ -310,7 +328,8 @@ class _StickerPickerSheetState extends State<StickerPickerSheet> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
             ])));
-      });
+      })),
+    ]);
   }
 
   Widget _gifPanel() => Column(children: [
