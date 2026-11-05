@@ -54,12 +54,12 @@ class _StickerPlayerState extends State<StickerPlayer> {
           final play = activeIds.contains(_id);
           if (widget.format == 'gif') {
             if (!play) {
-              if ((widget.previewUrl ?? '').isNotEmpty) {
-                return Image.network(widget.previewUrl!, width: widget.size, height: widget.size,
-                  fit: BoxFit.contain, errorBuilder: (_, __, ___) => _placeholder(context));
-              }
               return SizedBox(width: widget.size, height: widget.size, child: _placeholder(context));
             }
+            return Image.network(widget.url, width: widget.size, height: widget.size,
+              fit: BoxFit.contain, errorBuilder: (_, __, ___) => _placeholder(context));
+          }
+          if (widget.format == 'png' || widget.format == 'webp') {
             return Image.network(widget.url, width: widget.size, height: widget.size,
               fit: BoxFit.contain, errorBuilder: (_, __, ___) => _placeholder(context));
           }
@@ -345,9 +345,8 @@ class _StickerPickerSheetState extends State<StickerPickerSheet> {
             return InkWell(borderRadius: BorderRadius.circular(14),
               onTap: () async { Navigator.pop(context); await widget.onGifSelected(item); },
               child: ClipRRect(borderRadius: BorderRadius.circular(14),
-                child: Image.network((item['preview_url'] ?? item['url']).toString(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.gif_box_outlined)))));
+                child: StickerPlayer(url: item['url'].toString(), format: 'gif',
+                  size: 150, instanceId: 'gif-search-' + item['id'].toString())));
           })),
   ]);
 }
