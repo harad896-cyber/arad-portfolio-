@@ -1547,7 +1547,16 @@ class AppThemeController extends ChangeNotifier with WidgetsBindingObserver {
     // Cloud sync is best-effort: local preferences remain usable when offline.
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
+    final pendingSync = p.getBool('theme_mode_pending_sync_$key') ?? false;
     try {
+      if (pendingSync) {
+        await Supabase.instance.client.from('user_settings').upsert({
+          'user_id': uid,
+          'theme_mode': mode,
+        }).timeout(const Duration(seconds: 3));
+        await p.setBool('theme_mode_pending_sync_$key', false);
+        return;
+      }
       final row = await Supabase.instance.client
           .from('user_settings')
           .select('theme_mode')
@@ -1585,9 +1594,10 @@ class AppThemeController extends ChangeNotifier with WidgetsBindingObserver {
     final p = await SharedPreferences.getInstance();
     await p.setString('theme_mode_$_scope', mode);
     await p.setBool('dark_mode_$_scope', dark);
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid != null) await p.setBool('theme_mode_pending_sync_$_scope', true);
     notifyListeners();
 
-    final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
     try {
       await Supabase.instance.client.from('user_settings').upsert({
@@ -1595,6 +1605,7 @@ class AppThemeController extends ChangeNotifier with WidgetsBindingObserver {
         'theme_mode': mode,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).timeout(const Duration(seconds: 5));
+      await p.setBool('theme_mode_pending_sync_$_scope', false);
     } catch (error) {
       debugPrint('GapResan theme preference saved locally; cloud sync failed: $error');
     }
