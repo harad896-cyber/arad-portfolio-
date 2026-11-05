@@ -1484,8 +1484,9 @@ class LanguageController extends ChangeNotifier {
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
-class AppThemeController extends ChangeNotifier {
+class AppThemeController extends ChangeNotifier with WidgetsBindingObserver {
   bool dark = true;
+  String mode = 'dark';
   int seed = 0xFF00C2A8;
   int backgroundSeed = 0xFF071A2D;
   String? backgroundImageBase64;
@@ -1497,13 +1498,33 @@ class AppThemeController extends ChangeNotifier {
     return uid == null ? 'guest' : uid;
   }
 
+  void attachPlatformBrightnessListener() {
+    WidgetsBinding.instance.addObserver(this);
+    _applySystemBrightness();
+  }
+
+  void _applySystemBrightness() {
+    if (mode != 'system') return;
+    final next = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    dark = next;
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (mode != 'system') return;
+    final previous = dark;
+    _applySystemBrightness();
+    if (previous != dark) notifyListeners();
+  }
+
   Future<void> load() async => loadForUser();
+
   Future<void> loadForUser() async {
     final p = await SharedPreferences.getInstance();
     final key = _scope;
     final revision = p.getInt('theme_revision_$key') ?? 0;
     if (revision < _themeRevision) {
-      // One-time migration to the polished dark neon visual system.
+      // Preserve the current polished defaults for existing installations.
       dark = true;
       seed = 0xFF00C2A8;
       backgroundSeed = 0xFF071A2D;
@@ -1516,16 +1537,71 @@ class AppThemeController extends ChangeNotifier {
       seed = p.getInt('accent_seed_$key') ?? 0xFF00C2A8;
       backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A2D;
     }
+    mode = p.getString('theme_mode_$key') ?? (dark ? 'dark' : 'light');
+    if (!const ['dark', 'light', 'system'].contains(mode)) mode = dark ? 'dark' : 'light';
+    _applySystemBrightness();
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
     notifyListeners();
+
+    // Cloud sync is best-effort: local preferences remain usable when offline.
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final row = await Supabase.instance.client
+          .from('user_settings')
+          .select('theme_mode')
+          .eq('user_id', uid)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 3));
+      final remoteMode = row?['theme_mode']?.toString();
+      if (const ['dark', 'light', 'system'].contains(remoteMode)) {
+        mode = remoteMode!;
+        _applySystemBrightness();
+        await p.setString('theme_mode_$key', mode);
+        await p.setBool('dark_mode_$key', dark);
+        notifyListeners();
+      } else if (row == null) {
+        await Supabase.instance.client.from('user_settings').upsert({
+          'user_id': uid,
+          'theme_mode': mode,
+        }).timeout(const Duration(seconds: 3));
+      }
+    } catch (error) {
+      debugPrint('GapResan theme cloud sync skipped: $error');
+    }
   }
-  Future<void> setDark(bool value) async {
-    dark = value;
+
+  Future<void> setMode(String value) async {
+    if (!const ['dark', 'light', 'system'].contains(value)) return;
+    mode = value;
+    if (mode == 'dark') {
+      dark = true;
+    } else if (mode == 'light') {
+      dark = false;
+    } else {
+      _applySystemBrightness();
+    }
     final p = await SharedPreferences.getInstance();
-    await p.setBool('dark_mode_$_scope', value);
+    await p.setString('theme_mode_$_scope', mode);
+    await p.setBool('dark_mode_$_scope', dark);
     notifyListeners();
+
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await Supabase.instance.client.from('user_settings').upsert({
+        'user_id': uid,
+        'theme_mode': mode,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).timeout(const Duration(seconds: 5));
+    } catch (error) {
+      debugPrint('GapResan theme preference saved locally; cloud sync failed: $error');
+    }
   }
+
+  Future<void> setDark(bool value) => setMode(value ? 'dark' : 'light');
+
   Future<void> setBackgroundImage(String? encoded) async {
     backgroundImageBase64 = encoded;
     final p = await SharedPreferences.getInstance();
@@ -1537,18 +1613,21 @@ class AppThemeController extends ChangeNotifier {
     }
     notifyListeners();
   }
+
   Future<void> setBackgroundSeed(int value) async {
     backgroundSeed = value;
     final p = await SharedPreferences.getInstance();
     await p.setInt('chat_background_seed_$_scope', value);
     notifyListeners();
   }
+
   Future<void> setBackgroundEffects(bool value) async {
     backgroundEffects = value;
     final p = await SharedPreferences.getInstance();
     await p.setBool('chat_background_effects_$_scope', value);
     notifyListeners();
   }
+
   Future<void> setSeed(int value) async {
     seed = value;
     final p = await SharedPreferences.getInstance();
@@ -1695,8 +1774,11 @@ Future<void> main() async {
       ),
     ),
   );
+  // Load the local appearance before the first interactive frame so the
+  // saved theme is painted immediately instead of flashing the default theme.
+  appTheme.attachPlatformBrightnessListener();
+  await appTheme.load().catchError((_) {});
   runApp(AradMessenger());
-  unawaited(appTheme.load().catchError((_) {}));
   unawaited(aradLanguageController.load().catchError((_) {}));
   unawaited(appAccessibility.load().catchError((_) {}));
 }
@@ -1964,7 +2046,7 @@ class AradMessenger extends StatelessWidget {
       },
       debugShowCheckedModeBanner: false,
       title: 'پیام رسان',
-      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: appTheme.mode == 'system' ? ThemeMode.system : (appTheme.dark ? ThemeMode.dark : ThemeMode.light),
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
@@ -3185,14 +3267,20 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
           SizedBox(height: 18),
           Text(trUi('حالت نمایش'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
           SizedBox(height: 8),
-          Card(child: RadioListTile<bool>(
-            value: false, groupValue: dark,
-            onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
+          Card(child: RadioListTile<String>(
+            value: 'system', groupValue: appTheme.mode,
+            onChanged: (v) async { if (v == null) return; await appTheme.setMode(v); if (mounted) setState(() {}); },
+            title: Text('خودکار (مطابق تنظیم دستگاه)'),
+            secondary: Icon(Icons.brightness_auto_rounded),
+          )),
+          Card(child: RadioListTile<String>(
+            value: 'light', groupValue: appTheme.mode,
+            onChanged: (v) async { if (v == null) return; await appTheme.setMode(v); if (mounted) setState(() {}); },
             title: Text(trUi('روشن')), secondary: Icon(Icons.light_mode_rounded),
           )),
-          Card(child: RadioListTile<bool>(
-            value: true, groupValue: dark,
-            onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
+          Card(child: RadioListTile<String>(
+            value: 'dark', groupValue: appTheme.mode,
+            onChanged: (v) async { if (v == null) return; await appTheme.setMode(v); if (mounted) setState(() {}); },
             title: Text(trUi('تاریک')), secondary: Icon(Icons.dark_mode_rounded),
           )),
           SizedBox(height: 18),
