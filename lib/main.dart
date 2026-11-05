@@ -1505,7 +1505,7 @@ class AppThemeController extends ChangeNotifier with WidgetsBindingObserver {
 
   void _applySystemBrightness() {
     if (mode != 'system') return;
-    final next = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    final next = gapResanResolveDarkMode(mode, WidgetsBinding.instance.platformDispatcher.platformBrightness);
     dark = next;
   }
 
@@ -2046,7 +2046,7 @@ class AradMessenger extends StatelessWidget {
       },
       debugShowCheckedModeBanner: false,
       title: 'پیام رسان',
-      themeMode: appTheme.mode == 'system' ? ThemeMode.system : (appTheme.dark ? ThemeMode.dark : ThemeMode.light),
+      themeMode: gapResanThemeMode(appTheme.mode),
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
