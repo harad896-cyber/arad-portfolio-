@@ -9,7 +9,7 @@ This branch builds the Flutter web app and publishes it with GitHub Pages.
 
 ## Build checks
 
-The workflow runs dependency resolution, Dart analysis, Flutter tests, and a release web build before uploading the Pages artifact. Pull request runs validate the build but do not deploy. Push runs on this feature branch perform the deployment.
+The workflow runs dependency resolution, Dart analysis, Flutter tests, and a release web build before uploading and deploying the Pages artifact. It runs on pushes to this feature branch and manual dispatches; pull requests are covered by the push build so duplicate preview jobs are avoided.
 
 ## GIF search configuration
 
