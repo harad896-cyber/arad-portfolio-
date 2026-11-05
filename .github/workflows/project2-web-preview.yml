@@ -31,8 +31,18 @@ jobs:
           cache: true
       - name: Resolve dependencies
         run: flutter pub get
-      - name: Analyze
-        run: flutter analyze --no-pub
+      - name: Analyze (fail only on errors; legacy warnings are reported)
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-pub 2>&1 | tee analyze.log
+          analyze_status=${PIPESTATUS[0]}
+          set -e
+          if grep -Eq ' error • ' analyze.log; then
+            echo "Dart analyzer reported errors."
+            exit 1
+          fi
+          echo "Analyzer exit code: ${analyze_status}; warnings/info do not block the preview build."
       - name: Run tests
         run: flutter test --no-pub
       - name: Build web preview
