@@ -14,6 +14,20 @@ void main() {
       expect(light.surface, Colors.white);
     });
 
+    test('maps saved appearance modes to Flutter theme modes', () {
+      expect(gapResanThemeMode('dark'), ThemeMode.dark);
+      expect(gapResanThemeMode('light'), ThemeMode.light);
+      expect(gapResanThemeMode('system'), ThemeMode.system);
+      expect(gapResanThemeMode('unknown'), ThemeMode.dark);
+    });
+
+    test('resolves system brightness while preserving explicit modes', () {
+      expect(gapResanResolveDarkMode('system', Brightness.dark), isTrue);
+      expect(gapResanResolveDarkMode('system', Brightness.light), isFalse);
+      expect(gapResanResolveDarkMode('dark', Brightness.light), isTrue);
+      expect(gapResanResolveDarkMode('light', Brightness.dark), isFalse);
+    });
+
     test('copyWith changes only the requested token', () {
       final original = GapResanThemeTokens.forBrightness(dark: true, accent: const Color(0xFF00C2A8));
       final updated = original.copyWith(surface: const Color(0xFF123456));
