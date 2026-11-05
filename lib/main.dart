@@ -37,6 +37,7 @@ import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
 import 'app_theme.dart';
+import 'sticker_system.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
 
@@ -9444,6 +9445,7 @@ class _ChatPageState extends State<ChatPage> {
   bool loading = true;
   bool _isSyncing = true;
   bool sending = false;
+  bool _assetSending = false;
   bool _chatNotificationsMuted = false;
   Map<String, dynamic>? replyMessage;
   final AudioRecorder _voiceRecorder = AudioRecorder();
@@ -11140,6 +11142,82 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Future<void> _showStickerGifPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (sheetContext) => StickerPickerSheet(
+        supabase: supabase,
+        onEmojiSelected: (emoji) {
+          final current = text.value;
+          final start = current.selection.start < 0 ? current.text.length : current.selection.start;
+          final end = current.selection.end < 0 ? current.text.length : current.selection.end;
+          final next = current.text.replaceRange(start, end, emoji);
+          text.value = TextEditingValue(
+            text: next,
+            selection: TextSelection.collapsed(offset: start + emoji.length),
+          );
+          if (mounted) setState(() {});
+        },
+        onStickerSelected: (sticker) => _sendAnimatedAssetMessage(sticker, 'sticker'),
+        onGifSelected: (gif) => _sendAnimatedAssetMessage(gif, 'gif'),
+      ),
+    );
+  }
+
+  Future<void> _sendAnimatedAssetMessage(
+    Map<String, dynamic> asset,
+    String messageType,
+  ) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || _assetSending) return;
+    final url = (asset['url'] ?? '').toString().trim();
+    if (url.isEmpty) {
+      if (mounted) showMsg(context, 'آدرس استیکر یا GIF معتبر نیست.');
+      return;
+    }
+    final payload = <String, dynamic>{
+      'url': url,
+      'format': (asset['format'] ?? (messageType == 'gif' ? 'gif' : 'lottie')).toString(),
+      'preview_url': (asset['preview_url'] ?? '').toString(),
+      'provider': (asset['provider'] ?? '').toString(),
+    };
+    final replyId = replyMessage?['id'];
+    setState(() => _assetSending = true);
+    try {
+      final saved = Map<String, dynamic>.from(await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': uid,
+        'body': jsonEncode(payload),
+        'message_type': messageType,
+        'reply_to': replyId,
+      }).select().single().timeout(const Duration(seconds: 15)));
+      if (!mounted) return;
+      setState(() {
+        replyMessage = null;
+        if (!messages.any((item) => item['id'].toString() == saved['id'].toString())) {
+          messages = [...messages, saved];
+        }
+        if (!timelineItems.any((item) => item['__kind'] == 'message' && item['id'].toString() == saved['id'].toString())) {
+          timelineItems = [...timelineItems, {...saved, '__kind': 'message'}]
+            ..sort((a, b) {
+              final ad = DateTime.tryParse((a['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
+              final bd = DateTime.tryParse((b['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
+              return ad.compareTo(bd);
+            });
+        }
+      });
+      await _saveCachedChat(messages);
+      _jumpToLatest();
+    } catch (error) {
+      if (mounted) showMsg(context, 'ارسال استیکر یا GIF ناموفق بود: ' + _friendlyError(error.toString()));
+    } finally {
+      if (mounted) setState(() => _assetSending = false);
+    }
+  }
+
   Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
     final uid = supabase.auth.currentUser?.id;
     final messageId = message['id']?.toString();
@@ -12176,7 +12254,24 @@ class _ChatPageState extends State<ChatPage> {
 
     Widget content;
     final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
-    if (stickerMatch != null) {
+    if (m['message_type'] == 'sticker' || m['message_type'] == 'gif') {
+      Map<String, dynamic> stickerPayload = {};
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map) stickerPayload = Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+      final assetUrl = (stickerPayload['url'] ?? body).toString();
+      final assetFormat = (stickerPayload['format'] ??
+        (m['message_type'] == 'gif' ? 'gif' : 'lottie')).toString();
+      final previewUrl = (stickerPayload['preview_url'] ?? '').toString();
+      content = StickerPlayer(
+        url: assetUrl,
+        format: assetFormat,
+        previewUrl: previewUrl.isEmpty ? null : previewUrl,
+        size: 190,
+        instanceId: 'chat-' + (m['id']?.toString() ?? assetUrl.hashCode.toString()),
+      );
+    } else if (stickerMatch != null) {
       final art = stickerMatch.group(1) ?? '✨';
       final caption = stickerMatch.group(2) ?? '';
       content = Container(
@@ -13338,7 +13433,7 @@ class _ChatPageState extends State<ChatPage> {
                               shape: CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: _showChatEmojiPicker,
+                            onPressed: _showStickerGifPicker,
                             tooltip: trUi('اموجی'),
                             icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
                           ),
