@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - feature/sticker-gif-system
-  pull_request:
-    branches:
-      - project2/theme-foundation
   workflow_dispatch:
 
 permissions:
@@ -15,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: gapresan-project2-pages-${{ github.event_name }}
+  group: gapresan-project2-pages
   cancel-in-progress: true
 
 jobs:
