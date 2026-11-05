@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/sticker-gif-system
+  pull_request:
+    branches:
+      - project2/theme-foundation
   workflow_dispatch:
 
 permissions:
@@ -46,6 +49,7 @@ jobs:
           path: build/web
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
