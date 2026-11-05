@@ -2233,7 +2233,7 @@ class AradMessenger extends StatelessWidget {
           elevation: 2,
           shape: StadiumBorder(),
         ),
-      ),      home: AuthGate(),
+      ),      home: _ThemeAuthSync(child: AuthGate()),
     ));
   }
 }
@@ -4416,6 +4416,40 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
         FilledButton.icon(onPressed:busy?null:_add,icon:Icon(Icons.person_add_alt_1_rounded),label:Text(busy?'در حال تغییر حساب...':'افزودن حساب جدید')),
       ]));
   }
+}
+
+class _ThemeAuthSync extends StatefulWidget {
+  const _ThemeAuthSync({required this.child});
+  final Widget child;
+
+  @override
+  State<_ThemeAuthSync> createState() => _ThemeAuthSyncState();
+}
+
+class _ThemeAuthSyncState extends State<_ThemeAuthSync> {
+  late final StreamSubscription<AuthState> _subscription;
+  String? _observedUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _observedUserId = supabase.auth.currentUser?.id;
+    _subscription = supabase.auth.onAuthStateChange.listen((state) {
+      final nextUserId = state.session?.user.id;
+      if (nextUserId == _observedUserId) return;
+      _observedUserId = nextUserId;
+      unawaited(appTheme.loadForUser().catchError((_) {}));
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class AuthGate extends StatelessWidget {
