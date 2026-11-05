@@ -1,0 +1,68 @@
+name: Project 2 Web Preview
+
+on:
+  push:
+    branches:
+      - feature/sticker-gif-system
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gapresan-project2-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project 2
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Analyze (fail only on errors; legacy warnings are reported)
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-pub 2>&1 | tee analyze.log
+          analyze_status=${PIPESTATUS[0]}
+          set -e
+          if grep -Eq ' error • ' analyze.log; then
+            echo "Dart analyzer reported errors."
+            exit 1
+          fi
+          echo "Analyzer exit code: ${analyze_status}; warnings/info do not block the preview build."
+      - name: Run tests
+        run: flutter test --no-pub
+      - name: Build web preview
+        env:
+          TENOR_API_KEY: ${{ secrets.TENOR_API_KEY }}
+          GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
+        run: |
+          flutter build web --release --base-href "/arad-portfolio-/" \
+            --dart-define=TENOR_API_KEY="$TENOR_API_KEY" \
+            --dart-define=GIPHY_API_KEY="$GIPHY_API_KEY"
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy web preview
+        id: deployment
+        uses: actions/deploy-pages@v4

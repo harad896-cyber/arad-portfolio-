@@ -1,5 +1,31 @@
 import 'package:flutter/material.dart';
 
+/// Resolves the persisted appearance preference without depending on UI state.
+ThemeMode gapResanThemeMode(String value) {
+  switch (value) {
+    case 'light':
+      return ThemeMode.light;
+    case 'system':
+      return ThemeMode.system;
+    case 'dark':
+    default:
+      return ThemeMode.dark;
+  }
+}
+
+/// Resolves the effective brightness used by previews and custom surfaces.
+bool gapResanResolveDarkMode(String value, Brightness systemBrightness) {
+  switch (value) {
+    case 'light':
+      return false;
+    case 'system':
+      return systemBrightness == Brightness.dark;
+    case 'dark':
+    default:
+      return true;
+  }
+}
+
 /// Semantic color tokens shared by GapResan surfaces and feature pages.
 ///
 /// This first foundation step intentionally preserves the current appearance;

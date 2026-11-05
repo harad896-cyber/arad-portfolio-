@@ -30,6 +30,9 @@ dependencies:
   share_plus: ^10.1.4
   qr_flutter: ^4.1.0
   video_player: ^2.10.1
+  lottie: ^3.3.2
+  visibility_detector: ^0.4.0+2
+  http: ^1.5.0
   local_auth: ^2.3.0
   path_provider: ^2.1.5
 

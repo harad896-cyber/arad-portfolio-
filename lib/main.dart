@@ -37,6 +37,7 @@ import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
 import 'app_theme.dart';
+import 'sticker_system.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
 
@@ -1483,8 +1484,9 @@ class LanguageController extends ChangeNotifier {
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
-class AppThemeController extends ChangeNotifier {
+class AppThemeController extends ChangeNotifier with WidgetsBindingObserver {
   bool dark = true;
+  String mode = 'dark';
   int seed = 0xFF00C2A8;
   int backgroundSeed = 0xFF071A2D;
   String? backgroundImageBase64;
@@ -1496,13 +1498,33 @@ class AppThemeController extends ChangeNotifier {
     return uid == null ? 'guest' : uid;
   }
 
+  void attachPlatformBrightnessListener() {
+    WidgetsBinding.instance.addObserver(this);
+    _applySystemBrightness();
+  }
+
+  void _applySystemBrightness() {
+    if (mode != 'system') return;
+    final next = gapResanResolveDarkMode(mode, WidgetsBinding.instance.platformDispatcher.platformBrightness);
+    dark = next;
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (mode != 'system') return;
+    final previous = dark;
+    _applySystemBrightness();
+    if (previous != dark) notifyListeners();
+  }
+
   Future<void> load() async => loadForUser();
+
   Future<void> loadForUser() async {
     final p = await SharedPreferences.getInstance();
     final key = _scope;
     final revision = p.getInt('theme_revision_$key') ?? 0;
     if (revision < _themeRevision) {
-      // One-time migration to the polished dark neon visual system.
+      // Preserve the current polished defaults for existing installations.
       dark = true;
       seed = 0xFF00C2A8;
       backgroundSeed = 0xFF071A2D;
@@ -1515,16 +1537,82 @@ class AppThemeController extends ChangeNotifier {
       seed = p.getInt('accent_seed_$key') ?? 0xFF00C2A8;
       backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A2D;
     }
+    mode = p.getString('theme_mode_$key') ?? (dark ? 'dark' : 'light');
+    if (!const ['dark', 'light', 'system'].contains(mode)) mode = dark ? 'dark' : 'light';
+    _applySystemBrightness();
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
     notifyListeners();
+
+    // Cloud sync is best-effort: local preferences remain usable when offline.
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+    final pendingSync = p.getBool('theme_mode_pending_sync_$key') ?? false;
+    try {
+      if (pendingSync) {
+        await Supabase.instance.client.from('user_settings').upsert({
+          'user_id': uid,
+          'theme_mode': mode,
+        }).timeout(const Duration(seconds: 3));
+        await p.setBool('theme_mode_pending_sync_$key', false);
+        return;
+      }
+      final row = await Supabase.instance.client
+          .from('user_settings')
+          .select('theme_mode')
+          .eq('user_id', uid)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 3));
+      final remoteMode = row?['theme_mode']?.toString();
+      if (const ['dark', 'light', 'system'].contains(remoteMode)) {
+        mode = remoteMode!;
+        _applySystemBrightness();
+        await p.setString('theme_mode_$key', mode);
+        await p.setBool('dark_mode_$key', dark);
+        notifyListeners();
+      } else if (row == null) {
+        await Supabase.instance.client.from('user_settings').upsert({
+          'user_id': uid,
+          'theme_mode': mode,
+        }).timeout(const Duration(seconds: 3));
+      }
+    } catch (error) {
+      debugPrint('GapResan theme cloud sync skipped: $error');
+    }
   }
-  Future<void> setDark(bool value) async {
-    dark = value;
+
+  Future<void> setMode(String value) async {
+    if (!const ['dark', 'light', 'system'].contains(value)) return;
+    mode = value;
+    if (mode == 'dark') {
+      dark = true;
+    } else if (mode == 'light') {
+      dark = false;
+    } else {
+      _applySystemBrightness();
+    }
     final p = await SharedPreferences.getInstance();
-    await p.setBool('dark_mode_$_scope', value);
+    await p.setString('theme_mode_$_scope', mode);
+    await p.setBool('dark_mode_$_scope', dark);
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid != null) await p.setBool('theme_mode_pending_sync_$_scope', true);
     notifyListeners();
+
+    if (uid == null) return;
+    try {
+      await Supabase.instance.client.from('user_settings').upsert({
+        'user_id': uid,
+        'theme_mode': mode,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).timeout(const Duration(seconds: 5));
+      await p.setBool('theme_mode_pending_sync_$_scope', false);
+    } catch (error) {
+      debugPrint('GapResan theme preference saved locally; cloud sync failed: $error');
+    }
   }
+
+  Future<void> setDark(bool value) => setMode(value ? 'dark' : 'light');
+
   Future<void> setBackgroundImage(String? encoded) async {
     backgroundImageBase64 = encoded;
     final p = await SharedPreferences.getInstance();
@@ -1536,18 +1624,21 @@ class AppThemeController extends ChangeNotifier {
     }
     notifyListeners();
   }
+
   Future<void> setBackgroundSeed(int value) async {
     backgroundSeed = value;
     final p = await SharedPreferences.getInstance();
     await p.setInt('chat_background_seed_$_scope', value);
     notifyListeners();
   }
+
   Future<void> setBackgroundEffects(bool value) async {
     backgroundEffects = value;
     final p = await SharedPreferences.getInstance();
     await p.setBool('chat_background_effects_$_scope', value);
     notifyListeners();
   }
+
   Future<void> setSeed(int value) async {
     seed = value;
     final p = await SharedPreferences.getInstance();
@@ -1694,8 +1785,11 @@ Future<void> main() async {
       ),
     ),
   );
+  // Load the local appearance before the first interactive frame so the
+  // saved theme is painted immediately instead of flashing the default theme.
+  appTheme.attachPlatformBrightnessListener();
+  await appTheme.load().catchError((_) {});
   runApp(AradMessenger());
-  unawaited(appTheme.load().catchError((_) {}));
   unawaited(aradLanguageController.load().catchError((_) {}));
   unawaited(appAccessibility.load().catchError((_) {}));
 }
@@ -1963,7 +2057,7 @@ class AradMessenger extends StatelessWidget {
       },
       debugShowCheckedModeBanner: false,
       title: 'پیام رسان',
-      themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: gapResanThemeMode(appTheme.mode),
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Vazirmatn',
@@ -2150,7 +2244,7 @@ class AradMessenger extends StatelessWidget {
           elevation: 2,
           shape: StadiumBorder(),
         ),
-      ),      home: AuthGate(),
+      ),      home: _ThemeAuthSync(child: AuthGate()),
     ));
   }
 }
@@ -3184,14 +3278,20 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
           SizedBox(height: 18),
           Text(trUi('حالت نمایش'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
           SizedBox(height: 8),
-          Card(child: RadioListTile<bool>(
-            value: false, groupValue: dark,
-            onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
+          Card(child: RadioListTile<String>(
+            value: 'system', groupValue: appTheme.mode,
+            onChanged: (v) async { if (v == null) return; await appTheme.setMode(v); if (mounted) setState(() {}); },
+            title: Text('خودکار (مطابق تنظیم دستگاه)'),
+            secondary: Icon(Icons.brightness_auto_rounded),
+          )),
+          Card(child: RadioListTile<String>(
+            value: 'light', groupValue: appTheme.mode,
+            onChanged: (v) async { if (v == null) return; await appTheme.setMode(v); if (mounted) setState(() {}); },
             title: Text(trUi('روشن')), secondary: Icon(Icons.light_mode_rounded),
           )),
-          Card(child: RadioListTile<bool>(
-            value: true, groupValue: dark,
-            onChanged: (v) async { if (v == null) return; await appTheme.setDark(v); if (mounted) setState(() {}); },
+          Card(child: RadioListTile<String>(
+            value: 'dark', groupValue: appTheme.mode,
+            onChanged: (v) async { if (v == null) return; await appTheme.setMode(v); if (mounted) setState(() {}); },
             title: Text(trUi('تاریک')), secondary: Icon(Icons.dark_mode_rounded),
           )),
           SizedBox(height: 18),
@@ -4327,6 +4427,40 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage>{
         FilledButton.icon(onPressed:busy?null:_add,icon:Icon(Icons.person_add_alt_1_rounded),label:Text(busy?'در حال تغییر حساب...':'افزودن حساب جدید')),
       ]));
   }
+}
+
+class _ThemeAuthSync extends StatefulWidget {
+  const _ThemeAuthSync({required this.child});
+  final Widget child;
+
+  @override
+  State<_ThemeAuthSync> createState() => _ThemeAuthSyncState();
+}
+
+class _ThemeAuthSyncState extends State<_ThemeAuthSync> {
+  late final StreamSubscription<AuthState> _subscription;
+  String? _observedUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _observedUserId = supabase.auth.currentUser?.id;
+    _subscription = supabase.auth.onAuthStateChange.listen((state) {
+      final nextUserId = state.session?.user.id;
+      if (nextUserId == _observedUserId) return;
+      _observedUserId = nextUserId;
+      unawaited(appTheme.loadForUser().catchError((_) {}));
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class AuthGate extends StatelessWidget {
@@ -9444,6 +9578,7 @@ class _ChatPageState extends State<ChatPage> {
   bool loading = true;
   bool _isSyncing = true;
   bool sending = false;
+  bool _assetSending = false;
   bool _chatNotificationsMuted = false;
   Map<String, dynamic>? replyMessage;
   final AudioRecorder _voiceRecorder = AudioRecorder();
@@ -11140,6 +11275,82 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Future<void> _showStickerGifPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (sheetContext) => StickerPickerSheet(
+        supabase: supabase,
+        onEmojiSelected: (emoji) {
+          final current = text.value;
+          final start = current.selection.start < 0 ? current.text.length : current.selection.start;
+          final end = current.selection.end < 0 ? current.text.length : current.selection.end;
+          final next = current.text.replaceRange(start, end, emoji);
+          text.value = TextEditingValue(
+            text: next,
+            selection: TextSelection.collapsed(offset: start + emoji.length),
+          );
+          if (mounted) setState(() {});
+        },
+        onStickerSelected: (sticker) => _sendAnimatedAssetMessage(sticker, 'sticker'),
+        onGifSelected: (gif) => _sendAnimatedAssetMessage(gif, 'gif'),
+      ),
+    );
+  }
+
+  Future<void> _sendAnimatedAssetMessage(
+    Map<String, dynamic> asset,
+    String messageType,
+  ) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || _assetSending) return;
+    final url = (asset['url'] ?? '').toString().trim();
+    if (url.isEmpty) {
+      if (mounted) showMsg(context, 'آدرس استیکر یا GIF معتبر نیست.');
+      return;
+    }
+    final payload = <String, dynamic>{
+      'url': url,
+      'format': (asset['format'] ?? (messageType == 'gif' ? 'gif' : 'lottie')).toString(),
+      'preview_url': (asset['preview_url'] ?? '').toString(),
+      'provider': (asset['provider'] ?? '').toString(),
+    };
+    final replyId = replyMessage?['id'];
+    setState(() => _assetSending = true);
+    try {
+      final saved = Map<String, dynamic>.from(await supabase.from('messages').insert({
+        'conversation_id': widget.id,
+        'sender_id': uid,
+        'body': jsonEncode(payload),
+        'message_type': messageType,
+        'reply_to': replyId,
+      }).select().single().timeout(const Duration(seconds: 15)));
+      if (!mounted) return;
+      setState(() {
+        replyMessage = null;
+        if (!messages.any((item) => item['id'].toString() == saved['id'].toString())) {
+          messages = [...messages, saved];
+        }
+        if (!timelineItems.any((item) => item['__kind'] == 'message' && item['id'].toString() == saved['id'].toString())) {
+          timelineItems = [...timelineItems, {...saved, '__kind': 'message'}]
+            ..sort((a, b) {
+              final ad = DateTime.tryParse((a['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
+              final bd = DateTime.tryParse((b['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
+              return ad.compareTo(bd);
+            });
+        }
+      });
+      await _saveCachedChat(messages);
+      _jumpToLatest();
+    } catch (error) {
+      if (mounted) showMsg(context, 'ارسال استیکر یا GIF ناموفق بود: ' + _friendlyError(error.toString()));
+    } finally {
+      if (mounted) setState(() => _assetSending = false);
+    }
+  }
+
   Future<void> reactTo(Map<String, dynamic> message, String emoji) async {
     final uid = supabase.auth.currentUser?.id;
     final messageId = message['id']?.toString();
@@ -12176,7 +12387,24 @@ class _ChatPageState extends State<ChatPage> {
 
     Widget content;
     final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
-    if (stickerMatch != null) {
+    if (m['message_type'] == 'sticker' || m['message_type'] == 'gif') {
+      Map<String, dynamic> stickerPayload = {};
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map) stickerPayload = Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+      final assetUrl = (stickerPayload['url'] ?? body).toString();
+      final assetFormat = (stickerPayload['format'] ??
+        (m['message_type'] == 'gif' ? 'gif' : 'lottie')).toString();
+      final previewUrl = (stickerPayload['preview_url'] ?? '').toString();
+      content = StickerPlayer(
+        url: assetUrl,
+        format: assetFormat,
+        previewUrl: previewUrl.isEmpty ? null : previewUrl,
+        size: 190,
+        instanceId: 'chat-' + (m['id']?.toString() ?? assetUrl.hashCode.toString()),
+      );
+    } else if (stickerMatch != null) {
       final art = stickerMatch.group(1) ?? '✨';
       final caption = stickerMatch.group(2) ?? '';
       content = Container(
@@ -13338,7 +13566,7 @@ class _ChatPageState extends State<ChatPage> {
                               shape: CircleBorder(),
                               padding: const EdgeInsets.all(10),
                             ),
-                            onPressed: _showChatEmojiPicker,
+                            onPressed: _showStickerGifPicker,
                             tooltip: trUi('اموجی'),
                             icon: Icon(Icons.emoji_emotions_rounded, color: scheme.primary),
                           ),
