@@ -37,5 +37,17 @@ void main() {
         aradLanguageController.locale = previousLocale;
       }
     });
+
+    test('Afghan Dari uses local interface wording', () {
+      final previousLocale = aradLanguageController.locale;
+      try {
+        aradLanguageController.locale = const Locale('prs');
+        expect(trUi('گفتگو'), 'گپ');
+        expect(trUi('مصرف داده'), 'مصرف اینترنت');
+        expect(trUi('دوربین'), 'کمره');
+      } finally {
+        aradLanguageController.locale = previousLocale;
+      }
+    });
   });
 }
