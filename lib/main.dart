@@ -1978,9 +1978,19 @@ class AradMessenger extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
-        final base = dark ? Color(0xFF0B1710) : Color(0xFFF4F8F5);
-        final glowA = dark ? Color(0xFF12251A) : Color(0xFFEEF6F0);
-        final glowB = dark ? Color(0xFF102219) : Color(0xFFEDF5EF);
+        final accent = Color(appTheme.seed);
+        final fallback = dark ? const Color(0xFF0B1710) : const Color(0xFFF4F8F5);
+        // The selected chat palette must also reach the app shell. Previously
+        // the root backdrop stayed green regardless of the chosen preset, so
+        // users saw little or no visible change outside the palette picker.
+        final base = _gapPaletteSurface(
+          dark: dark,
+          backgroundSeed: appTheme.backgroundSeed,
+          fallback: fallback,
+          strength: dark ? .28 : .18,
+        );
+        final glowA = Color.lerp(base, accent, dark ? .17 : .10)!;
+        final glowB = Color.lerp(base, accent, dark ? .09 : .055)!;
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -2160,7 +2170,12 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
-          backgroundColor: Color(0xFF071A13),
+          backgroundColor: _gapPaletteSurface(
+            dark: true,
+            backgroundSeed: appTheme.backgroundSeed,
+            fallback: const Color(0xFF071A13),
+            strength: .22,
+          ),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
