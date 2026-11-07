@@ -1,4 +1,4 @@
-name: Flutter validation
+name: Flutter validation and Android APK
 
 on:
   push:
@@ -18,12 +18,18 @@ concurrency:
 
 jobs:
   validate:
-    name: Analyze, test and build web
+    name: Analyze, test, build web and Android APK
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Check out Project 2
         uses: actions/checkout@v4
+
+      - name: Set up Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -35,6 +41,10 @@ jobs:
         run: |
           flutter --version
           dart --version
+          java -version
+
+      - name: Generate Android platform project
+        run: flutter create --platforms=android --org com.gapresan --project-name gapresan .
 
       - name: Resolve dependencies
         run: flutter pub get
@@ -44,6 +54,17 @@ jobs:
 
       - name: Run tests
         run: flutter test --no-pub
+
+      - name: Build Android installable debug APK
+        run: flutter build apk --debug
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build web preview artifact
         run: flutter build web --release
@@ -55,4 +76,3 @@ jobs:
           path: build/web/
           if-no-files-found: error
           retention-days: 7
-
