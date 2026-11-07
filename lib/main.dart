@@ -13974,6 +13974,9 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   bool _biometricEnabled = false;
   String? _pin;
   DateTime? _backgroundedAt;
+  bool _storageUnavailable = false;
+  int _failedPinAttempts = 0;
+  DateTime? _pinLockedUntil;
 
   @override
   void initState() {
@@ -14004,12 +14007,15 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
         _pin = valid ? pin : null;
         _biometricEnabled = valid && (prefs.getBool('app_lock_biometric') ?? false);
         _locked = valid;
+        _storageUnavailable = false;
         _ready = true;
       });
       if (valid && _biometricEnabled) _unlockBiometric();
     } catch (error) {
       debugPrint('App lock initialization failed: $error');
-      if (mounted) setState(() { _ready = true; _locked = false; });
+      // Fail closed: never bypass an enabled local lock because secure storage
+      // temporarily failed. Keep the app behind a retry screen instead.
+      if (mounted) setState(() { _ready = true; _locked = true; _storageUnavailable = true; });
     }
   }
 
@@ -14043,6 +14049,13 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   }
 
   Future<void> _unlockWithPin(String value) async {
+    if (_storageUnavailable) return;
+    final lockUntil = _pinLockedUntil;
+    if (lockUntil != null && DateTime.now().isBefore(lockUntil)) {
+      final remaining = lockUntil.difference(DateTime.now()).inSeconds + 1;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('برای امنیت، $remaining ثانیه صبر کن.')));
+      return;
+    }
     final normalized = value.runes.map((r) {
       if (r >= 0x06F0 && r <= 0x06F9) return String.fromCharCode(0x30 + r - 0x06F0);
       if (r >= 0x0660 && r <= 0x0669) return String.fromCharCode(0x30 + r - 0x0660);
@@ -14051,15 +14064,42 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     if (normalized == _pin && mounted) {
       FocusScope.of(context).unfocus();
       _pinController.clear();
+      _failedPinAttempts = 0;
+      _pinLockedUntil = null;
       setState(() => _locked = false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رمز واردشده درست نیست.')));
+      _failedPinAttempts++;
+      if (_failedPinAttempts >= 5) {
+        _failedPinAttempts = 0;
+        _pinLockedUntil = DateTime.now().add(const Duration(seconds: 30));
+        _pinController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('۵ بار رمز اشتباه بود؛ برای ۳۰ ثانیه ورود با PIN بسته شد.')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('رمز درست نیست؛ ${5 - _failedPinAttempts} تلاش باقی مانده.')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_ready) return const Material(color: Color(0xFF081712), child: Center(child: CircularProgressIndicator()));
+    if (_storageUnavailable) {
+      return Material(
+        color: const Color(0xFF081712),
+        child: SafeArea(child: Center(child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.shield_outlined, size: 52, color: Color(0xFFFFC36A)),
+            const SizedBox(height: 16),
+            const Text('حافظهٔ امن در دسترس نیست', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('برای محافظت از حساب، برنامه باز نمی‌شود. اتصال دستگاه را بررسی کن و دوباره تلاش کن.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFB4C6BC))),
+            const SizedBox(height: 18),
+            FilledButton.icon(onPressed: _loadLockState, icon: const Icon(Icons.refresh), label: const Text('تلاش دوباره')),
+          ]),
+        ))),
+      );
+    }
     if (!_locked) return widget.child;
     return PopScope(
       canPop: false,
