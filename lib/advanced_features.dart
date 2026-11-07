@@ -534,6 +534,7 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
   bool _biometric = false;
   bool _hasPin = false;
   bool _busy = true;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -542,19 +543,26 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final pin = await _storage.read(key: 'app_lock_pin');
-    if (!mounted) return;
-    setState(() {
-      _hasPin = pin != null && pin.isNotEmpty;
-      _enabled = prefs.getBool('app_lock_enabled') ?? false;
-      _biometric = prefs.getBool('app_lock_biometric') ?? false;
-      if (!_hasPin) {
-        _enabled = false;
-        _biometric = false;
-      }
-      _busy = false;
-    });
+    if (mounted) setState(() { _busy = true; _loadFailed = false; });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pin = await _storage.read(key: 'app_lock_pin');
+      if (!mounted) return;
+      setState(() {
+        _hasPin = pin != null && pin.isNotEmpty;
+        _enabled = prefs.getBool('app_lock_enabled') ?? false;
+        _biometric = prefs.getBool('app_lock_biometric') ?? false;
+        if (!_hasPin) {
+          _enabled = false;
+          _biometric = false;
+        }
+        _busy = false;
+        _loadFailed = false;
+      });
+    } catch (error) {
+      debugPrint('App lock settings load failed: $error');
+      if (mounted) setState(() { _busy = false; _loadFailed = true; });
+    }
   }
 
   String _digits(String value) => _normalizeSettingsPinDigits(value).replaceAll(RegExp(r'[^0-9]'), '');
@@ -643,7 +651,18 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
     appBar: AppBar(title: const Text('قفل برنامه')),
     body: _busy
       ? const Center(child: CircularProgressIndicator())
-      : ListView(padding: const EdgeInsets.all(16), children: [
+      : _loadFailed
+        ? Center(child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.lock_clock_outlined, size: 44),
+              const SizedBox(height: 12),
+              const Text('خواندن تنظیمات قفل ممکن نشد.'),
+              const SizedBox(height: 12),
+              FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh), label: const Text('تلاش دوباره')),
+            ]),
+          ))
+        : ListView(padding: const EdgeInsets.all(16), children: [
           Card(child: SwitchListTile(
             secondary: const Icon(Icons.lock_outline_rounded),
             title: const Text('قفل با رمز PIN'),
