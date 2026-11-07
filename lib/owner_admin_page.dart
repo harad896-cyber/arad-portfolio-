@@ -19,6 +19,7 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
   int activeUserCount = 0;
   int messageCount = 0;
   int openReportCount = 0;
+  List<Map<String, dynamic>> supportReports = [];
   String query = '';
 
   bool get isOwner =>
@@ -48,6 +49,8 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
       final nextActiveUserCount = (stats['active_users_30d'] as num?)?.toInt() ?? 0;
       final nextMessageCount = (stats['messages'] as num?)?.toInt() ?? 0;
       final nextOpenReportCount = (stats['open_support_reports'] as num?)?.toInt() ?? 0;
+      final reportRows = await supabase.rpc('owner_list_support_reports', params: {'p_limit': 50});
+      final nextSupportReports = List<Map<String, dynamic>>.from(reportRows as List);
       final banRows = await supabase.rpc('owner_list_app_bans');
       final nextBanned = <String>{
         for (final row in List<Map<String, dynamic>>.from(banRows as List))
@@ -61,6 +64,7 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
           activeUserCount = nextActiveUserCount;
           messageCount = nextMessageCount;
           openReportCount = nextOpenReportCount;
+          supportReports = nextSupportReports;
           banned = nextBanned;
           loading = false;
         });
@@ -227,6 +231,38 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
                     ],
                   ),
                 ),
+                if (supportReports.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                    child: Card(
+                      child: ExpansionTile(
+                        leading: Icon(Icons.assignment_outlined, color: s.primary),
+                        title: Text('گزارش‌های کاربران (' + supportReports.length.toString() + ')',
+                            style: const TextStyle(fontWeight: FontWeight.w800)),
+                        children: supportReports.map((report) {
+                          final status = '${report['status'] ?? 'open'}';
+                          final statusText = status == 'resolved'
+                              ? 'رسیدگی شد'
+                              : status == 'in_progress'
+                                  ? 'در حال بررسی'
+                                  : status == 'closed'
+                                      ? 'بسته شد'
+                                      : 'باز';
+                          return ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.bug_report_outlined),
+                            title: Text('${report['reporter_name'] ?? 'کاربر'} · $statusText',
+                                style: const TextStyle(fontWeight: FontWeight.w700)),
+                            subtitle: Text(
+                              '${report['category'] ?? 'سایر'}: ${report['description'] ?? ''}',
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Row(
