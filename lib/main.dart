@@ -1485,7 +1485,7 @@ class LanguageController extends ChangeNotifier {
 
 class AppThemeController extends ChangeNotifier {
   bool dark = true;
-  int seed = 0xFF00C2A8;
+  int seed = 0xFF0B9658;
   int backgroundSeed = 0xFF071A2D;
   String? backgroundImageBase64;
   bool backgroundEffects = true;
@@ -1504,7 +1504,7 @@ class AppThemeController extends ChangeNotifier {
     if (revision < _themeRevision) {
       // One-time migration to the polished dark neon visual system.
       dark = true;
-      seed = 0xFF00C2A8;
+      seed = 0xFF0B9658;
       backgroundSeed = 0xFF071A2D;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
@@ -1512,7 +1512,9 @@ class AppThemeController extends ChangeNotifier {
       await p.setInt('theme_revision_$key', _themeRevision);
     } else {
       dark = p.getBool('dark_mode_$key') ?? true;
-      seed = p.getInt('accent_seed_$key') ?? 0xFF00C2A8;
+      final savedSeed = p.getInt('accent_seed_$key');
+      seed = savedSeed == null || savedSeed == 0xFF00C2A8 ? 0xFF0B9658 : savedSeed;
+      if (savedSeed == 0xFF00C2A8) await p.setInt('accent_seed_$key', seed);
       backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A2D;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
@@ -1640,6 +1642,11 @@ String? authRedirectUrl() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Bound decoded-image memory so long chat sessions do not retain an excessive
+  // number of off-screen avatars and media thumbnails.
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSize = 180;
+  imageCache.maximumSizeBytes = 64 * 1024 * 1024;
 
   // Keep unexpected framework/async failures visible in device logs instead
   // of letting an unhandled callback silently terminate a user interaction.
@@ -1962,7 +1969,7 @@ class AradMessenger extends StatelessWidget {
         );
       },
       debugShowCheckedModeBanner: false,
-      title: 'پیام رسان',
+      title: 'گپ‌رسان',
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
