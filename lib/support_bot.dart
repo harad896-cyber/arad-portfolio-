@@ -13,6 +13,8 @@ class _SupportBotPageState extends State<SupportBotPage> {
   final _scroll = ScrollController();
   late Future<List<Map<String, dynamic>>> _reportsFuture;
   bool _sendingReport = false;
+  String _faqSearch = '';
+  _Faq? _lastMatchedFaq;
   final List<_BotMessage> _messages = [
     const _BotMessage(
       text: 'سلام! من راهنمای گپ‌رسان هستم. می‌توانم دربارهٔ حساب کاربری، پیام‌ها، گروه‌ها، امنیت و تنظیمات راهنمایی‌تان کنم. سوال‌تان را بنویسید یا یکی از سوال‌های پرتکرار را انتخاب کنید.',
@@ -155,6 +157,7 @@ class _SupportBotPageState extends State<SupportBotPage> {
       .replaceAll('ى', 'ی')
       .replaceAll('ك', 'ک')
       .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u200C\u200D]'), '')
       .replaceAll(RegExp(r'[؟?!.,،؛:ـ()\[\]{}"“”«»]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
@@ -167,26 +170,41 @@ class _SupportBotPageState extends State<SupportBotPage> {
   int _similarityScore(String question, _Faq faq) {
     final normalizedQuestion = _normalize(question);
     final questionTokens = _tokens(normalizedQuestion);
-    var score = 0;
+    if (normalizedQuestion.isEmpty || questionTokens.isEmpty) return 0;
+
+    // Prefer a specific multi-word phrase over a generic single word.
+    var bestPhraseScore = 0;
+    var tokenScore = 0;
     for (final keyword in faq.keywords) {
-      final normalizedKeyword = _normalize(keyword);
-      if (normalizedKeyword.isEmpty) continue;
-      if (normalizedQuestion == normalizedKeyword) {
-        score += 12;
-      } else if (normalizedQuestion.contains(normalizedKeyword)) {
-        score += normalizedKeyword.contains(' ') ? 7 : 3;
-      } else {
-        final keywordTokens = _tokens(normalizedKeyword);
-        if (keywordTokens.isNotEmpty) {
-          final overlap = keywordTokens.intersection(questionTokens).length;
-          if (overlap > 0) score += overlap * 2;
-        }
+      final phrase = _normalize(keyword);
+      if (phrase.isEmpty) continue;
+      if (normalizedQuestion == phrase) {
+        bestPhraseScore = bestPhraseScore < 14 ? 14 : bestPhraseScore;
+      } else if (phrase.length >= 4 && normalizedQuestion.contains(phrase)) {
+        final phraseScore = phrase.contains(' ') ? 9 : 4;
+        if (phraseScore > bestPhraseScore) bestPhraseScore = phraseScore;
+      }
+      final keywordTokens = _tokens(phrase);
+      if (keywordTokens.isNotEmpty) {
+        final overlap = keywordTokens.intersection(questionTokens).length;
+        if (overlap > 0) tokenScore += overlap * (keywordTokens.length > 1 ? 3 : 2);
       }
     }
-    return score;
+    // Cap token contribution so duplicated synonyms cannot dominate ranking.
+    return bestPhraseScore + (tokenScore > 8 ? 8 : tokenScore);
   }
 
   String _answerFor(String question) {
+    final normalized = _normalize(question);
+    final followUp = RegExp(r'^(بیشتر|توضیح بیشتر|واضح تر|مثال|چطور دقیق|مرحله به مرحله|حل نشد|درست نشد|باز هم|هنوز مشکل|همین مشکل)').hasMatch(normalized);
+    if (followUp && _lastMatchedFaq != null) {
+      final previous = _lastMatchedFaq!;
+      if (RegExp(r'^(حل نشد|درست نشد|باز هم|هنوز مشکل)').hasMatch(normalized)) {
+        return 'متوجه شدم؛ مشکل «${previous.question}» هنوز حل نشده است. لطفاً این سه مورد را بنویس: ۱) در کدام صفحه هستی؟ ۲) دقیقاً چه کاری انجام می‌دهی؟ ۳) چه پیام خطایی می‌بینی؟ اگر خطا نداری، بنویس بعد از زدن کدام دکمه چه اتفاقی می‌افتد. برای پیگیری هم می‌توانی گزارش مشکل ثبت کنی.';
+      }
+      return 'دربارهٔ «${previous.question}» قدم‌به‌قدم: ${previous.answer}\n\nاگر این مراحل با صفحه‌ای که می‌بینی فرق دارد، نام دکمه یا گزینه‌ای را که پیدا نمی‌کنی بنویس تا راهنمایی دقیق‌تری بدهم.';
+    }
+
     final ranked = _faqs
         .map((faq) => (faq: faq, score: _similarityScore(question, faq)))
         .where((item) => item.score > 0)
@@ -194,11 +212,14 @@ class _SupportBotPageState extends State<SupportBotPage> {
       ..sort((a, b) => b.score.compareTo(a.score));
 
     if (ranked.isEmpty || ranked.first.score < 4) {
+      _lastMatchedFaq = null;
       return 'برای این پرسش هنوز پاسخ مطمئنی پیدا نکردم و نمی‌خواهم حدس نادرست بزنم. لطفاً نام بخشی را که درباره‌اش پرسش داری و کاری را که انجام می‌دادی بنویس. اگر خطا می‌بینی، متن خطا را هم اضافه کن. برای پیگیری مستقیم، دکمهٔ «ثبت گزارش مشکل» در همین صفحه را بزن.';
     }
     if (ranked.length > 1 && ranked.first.score - ranked[1].score < 2) {
+      _lastMatchedFaq = null;
       return 'پرسشت می‌تواند به چند بخش مربوط باشد. لطفاً مشخص کن منظورت کدام است: حساب و ورود، پیام و گفتگو، گروه و کانال، یا تنظیمات و امنیت؟';
     }
+    _lastMatchedFaq = ranked.first.faq;
     return ranked.first.faq.answer;
   }
 
@@ -293,7 +314,24 @@ class _SupportBotPageState extends State<SupportBotPage> {
               const SizedBox(height: 8),
               Text('سوال‌های پرتکرار', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
               const SizedBox(height: 8),
-              ..._faqs.map((faq) => Card(
+              TextField(
+                onChanged: (value) => setState(() => _faqSearch = value),
+                decoration: InputDecoration(
+                  hintText: 'جستجو در راهنما…',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _faqSearch.isEmpty ? null : IconButton(
+                    tooltip: 'پاک‌کردن جستجو',
+                    onPressed: () => setState(() => _faqSearch = ''),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._faqs.where((faq) => _faqSearch.trim().isEmpty ||
+                  _normalize('${faq.question} ${faq.keywords.join(' ')}').contains(_normalize(_faqSearch)) ||
+                  _tokens(_faqSearch).intersection(_tokens('${faq.question} ${faq.keywords.join(' ')}')).isNotEmpty).map((faq) => Card(
                 margin: const EdgeInsets.only(bottom: 6),
                 child: ListTile(
                   dense: true,
