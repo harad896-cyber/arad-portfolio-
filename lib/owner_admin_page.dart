@@ -14,6 +14,8 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
   List<Map<String, dynamic>> users = [];
   Set<String> banned = <String>{};
   bool loading = true;
+  int groupCount = 0;
+  int channelCount = 0;
   String query = '';
 
   bool get isOwner =>
@@ -36,6 +38,10 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
           .from('profiles')
           .select('id,display_name,username,avatar_url,is_verified,joined_at')
           .order('display_name');
+      final conversations = await supabase.from('conversations').select('id,type');
+      final conversationRows = List<Map<String, dynamic>>.from(conversations);
+      final nextGroupCount = conversationRows.where((row) => row['type'] == 'group').length;
+      final nextChannelCount = conversationRows.where((row) => row['type'] == 'channel').length;
       final banRows = await supabase.rpc('owner_list_app_bans');
       final nextBanned = <String>{
         for (final row in List<Map<String, dynamic>>.from(banRows as List))
@@ -44,6 +50,8 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
       if (mounted) {
         setState(() {
           users = List<Map<String, dynamic>>.from(data);
+          groupCount = nextGroupCount;
+          channelCount = nextChannelCount;
           banned = nextBanned;
           loading = false;
         });
@@ -157,6 +165,33 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
                   ),
                 ),
                 Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: Row(
+                    children: [
+                      Expanded(child: _OwnerStatCard(
+                        icon: Icons.people_alt_rounded,
+                        label: 'کل کاربران',
+                        value: users.length,
+                        color: s.primary,
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: _OwnerStatCard(
+                        icon: Icons.groups_rounded,
+                        label: 'گروه‌ها',
+                        value: groupCount,
+                        color: s.tertiary,
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: _OwnerStatCard(
+                        icon: Icons.campaign_rounded,
+                        label: 'کانال‌ها',
+                        value: channelCount,
+                        color: s.secondary,
+                      )),
+                    ],
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Row(
                     children: [
@@ -243,6 +278,53 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+
+class _OwnerStatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color color;
+
+  const _OwnerStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 7),
+            Text(
+              '$value',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: scheme.onSurface,
+                  ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
