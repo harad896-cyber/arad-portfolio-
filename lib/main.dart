@@ -1483,6 +1483,16 @@ class LanguageController extends ChangeNotifier {
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
+// Keep app surfaces coordinated with the selected chat palette without
+// allowing a light wallpaper to wash out dark mode (or vice versa).
+Color _gapPaletteSurface({required bool dark, required int backgroundSeed, required Color fallback, required double strength}) {
+  final selected = Color(backgroundSeed);
+  final luminance = selected.computeLuminance();
+  final matchesBrightness = dark ? luminance < .42 : luminance > .58;
+  if (!matchesBrightness) return fallback;
+  return Color.lerp(fallback, selected, strength)!;
+}
+
 class AppThemeController extends ChangeNotifier {
   bool dark = true;
   int seed = 0xFF0B9658;
@@ -1715,7 +1725,7 @@ class StartupLoadingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFF071A13),
+        backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1977,7 +1987,7 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: Color(0xFFFCFEFC),
+          surface: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
         ),
         extensions: <ThemeExtension<dynamic>>[
           GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed)),
@@ -1995,7 +2005,7 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .10),
-          backgroundColor: Color(0xFFFCFEFC),
+          backgroundColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF18251C)),
@@ -2004,7 +2014,7 @@ class AradMessenger extends StatelessWidget {
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFFFFFFFF),
+          color: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .97),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2015,14 +2025,14 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFFFFFFFF),
+          tileColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .97),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
           iconColor: Color(appTheme.seed),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFEDF4EF),
+          fillColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFEDF4EF), strength: .86),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           hintStyle: TextStyle(color: Color(0xFF647268), fontSize: 14),
           labelStyle: TextStyle(color: Color(0xFF18251C), fontSize: 14),
@@ -2074,7 +2084,7 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: Color(0xFF071A13),
+          surface: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
         ),
         extensions: <ThemeExtension<dynamic>>[
           GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed)),
@@ -2099,7 +2109,7 @@ class AradMessenger extends StatelessWidget {
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFF0D251A),
+          color: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2110,14 +2120,14 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFF0D251A),
+          tileColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
           iconColor: Color(0xFFA6B9AC),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFF0B2016),
+          fillColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0B2016), strength: .08),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           hintStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 14),
           labelStyle: TextStyle(color: Color(0xFFE8EDF5), fontSize: 14),
