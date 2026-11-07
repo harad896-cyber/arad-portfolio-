@@ -860,7 +860,19 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       });
       await load();
       toast('تنظیمات گروه ذخیره شد.');
-    } catch (e) { toast('تنظیمات ذخیره نشد: $e'); }
+    } on PostgrestException catch (e) {
+      final message = e.message.toLowerCase();
+      if (e.code == '23505' || message.contains('duplicate') || message.contains('username')) {
+        toast('این نام کاربری قبلاً استفاده شده است؛ یک نام دیگر انتخاب کنید.');
+      } else if (e.code == '42501' || message.contains('permission') || message.contains('not_group_admin')) {
+        toast('سرور اجازهٔ این تغییر را نداد؛ دسترسی و نقش مدیر را بررسی کنید.');
+        await load();
+      } else {
+        toast('تنظیمات ذخیره نشد: ${e.message}');
+      }
+    } catch (e) {
+      toast('تنظیمات ذخیره نشد. اتصال و دسترسی گروه را بررسی کنید.');
+    }
     finally { if (mounted) setState(() => busy = false); }
   }
 
@@ -987,34 +999,85 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         return Card(margin: const EdgeInsets.symmetric(vertical: 4), child: ListTile(leading: CircleAvatar(backgroundImage: a.isNotEmpty ? NetworkImage(a) : null, child: a.isEmpty ? const Icon(Icons.person) : null), title: Text(nameOf(id)), subtitle: Text(isGroupOwner ? '👑 مالک' : role), trailing: isGroupOwner ? const Icon(Icons.lock_rounded) : ((canRemoveMembers || owner) ? PopupMenuButton<String>(onSelected: (v) { if (v == 'remove') removeMember(id); else if (v == 'ban') banMember(id); else if (v == 'admin') setRole(id, 'admin'); else if (v == 'member') setRole(id, 'member'); }, itemBuilder: (_) => <PopupMenuEntry<String>>[const PopupMenuItem(value: 'remove', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_remove_rounded), title: Text('حذف از گروه'))), const PopupMenuItem(value: 'ban', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.block_rounded), title: Text('محروم کردن'))), if (owner) const PopupMenuItem(value: 'admin', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.admin_panel_settings_rounded), title: Text('مدیر کردن'))), if (owner) const PopupMenuItem(value: 'member', child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_rounded), title: Text('برداشتن مدیریت')))]) : null)));
       }),
       const SizedBox(height: 14),
-      Card(child: Column(children: [
-        const ListTile(title: Text('تنظیمات گروه', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
-        SwitchListTile(title: const Text('گروه عمومی'), subtitle: Text((group!['username'] ?? '').toString().isEmpty ? 'برای فعال‌سازی، نام کاربری یکتا تعیین کنید.' : '@${group!['username']}'), value: group!['is_public'] == true, onChanged: canEditGroup ? changePublicVisibility : null),
-        SwitchListTile(title: const Text('تأیید درخواست عضویت'), value: group!['join_approval'] == true, onChanged: canEditGroup ? (v) => updateSettings(approval: v) : null),
-        SwitchListTile(title: const Text('فقط مدیران پیام بفرستند'), value: group!['only_admins_can_post'] == true, onChanged: canEditGroup ? (v) => updateSettings(adminsPost: v) : null),
-        SwitchListTile(
-          secondary: const Icon(Icons.group_add_rounded),
-          title: const Text('فقط مدیران عضو اضافه کنند'),
-          subtitle: const Text('در حالت خاموش، اعضا هم می‌توانند افراد را اضافه کنند.'),
-          value: group!['only_admins_can_add'] == true,
-          onChanged: canEditGroup ? (v) => updateSettings(adminsAdd: v) : null,
-        ),
-        ListTile(
-          leading: const Icon(Icons.auto_delete_rounded),
-          title: const Text('حذف خودکار پیام‌ها'),
-          subtitle: Text(autoDeleteLabel((group!['auto_delete_seconds'] as num?)?.toInt() ?? 0)),
-          trailing: const Icon(Icons.chevron_left_rounded),
-          enabled: canEditGroup && !busy,
-          onTap: canEditGroup && !busy ? chooseAutoDelete : null,
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.emoji_emotions_outlined),
-          title: const Text('واکنش به پیام‌ها'),
-          subtitle: const Text('فعال یا غیرفعال کردن واکنش‌های ایموجی در گروه.'),
-          value: group!['allow_reactions'] != false,
-          onChanged: canEditGroup ? (v) => updateSettings(reactions: v) : null,
-        ),
-      ])),
+      Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
+            child: Text('تنظیمات گروه', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('دسترسی‌ها و شیوهٔ فعالیت اعضا را کنترل کنید. تغییرات پس از تأیید سرور اعمال می‌شود.'),
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const ListTile(
+            dense: true,
+            leading: Icon(Icons.lock_outline_rounded),
+            title: Text('حریم خصوصی و عضویت', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.public_rounded),
+            title: const Text('گروه عمومی'),
+            subtitle: Text((group!['username'] ?? '').toString().isEmpty
+                ? 'برای فعال‌سازی، نام کاربری یکتا تعیین کنید.'
+                : 'شناسهٔ عمومی: @${group!['username']}'),
+            value: group!['is_public'] == true,
+            onChanged: canEditGroup && !busy ? changePublicVisibility : null,
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.fact_check_outlined),
+            title: const Text('تأیید درخواست عضویت'),
+            subtitle: const Text('درخواست افراد تازه پیش از ورود باید توسط مدیر تأیید شود.'),
+            value: group!['join_approval'] == true,
+            onChanged: canEditGroup && !busy ? (v) => updateSettings(approval: v) : null,
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.group_add_rounded),
+            title: const Text('فقط مدیران عضو اضافه کنند'),
+            subtitle: const Text('با فعال‌سازی، اعضای عادی امکان افزودن افراد را ندارند.'),
+            value: group!['only_admins_can_add'] == true,
+            onChanged: canEditGroup && !busy ? (v) => updateSettings(adminsAdd: v) : null,
+          ),
+          const Divider(height: 1),
+          const ListTile(
+            dense: true,
+            leading: Icon(Icons.forum_outlined),
+            title: Text('پیام‌ها و تعامل', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.campaign_outlined),
+            title: const Text('فقط مدیران پیام بفرستند'),
+            subtitle: const Text('گروه به حالت اطلاع‌رسانی مدیرمحور تبدیل می‌شود.'),
+            value: group!['only_admins_can_post'] == true,
+            onChanged: canEditGroup && !busy ? (v) => updateSettings(adminsPost: v) : null,
+          ),
+          ListTile(
+            leading: const Icon(Icons.auto_delete_rounded),
+            title: const Text('حذف خودکار پیام‌ها'),
+            subtitle: Text(autoDeleteLabel((group!['auto_delete_seconds'] as num?)?.toInt() ?? 0)),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            enabled: canEditGroup && !busy,
+            onTap: canEditGroup && !busy ? chooseAutoDelete : null,
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.emoji_emotions_outlined),
+            title: const Text('واکنش به پیام‌ها'),
+            subtitle: const Text('اعضا می‌توانند با ایموجی به پیام‌ها واکنش نشان دهند.'),
+            value: group!['allow_reactions'] != false,
+            onChanged: canEditGroup && !busy ? (v) => updateSettings(reactions: v) : null,
+          ),
+          if (!canEditGroup)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Text(
+                'برای تغییر این گزینه‌ها، از مالک گروه بخواهید دسترسی «ویرایش گروه» را برای شما فعال کند.',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ),
+        ]),
+      ),
       if (canRemoveMembers || canDeleteMessages || owner) Card(child: ListTile(leading: const Icon(Icons.shield_rounded), title: const Text('محرومیت و حذف پیام'), subtitle: const Text('فهرست محروم‌ها و حذف پیام برای همه'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupModerationPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.dashboard_customize_rounded), title: const Text('مدیریت پیشرفته'), subtitle: const Text('درخواست‌های عضویت، محروم‌ها، محدودیت‌ها، سنجاق پیام و اختیارات مدیران'), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupAdvancedAdminPage(conversationId: widget.conversationId, title: widget.title))))),
       if (owner) Card(child: ListTile(leading: const Icon(Icons.delete_forever_rounded), title: const Text('حذف کامل گروه', style: TextStyle(fontWeight: FontWeight.w900)), subtitle: const Text('این گزینه هیچ ارتباطی با حذف/محروم کردن اعضا ندارد.'), onTap: deleteGroup)),
