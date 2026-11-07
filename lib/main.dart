@@ -3811,6 +3811,7 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
   void dispose() {
     _heartbeatTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    _pinController.dispose();
     super.dispose();
   }
 
@@ -13963,6 +13964,7 @@ class AppLockGate extends StatefulWidget {
 class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   final _storage = const FlutterSecureStorage();
   final _auth = LocalAuthentication();
+  final _pinController = TextEditingController();
   bool _ready = false;
   bool _locked = false;
   bool _busy = false;
@@ -14015,8 +14017,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
       final since = _backgroundedAt;
       _backgroundedAt = null;
       if (since != null && DateTime.now().difference(since) >= const Duration(seconds: 30) && _pin != null) {
-        setState(() => _locked = true);
-        if (_biometricEnabled) _unlockBiometric();
+        _loadLockState();
       }
     }
   }
@@ -14045,6 +14046,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     }).join().replaceAll(RegExp(r'[^0-9]'), '');
     if (normalized == _pin && mounted) {
       FocusScope.of(context).unfocus();
+      _pinController.clear();
       setState(() => _locked = false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رمز واردشده درست نیست.')));
@@ -14055,7 +14057,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     if (!_ready) return const Material(color: Color(0xFF081712), child: Center(child: CircularProgressIndicator()));
     if (!_locked) return widget.child;
-    final controller = TextEditingController();
     return PopScope(
       canPop: false,
       child: Material(
@@ -14074,7 +14075,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
                   const Text('برای ادامه رمز برنامه را وارد کن.', style: TextStyle(color: Color(0xFFB4C6BC))),
                   const SizedBox(height: 22),
                   TextField(
-                    controller: controller,
+                    controller: _pinController,
                     autofocus: true,
                     obscureText: true,
                     keyboardType: TextInputType.number,
@@ -14091,7 +14092,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
                     onSubmitted: _unlockWithPin,
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(width: double.infinity, child: FilledButton(onPressed: () => _unlockWithPin(controller.text), child: const Text('بازکردن قفل'))),
+                  SizedBox(width: double.infinity, child: FilledButton(onPressed: () => _unlockWithPin(_pinController.text), child: const Text('بازکردن قفل'))),
                   if (_biometricEnabled) TextButton.icon(onPressed: _busy ? null : _unlockBiometric, icon: const Icon(Icons.fingerprint), label: const Text('استفاده از اثرانگشت')),
                 ]),
               ),
