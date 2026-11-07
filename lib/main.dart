@@ -2017,7 +2017,7 @@ class AradMessenger extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           tileColor: Color(0xFFFFFFFF),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
-          iconColor: Color(0xFF766A88),
+          iconColor: Color(appTheme.seed),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -2099,7 +2099,7 @@ class AradMessenger extends StatelessWidget {
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFF0D2336),
+          color: Color(0xFF0D251A),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2110,9 +2110,9 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFF0D2336),
+          tileColor: Color(0xFF0D251A),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
-          iconColor: Color(0xFFBDB1D0),
+          iconColor: Color(0xFFA6B9AC),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -2132,7 +2132,7 @@ class AradMessenger extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF2A3349)),
+            borderSide: BorderSide(color: Color(0xFF294234)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
