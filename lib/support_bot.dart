@@ -144,8 +144,8 @@ class _SupportBotPageState extends State<SupportBotPage> {
       .replaceAll('ى', 'ی')
       .replaceAll('ك', 'ک')
       .replaceAll('ة', 'ه')
-      .replaceAll(RegExp(r'[؟?!.,،؛:ـ()\\[\\]{}"“”«»]'), ' ')
-      .replaceAll(RegExp(r'\\s+'), ' ')
+      .replaceAll(RegExp(r'[؟?!.,،؛:ـ()\[\]{}"“”«»]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
   Set<String> _tokens(String value) {
