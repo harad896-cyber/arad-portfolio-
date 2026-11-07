@@ -16,6 +16,9 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
   bool loading = true;
   int groupCount = 0;
   int channelCount = 0;
+  int activeUserCount = 0;
+  int messageCount = 0;
+  int openReportCount = 0;
   String query = '';
 
   bool get isOwner =>
@@ -38,10 +41,13 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
           .from('profiles')
           .select('id,display_name,username,avatar_url,is_verified,joined_at')
           .order('display_name');
-      final conversations = await supabase.from('conversations').select('id,type');
-      final conversationRows = List<Map<String, dynamic>>.from(conversations);
-      final nextGroupCount = conversationRows.where((row) => row['type'] == 'group').length;
-      final nextChannelCount = conversationRows.where((row) => row['type'] == 'channel').length;
+      final statsResult = await supabase.rpc('owner_dashboard_stats');
+      final stats = Map<String, dynamic>.from(statsResult as Map);
+      final nextGroupCount = (stats['groups'] as num?)?.toInt() ?? 0;
+      final nextChannelCount = (stats['channels'] as num?)?.toInt() ?? 0;
+      final nextActiveUserCount = (stats['active_users_30d'] as num?)?.toInt() ?? 0;
+      final nextMessageCount = (stats['messages'] as num?)?.toInt() ?? 0;
+      final nextOpenReportCount = (stats['open_support_reports'] as num?)?.toInt() ?? 0;
       final banRows = await supabase.rpc('owner_list_app_bans');
       final nextBanned = <String>{
         for (final row in List<Map<String, dynamic>>.from(banRows as List))
@@ -52,6 +58,9 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
           users = List<Map<String, dynamic>>.from(data);
           groupCount = nextGroupCount;
           channelCount = nextChannelCount;
+          activeUserCount = nextActiveUserCount;
+          messageCount = nextMessageCount;
+          openReportCount = nextOpenReportCount;
           banned = nextBanned;
           loading = false;
         });
@@ -187,6 +196,33 @@ class _OwnerAdminPageState extends State<OwnerAdminPage> {
                         label: 'کانال‌ها',
                         value: channelCount,
                         color: s.secondary,
+                      )),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                  child: Row(
+                    children: [
+                      Expanded(child: _OwnerStatCard(
+                        icon: Icons.online_prediction_rounded,
+                        label: 'فعال در ۳۰ روز',
+                        value: activeUserCount,
+                        color: s.primary,
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: _OwnerStatCard(
+                        icon: Icons.forum_rounded,
+                        label: 'کل پیام‌ها',
+                        value: messageCount,
+                        color: s.tertiary,
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: _OwnerStatCard(
+                        icon: Icons.assignment_late_outlined,
+                        label: 'گزارش‌های باز',
+                        value: openReportCount,
+                        color: s.error,
                       )),
                     ],
                   ),
