@@ -52,10 +52,30 @@ class _GroupProfilePageState extends State<GroupProfilePage> {
   Future<void> load() async {
     if (mounted && group == null) setState(() { loading = true; loadError = null; });
     try {
-      final g = Map<String, dynamic>.from(await db.from('conversations').select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds').eq('id', widget.conversationId).single());
-      final ms = List<Map<String, dynamic>>.from(await db.from('conversation_members').select('user_id,role,joined_at').eq('conversation_id', widget.conversationId).order('joined_at'));
-      List<Map<String, dynamic>> events = [];
-      try { events = List<Map<String, dynamic>>.from(await db.from('group_audit_logs').select('id,actor_id,action,target_user_id,details,created_at').eq('conversation_id', widget.conversationId).order('created_at', ascending: false).limit(100)); } catch (_) {}
+      // Fetch the independent group, member and audit data together so the
+      // profile page does not wait for three sequential network round-trips.
+      final baseResults = await Future.wait<dynamic>([
+        db.from('conversations')
+            .select('id,type,title,avatar_url,description,created_by,username,is_public,join_approval,only_admins_can_post,only_admins_can_add,allow_reactions,auto_delete_seconds')
+            .eq('id', widget.conversationId).single(),
+        db.from('conversation_members')
+            .select('user_id,role,joined_at')
+            .eq('conversation_id', widget.conversationId).order('joined_at'),
+        () async {
+          try {
+            return await db.from('group_audit_logs')
+                .select('id,actor_id,action,target_user_id,details,created_at')
+                .eq('conversation_id', widget.conversationId)
+                .order('created_at', ascending: false).limit(100);
+          } catch (error) {
+            debugPrint('Optional group audit history unavailable: $error');
+            return <Map<String, dynamic>>[];
+          }
+        }(),
+      ]);
+      final g = Map<String, dynamic>.from(baseResults[0] as Map);
+      final ms = List<Map<String, dynamic>>.from(baseResults[1] as List);
+      final events = List<Map<String, dynamic>>.from(baseResults[2] as List);
       final ids = ms.map((m) => m['user_id'].toString()).toSet();
       for (final event in events) { if (event['actor_id'] != null) ids.add(event['actor_id'].toString()); if (event['target_user_id'] != null) ids.add(event['target_user_id'].toString()); }
       final idList = ids.toList();
