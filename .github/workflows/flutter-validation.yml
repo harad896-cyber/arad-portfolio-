@@ -18,18 +18,12 @@ concurrency:
 
 jobs:
   validate:
-    name: Analyze, test and build
+    name: Analyze, test and build web
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Check out Project 2
         uses: actions/checkout@v4
-
-      - name: Set up Java for Android
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -54,9 +48,6 @@ jobs:
       - name: Build web preview artifact
         run: flutter build web --release
 
-      - name: Build Android APK
-        run: flutter build apk --release
-
       - name: Upload web build
         uses: actions/upload-artifact@v4
         with:
@@ -65,10 +56,3 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: gapresan-android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 7
