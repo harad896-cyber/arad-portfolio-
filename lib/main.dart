@@ -1486,7 +1486,7 @@ class LanguageController extends ChangeNotifier {
 class AppThemeController extends ChangeNotifier {
   bool dark = true;
   int seed = 0xFF0B9658;
-  int backgroundSeed = 0xFF071A2D;
+  int backgroundSeed = 0xFF071A13;
   String? backgroundImageBase64;
   bool backgroundEffects = true;
   static const int _themeRevision = 6;
@@ -1505,7 +1505,7 @@ class AppThemeController extends ChangeNotifier {
       // One-time migration to the polished dark neon visual system.
       dark = true;
       seed = 0xFF0B9658;
-      backgroundSeed = 0xFF071A2D;
+      backgroundSeed = 0xFF071A13;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
@@ -1515,7 +1515,7 @@ class AppThemeController extends ChangeNotifier {
       final savedSeed = p.getInt('accent_seed_$key');
       seed = savedSeed == null || savedSeed == 0xFF00C2A8 ? 0xFF0B9658 : savedSeed;
       if (savedSeed == 0xFF00C2A8) await p.setInt('accent_seed_$key', seed);
-      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A2D;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A13;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
@@ -1910,9 +1910,9 @@ class AradMessenger extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
-        final base = dark ? Color(0xFF10121A) : Color(0xFFF6F7FB);
-        final glowA = dark ? Color(0xFF171827) : Color(0xFFF0EDFA);
-        final glowB = dark ? Color(0xFF111D28) : Color(0xFFEDF4FB);
+        final base = dark ? Color(0xFF0B1710) : Color(0xFFF4F8F5);
+        final glowA = dark ? Color(0xFF12251A) : Color(0xFFEEF6F0);
+        final glowB = dark ? Color(0xFF102219) : Color(0xFFEDF5EF);
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -1977,7 +1977,7 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: Color(0xFFFCFCFE),
+          surface: Color(0xFFFCFEFC),
         ),
         extensions: <ThemeExtension<dynamic>>[
           GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed)),
@@ -1995,10 +1995,10 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .10),
-          backgroundColor: Color(0xFFFCFCFE),
+          backgroundColor: Color(0xFFFCFEFC),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF18251C)),
           iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
@@ -2022,22 +2022,22 @@ class AradMessenger extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFF0F2F8),
+          fillColor: Color(0xFFEDF4EF),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 14),
-          labelStyle: TextStyle(color: Color(0xFF171320), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFF647268), fontSize: 14),
+          labelStyle: TextStyle(color: Color(0xFF18251C), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFF647268), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFB42318), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: Color(0xFF6C7180),
+          suffixIconColor: Color(0xFF647268),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFE2E6F0)),
+            borderSide: BorderSide(color: Color(0xFFDDE8E0)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFE2E6F0)),
+            borderSide: BorderSide(color: Color(0xFFDDE8E0)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -2074,7 +2074,7 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: Color(0xFF071A2D),
+          surface: Color(0xFF071A13),
         ),
         extensions: <ThemeExtension<dynamic>>[
           GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed)),
@@ -2092,7 +2092,7 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
-          backgroundColor: Color(0xFF071A2D),
+          backgroundColor: Color(0xFF071A13),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
@@ -2117,18 +2117,18 @@ class AradMessenger extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFF0B2032),
+          fillColor: Color(0xFF0B2016),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 14),
           labelStyle: TextStyle(color: Color(0xFFE8EDF5), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: Color(0xFF9DAFC0),
+          suffixIconColor: Color(0xFFA6B9AC),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF263653))
+            borderSide: BorderSide(color: Color(0xFF294234))
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
