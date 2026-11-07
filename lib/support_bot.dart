@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupportBotPage extends StatefulWidget {
   const SupportBotPage({super.key});
@@ -10,6 +11,8 @@ class SupportBotPage extends StatefulWidget {
 class _SupportBotPageState extends State<SupportBotPage> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
+  late Future<List<Map<String, dynamic>>> _reportsFuture;
+  bool _sendingReport = false;
   final List<_BotMessage> _messages = [
     const _BotMessage(
       text: 'سلام! من راهنمای گپ‌رسان هستم. می‌توانم دربارهٔ حساب کاربری، پیام‌ها، گروه‌ها، امنیت و تنظیمات راهنمایی‌تان کنم. سوال‌تان را بنویسید یا یکی از سوال‌های پرتکرار را انتخاب کنید.',
@@ -30,6 +33,90 @@ class _SupportBotPageState extends State<SupportBotPage> {
     _Faq(['مخاطب', 'مخاطبین', 'پیدا', 'جستجو'], 'چرا مخاطبین یا گفتگوهایم نمایش داده نمی‌شوند؟', 'اتصال اینترنت را بررسی و صفحه را تازه‌سازی کنید. اگر مشکل ادامه داشت، یک‌بار خارج و دوباره وارد حساب شوید. اگر باز هم حل نشد، نام کاربری و زمان بروز مشکل را برای پشتیبانی بفرستید.'),
     _Faq(['کند', 'سرعت', 'باز نمی', 'خطا', 'ارور', 'مشکل'], 'اگر برنامه کند شد یا خطا داد چه کنم؟', 'اتصال اینترنت را بررسی کنید، برنامه را ببندید و دوباره باز کنید. اگر خطا ادامه داشت، متن یا تصویر خطا و صفحه‌ای را که در آن رخ داده برای پشتیبانی ارسال کنید.'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _reportsFuture = _loadReports();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadReports() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return const [];
+    final rows = await Supabase.instance.client.from('support_reports')
+        .select('id, category, description, status, created_at')
+        .eq('reporter_id', user.id).order('created_at', ascending: false).limit(20);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<void> _openReportDialog() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('برای ثبت گزارش، ابتدا وارد حساب شوید.')));
+      return;
+    }
+    final details = TextEditingController();
+    var category = 'technical';
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('گزارش مشکل'),
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            DropdownButtonFormField<String>(
+              value: category, isExpanded: true,
+              decoration: const InputDecoration(labelText: 'نوع مشکل'),
+              items: const [
+                DropdownMenuItem(value: 'technical', child: Text('خطا یا مشکل فنی')),
+                DropdownMenuItem(value: 'login', child: Text('ورود و حساب کاربری')),
+                DropdownMenuItem(value: 'messages', child: Text('پیام‌ها و گفتگوها')),
+                DropdownMenuItem(value: 'groups', child: Text('گروه‌ها و کانال‌ها')),
+                DropdownMenuItem(value: 'profile', child: Text('پروفایل و تصویر')),
+                DropdownMenuItem(value: 'other', child: Text('سایر موارد')),
+              ],
+              onChanged: (value) => setDialogState(() => category = value ?? 'technical'),
+            ),
+            const SizedBox(height: 12),
+            TextField(controller: details, minLines: 3, maxLines: 6, maxLength: 1200,
+              decoration: const InputDecoration(labelText: 'شرح مشکل', hintText: 'چه کاری انجام می‌دادید و چه خطایی دیدید؟', alignLabelWithHint: true, border: OutlineInputBorder())),
+            const Text('لطفاً رمز عبور، کد ورود، متن پیام‌های خصوصی یا توکن‌ها را ننویسید.', style: TextStyle(fontSize: 12)),
+          ])),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+            FilledButton(onPressed: details.text.trim().length < 8 ? null : () => Navigator.pop(dialogContext, true), child: const Text('ثبت گزارش')),
+          ],
+        ),
+      ),
+    );
+    if (submitted != true) { details.dispose(); return; }
+    final description = details.text.trim();
+    details.dispose();
+    if (!mounted) return;
+    setState(() => _sendingReport = true);
+    try {
+      await Supabase.instance.client.from('support_reports').insert({
+        'reporter_id': user.id, 'category': category, 'description': description,
+      });
+      if (!mounted) return;
+      setState(() { _reportsFuture = _loadReports(); });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('گزارش شما با موفقیت ثبت شد.')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ثبت گزارش انجام نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید.')));
+    } finally {
+      if (mounted) setState(() => _sendingReport = false);
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'open': return 'در انتظار بررسی';
+      case 'in_progress': return 'در حال پیگیری';
+      case 'resolved': return 'رسیدگی شد';
+      case 'closed': return 'بسته شد';
+      default: return 'ثبت‌شده';
+    }
+  }
 
   @override
   void dispose() {
@@ -93,6 +180,40 @@ class _SupportBotPageState extends State<SupportBotPage> {
             controller: _scroll,
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             children: [
+              Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  CircleAvatar(backgroundColor: scheme.primaryContainer, child: Icon(Icons.support_agent_rounded, color: scheme.primary)),
+                  const SizedBox(width: 10),
+                  const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('مرکز پشتیبانی', style: TextStyle(fontWeight: FontWeight.w900)),
+                    Text('مشکل را گزارش کنید و وضعیت پیگیری را ببینید.', style: TextStyle(fontSize: 12)),
+                  ])),
+                ]),
+                const SizedBox(height: 12),
+                SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: _sendingReport ? null : _openReportDialog,
+                  icon: _sendingReport ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.bug_report_outlined),
+                  label: const Text('ثبت گزارش مشکل'),
+                )),
+                const SizedBox(height: 10),
+                Row(children: [
+                  const Expanded(child: Text('گزارش‌های قبلی', style: TextStyle(fontWeight: FontWeight.w800))),
+                  IconButton(tooltip: 'تازه‌سازی', onPressed: () => setState(() { _reportsFuture = _loadReports(); }), icon: const Icon(Icons.refresh_rounded)),
+                ]),
+                FutureBuilder<List<Map<String, dynamic>>>(future: _reportsFuture, builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
+                  if (snapshot.hasError) return const Text('بارگذاری گزارش‌ها ناموفق بود.');
+                  final reports = snapshot.data ?? const [];
+                  if (reports.isEmpty) return const Text('هنوز گزارشی ثبت نکرده‌اید.', style: TextStyle(fontSize: 12));
+                  return Column(children: reports.map((report) => ListTile(
+                    contentPadding: EdgeInsets.zero, dense: true,
+                    leading: Icon(Icons.assignment_outlined, color: scheme.primary),
+                    title: Text(_statusLabel('${report['status'] ?? 'open'}'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text('${report['category'] ?? 'other'} · ${report['description'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis),
+                  )).toList());
+                }),
+              ]))),
+              const SizedBox(height: 12),
               ..._messages.map((message) => Align(
                 alignment: message.fromBot ? AlignmentDirectional.centerStart : AlignmentDirectional.centerEnd,
                 child: Container(
