@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
@@ -13959,24 +13960,145 @@ class AppLockGate extends StatefulWidget {
   State<AppLockGate> createState() => _AppLockGateState();
 }
 
-class _AppLockGateState extends State<AppLockGate> {
+class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
+  final _storage = const FlutterSecureStorage();
+  final _auth = LocalAuthentication();
+  bool _ready = false;
+  bool _locked = false;
+  bool _busy = false;
+  bool _biometricEnabled = false;
+  String? _pin;
+  DateTime? _backgroundedAt;
+
   @override
   void initState() {
     super.initState();
-    _disableLocalAppLock();
+    WidgetsBinding.instance.addObserver(this);
+    _loadLockState();
   }
 
-  Future<void> _disableLocalAppLock() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _loadLockState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('app_lock_enabled', false);
-      await prefs.setBool('app_lock_biometric', false);
-      await const FlutterSecureStorage().delete(key: 'app_lock_pin');
+      final enabled = prefs.getBool('app_lock_enabled') ?? false;
+      final pin = await _storage.read(key: 'app_lock_pin');
+      final valid = enabled && pin != null && pin.length >= 4;
+      if (!valid && enabled) {
+        await prefs.setBool('app_lock_enabled', false);
+        await prefs.setBool('app_lock_biometric', false);
+      }
+      if (!mounted) return;
+      setState(() {
+        _pin = valid ? pin : null;
+        _biometricEnabled = valid && (prefs.getBool('app_lock_biometric') ?? false);
+        _locked = valid;
+        _ready = true;
+      });
+      if (valid && _biometricEnabled) _unlockBiometric();
     } catch (error) {
-      debugPrint('Could not clear disabled app PIN settings: $error');
+      debugPrint('App lock initialization failed: $error');
+      if (mounted) setState(() { _ready = true; _locked = false; });
     }
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _backgroundedAt ??= DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final since = _backgroundedAt;
+      _backgroundedAt = null;
+      if (since != null && DateTime.now().difference(since) >= const Duration(seconds: 30) && _pin != null) {
+        setState(() => _locked = true);
+        if (_biometricEnabled) _unlockBiometric();
+      }
+    }
+  }
+
+  Future<void> _unlockBiometric() async {
+    if (!_locked || _busy || !_biometricEnabled) return;
+    _busy = true;
+    try {
+      final ok = await _auth.authenticate(
+        localizedReason: 'برای بازکردن گپ‌رسان هویت خود را تأیید کن',
+        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+      );
+      if (ok && mounted) setState(() => _locked = false);
+    } catch (error) {
+      debugPrint('Biometric unlock unavailable: $error');
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _unlockWithPin(String value) async {
+    final normalized = value.runes.map((r) {
+      if (r >= 0x06F0 && r <= 0x06F9) return String.fromCharCode(0x30 + r - 0x06F0);
+      if (r >= 0x0660 && r <= 0x0669) return String.fromCharCode(0x30 + r - 0x0660);
+      return String.fromCharCode(r);
+    }).join().replaceAll(RegExp(r'[^0-9]'), '');
+    if (normalized == _pin && mounted) {
+      FocusScope.of(context).unfocus();
+      setState(() => _locked = false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رمز واردشده درست نیست.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return const Material(color: Color(0xFF081712), child: Center(child: CircularProgressIndicator()));
+    if (!_locked) return widget.child;
+    final controller = TextEditingController();
+    return PopScope(
+      canPop: false,
+      child: Material(
+        color: const Color(0xFF081712),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.lock_rounded, size: 54, color: Color(0xFF35C99A)),
+                  const SizedBox(height: 18),
+                  const Text('گپ‌رسان قفل است', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text('برای ادامه رمز برنامه را وارد کن.', style: TextStyle(color: Color(0xFFB4C6BC))),
+                  const SizedBox(height: 22),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 8,
+                    style: const TextStyle(color: Colors.white, letterSpacing: 8),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: '••••',
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      filled: true,
+                      fillColor: const Color(0xFF193329),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    ),
+                    onSubmitted: _unlockWithPin,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(width: double.infinity, child: FilledButton(onPressed: () => _unlockWithPin(controller.text), child: const Text('بازکردن قفل'))),
+                  if (_biometricEnabled) TextButton.icon(onPressed: _busy ? null : _unlockBiometric, icon: const Icon(Icons.fingerprint), label: const Text('استفاده از اثرانگشت')),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
