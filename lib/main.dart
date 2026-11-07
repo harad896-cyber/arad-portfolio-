@@ -1863,6 +1863,10 @@ class StartupFailureApp extends StatelessWidget {
   }
 }
 
+// Shared network state lets chat screens refresh their local snapshot as soon as
+// connectivity returns, instead of waiting for the user to pull-to-refresh.
+final ValueNotifier<bool> appNetworkOffline = ValueNotifier<bool>(false);
+
 class _NetworkStatusBanner extends StatefulWidget {
   final Widget child;
   const _NetworkStatusBanner({required this.child});
@@ -1897,6 +1901,7 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
 
   void _update(List<ConnectivityResult> results) {
     final next = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+    if (next != appNetworkOffline.value) appNetworkOffline.value = next;
     if (mounted && next != offline) setState(() => offline = next);
   }
 
@@ -5549,6 +5554,10 @@ class _HomePageState extends State<HomePage> {
   Timer? _homeRefreshTimer;
   bool _homeLoadInProgress = false;
   bool _homeLoadQueued = false;
+
+  void _onNetworkStatusChanged() {
+    if (!appNetworkOffline.value && mounted) unawaited(load());
+  }
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
   final AppLinks _appLinks = AppLinks();
@@ -5609,7 +5618,14 @@ class _HomePageState extends State<HomePage> {
       // must never make the user's chat history disappear from the UI.
       try {
         final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 3));
-        final cached = prefs.getString('arad_home_chats_cache_$uid');
+        final cacheKey = 'arad_home_chats_cache_$uid';
+        final cachedAt = prefs.getInt('${cacheKey}_saved_at');
+        final isExpired = cachedAt != null && DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(cachedAt)) > const Duration(days: 30);
+        if (isExpired) {
+          await prefs.remove(cacheKey);
+          await prefs.remove('${cacheKey}_saved_at');
+        }
+        final cached = isExpired ? null : prefs.getString(cacheKey);
         if (supabase.auth.currentUser?.id != uid) return;
         if (chats.isEmpty && cached != null && cached.isNotEmpty) {
           final decoded = jsonDecode(cached);
@@ -5849,7 +5865,9 @@ class _HomePageState extends State<HomePage> {
       try {
         final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
         if (supabase.auth.currentUser?.id != uid) return;
-        await prefs.setString('arad_home_chats_cache_$uid', jsonEncode(nextChats)).timeout(const Duration(seconds: 2));
+        final cacheKey = 'arad_home_chats_cache_$uid';
+        await prefs.setString(cacheKey, jsonEncode(nextChats)).timeout(const Duration(seconds: 2));
+        await prefs.setInt('${cacheKey}_saved_at', DateTime.now().millisecondsSinceEpoch).timeout(const Duration(seconds: 2));
       } catch (cacheError) {
         debugPrint('Conversation cache save failed: $cacheError');
       }
@@ -6166,6 +6184,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    appNetworkOffline.addListener(_onNetworkStatusChanged);
     _observedAuthUserId = supabase.auth.currentUser?.id;
     load();
     // Auth restoration/refresh can finish after this page first builds. Reload
@@ -6312,6 +6331,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    appNetworkOffline.removeListener(_onNetworkStatusChanged);
     _homeAuthSubscription?.cancel();
     _homeRefreshTimer?.cancel();
     _inviteLinkSubscription?.cancel();
@@ -9624,6 +9644,10 @@ class _ChatPageState extends State<ChatPage> {
   final Set<String> _locallyHiddenMessageIds = <String>{};
   bool _localHiddenIdsLoaded = false;
 
+  void _onNetworkStatusChanged() {
+    if (!appNetworkOffline.value && mounted) unawaited(load());
+  }
+
   void _onMessagesScroll() {
     if (!_messagesScroll.hasClients || !mounted) return;
     final distance = _messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels;
@@ -9966,6 +9990,13 @@ class _ChatPageState extends State<ChatPage> {
     await _ensureLocalHiddenIds();
     try {
       final prefs = await SharedPreferences.getInstance();
+      final cachedAt = prefs.getInt('${_chatCacheKey}_saved_at');
+      final isExpired = cachedAt != null && DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(cachedAt)) > const Duration(days: 30);
+      if (isExpired) {
+        await prefs.remove(_chatCacheKey);
+        await prefs.remove('${_chatCacheKey}_saved_at');
+        return;
+      }
       final raw = prefs.getString(_chatCacheKey);
       if (raw == null || raw.isEmpty || !mounted) return;
       final decoded = jsonDecode(raw);
@@ -9999,6 +10030,7 @@ class _ChatPageState extends State<ChatPage> {
           m['__kind'] != 'system' &&
           m['__kind'] != 'call').toList();
       await prefs.setString(_chatCacheKey, jsonEncode(cacheable.take(120).toList()));
+      await prefs.setInt('${_chatCacheKey}_saved_at', DateTime.now().millisecondsSinceEpoch);
     } catch (_) {
       // Cache is an optimization; the server remains the source of truth.
     }
@@ -12647,6 +12679,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    appNetworkOffline.addListener(_onNetworkStatusChanged);
     _openChatConversationCounts.update(widget.id, (count) => count + 1, ifAbsent: () => 1);
     _composerFocus.addListener(_onComposerFocus);
     _messagesScroll.addListener(_onMessagesScroll);
@@ -12738,6 +12771,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    appNetworkOffline.removeListener(_onNetworkStatusChanged);
     final openCount = _openChatConversationCounts[widget.id] ?? 0;
     if (openCount <= 1) {
       _openChatConversationCounts.remove(widget.id);
