@@ -64,8 +64,6 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release --build-number=${GITHUB_RUN_NUMBER}
 
-        run: 
-
       - name: Verify APK and create checksum
         shell: bash
         run: |
@@ -73,13 +71,13 @@ jobs:
           test -s "$APK"
           mkdir -p release
           cp "$APK" release/GapResan-Android.apk
-          sha256sum release/GapResan-test.apk | tee release/SHA256SUMS.txt
+          sha256sum release/GapResan-Android.apk | tee release/SHA256SUMS.txt
           ls -lh release/
 
       - name: Upload APK artifact (ZIP backup)
         uses: actions/upload-artifact@v4
         with:
-          name: gapresan-android-debug-${{ github.run_number }}
+          name: gapresan-android-release-${{ github.run_number }}
           path: release/*
           if-no-files-found: error
           retention-days: 14
@@ -92,5 +90,5 @@ jobs:
           prerelease: true
           generate_release_notes: false
           files: |
-            release/GapResan-test.apk
+            release/GapResan-Android.apk
             release/SHA256SUMS.txt
