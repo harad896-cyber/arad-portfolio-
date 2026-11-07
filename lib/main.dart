@@ -2292,6 +2292,7 @@ class ProfessionalSettingsPage extends StatefulWidget {
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   final search=TextEditingController();
   String theme='تاریک',language='فارسی';
+  bool savingPreference = false;
   @override void initState(){super.initState();_load();}
   @override void dispose(){search.dispose();super.dispose();}
   Future<void> _load() async {
@@ -2322,7 +2323,11 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     return Scaffold(
       appBar:AppBar(title:Text(trUi('تنظیمات')),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
         padding:const EdgeInsets.fromLTRB(16,4,14,10),
-        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:Icon(Icons.search_rounded))),
+        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(
+          hintText:trUi('جستجو در تنظیمات'),
+          prefixIcon:Icon(Icons.search_rounded),
+          suffixIcon:search.text.isEmpty?null:IconButton(tooltip:trUi('پاک کردن جستجو'),icon:Icon(Icons.close_rounded),onPressed:(){search.clear();setState((){});}),
+        )),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
         Card(child:ListTile(
@@ -2379,11 +2384,34 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>AboutAppPage())); break;
     }
   }
-  void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Padding(padding:EdgeInsets.all(18),child:Text(trUi('ظاهر برنامه'),style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
-    RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);await saveUserSettings({'theme_mode':'dark'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('تاریک'))),
-    RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('روشن'))),
-  ])));
+  Future<void> _selectTheme(String value, BuildContext sheetContext) async {
+    if (savingPreference || value == theme) return;
+    final previous = theme;
+    setState(() => savingPreference = true);
+    try {
+      await appTheme.setDark(value == 'تاریک');
+      await saveUserSettings({'theme_mode': value == 'تاریک' ? 'dark' : 'light'});
+      if (!mounted) return;
+      setState(() => theme = value);
+      if (sheetContext.mounted) Navigator.pop(sheetContext);
+      showMsg(context, 'ظاهر برنامه ذخیره شد.');
+    } catch (e) {
+      await appTheme.setDark(previous == 'تاریک');
+      if (mounted) showMsg(context, 'ذخیره ظاهر برنامه ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => savingPreference = false);
+    }
+  }
+  void _showThemeSheet() => showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Padding(padding: const EdgeInsets.all(18), child: Text(trUi('ظاهر برنامه'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+      if (savingPreference) const Padding(padding: EdgeInsets.symmetric(horizontal: 18), child: LinearProgressIndicator()),
+      RadioListTile<String>(value: 'تاریک', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('تاریک'))),
+      RadioListTile<String>(value: 'روشن', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('روشن'))),
+    ])),
+  );
   void _showLanguageSheet() => showModalBottomSheet(
     context: context,
     isScrollControlled: true,
