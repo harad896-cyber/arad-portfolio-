@@ -88,7 +88,7 @@ class _SupportBotPageState extends State<SupportBotPage> {
           title: const Text('گزارش مشکل'),
           content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             DropdownButtonFormField<String>(
-              value: category, isExpanded: true,
+              initialValue: category, isExpanded: true,
               decoration: const InputDecoration(labelText: 'نوع مشکل'),
               items: const [
                 DropdownMenuItem(value: 'technical', child: Text('خطا یا مشکل فنی')),
