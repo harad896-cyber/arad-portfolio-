@@ -1,0 +1,74 @@
+name: Flutter validation
+
+on:
+  push:
+    branches:
+      - project2/theme-foundation
+  pull_request:
+    branches:
+      - project2/theme-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Analyze, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out Project 2
+        uses: actions/checkout@v4
+
+      - name: Set up Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show toolchain versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze --no-pub
+
+      - name: Run tests
+        run: flutter test --no-pub
+
+      - name: Build web preview artifact
+        run: flutter build web --release
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-web
+          path: build/web/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
