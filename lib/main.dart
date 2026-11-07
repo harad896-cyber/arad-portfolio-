@@ -36,6 +36,8 @@ import 'chat_background_page.dart';
 import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
+import 'support_bot.dart';
+import 'app_theme.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
 
@@ -1482,10 +1484,20 @@ class LanguageController extends ChangeNotifier {
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
+// Keep app surfaces coordinated with the selected chat palette without
+// allowing a light wallpaper to wash out dark mode (or vice versa).
+Color _gapPaletteSurface({required bool dark, required int backgroundSeed, required Color fallback, required double strength}) {
+  final selected = Color(backgroundSeed);
+  final luminance = selected.computeLuminance();
+  final matchesBrightness = dark ? luminance < .42 : luminance > .58;
+  if (!matchesBrightness) return fallback;
+  return Color.lerp(fallback, selected, strength)!;
+}
+
 class AppThemeController extends ChangeNotifier {
   bool dark = true;
-  int seed = 0xFF00C2A8;
-  int backgroundSeed = 0xFF071A2D;
+  int seed = 0xFF0B9658;
+  int backgroundSeed = 0xFF071A13;
   String? backgroundImageBase64;
   bool backgroundEffects = true;
   static const int _themeRevision = 6;
@@ -1503,16 +1515,18 @@ class AppThemeController extends ChangeNotifier {
     if (revision < _themeRevision) {
       // One-time migration to the polished dark neon visual system.
       dark = true;
-      seed = 0xFF00C2A8;
-      backgroundSeed = 0xFF071A2D;
+      seed = 0xFF0B9658;
+      backgroundSeed = 0xFF071A13;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
       await p.setInt('theme_revision_$key', _themeRevision);
     } else {
       dark = p.getBool('dark_mode_$key') ?? true;
-      seed = p.getInt('accent_seed_$key') ?? 0xFF00C2A8;
-      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A2D;
+      final savedSeed = p.getInt('accent_seed_$key');
+      seed = savedSeed == null || savedSeed == 0xFF00C2A8 ? 0xFF0B9658 : savedSeed;
+      if (savedSeed == 0xFF00C2A8) await p.setInt('accent_seed_$key', seed);
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A13;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
@@ -1639,6 +1653,11 @@ String? authRedirectUrl() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Bound decoded-image memory so long chat sessions do not retain an excessive
+  // number of off-screen avatars and media thumbnails.
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSize = 180;
+  imageCache.maximumSizeBytes = 64 * 1024 * 1024;
 
   // Keep unexpected framework/async failures visible in device logs instead
   // of letting an unhandled callback silently terminate a user interaction.
@@ -1707,7 +1726,7 @@ class StartupLoadingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFF071A2D),
+        backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1718,15 +1737,15 @@ class StartupLoadingApp extends StatelessWidget {
                   Container(
                     width: 76, height: 76,
                     decoration: BoxDecoration(
-                      color: Color(0xFF00C2A8).withValues(alpha: .14),
+                      color: Color(0xFF0B9658).withValues(alpha: .16),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/app_icon.jpg', width: 76, height: 76, fit: BoxFit.cover)),
                   ),
                   SizedBox(height: 18),
-                  Text(trUi('پیام رسان'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  Text('گپ‌رسان', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)), 
                   SizedBox(height: 12),
-                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF20C879))),
                   SizedBox(height: 12),
                   Text(trUi('در حال آماده‌سازی برنامه…'), style: TextStyle(color: Colors.white70)),
                 ],
@@ -1748,7 +1767,7 @@ class StartupFailureApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFFF8F7FC),
+        backgroundColor: Color(0xFFF4F8F5),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1759,8 +1778,8 @@ class StartupFailureApp extends StatelessWidget {
                   ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.asset('assets/app_icon.jpg', width: 88, height: 88, fit: BoxFit.cover)),
                   SizedBox(height: 16),
                   Text(
-                    'پیام رسان',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    'گپ‌رسان',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0B9658)), 
                   ),
                   SizedBox(height: 12),
                   Text(
@@ -1774,7 +1793,7 @@ class StartupFailureApp extends StatelessWidget {
                     message,
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
-                    style: TextStyle(fontSize: 13, color: Color(0xFF5B5568)),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF52645A)), 
                   ),
                   SizedBox(height: 20),
                   FilledButton.icon(
@@ -1902,9 +1921,9 @@ class AradMessenger extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
-        final base = dark ? Color(0xFF10121A) : Color(0xFFF6F7FB);
-        final glowA = dark ? Color(0xFF171827) : Color(0xFFF0EDFA);
-        final glowB = dark ? Color(0xFF111D28) : Color(0xFFEDF4FB);
+        final base = dark ? Color(0xFF0B1710) : Color(0xFFF4F8F5);
+        final glowA = dark ? Color(0xFF12251A) : Color(0xFFEEF6F0);
+        final glowB = dark ? Color(0xFF102219) : Color(0xFFEDF5EF);
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -1961,7 +1980,7 @@ class AradMessenger extends StatelessWidget {
         );
       },
       debugShowCheckedModeBanner: false,
-      title: 'پیام رسان',
+      title: 'گپ‌رسان',
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
@@ -1969,8 +1988,11 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: Color(0xFFFCFCFE),
+          surface: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
         ),
+        extensions: <ThemeExtension<dynamic>>[
+          GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed)),
+        ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
@@ -1984,16 +2006,16 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .10),
-          backgroundColor: Color(0xFFFCFCFE),
+          backgroundColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF18251C)),
           iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFFFFFFFF),
+          color: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .97),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2004,29 +2026,29 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFFFFFFFF),
+          tileColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .97),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
-          iconColor: Color(0xFF766A88),
+          iconColor: Color(appTheme.seed),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFF0F2F8),
+          fillColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFEDF4EF), strength: .86),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 14),
-          labelStyle: TextStyle(color: Color(0xFF171320), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFF647268), fontSize: 14),
+          labelStyle: TextStyle(color: Color(0xFF18251C), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFF647268), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFB42318), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: Color(0xFF6C7180),
+          suffixIconColor: Color(0xFF647268),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFE2E6F0)),
+            borderSide: BorderSide(color: Color(0xFFDDE8E0)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFE2E6F0)),
+            borderSide: BorderSide(color: Color(0xFFDDE8E0)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -2063,8 +2085,11 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: Color(0xFF071A2D),
+          surface: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
         ),
+        extensions: <ThemeExtension<dynamic>>[
+          GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed)),
+        ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
@@ -2078,14 +2103,14 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
-          backgroundColor: Color(0xFF071A2D),
+          backgroundColor: Color(0xFF071A13),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFF0D2336),
+          color: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2096,29 +2121,29 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFF0D2336),
+          tileColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
-          iconColor: Color(0xFFBDB1D0),
+          iconColor: Color(0xFFA6B9AC),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFF0B2032),
+          fillColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0B2016), strength: .08),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 14),
           labelStyle: TextStyle(color: Color(0xFFE8EDF5), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: Color(0xFF9DAFC0),
+          suffixIconColor: Color(0xFFA6B9AC),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF263653))
+            borderSide: BorderSide(color: Color(0xFF294234))
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF2A3349)),
+            borderSide: BorderSide(color: Color(0xFF294234)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -2268,6 +2293,7 @@ class ProfessionalSettingsPage extends StatefulWidget {
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   final search=TextEditingController();
   String theme='تاریک',language='فارسی';
+  bool savingPreference = false;
   @override void initState(){super.initState();_load();}
   @override void dispose(){search.dispose();super.dispose();}
   Future<void> _load() async {
@@ -2298,7 +2324,11 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     return Scaffold(
       appBar:AppBar(title:Text(trUi('تنظیمات')),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
         padding:const EdgeInsets.fromLTRB(16,4,14,10),
-        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:Icon(Icons.search_rounded))),
+        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(
+          hintText:trUi('جستجو در تنظیمات'),
+          prefixIcon:Icon(Icons.search_rounded),
+          suffixIcon:search.text.isEmpty?null:IconButton(tooltip:trUi('پاک کردن جستجو'),icon:Icon(Icons.close_rounded),onPressed:(){search.clear();setState((){});}),
+        )),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
         Card(child:ListTile(
@@ -2355,11 +2385,34 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>AboutAppPage())); break;
     }
   }
-  void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Padding(padding:EdgeInsets.all(18),child:Text(trUi('ظاهر برنامه'),style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
-    RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);await saveUserSettings({'theme_mode':'dark'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('تاریک'))),
-    RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('روشن'))),
-  ])));
+  Future<void> _selectTheme(String value, BuildContext sheetContext) async {
+    if (savingPreference || value == theme) return;
+    final previous = theme;
+    setState(() => savingPreference = true);
+    try {
+      await appTheme.setDark(value == 'تاریک');
+      await saveUserSettings({'theme_mode': value == 'تاریک' ? 'dark' : 'light'});
+      if (!mounted) return;
+      setState(() => theme = value);
+      if (sheetContext.mounted) Navigator.pop(sheetContext);
+      showMsg(context, 'ظاهر برنامه ذخیره شد.');
+    } catch (e) {
+      await appTheme.setDark(previous == 'تاریک');
+      if (mounted) showMsg(context, 'ذخیره ظاهر برنامه ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => savingPreference = false);
+    }
+  }
+  void _showThemeSheet() => showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Padding(padding: const EdgeInsets.all(18), child: Text(trUi('ظاهر برنامه'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+      if (savingPreference) const Padding(padding: EdgeInsets.symmetric(horizontal: 18), child: LinearProgressIndicator()),
+      RadioListTile<String>(value: 'تاریک', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('تاریک'))),
+      RadioListTile<String>(value: 'روشن', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('روشن'))),
+    ])),
+  );
   void _showLanguageSheet() => showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -2960,32 +3013,25 @@ class AppAppearancePage extends StatefulWidget {
 }
 class _AppAppearancePageState extends State<AppAppearancePage> {
   bool picking = false;
+  // Curated palettes: each wallpaper and accent are paired for readable,
+  // coordinated previews and message colors in both light and dark modes.
   static const presets = <({String name, int color, int accent})>[
-    (name: 'شب آرام', color: 0xFF10131C, accent: 0xFF229ED9),
-    (name: 'آبی اقیانوسی', color: 0xFF102B3A, accent: 0xFF2A9D8F),
-    (name: 'بنفش مدرن', color: 0xFF25183D, accent: 0xFF8B5CF6),
-    (name: 'سبز جنگلی', color: 0xFF142D26, accent: 0xFF4CAF80),
-    (name: 'ذغالی', color: 0xFF25272B, accent: 0xFF5C9DED),
-    (name: 'روشن مینیمال', color: 0xFFF2F3F7, accent: 0xFF229ED9),
-    (name: 'صورتی ملایم', color: 0xFFF6EAF0, accent: 0xFFD85D91),
-    (name: 'آبی یخی', color: 0xFFE8F2FA, accent: 0xFF3689C9),
-    (name: 'غروب بنفش', color: 0xFF2B1B3D, accent: 0xFFE879F9),
-    (name: 'فیروزه‌ای', color: 0xFF103A3A, accent: 0xFF2DD4BF),
-    (name: 'کهکشانی', color: 0xFF17162E, accent: 0xFF818CF8),
-    (name: 'طلوع گرم', color: 0xFF3A241E, accent: 0xFFFF9F68),
-    (name: 'زمردی', color: 0xFF102A27, accent: 0xFF34D399),
-    (name: 'یاسی روشن', color: 0xFFF0EAFE, accent: 0xFF8B5CF6),
-    (name: 'رزگلد', color: 0xFF38212D, accent: 0xFFFB7185),
-    (name: 'آبی نیمه‌شب', color: 0xFF101D36, accent: 0xFF60A5FA),
-    (name: 'شن و ماسه', color: 0xFFF1E8D8, accent: 0xFFB77936),
-    (name: 'سبز نعنایی', color: 0xFFE4F7EF, accent: 0xFF159D78),
-    (name: 'مرجانی', color: 0xFF3A2024, accent: 0xFFFF7F6A),
-    (name: 'شفق قطبی', color: 0xFF10252D, accent: 0xFF6EE7B7),
-    (name: 'آبی سلطنتی', color: 0xFF101D43, accent: 0xFF60A5FA),
-    (name: 'طلایی لوکس', color: 0xFF292319, accent: 0xFFE8BD67),
-    (name: 'گرافیتی', color: 0xFF20242D, accent: 0xFFA3B3C7),
-    (name: 'بنفش نئونی', color: 0xFF211536, accent: 0xFFC084FC),
-    (name: 'جنگل مه‌آلود', color: 0xFF172B28, accent: 0xFF86B99B),
+    (name: 'زمردی گپ‌رسان', color: 0xFF071A13, accent: 0xFF0B9658),
+    (name: 'جنگل عمیق', color: 0xFF10271D, accent: 0xFF3FA66B),
+    (name: 'نعنایی روشن', color: 0xFFE7F5EC, accent: 0xFF16845A),
+    (name: 'اقیانوسی', color: 0xFF102D32, accent: 0xFF159A91),
+    (name: 'فیروزه‌ای آرام', color: 0xFFE5F5F1, accent: 0xFF168F83),
+    (name: 'ذغالی حرفه‌ای', color: 0xFF202923, accent: 0xFF8BAE98),
+    (name: 'سنگ روشن', color: 0xFFF0F2ED, accent: 0xFF526B5A),
+    (name: 'طلایی گرم', color: 0xFF302719, accent: 0xFFD5A64A),
+    (name: 'شن و ماسه', color: 0xFFF3EBDD, accent: 0xFF9A6A32),
+    (name: 'غروب مسی', color: 0xFF38251E, accent: 0xFFE18A58),
+    (name: 'رز ملایم', color: 0xFFF5E9E9, accent: 0xFFB65F68),
+    (name: 'آلبالویی تیره', color: 0xFF321D24, accent: 0xFFD47780),
+    (name: 'زیتونی', color: 0xFF252A19, accent: 0xFFA5A85A),
+    (name: 'سبز مه‌آلود', color: 0xFFE9F0E9, accent: 0xFF668B70),
+    (name: 'آسمان خاکستری', color: 0xFF26333A, accent: 0xFF83A6AD),
+    (name: 'یخی مینیمال', color: 0xFFEDF3F1, accent: 0xFF527D79),
   ];
 
   Future<void> _pickWallpaper() async {
@@ -6899,7 +6945,9 @@ class _HomePageState extends State<HomePage> {
               ])
             : navIndex == 0
                 ? chatsView()
-                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; })),
+                : navIndex == 1
+                    ? ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; }))
+                    : const SupportBotPage(),
       ))),
       floatingActionButton: navIndex == 0 ? IgnorePointer(ignoring: !_homeChromeVisible, child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: _homeChromeVisible ? 1 : 0, child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _homeChromeVisible ? 1 : .78, child: FloatingActionButton(tooltip: trUi('گفتگوی جدید'), onPressed: createDirect, child: Icon(Icons.edit_rounded))))) : null,
       bottomNavigationBar: AnimatedSize(
@@ -6947,6 +6995,7 @@ class _HomePageState extends State<HomePage> {
                       destinations: [
                         NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
                         NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+                        NavigationDestination(icon: Icon(Icons.smart_toy_outlined), selectedIcon: Icon(Icons.smart_toy_rounded), label: trUi('راهنما')),
                       ],
                     ),
                   ),
@@ -8124,56 +8173,112 @@ class DataSettingsPage extends StatefulWidget {
 }
 class _DataSettingsPageState extends State<DataSettingsPage> {
   bool low = false, wifi = true, loading = true;
-  @override void initState() { super.initState(); _load(); }
+  bool savingLow = false, savingWifi = false;
+  String? loadError;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
   Future<void> _load() async {
+    if (mounted) setState(() { loading = true; loadError = null; });
     try {
       final values = await loadUserSettings();
       if (!mounted) return;
       setState(() {
-        low = values['low_data_mode'] ?? false;
-        wifi = values['wifi_only'] ?? true;
+        low = values['low_data_mode'] is bool ? values['low_data_mode'] as bool : false;
+        wifi = values['wifi_only'] is bool ? values['wifi_only'] as bool : true;
         loading = false;
+        loadError = null;
       });
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        loadError = _friendlyError(e.toString());
+      });
     }
   }
-  Future<void> _change(String key, bool value, bool previous, ValueChanged<bool> update) async {
-    if (mounted) setState(() => update(value));
+
+  Future<void> _change(String key, bool value) async {
+    final isLow = key == 'low_data_mode';
+    final previous = isLow ? low : wifi;
+    if ((isLow && savingLow) || (!isLow && savingWifi) || value == previous) return;
+    setState(() {
+      if (isLow) { savingLow = true; low = value; }
+      else { savingWifi = true; wifi = value; }
+    });
     try {
       await saveUserSettings({key: value});
       if (mounted) showMsg(context, 'تنظیم ذخیره شد.');
     } catch (e) {
       if (!mounted) return;
-      setState(() => update(previous));
-      showMsg(context, 'ذخیره تنظیم انجام نشد: '+_friendlyError(e.toString()));
+      setState(() {
+        if (isLow) low = previous;
+        else wifi = previous;
+      });
+      showMsg(context, 'ذخیره تنظیم انجام نشد؛ مقدار قبلی برگشت. ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() {
+        if (isLow) savingLow = false;
+        else savingWifi = false;
+      });
     }
   }
+
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(trUi('مصرف داده'))),
-    body: loading ? Center(child: CircularProgressIndicator()) : ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(child: SwitchListTile(
-          value: low,
-          onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
-          title: Text(trUi('حالت کم‌مصرف')),
-          subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
-          secondary: Icon(Icons.data_saver_on_rounded),
-        )),
-        Card(child: SwitchListTile(
-          value: wifi,
-          onChanged: (v) => _change('wifi_only', v, wifi, (next) => wifi = next),
-          title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
-          subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
-          secondary: Icon(Icons.wifi_rounded),
-        )),
-        Padding(
-          padding: EdgeInsets.all(8),
-          child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.')),
+    appBar: AppBar(
+      title: Text(trUi('مصرف داده')),
+      actions: [
+        IconButton(
+          tooltip: trUi('تازه‌سازی'),
+          onPressed: loading ? null : _load,
+          icon: const Icon(Icons.refresh_rounded),
         ),
       ],
     ),
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : loadError != null
+            ? Center(child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.cloud_off_rounded, size: 42, color: Theme.of(context).colorScheme.error),
+                  const SizedBox(height: 12),
+                  Text(trUi('تنظیمات مصرف داده بارگذاری نشد.')),
+                  const SizedBox(height: 8),
+                  Text(loadError!, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+                ]),
+              ))
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(child: SwitchListTile.adaptive(
+                    value: low,
+                    onChanged: savingLow ? null : (v) => _change('low_data_mode', v),
+                    title: Text(trUi('حالت کم‌مصرف')),
+                    subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
+                    secondary: const Icon(Icons.data_saver_on_rounded),
+                  )),
+                  Card(child: SwitchListTile.adaptive(
+                    value: wifi,
+                    onChanged: savingWifi ? null : (v) => _change('wifi_only', v),
+                    title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
+                    subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
+                    secondary: const Icon(Icons.wifi_rounded),
+                  )),
+                  const SizedBox(height: 8),
+                  Card(child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.'))),
+                    ]),
+                  )),
+                ],
+              ),
   );
 }
 
