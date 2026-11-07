@@ -1738,12 +1738,8 @@ Future<void> main() async {
     await Supabase.initialize(
       url: supabaseUrl,
       publishableKey: supabasePublishableKey,
-    ).timeout(
-      Duration(seconds: 10),
-      onTimeout: () => throw TimeoutException(
-        'اتصال به سرویس ورود بیش از ۱۰ ثانیه طول کشید. اینترنت یا دسترسی به سرویس را بررسی کنید و دوباره تلاش کنید.',
-      ),
     );
+
   } catch (error, stack) {
     debugPrint('گپ‌رسان startup failed: $error');
     debugPrintStack(stackTrace: stack);
