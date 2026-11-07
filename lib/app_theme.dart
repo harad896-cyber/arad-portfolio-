@@ -27,33 +27,33 @@ class GapResanThemeTokens extends ThemeExtension<GapResanThemeTokens> {
     required Color accent,
   }) {
     if (dark) {
-      const canvas = Color(0xFF071A13);
+      const canvas = Color(0xFF081712);
       return GapResanThemeTokens(
         canvas: canvas,
-        surface: const Color(0xFF0D251A),
-        elevatedSurface: const Color(0xFF123322),
-        subtleSurface: const Color(0xFF0B2016),
-        textPrimary: const Color(0xFFF4F2FA),
-        textSecondary: const Color(0xFFA6B9AC),
-        divider: const Color(0xFF294234),
+        surface: const Color(0xFF10251D),
+        elevatedSurface: const Color(0xFF183329),
+        subtleSurface: const Color(0xFF0D2119),
+        textPrimary: const Color(0xFFF7FBF8),
+        textSecondary: const Color(0xFFB4C6BC),
+        divider: const Color(0xFF304A3D),
         accent: accent,
         accentSoft: accent.withValues(alpha: .16),
         outgoingBubble: Color.lerp(accent, canvas, .34)!,
-        incomingBubble: const Color(0xFF10291D),
+        incomingBubble: const Color(0xFF193329),
         chatBackdrop: canvas,
         danger: const Color(0xFFFF8A8A),
       );
     }
 
-    const canvas = Color(0xFFF4F8F5);
+    const canvas = Color(0xFFF5F8F6);
     return GapResanThemeTokens(
       canvas: canvas,
       surface: const Color(0xFFFFFFFF),
       elevatedSurface: const Color(0xFFFCFCFE),
-      subtleSurface: const Color(0xFFEDF4EF),
-      textPrimary: const Color(0xFF171320),
-      textSecondary: const Color(0xFF647268),
-      divider: const Color(0xFFDDE8E0),
+      subtleSurface: const Color(0xFFF0F5F1),
+      textPrimary: const Color(0xFF17231C),
+      textSecondary: const Color(0xFF65756B),
+      divider: const Color(0xFFDCE7DF),
       accent: accent,
       accentSoft: accent.withValues(alpha: .12),
       outgoingBubble: Color.lerp(accent, Colors.white, .12)!,
