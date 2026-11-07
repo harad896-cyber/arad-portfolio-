@@ -1514,10 +1514,13 @@ class AppThemeController extends ChangeNotifier {
     final key = _scope;
     final revision = p.getInt('theme_revision_$key') ?? 0;
     if (revision < _themeRevision) {
-      // One-time migration to the polished dark neon visual system.
-      dark = true;
-      seed = 0xFF0B9658;
-      backgroundSeed = 0xFF071A13;
+      // Migrate old installs without overwriting a user's existing choices.
+      dark = p.getBool('dark_mode_$key') ?? true;
+      final savedSeed = p.getInt('accent_seed_$key');
+      seed = savedSeed == null || savedSeed == 0xFF00C2A8
+          ? 0xFF0B9658
+          : savedSeed;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A13;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
