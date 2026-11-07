@@ -8,10 +8,10 @@ void main() {
       const accent = Color(0xFF0B9658);
       final dark = GapResanThemeTokens.forBrightness(dark: true, accent: accent);
       final light = GapResanThemeTokens.forBrightness(dark: false, accent: accent);
-      expect(dark.canvas, const Color(0xFF071A13));
-      expect(dark.incomingBubble, const Color(0xFF10291D));
+      expect(dark.canvas, const Color(0xFF081712));
+      expect(dark.incomingBubble, const Color(0xFF193329));
       expect(dark.accent, accent);
-      expect(light.canvas, const Color(0xFFF4F8F5));
+      expect(light.canvas, const Color(0xFFF5F8F6));
       expect(light.surface, Colors.white);
     });
 
