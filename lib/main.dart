@@ -1715,7 +1715,7 @@ class StartupLoadingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFF071A2D),
+        backgroundColor: Color(0xFF071A13),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1726,15 +1726,15 @@ class StartupLoadingApp extends StatelessWidget {
                   Container(
                     width: 76, height: 76,
                     decoration: BoxDecoration(
-                      color: Color(0xFF00C2A8).withValues(alpha: .14),
+                      color: Color(0xFF0B9658).withValues(alpha: .16),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/app_icon.jpg', width: 76, height: 76, fit: BoxFit.cover)),
                   ),
                   SizedBox(height: 18),
-                  Text(trUi('پیام رسان'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  Text('گپ‌رسان', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)), 
                   SizedBox(height: 12),
-                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF20C879))),
                   SizedBox(height: 12),
                   Text(trUi('در حال آماده‌سازی برنامه…'), style: TextStyle(color: Colors.white70)),
                 ],
@@ -1756,7 +1756,7 @@ class StartupFailureApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFFF8F7FC),
+        backgroundColor: Color(0xFFF4F8F5),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1767,8 +1767,8 @@ class StartupFailureApp extends StatelessWidget {
                   ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.asset('assets/app_icon.jpg', width: 88, height: 88, fit: BoxFit.cover)),
                   SizedBox(height: 16),
                   Text(
-                    'پیام رسان',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    'گپ‌رسان',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0B9658)), 
                   ),
                   SizedBox(height: 12),
                   Text(
@@ -1782,7 +1782,7 @@ class StartupFailureApp extends StatelessWidget {
                     message,
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
-                    style: TextStyle(fontSize: 13, color: Color(0xFF5B5568)),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF52645A)), 
                   ),
                   SizedBox(height: 20),
                   FilledButton.icon(
