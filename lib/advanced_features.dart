@@ -528,30 +528,141 @@ class AppLockSettingsPage extends StatefulWidget {
 }
 
 class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
+  final _storage = const FlutterSecureStorage();
+  final _auth = LocalAuthentication();
+  bool _enabled = false;
+  bool _biometric = false;
+  bool _hasPin = false;
+  bool _busy = true;
+
   @override
   void initState() {
     super.initState();
-    _disablePinLock();
+    _load();
   }
 
-  Future<void> _disablePinLock() async {
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    final pin = await _storage.read(key: 'app_lock_pin');
+    if (!mounted) return;
+    setState(() {
+      _hasPin = pin != null && pin.isNotEmpty;
+      _enabled = prefs.getBool('app_lock_enabled') ?? false;
+      _biometric = prefs.getBool('app_lock_biometric') ?? false;
+      if (!_hasPin) {
+        _enabled = false;
+        _biometric = false;
+      }
+      _busy = false;
+    });
+  }
+
+  String _digits(String value) => _normalizeSettingsPinDigits(value).replaceAll(RegExp(r'[^0-9]'), '');
+
+  Future<void> _setPin() async {
+    final first = TextEditingController();
+    final second = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تنظیم رمز برنامه'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: first, keyboardType: TextInputType.number, obscureText: true, maxLength: 8, decoration: const InputDecoration(labelText: 'رمز جدید (۴ تا ۸ رقم)')),
+          TextField(controller: second, keyboardType: TextInputType.number, obscureText: true, maxLength: 8, decoration: const InputDecoration(labelText: 'تکرار رمز')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+          FilledButton(onPressed: () {
+            final a = _digits(first.text), b = _digits(second.text);
+            if (a.length < 4 || a.length > 8 || a != b) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رمز باید ۴ تا ۸ رقم باشد و هر دو بار یکسان وارد شود.')));
+              return;
+            }
+            Navigator.pop(dialogContext, a);
+          }, child: const Text('ذخیره')),
+        ],
+      ),
+    );
+    first.dispose();
+    second.dispose();
+    if (result == null) return;
+    await _storage.write(key: 'app_lock_pin', value: result);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('app_lock_enabled', true);
+    if (!mounted) return;
+    setState(() { _hasPin = true; _enabled = true; });
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رمز برنامه ذخیره و فعال شد.')));
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (value && !_hasPin) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اول یک رمز PIN تنظیم کن.')));
+      return;
+    }
+    if (value) {
+      try {
+        final supported = await _auth.isDeviceSupported();
+        final canCheck = await _auth.canCheckBiometrics;
+        if (!supported || !canCheck) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('قفل زیست‌سنجی در این دستگاه در دسترس نیست.')));
+          return;
+        }
+        final ok = await _auth.authenticate(localizedReason: 'برای فعال‌سازی قفل زیست‌سنجی تأیید کن', options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true));
+        if (!ok) return;
+      } catch (_) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('امکان فعال‌سازی اثرانگشت وجود ندارد؛ از PIN استفاده کن.')));
+        return;
+      }
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('app_lock_biometric', value);
+    if (mounted) setState(() => _biometric = value);
+  }
+
+  Future<void> _toggleLock(bool value) async {
+    if (value && !_hasPin) {
+      await _setPin();
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('app_lock_enabled', value);
+    if (!value) await prefs.setBool('app_lock_biometric', false);
+    if (mounted) setState(() { _enabled = value; if (!value) _biometric = false; });
+  }
+
+  Future<void> _removePin() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _storage.delete(key: 'app_lock_pin');
     await prefs.setBool('app_lock_enabled', false);
     await prefs.setBool('app_lock_biometric', false);
-    await const FlutterSecureStorage().delete(key: 'app_lock_pin');
+    if (mounted) setState(() { _hasPin = false; _enabled = false; _biometric = false; });
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('قفل برنامه')),
-    body: ListView(padding: const EdgeInsets.all(16), children: const [
-      Card(child: ListTile(
-        leading: Icon(Icons.lock_open_rounded),
-        title: Text('قفل PIN غیرفعال است'),
-        subtitle: Text('قفل عددی و قفل اثر انگشت برای ورود به پیام‌رسان خاموش است.'),
-      )),
-      SizedBox(height: 12),
-      Text('برای ورود به پیام‌رسان، PIN برنامه درخواست نمی‌شود.'),
-    ]),
+    body: _busy
+      ? const Center(child: CircularProgressIndicator())
+      : ListView(padding: const EdgeInsets.all(16), children: [
+          Card(child: SwitchListTile(
+            secondary: const Icon(Icons.lock_outline_rounded),
+            title: const Text('قفل با رمز PIN'),
+            subtitle: Text(_hasPin ? 'رمز امن در حافظهٔ محافظت‌شده ذخیره شده است.' : 'برای فعال‌سازی، یک رمز ۴ تا ۸ رقمی بساز.'),
+            value: _enabled,
+            onChanged: _toggleLock,
+          )),
+          Card(child: SwitchListTile(
+            secondary: const Icon(Icons.fingerprint_rounded),
+            title: const Text('بازکردن با اثرانگشت'),
+            subtitle: const Text('در دستگاه‌های پشتیبانی‌شده؛ PIN همیشه راه جایگزین است.'),
+            value: _biometric,
+            onChanged: _enabled ? _toggleBiometric : null,
+          )),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(onPressed: _setPin, icon: const Icon(Icons.password_rounded), label: Text(_hasPin ? 'تغییر رمز PIN' : 'تنظیم رمز PIN')),
+          if (_hasPin) TextButton.icon(onPressed: _removePin, icon: const Icon(Icons.delete_outline), label: const Text('حذف رمز و غیرفعال‌کردن قفل')),
+          const SizedBox(height: 8),
+          const Text('رمز فقط روی همین دستگاه و در فضای امن سیستم‌عامل نگهداری می‌شود. اگر اثرانگشت در دسترس نباشد، می‌توانی با PIN وارد شوی.'),
+        ]),
   );
 }
