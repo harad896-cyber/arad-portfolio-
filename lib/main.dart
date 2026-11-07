@@ -3866,7 +3866,6 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
   void dispose() {
     _heartbeatTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-    _pinController.dispose();
     super.dispose();
   }
 
