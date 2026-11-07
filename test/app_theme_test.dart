@@ -5,17 +5,21 @@ import 'package:arad_messenger/app_theme.dart';
 void main() {
   group('GapResanThemeTokens', () {
     test('provides semantic colors for dark and light themes', () {
-      final dark = GapResanThemeTokens.forBrightness(dark: true, accent: const Color(0xFF00C2A8));
-      final light = GapResanThemeTokens.forBrightness(dark: false, accent: const Color(0xFF00C2A8));
-      expect(dark.canvas, const Color(0xFF071A2D));
-      expect(dark.incomingBubble, const Color(0xFF0D2336));
-      expect(dark.accent, const Color(0xFF00C2A8));
-      expect(light.canvas, const Color(0xFFF6F7FB));
+      const accent = Color(0xFF0B9658);
+      final dark = GapResanThemeTokens.forBrightness(dark: true, accent: accent);
+      final light = GapResanThemeTokens.forBrightness(dark: false, accent: accent);
+      expect(dark.canvas, const Color(0xFF071A13));
+      expect(dark.incomingBubble, const Color(0xFF10291D));
+      expect(dark.accent, accent);
+      expect(light.canvas, const Color(0xFFF4F8F5));
       expect(light.surface, Colors.white);
     });
 
     test('copyWith changes only the requested token', () {
-      final original = GapResanThemeTokens.forBrightness(dark: true, accent: const Color(0xFF00C2A8));
+      final original = GapResanThemeTokens.forBrightness(
+        dark: true,
+        accent: const Color(0xFF0B9658),
+      );
       final updated = original.copyWith(surface: const Color(0xFF123456));
       expect(updated.surface, const Color(0xFF123456));
       expect(updated.canvas, original.canvas);
