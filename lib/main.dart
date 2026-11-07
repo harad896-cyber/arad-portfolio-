@@ -13982,6 +13982,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pinController.dispose();
     super.dispose();
   }
 
