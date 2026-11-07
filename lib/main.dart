@@ -8169,56 +8169,112 @@ class DataSettingsPage extends StatefulWidget {
 }
 class _DataSettingsPageState extends State<DataSettingsPage> {
   bool low = false, wifi = true, loading = true;
-  @override void initState() { super.initState(); _load(); }
+  bool savingLow = false, savingWifi = false;
+  String? loadError;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
   Future<void> _load() async {
+    if (mounted) setState(() { loading = true; loadError = null; });
     try {
       final values = await loadUserSettings();
       if (!mounted) return;
       setState(() {
-        low = values['low_data_mode'] ?? false;
-        wifi = values['wifi_only'] ?? true;
+        low = values['low_data_mode'] is bool ? values['low_data_mode'] as bool : false;
+        wifi = values['wifi_only'] is bool ? values['wifi_only'] as bool : true;
         loading = false;
+        loadError = null;
       });
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        loadError = _friendlyError(e.toString());
+      });
     }
   }
-  Future<void> _change(String key, bool value, bool previous, ValueChanged<bool> update) async {
-    if (mounted) setState(() => update(value));
+
+  Future<void> _change(String key, bool value) async {
+    final isLow = key == 'low_data_mode';
+    final previous = isLow ? low : wifi;
+    if ((isLow && savingLow) || (!isLow && savingWifi) || value == previous) return;
+    setState(() {
+      if (isLow) { savingLow = true; low = value; }
+      else { savingWifi = true; wifi = value; }
+    });
     try {
       await saveUserSettings({key: value});
       if (mounted) showMsg(context, 'تنظیم ذخیره شد.');
     } catch (e) {
       if (!mounted) return;
-      setState(() => update(previous));
-      showMsg(context, 'ذخیره تنظیم انجام نشد: '+_friendlyError(e.toString()));
+      setState(() {
+        if (isLow) low = previous;
+        else wifi = previous;
+      });
+      showMsg(context, 'ذخیره تنظیم انجام نشد؛ مقدار قبلی برگشت. ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() {
+        if (isLow) savingLow = false;
+        else savingWifi = false;
+      });
     }
   }
+
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(trUi('مصرف داده'))),
-    body: loading ? Center(child: CircularProgressIndicator()) : ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(child: SwitchListTile(
-          value: low,
-          onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
-          title: Text(trUi('حالت کم‌مصرف')),
-          subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
-          secondary: Icon(Icons.data_saver_on_rounded),
-        )),
-        Card(child: SwitchListTile(
-          value: wifi,
-          onChanged: (v) => _change('wifi_only', v, wifi, (next) => wifi = next),
-          title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
-          subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
-          secondary: Icon(Icons.wifi_rounded),
-        )),
-        Padding(
-          padding: EdgeInsets.all(8),
-          child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.')),
+    appBar: AppBar(
+      title: Text(trUi('مصرف داده')),
+      actions: [
+        IconButton(
+          tooltip: trUi('تازه‌سازی'),
+          onPressed: loading ? null : _load,
+          icon: const Icon(Icons.refresh_rounded),
         ),
       ],
     ),
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : loadError != null
+            ? Center(child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.cloud_off_rounded, size: 42, color: Theme.of(context).colorScheme.error),
+                  const SizedBox(height: 12),
+                  Text(trUi('تنظیمات مصرف داده بارگذاری نشد.')),
+                  const SizedBox(height: 8),
+                  Text(loadError!, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+                ]),
+              ))
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(child: SwitchListTile.adaptive(
+                    value: low,
+                    onChanged: savingLow ? null : (v) => _change('low_data_mode', v),
+                    title: Text(trUi('حالت کم‌مصرف')),
+                    subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
+                    secondary: const Icon(Icons.data_saver_on_rounded),
+                  )),
+                  Card(child: SwitchListTile.adaptive(
+                    value: wifi,
+                    onChanged: savingWifi ? null : (v) => _change('wifi_only', v),
+                    title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
+                    subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
+                    secondary: const Icon(Icons.wifi_rounded),
+                  )),
+                  const SizedBox(height: 8),
+                  Card(child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.'))),
+                    ]),
+                  )),
+                ],
+              ),
   );
 }
 
