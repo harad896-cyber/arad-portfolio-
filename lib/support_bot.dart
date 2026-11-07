@@ -77,7 +77,7 @@ class _SupportBotPageState extends State<SupportBotPage> {
               onChanged: (value) => setDialogState(() => category = value ?? 'technical'),
             ),
             const SizedBox(height: 12),
-            TextField(controller: details, minLines: 3, maxLines: 6, maxLength: 1200,
+            TextField(controller: details, onChanged: (_) => setDialogState(() {}), minLines: 3, maxLines: 6, maxLength: 1200,
               decoration: const InputDecoration(labelText: 'شرح مشکل', hintText: 'چه کاری انجام می‌دادید و چه خطایی دیدید؟', alignLabelWithHint: true, border: OutlineInputBorder())),
             const Text('لطفاً رمز عبور، کد ورود، متن پیام‌های خصوصی یا توکن‌ها را ننویسید.', style: TextStyle(fontSize: 12)),
           ])),
