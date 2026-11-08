@@ -37,6 +37,24 @@ jobs:
           path: ~/.android/debug.keystore
           key: gapresan-google-oauth-debug-keystore-v1
 
+      # A cache miss is normal on the first run. Create the standard debug
+      # certificate before printing its fingerprint; the cache action saves it
+      # after a successful job so subsequent runs keep the same SHA-1.
+      - name: Create test signing key when cache is empty
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -s "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          keytool -list -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey >/dev/null
+
       - name: Generate missing Android and Web platform scaffolding
         run: |
           flutter create --platforms=android,web --org com.gapresan --project-name arad_messenger .
