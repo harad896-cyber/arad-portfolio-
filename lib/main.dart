@@ -7017,25 +7017,46 @@ class _HomePageState extends State<HomePage> {
           );
       },
       child: Scaffold(
-      body: SafeArea(child: AnimatedSwitcher(duration: Duration(milliseconds: 180), child: KeyedSubtree(
-        key: ValueKey('$navIndex-$showContacts'),
-        child: showContacts
-            ? Column(children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
-                  child: Row(children: [
-                    IconButton(onPressed: () => setState(() { showContacts = false; _homeChromeVisible = true; _chatTopGlowVisible = true; }), icon: Icon(Icons.arrow_back_rounded)),
-                    Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
-                  ]),
-                ),
-                Expanded(child: contactsView()),
-              ])
-            : navIndex == 0
-                ? chatsView()
-                : navIndex == 1
-                    ? ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; }))
-                    : const SupportBotPage(),
-      ))),
+      body: NotificationListener<ScrollNotification>(
+        // Keep the floating navigation out of the way while reading long
+        // pages, not only while scrolling the chat list. Scrolling back up
+        // or returning to the top reveals it again.
+        onNotification: (notification) {
+          if (notification.metrics.axis == Axis.vertical) {
+            bool? show;
+            if (notification is UserScrollNotification) {
+              if (notification.direction == ScrollDirection.reverse) show = false;
+              if (notification.direction == ScrollDirection.forward) show = true;
+            } else if (notification is ScrollUpdateNotification &&
+                notification.metrics.pixels <= 8) {
+              show = true;
+            }
+            if (show != null && mounted && show != _homeChromeVisible) {
+              setState(() => _homeChromeVisible = show!);
+            }
+          }
+          return false;
+        },
+        child: SafeArea(child: AnimatedSwitcher(duration: Duration(milliseconds: 180), child: KeyedSubtree(
+          key: ValueKey('$navIndex-$showContacts'),
+          child: showContacts
+              ? Column(children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+                    child: Row(children: [
+                      IconButton(onPressed: () => setState(() { showContacts = false; _homeChromeVisible = true; _chatTopGlowVisible = true; }), icon: Icon(Icons.arrow_back_rounded)),
+                      Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                    ]),
+                  ),
+                  Expanded(child: contactsView()),
+                ])
+              : navIndex == 0
+                  ? chatsView()
+                  : navIndex == 1
+                      ? ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; }))
+                      : const SupportBotPage(),
+        )))),
+      ),
       floatingActionButton: navIndex == 0 ? IgnorePointer(ignoring: !_homeChromeVisible, child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: _homeChromeVisible ? 1 : 0, child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _homeChromeVisible ? 1 : .78, child: FloatingActionButton(tooltip: trUi('گفتگوی جدید'), onPressed: createDirect, child: Icon(Icons.edit_rounded))))) : null,
       bottomNavigationBar: AnimatedSize(
         duration: const Duration(milliseconds: 230),
