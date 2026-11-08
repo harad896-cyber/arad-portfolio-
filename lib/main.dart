@@ -3800,51 +3800,80 @@ class StickersGifsPage extends StatelessWidget {
     ));
   }
 }
-const _deviceSessionIdKey = 'arad_device_session_id_v2';
+const _deviceSessionIdKey = 'gapresan_device_identity_v3';
+const _legacyDeviceSessionIdKey = 'arad_device_session_id_v2';
 const FlutterSecureStorage _deviceIdentityStorage = FlutterSecureStorage();
 
-Future<String> _getDeviceSessionId() async {
-  // Android's SSAID (ANDROID_ID) is the primary identity for this app on this
-  // physical device. Never silently replace it with a random ID: doing so
-  // turns a temporary plugin/OS failure into a brand-new registered device.
+// One in-flight identity lookup for the whole process. Without this guard,
+// the security page and the background heartbeat can both observe an empty
+// secure-storage key and race to create two different IDs for the same phone.
+Future<String>? _deviceSessionIdFuture;
+
+Future<String> _getDeviceSessionId() {
+  return _deviceSessionIdFuture ??= _createStableDeviceSessionId().catchError(
+    (Object error) {
+      _deviceSessionIdFuture = null;
+      throw error;
+    },
+  );
+}
+
+Future<String> _createStableDeviceSessionId() async {
+  // First reuse the identity already stored for this app installation.
+  // It is intentionally shared across all accounts signed in on this device.
+  final saved = await _deviceIdentityStorage.read(key: _deviceSessionIdKey);
+  if (saved != null && saved.trim().length >= 16) return saved.trim();
+
+  // Migrate the previous app key rather than creating a fresh device entry
+  // after an app update.
+  final legacy = await _deviceIdentityStorage.read(key: _legacyDeviceSessionIdKey);
+  if (legacy != null && legacy.trim().length >= 16) {
+    final migrated = legacy.trim();
+    await _deviceIdentityStorage.write(key: _deviceSessionIdKey, value: migrated);
+    return migrated;
+  }
+
+  String stableId;
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    // Android ID is stable for the app-signing key, Android user and device.
+    // If the OS/plugin cannot provide it, fail closed: never invent a new ID
+    // on a transient error, because that would register a fake new device.
     try {
       final androidId = await AndroidId().getId();
-      if (androidId != null && androidId.trim().isNotEmpty) {
-        return 'android:${androidId.trim()}';
+      if (androidId == null || androidId.trim().isEmpty) {
+        throw StateError('Android returned an empty device identifier.');
       }
-      throw StateError('Android returned an empty device identifier.');
+      stableId = 'android:${androidId.trim()}';
     } catch (error, stackTrace) {
       debugPrint('Stable Android device ID unavailable; registration paused: $error');
       debugPrintStack(stackTrace: stackTrace);
       rethrow;
     }
-  }
-
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+  } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
     try {
       final info = await DeviceInfoPlugin().iosInfo;
       final vendorId = info.identifierForVendor;
-      if (vendorId != null && vendorId.trim().isNotEmpty) return 'ios:${vendorId.trim()}';
-      throw StateError('iOS returned an empty vendor identifier.');
+      if (vendorId == null || vendorId.trim().isEmpty) {
+        throw StateError('iOS returned an empty vendor identifier.');
+      }
+      stableId = 'ios:${vendorId.trim()}';
     } catch (error, stackTrace) {
       debugPrint('Stable iOS device ID unavailable; registration paused: $error');
       debugPrintStack(stackTrace: stackTrace);
       rethrow;
     }
+  } else {
+    // Web/desktop cannot expose a hardware ID. Generate once, then persist
+    // it securely so logins and concurrent calls reuse the same profile ID.
+    final random = math.Random.secure();
+    final randomId = List<int>.generate(32, (_) => random.nextInt(256))
+        .map((value) => value.toRadixString(16).padLeft(2, '0'))
+        .join();
+    stableId = 'profile:$randomId';
   }
 
-  // Browsers/desktop platforms do not expose a cross-install hardware ID.
-  // Keep one app-profile identity in secure storage instead of generating a
-  // new value on every login. Clearing browser/app data can reset this ID.
-  final saved = await _deviceIdentityStorage.read(key: _deviceSessionIdKey);
-  if (saved != null && saved.length >= 16) return saved;
-  final random = math.Random.secure();
-  final id = List<int>.generate(32, (_) => random.nextInt(256))
-      .map((value) => value.toRadixString(16).padLeft(2, '0'))
-      .join();
-  await _deviceIdentityStorage.write(key: _deviceSessionIdKey, value: id);
-  return id;
+  await _deviceIdentityStorage.write(key: _deviceSessionIdKey, value: stableId);
+  return stableId;
 }
 
 Future<String> _deviceDisplayName() async {
