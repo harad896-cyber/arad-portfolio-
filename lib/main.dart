@@ -7343,7 +7343,9 @@ class _HomePageState extends State<HomePage> {
             heightFactor: _homeChromeVisible ? 1 : 0,
             child: SafeArea(
               top: false,
-              minimum: const EdgeInsets.fromLTRB(12, 0, 12, 7),
+              // Keep the navigation pill comfortably above Android's
+              // gesture/three-button system navigation area.
+              minimum: const EdgeInsets.fromLTRB(12, 0, 12, 14),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: BackdropFilter(
@@ -13749,7 +13751,9 @@ class _ChatPageState extends State<ChatPage> {
       ),
       floatingActionButton: _showJumpToLatest
           ? Padding(
-              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 104 : 86),
+              // Lift the jump control clear of the Android system bar and
+              // leave a reliable touch gap above the composer when typing.
+              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 120 : 104),
               child: FloatingActionButton.small(
                 heroTag: 'jump-to-latest-${widget.id}',
                 onPressed: _jumpToLatest,
