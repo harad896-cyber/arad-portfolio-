@@ -11812,9 +11812,22 @@ class _ChatPageState extends State<ChatPage> {
         if (aSaved != bSaved) return aSaved ? -1 : 1;
         return '${b['created_at'] ?? ''}'.compareTo('${a['created_at'] ?? ''}');
       });
+      Map<String, dynamic>? savedDestinationSettings;
+      try {
+        savedDestinationSettings = await supabase.from('saved_chat_settings')
+            .select('display_name,avatar_path').eq('user_id', uid).maybeSingle();
+      } catch (_) {}
       final targets = <Map<String, dynamic>>[];
       for (final c in rawTargets) {
-        var displayTitle = '${c['title'] ?? ''}'.trim();
+        var displayTitle = c['type'] == 'saved'
+            ? '${savedDestinationSettings?['display_name'] ?? c['title'] ?? 'پیام‌های ذخیره‌شده'}'.trim()
+            : '${c['title'] ?? ''}'.trim();
+        if (c['type'] == 'saved') {
+          final avatarPath = savedDestinationSettings?['avatar_path']?.toString() ?? '';
+          if (avatarPath.isNotEmpty) {
+            try { c['_peer_avatar_url'] = await supabase.storage.from('saved-messages').createSignedUrl(avatarPath, 3600); } catch (_) {}
+          }
+        }
         if (displayTitle.isEmpty && '${c['type']}' == 'direct') {
           final other = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']).neq('user_id', uid).maybeSingle();
           if (other != null) {
@@ -11918,7 +11931,7 @@ class _ChatPageState extends State<ChatPage> {
 
       final type = '${message['message_type'] ?? 'text'}';
       var attachmentCopied = true;
-      if (type != 'text') {
+      if (['image', 'video', 'audio', 'file'].contains(type)) {
         try {
           final attachment = await supabase.from('message_attachments')
               .select('storage_path,bucket_id,file_name,file_size,mime_type,duration_ms')
