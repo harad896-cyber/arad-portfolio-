@@ -11874,7 +11874,7 @@ class _ChatPageState extends State<ChatPage> {
                       final c = targets[index];
                       final type = '${c['type']}';
                       final title = '${c['_display_title'] ?? c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
-                      final icon = type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      final icon = type == 'saved' ? Icons.bookmark_rounded : type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                       final avatarUrl = '${c['_peer_avatar_url'] ?? c['avatar_url'] ?? ''}'.trim();
                       return ListTile(
                         leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
@@ -11942,9 +11942,9 @@ class _ChatPageState extends State<ChatPage> {
             final targetBucket = target['type'] == 'saved' ? 'saved-messages' : 'chat-media';
             final sourcePath = attachment['storage_path'].toString();
             final fileBytes = await supabase.storage.from(sourceBucket).download(sourcePath);
-            final uid = supabase.auth.currentUser!.id;
+            final ownerId = supabase.auth.currentUser!.id;
             final safeName = (attachment['file_name'] ?? 'forwarded_file').toString().replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-            final targetFolder = targetBucket == 'saved-messages' ? '$uid/${target['id']}' : '${target['id']}';
+            final targetFolder = targetBucket == 'saved-messages' ? '$ownerId/${target['id']}' : '${target['id']}';
             final targetPath = '$targetFolder/forward_${DateTime.now().microsecondsSinceEpoch}_$safeName';
             await supabase.storage.from(targetBucket).uploadBinary(
               targetPath, fileBytes,
