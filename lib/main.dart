@@ -2386,7 +2386,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری'},
     {'cat':'گفتگو و پیام‌ها','title':'تنظیمات گفتگو','desc':'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا'},
     {'cat':'گفتگو و پیام‌ها','title':'پوشه‌های گفتگو','desc':'ساخت و مدیریت پوشه‌های گفتگو'},
-    {'cat':'گفتگو و پیام‌ها','title':'پیام‌های ذخیره‌شده','desc':'پیام‌هایی که برای خودتان ذخیره کرده‌اید'},
     {'cat':'محتوا','title':'پیام‌رسانی پیشرفته','desc':'ابزارهای پیشرفته متصل به Backend'},
     {'cat':'درباره','title':'درباره برنامه','desc':'نسخه، معماری و اطلاعات برنامه'},
   ];
@@ -2437,7 +2436,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     'حساب کاربری'=>Icons.manage_accounts_rounded,'حریم خصوصی'=>Icons.lock_outline_rounded,'امنیت'=>Icons.security_rounded,
     'اعلان‌ها'=>Icons.notifications_none_rounded,'مصرف داده'=>Icons.data_saver_on_rounded,'دسترسی‌پذیری'=>Icons.accessibility_new_rounded,'دسترسی‌های برنامه'=>Icons.admin_panel_settings_rounded,
     'تماس‌ها'=>Icons.call_rounded,'ظاهر'=>Icons.palette_outlined,'پس‌زمینه چت'=>Icons.wallpaper_rounded,'زبان'=>Icons.language_rounded,
-    'تنظیمات گفتگو'=>Icons.chat_bubble_outline_rounded,'پوشه‌های گفتگو'=>Icons.folder_copy_outlined,'پیام‌های ذخیره‌شده'=>Icons.bookmark_outline_rounded,
+    'تنظیمات گفتگو'=>Icons.chat_bubble_outline_rounded,'پوشه‌های گفتگو'=>Icons.folder_copy_outlined,
     'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.backup_outlined,'استیکر و ایموجی'=>Icons.emoji_emotions_outlined,
     'پیام‌رسانی پیشرفته'=>Icons.auto_awesome_rounded,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
   void _open(String title){
@@ -2454,7 +2453,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'زبان': _showLanguageSheet(); break;
       case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatSettingsPage())); break;
       case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatFoldersPage())); break;
-      case 'پیام‌های ذخیره‌شده': Navigator.push(context,MaterialPageRoute(builder:(_)=>SavedMessagesPage())); break;
       case 'پیام‌رسانی پیشرفته': Navigator.push(context,MaterialPageRoute(builder:(_)=>AdvancedFeaturesPage())); break;
       case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>AboutAppPage())); break;
     }
@@ -6895,11 +6893,7 @@ class _HomePageState extends State<HomePage> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        child: Row(children: [
-          Expanded(child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelCreatePage())).then((_) => load()))),
-          SizedBox(width: 8),
-          Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage())))),
-        ]),
+        child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelCreatePage())).then((_) => load())),
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -11707,28 +11701,80 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> saveMessage(Map<String, dynamic> message) async {
     final uid = supabase.auth.currentUser?.id;
     final sourceId = message['id']?.toString();
-    if (uid == null || sourceId == null || sourceId.startsWith('pending-')) {
-      if (mounted) showMsg(context, 'این پیام هنوز در سرور ثبت نشده است؛ کمی بعد دوباره امتحان کنید.');
+    if (uid == null || sourceId == null || sourceId.startsWith('pending-') || message['deleted_at'] != null) {
+      if (mounted) showMsg(context, 'این پیام هنوز در سرور ثبت نشده یا حذف شده است.');
       return;
     }
+    String? uploadedPath;
+    String? insertedMessageId;
     try {
-      final payload = <String, dynamic>{
-        'user_id': uid,
-        'source_message_id': sourceId,
-        // saved_messages.body is NOT NULL in the live database; media messages
-        // may have no textual caption, so store a useful fallback label.
-        'body': (message['body'] ?? '').toString().trim().isNotEmpty
-            ? message['body'].toString()
-            : ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[message['message_type']?.toString()] ?? 'پیام'),
-        'message_type': message['message_type'] ?? 'text',
-      };
-      // The unique key makes this one request both idempotent and race-safe.
-      await supabase.from('saved_messages').upsert(
-        payload,
-        onConflict: 'user_id,source_message_id',
-      );
-      if (mounted) showMsg(context, 'پیام در پیام‌های ذخیره‌شده ثبت شد.');
+      final savedConversationId = (await supabase.rpc('get_or_create_saved_messages')).toString();
+      if (savedConversationId == widget.id) {
+        if (mounted) showMsg(context, 'این پیام همین‌حالا در پیام‌های ذخیره‌شده است.');
+        return;
+      }
+
+      final type = (message['message_type'] ?? 'text').toString();
+      Map<String, dynamic>? attachment = attachments[sourceId];
+      final needsAttachment = ['image', 'video', 'audio', 'file'].contains(type);
+      if (needsAttachment && attachment == null) {
+        attachment = await supabase.from('message_attachments')
+            .select('storage_path,bucket_id,file_name,file_size,mime_type,duration_ms')
+            .eq('message_id', sourceId).maybeSingle();
+      }
+      if (needsAttachment && attachment == null) {
+        throw StateError('فایل پیوست این پیام پیدا نشد.');
+      }
+      if (attachment != null && needsAttachment) {
+        final sourceBucket = (attachment['bucket_id'] ?? _attachmentBucket).toString();
+        final sourcePath = attachment['storage_path'].toString();
+        final bytes = await supabase.storage.from(sourceBucket).download(sourcePath);
+        final safeName = (attachment['file_name'] ?? 'saved_file').toString()
+            .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+        uploadedPath = '$uid/$savedConversationId/save_${DateTime.now().microsecondsSinceEpoch}_$safeName';
+        await supabase.storage.from('saved-messages').uploadBinary(
+          uploadedPath!, bytes,
+          fileOptions: FileOptions(contentType: (attachment['mime_type'] ?? 'application/octet-stream').toString(), upsert: false),
+        );
+      }
+
+      final rawBody = (message['body'] ?? '').toString();
+      final fallbackBody = ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[type] ?? 'پیام');
+      final visibleBody = rawBody.trim().isNotEmpty ? rawBody : fallbackBody;
+      var savedBody = visibleBody;
+      if (!savedBody.startsWith('[[ARAD_FORWARD]]')) {
+        final senderId = (message['sender_id'] ?? uid).toString();
+        final author = _senderName(message).replaceAll('|', ' ').replaceAll(RegExp(r'[\\r\\n]+'), ' ').trim();
+        savedBody = '[[ARAD_FORWARD]]$senderId|${author.isEmpty ? 'کاربر' : author}\\n$visibleBody';
+      }
+      final inserted = await supabase.from('messages').insert({
+        'conversation_id': savedConversationId,
+        'sender_id': uid,
+        'body': savedBody,
+        'message_type': type,
+        'reply_to': null,
+      }).select().single();
+      insertedMessageId = inserted['id']?.toString();
+
+      if (needsAttachment && attachment != null && uploadedPath != null) {
+        await supabase.from('message_attachments').insert({
+          'message_id': inserted['id'],
+          'bucket_id': 'saved-messages',
+          'storage_path': uploadedPath,
+          'file_name': attachment['file_name'],
+          'file_size': attachment['file_size'],
+          'mime_type': attachment['mime_type'],
+          if (attachment['duration_ms'] != null) 'duration_ms': attachment['duration_ms'],
+        });
+      }
+      if (mounted) showMsg(context, 'پیام به گفت‌وگوی شخصی شما منتقل شد.');
     } catch (e) {
+      if (insertedMessageId != null) {
+        try { await supabase.from('messages').delete().eq('id', insertedMessageId!); } catch (_) {}
+      }
+      if (uploadedPath != null) {
+        try { await supabase.storage.from('saved-messages').remove([uploadedPath!]); } catch (_) {}
+      }
       if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}');
     }
   }
