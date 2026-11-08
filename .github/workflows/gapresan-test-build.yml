@@ -29,6 +29,13 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Generate missing Android and Web platform scaffolding
+        run: |
+          flutter create --platforms=android,web --org com.gapresan --project-name arad_messenger .
+          test -s android/app/src/main/AndroidManifest.xml
+          test -s android/app/build.gradle
+          test -s web/index.html
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -37,6 +44,11 @@ jobs:
 
       - name: Build Web preview
         run: flutter build web --release
+
+      - name: Verify build outputs
+        run: |
+          test -s build/app/outputs/flutter-apk/app-release.apk
+          test -s build/web/index.html
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
