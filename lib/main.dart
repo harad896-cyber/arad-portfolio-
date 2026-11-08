@@ -5107,30 +5107,28 @@ class _LoginPageState extends State<LoginPage>{
       if(!signup)...[TextField(controller:password,obscureText:obscure,onChanged:(v)=>setState(()=>passwordError=passwordMessage(v)),decoration:InputDecoration(labelText:'رمز عبور',errorText:passwordError,prefixIcon:Icon(Icons.lock_outline_rounded),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),],
       if(!signup)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:busy?null:forgotPassword,child:Text(trUi('رمز را فراموش کرده‌ام')))),
       SizedBox(height:8),SizedBox(height:52,width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:busy?CircularProgressIndicator():Text(signup?'ثبت‌نام و دریافت کد':'ورود به حساب'))),
-      if (!signup) ...[
-        SizedBox(height: 12),
-        Row(children: [
-          Expanded(child: Divider()),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text(trUi('یا'))),
-          Expanded(child: Divider()),
-        ]),
-        SizedBox(height: 12),
-        SizedBox(
-          height: 50,
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: busy ? null : signInWithGoogle,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(trUi('G'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF4285F4))),
-                SizedBox(width: 10),
-                Text(trUi('ورود با گوگل')),
-              ],
-            ),
+      SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: Divider()),
+        Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text(trUi('یا'))),
+        Expanded(child: Divider()),
+      ]),
+      SizedBox(height: 12),
+      SizedBox(
+        height: 50,
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: busy ? null : signInWithGoogle,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('G', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF4285F4))),
+              SizedBox(width: 10),
+              Text(trUi(signup ? 'ثبت‌نام با گوگل' : 'ورود با گوگل')),
+            ],
           ),
         ),
-      ],
+      ),
       SizedBox(height:8),TextButton(onPressed:busy?null:()=>setState(()=>signup=!signup),child:Text(signup?'حساب دارم؛ ورود':'حساب ندارم؛ ثبت‌نام'))
     ])))
   ]))))));}
