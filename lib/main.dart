@@ -5905,17 +5905,21 @@ class _HomePageState extends State<HomePage> {
                 .eq('conversation_id', id)
                 .isFilter('deleted_at', null)
                 .order('created_at', ascending: false)
-                .limit(1)
+                .limit(30)
                 .timeout(const Duration(seconds: 4));
             final list = List<Map<String, dynamic>>.from(rows as List);
             if (list.isEmpty) return null;
-            final deletion = await supabase.from('message_user_deletions')
+            final deletionRows = await supabase.from('message_user_deletions')
                 .select('message_id')
                 .eq('user_id', uid)
-                .eq('message_id', list.first['id'])
-                .maybeSingle()
+                .inFilter('message_id', list.map((row) => '${row['id']}').toList())
                 .timeout(const Duration(seconds: 4));
-            return deletion == null ? list.first : null;
+            final hiddenIds = List<Map<String, dynamic>>.from(deletionRows)
+                .map((row) => '${row['message_id']}').toSet();
+            for (final row in list) {
+              if (!hiddenIds.contains('${row['id']}')) return row;
+            }
+            return null;
           } catch (messageError) {
             debugPrint('Latest message lookup failed for $id: $messageError');
             return null;
