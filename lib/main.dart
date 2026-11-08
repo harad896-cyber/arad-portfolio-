@@ -6106,24 +6106,9 @@ class _HomePageState extends State<HomePage> {
         latestByConversation.clear();
         debugPrint('Latest-message/deletion preview sync failed; hiding previews: $messageError');
       }
+      await unreadCountsFuture;
 
-      // The RPC counts messages against message_reads for auth.uid(), so
-      // unread badges remain private to the signed-in account and require one
-      // bounded request rather than fetching every message receipt.
-      try {
-        final unreadRows = await supabase.rpc('get_unread_counts')
-            .timeout(const Duration(seconds: 8));
-        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
-          final conversationId = row['conversation_id']?.toString() ?? '';
-          final count = int.tryParse(row['unread_count']?.toString() ?? '0') ?? 0;
-          if (conversationId.isNotEmpty && count > 0) {
-            unreadByConversation[conversationId] = count;
-          }
-        }
-      } catch (unreadError) {
-        // Keep the chat list visible if the unread-count RPC is unavailable.
-        debugPrint('Per-account unread counts unavailable: $unreadError');
-      }
+
 
       // For chats without a preview, try one lightweight request per chat.
       // Failure to read a preview must not hide that chat from the list.
@@ -11820,7 +11805,25 @@ class _ChatPageState extends State<ChatPage> {
                       final value = text.text;
                       final selection = text.selection;
                       final start = selection.start < 0 ? value.length : selection.start;
-                      final end = selection.end < 0 ? value.length : selection.end;
+      
+      // Start unread counts alongside the latest-message query to reduce
+      // the number of sequential network round trips.
+      final unreadCountsFuture = () async {
+        try {
+        final unreadRows = await supabase.rpc('get_unread_counts')
+            .timeout(const Duration(seconds: 8));
+        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
+          final conversationId = row['conversation_id']?.toString() ?? '';
+          final count = int.tryParse(row['unread_count']?.toString() ?? '0') ?? 0;
+          if (conversationId.isNotEmpty && count > 0) {
+            unreadByConversation[conversationId] = count;
+          }
+        }
+        } catch (unreadError) {
+          // Keep the chat list visible if the unread-count RPC is unavailable.
+          debugPrint('Per-account unread counts unavailable: $unreadError');
+        }
+      }();                final end = selection.end < 0 ? value.length : selection.end;
                       final insertion = chosen.join();
                       text.value = TextEditingValue(
                         text: value.replaceRange(start, end, insertion),
