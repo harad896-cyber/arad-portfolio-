@@ -5124,7 +5124,7 @@ class _LoginPageState extends State<LoginPage>{
             children: [
               Text('G', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF4285F4))),
               SizedBox(width: 10),
-              Text(trUi(signup ? 'ثبت‌نام با گوگل' : 'ورود با گوگل')),
+              Text(trUi('ورود با حساب Google')),
             ],
           ),
         ),
