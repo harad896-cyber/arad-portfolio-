@@ -5761,6 +5761,129 @@ Future<void> openAradLink(BuildContext context, Uri uri) async {
   }
 }
 
+class GapResanFeaturesPage extends StatelessWidget {
+  const GapResanFeaturesPage({super.key});
+
+  void _open(BuildContext context, Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget feature({
+      required IconData icon,
+      required String title,
+      required String detail,
+      required VoidCallback onTap,
+      Color? color,
+    }) => Card(
+      margin: const EdgeInsets.only(bottom: 11),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+          child: Row(children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(
+                color: (color ?? scheme.primary).withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(icon, color: color ?? scheme.primary, size: 26),
+            ),
+            const SizedBox(width: 13),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                Text(detail, style: TextStyle(fontSize: 12, height: 1.45, color: scheme.onSurfaceVariant)),
+              ],
+            )),
+            Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
+          ]),
+        ),
+      ),
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('امکانات گپ‌رسان')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 28),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [scheme.primary, scheme.primary.withValues(alpha: .72)],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: const Row(children: [
+              Icon(Icons.send_rounded, color: Colors.white, size: 34),
+              SizedBox(width: 13),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('همه ابزارهای ارتباطی در یک جا', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17)),
+                  SizedBox(height: 5),
+                  Text('گفتگو، گروه، کانال و کنترل امنیت حساب', style: TextStyle(color: Colors.white70, height: 1.4)),
+                ],
+              )),
+            ]),
+          ),
+          const SizedBox(height: 17),
+          feature(
+            icon: Icons.bolt_rounded,
+            title: 'سرعت و مصرف اینترنت',
+            detail: 'گفتگوهای قبلی با حافظه محلی سریع‌تر نمایش داده می‌شوند؛ تنظیمات مصرف داده و بارگذاری را مدیریت کنید.',
+            onTap: () => _open(context, DataSettingsPage()),
+            color: Colors.amber.shade800,
+          ),
+          feature(
+            icon: Icons.groups_rounded,
+            title: 'گروه‌ها و مدیریت اعضا',
+            detail: 'گروه بسازید، اعضا را اضافه کنید و سپس نقش‌ها و تنظیمات گروه را مدیریت کنید.',
+            onTap: () => _open(context, GroupCreatePage()),
+            color: Colors.deepPurple,
+          ),
+          feature(
+            icon: Icons.campaign_rounded,
+            title: 'کانال‌ها',
+            detail: 'کانال بسازید و از بخش مدیریت کانال، اطلاعات، اعضا و لینک دعوت را تنظیم کنید.',
+            onTap: () => _open(context, ChannelCreatePage()),
+            color: Colors.teal,
+          ),
+          feature(
+            icon: Icons.shield_rounded,
+            title: 'امنیت حساب و دستگاه‌ها',
+            detail: 'نشست‌های فعال را ببینید و دستگاه‌های ناشناس یا دیگر را از حساب خارج کنید.',
+            onTap: () => _open(context, SecurityCenterPage()),
+            color: Colors.green,
+          ),
+          feature(
+            icon: Icons.lock_rounded,
+            title: 'حریم خصوصی',
+            detail: 'کنترل‌های نمایش وضعیت، دسترسی‌ها و تنظیمات حریم خصوصی حساب را بررسی کنید.',
+            onTap: () => _open(context, PrivacySettingsPage()),
+            color: Colors.blue,
+          ),
+          feature(
+            icon: Icons.tune_rounded,
+            title: 'کنترل سریع برنامه',
+            detail: 'میان‌بر تنظیمات مهم، اعلان‌ها، ظاهر و رفتار گفتگوها.',
+            onTap: () => _open(context, QuickControlsPage()),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class HomePage extends StatefulWidget {
   HomePage({super.key});
   @override
@@ -6713,20 +6836,24 @@ class _HomePageState extends State<HomePage> {
             constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
             icon: Container(width: 48, height: 48, decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .62), shape: BoxShape.circle), alignment: Alignment.center, child: Icon(Icons.menu_rounded, size: 32, color: scheme.primary)),
             onSelected: (value) {
-              if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
+              if (value == 'features') Navigator.push(context, MaterialPageRoute(builder: (_) => const GapResanFeaturesPage()));
+              else if (value == 'controls') Navigator.push(context, MaterialPageRoute(builder: (_) => QuickControlsPage()));
               else if (value == 'archive') setState(() { selectedFolderId = null; selectedFilter = 5; });
               else if (value == 'folders') _openFolderManager();
               else if (value == 'all') setState(() { selectedFolderId = null; selectedFilter = 0; });
               else if (value == 'group') createGroup();
+              else if (value == 'channel') Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelCreatePage()));
               else if (value == 'join') _joinGroupByInviteCode();
               else if (value == 'stories') Navigator.push(context, MaterialPageRoute(builder: (_) => StoriesPage()));
             },
             itemBuilder: (_) => [
+              PopupMenuItem(value: 'features', child: ListTile(dense: true, leading: Icon(Icons.grid_view_rounded), title: Text('امکانات گپ‌رسان'))),
               PopupMenuItem(value: 'controls', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('کنترل سریع برنامه')))),
               PopupMenuItem(value: 'all', child: ListTile(dense: true, leading: Icon(Icons.forum_outlined), title: Text(trUi('همه گفتگوها')))),
               PopupMenuItem(value: 'folders', child: ListTile(dense: true, leading: Icon(Icons.folder_open_rounded), title: Text(trUi('مدیریت پوشه‌های گفتگو')))),
               PopupMenuItem(value: 'archive', child: ListTile(dense: true, leading: Icon(Icons.archive_outlined), title: Text(trUi('بایگانی')))),
               PopupMenuItem(value: 'group', child: ListTile(dense: true, leading: Icon(Icons.group_add_outlined), title: Text(trUi('ساخت گروه')))),
+              PopupMenuItem(value: 'channel', child: ListTile(dense: true, leading: Icon(Icons.campaign_outlined), title: Text('ساخت کانال'))),
               PopupMenuItem(value: 'join', child: ListTile(dense: true, leading: Icon(Icons.link_rounded), title: Text(trUi('پیوستن با لینک گروه')))),
             ],
           ),
