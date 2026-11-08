@@ -3875,30 +3875,82 @@ Future<String> _createStableDeviceSessionId() async {
 }
 
 Future<String> _deviceDisplayName() async {
-  if (kIsWeb) return 'مرورگر وب';
+  // Never invent a generic device label. If platform details cannot be read,
+  // registration is skipped so the security page cannot show a fabricated row.
+  String clean(String? value) => (value ?? '').trim().replaceAll(RegExp(r'\\s+'), ' ');
+  String joinLabel(List<String> parts) =>
+      parts.where((part) => part.trim().isNotEmpty).join(' • ');
+
   try {
     final info = DeviceInfoPlugin();
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      final android = await info.androidInfo;
-      final maker = android.manufacturer.trim();
-      final model = android.model.trim();
-      final label = [maker, model]
-          .where((part) => part.isNotEmpty)
-          .toSet()
-          .join(' ');
-      return label.isEmpty ? 'گوشی اندروید' : label;
+    if (kIsWeb) {
+      final web = await info.webBrowserInfo;
+      var browser = clean(web.browserName.name);
+      final ua = clean(web.userAgent);
+      if (browser.isEmpty || browser.toLowerCase() == 'unknown') {
+        if (ua.contains('Edg/')) {
+          browser = 'Microsoft Edge';
+        } else if (ua.contains('Firefox/')) {
+          browser = 'Firefox';
+        } else if (ua.contains('Chrome/')) {
+          browser = 'Google Chrome';
+        } else if (ua.contains('Safari/')) {
+          browser = 'Safari';
+        }
+      } else {
+        browser = browser
+            .split(RegExp(r'[_-]'))
+            .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}')
+            .join(' ');
+      }
+      final platform = clean(web.platform);
+      if (browser.isEmpty || platform.isEmpty) return '';
+      return joinLabel([browser, platform]);
     }
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      final ios = await info.iosInfo;
-      return ios.name.isNotEmpty ? ios.name : 'دستگاه اپل';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        final android = await info.androidInfo;
+        final maker = clean(android.manufacturer);
+        final model = clean(android.model);
+        final release = clean(android.version.release);
+        final hardwareName = joinLabel([maker, model]);
+        if (hardwareName.isEmpty || model.isEmpty) return '';
+        return joinLabel([hardwareName, release.isEmpty ? '' : 'Android $release']);
+      case TargetPlatform.iOS:
+        final ios = await info.iosInfo;
+        final model = clean(ios.model);
+        final release = clean(ios.systemVersion);
+        if (model.isEmpty) return '';
+        return joinLabel([model, release.isEmpty ? '' : 'iOS $release']);
+      case TargetPlatform.macOS:
+        final mac = await info.macOsInfo;
+        final model = clean(mac.model);
+        final release = clean(mac.osRelease);
+        if (model.isEmpty) return '';
+        return joinLabel([model, release.isEmpty ? '' : 'macOS $release']);
+      case TargetPlatform.windows:
+        final windows = await info.windowsInfo;
+        final product = clean(windows.productName);
+        final version = clean(windows.displayVersion);
+        if (product.isEmpty) return '';
+        return joinLabel([product, version]);
+      case TargetPlatform.linux:
+        final linux = await info.linuxInfo;
+        final name = clean(linux.prettyName).isNotEmpty
+            ? clean(linux.prettyName)
+            : clean(linux.name);
+        final version = clean(linux.version);
+        if (name.isEmpty) return '';
+        return joinLabel([name, version]);
+      case TargetPlatform.fuchsia:
+        return '';
     }
-    if (defaultTargetPlatform == TargetPlatform.windows) return 'رایانه ویندوز';
-    if (defaultTargetPlatform == TargetPlatform.macOS) return 'رایانه مک';
-    if (defaultTargetPlatform == TargetPlatform.linux) return 'رایانه لینوکس';
-  } catch (_) {
-    // Use a safe generic name if device-info is unavailable.
+  } catch (error, stackTrace) {
+    debugPrint('Real device details unavailable; session registration skipped: $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
-  return 'دستگاه';
+  return '';
 }
 
 class DeviceSessionGate extends StatefulWidget {
@@ -3946,12 +3998,17 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
     if (_busy || _signedOut || supabase.auth.currentUser == null) return;
     _busy = true;
     try {
+      final deviceName = await _deviceDisplayName();
+      if (deviceName.isEmpty) {
+        // Do not create a session with a placeholder or guessed device name.
+        return;
+      }
       _deviceId ??= await _getDeviceSessionId();
       final active = await supabase.rpc(
         'register_device_session',
         params: {
           'p_device_id': _deviceId,
-          'p_device_name': await _deviceDisplayName(),
+          'p_device_name': deviceName,
         },
       ).timeout(Duration(seconds: 8));
       if (active != true && mounted && !_signedOut) {
@@ -4062,7 +4119,19 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     final byId = <String, Map<String, dynamic>>{};
     for (final row in devices) {
       final id = row['device_id']?.toString().trim() ?? '';
-      if (id.length < 16 || row['revoked_at'] != null) continue;
+      final name = row['device_name']?.toString().trim() ?? '';
+      final recognizedIdentity = id.startsWith('android:') ||
+          id.startsWith('ios:') || id.startsWith('profile:');
+      final placeholderName = name.isEmpty ||
+          name == 'دستگاه' ||
+          name == 'گوشی اندروید' ||
+          name == 'دستگاه اپل' ||
+          name == 'رایانه ویندوز' ||
+          name == 'رایانه مک' ||
+          name == 'رایانه لینوکس' ||
+          name == 'مرورگر وب';
+      if (id.length < 16 || !recognizedIdentity ||
+          placeholderName || row['revoked_at'] != null) continue;
       final existing = byId[id];
       final currentDate = _deviceDate(row, 'last_seen_at');
       final existingDate = existing == null ? null : _deviceDate(existing, 'last_seen_at');
