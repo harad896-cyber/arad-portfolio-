@@ -10247,6 +10247,24 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _setPendingDeletionSync(String messageId, bool pending) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final key = 'arad_pending_message_deletions_v1_${uid}_${widget.id}';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = (prefs.getStringList(key) ?? <String>[]).toSet();
+      if (pending) {
+        ids.add(messageId);
+      } else {
+        ids.remove(messageId);
+      }
+      await prefs.setStringList(key, ids.toList());
+    } catch (error) {
+      debugPrint('Could not persist pending message deletion: $error');
+    }
+  }
+
   Future<void> _restoreCachedChat() async {
     await _ensureLocalHiddenIds();
     try {
@@ -11718,6 +11736,9 @@ class _ChatPageState extends State<ChatPage> {
     });
     try {
       await _setLocalMessageHidden(messageId, true);
+      // Persist a retry marker before the network request, so an app close
+      // during a weak connection cannot lose the deletion operation.
+      await _setPendingDeletionSync(messageId, true);
       try {
         // INSERT is intentionally used instead of upsert: tombstones are
         // append-only and the table has no UPDATE policy.
@@ -11732,6 +11753,7 @@ class _ChatPageState extends State<ChatPage> {
             errorText.contains('unique constraint');
         if (!alreadyRecorded) rethrow;
       }
+      await _setPendingDeletionSync(messageId, false);
       await _saveCachedChat(messages);
       // The current screen is already updated optimistically; a full history
       // reload here only adds latency and another round-trip.
@@ -11740,12 +11762,7 @@ class _ChatPageState extends State<ChatPage> {
       // the network/RLS write fails. Keep the tombstone and filtered cache;
       // report that cloud sync failed rather than resurrecting the message.
       await _saveCachedChat(messages);
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final pendingKey = 'arad_pending_message_deletions_v1_${supabase.auth.currentUser!.id}_${widget.id}';
-        final pending = (prefs.getStringList(pendingKey) ?? <String>[]).toSet()..add(messageId);
-        await prefs.setStringList(pendingKey, pending.toList());
-      } catch (_) {}
+      await _setPendingDeletionSync(messageId, true);
       if (mounted) showMsg(context, 'پیام فعلاً از این دستگاه پنهان شد؛ ثبت دائمی در سرور ناموفق بود. تا تأیید همگام‌سازی، برنامه را حذف نکنید و اتصال را دوباره امتحان کنید.');
     }
   }
