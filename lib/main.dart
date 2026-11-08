@@ -3999,7 +3999,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           .eq('user_id', user.id)
           .isFilter('revoked_at', null)
           .order('last_seen_at', ascending: false)
-          .limit(100);
+          .limit(1000);
       if (!mounted) return;
       setState(() {
         devices = List<Map<String, dynamic>>.from(result);
@@ -4022,7 +4022,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   String _formatDeviceDate(DateTime? date) {
     if (date == null) return 'نامشخص';
-    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
   }
 
   String _lastSeen(Map<String, dynamic> row) {
@@ -4215,7 +4215,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                       if (visibleDevices.isEmpty)
                         Card(child: Padding(
                           padding: EdgeInsets.all(18),
-                          child: Text(trUi('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.')),
+                          child: Text(trUi('هیچ دستگاه فعالی برای این حساب ثبت نشده است.')),
                         )),
                       ...visibleDevices.map((row) {
                         final id = row['device_id']?.toString() ?? '';
