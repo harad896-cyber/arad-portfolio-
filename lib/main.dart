@@ -6071,6 +6071,25 @@ class _HomePageState extends State<HomePage> {
       // true latest message.
       final latestByConversation = <String, Map<String, dynamic>>{};
       final unreadByConversation = <String, int>{};
+      // Start unread counts alongside the latest-message query to reduce
+      // sequential network round trips.
+      final unreadCountsFuture = () async {
+        try {
+        final unreadRows = await supabase.rpc('get_unread_counts')
+            .timeout(const Duration(seconds: 8));
+        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
+          final conversationId = row['conversation_id']?.toString() ?? '';
+          final count = int.tryParse(row['unread_count']?.toString() ?? '0') ?? 0;
+          if (conversationId.isNotEmpty && count > 0) {
+            unreadByConversation[conversationId] = count;
+          }
+        }
+        } catch (unreadError) {
+          // Keep the chat list visible if the unread-count RPC is unavailable.
+          debugPrint('Per-account unread counts unavailable: $unreadError');
+        }
+      }();
+
       // Preview queries are optional: if messages have an RLS/schema/network
       // issue, still show the conversations instead of failing the whole page.
       try {
@@ -11805,25 +11824,7 @@ class _ChatPageState extends State<ChatPage> {
                       final value = text.text;
                       final selection = text.selection;
                       final start = selection.start < 0 ? value.length : selection.start;
-      
-      // Start unread counts alongside the latest-message query to reduce
-      // the number of sequential network round trips.
-      final unreadCountsFuture = () async {
-        try {
-        final unreadRows = await supabase.rpc('get_unread_counts')
-            .timeout(const Duration(seconds: 8));
-        for (final row in List<Map<String, dynamic>>.from(unreadRows as List)) {
-          final conversationId = row['conversation_id']?.toString() ?? '';
-          final count = int.tryParse(row['unread_count']?.toString() ?? '0') ?? 0;
-          if (conversationId.isNotEmpty && count > 0) {
-            unreadByConversation[conversationId] = count;
-          }
-        }
-        } catch (unreadError) {
-          // Keep the chat list visible if the unread-count RPC is unavailable.
-          debugPrint('Per-account unread counts unavailable: $unreadError');
-        }
-      }();                final end = selection.end < 0 ? value.length : selection.end;
+                      final end = selection.end < 0 ? value.length : selection.end;
                       final insertion = chosen.join();
                       text.value = TextEditingValue(
                         text: value.replaceRange(start, end, insertion),
