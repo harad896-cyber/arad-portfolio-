@@ -3877,7 +3877,7 @@ Future<String> _createStableDeviceSessionId() async {
 Future<String> _deviceDisplayName() async {
   // Never invent a generic device label. If platform details cannot be read,
   // registration is skipped so the security page cannot show a fabricated row.
-  String clean(String? value) => (value ?? '').trim().replaceAll(RegExp(r'\\s+'), ' ');
+  String clean(String? value) => (value ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
   String joinLabel(List<String> parts) =>
       parts.where((part) => part.trim().isNotEmpty).join(' • ');
 
