@@ -5850,12 +5850,29 @@ class _HomePageState extends State<HomePage> {
             .order('created_at', ascending: false)
             .limit(1000)
             .timeout(const Duration(seconds: 10));
-        for (final row in List<Map<String, dynamic>>.from(messageResponse as List)) {
+        final previewRows = List<Map<String, dynamic>>.from(messageResponse as List);
+        final previewIds = previewRows.map((row) => '${row['id']}').toList();
+        final hiddenPreviewIds = <String>{};
+        if (previewIds.isNotEmpty) {
+          final deletionRows = await supabase
+              .from('message_user_deletions')
+              .select('message_id')
+              .eq('user_id', uid)
+              .inFilter('message_id', previewIds)
+              .timeout(const Duration(seconds: 6));
+          hiddenPreviewIds.addAll(List<Map<String, dynamic>>.from(deletionRows)
+              .map((row) => '${row['message_id']}'));
+        }
+        for (final row in previewRows) {
           final id = row['conversation_id']?.toString() ?? '';
-          if (id.isNotEmpty) latestByConversation.putIfAbsent(id, () => row);
+          if (id.isNotEmpty && !hiddenPreviewIds.contains('${row['id']}')) {
+            latestByConversation.putIfAbsent(id, () => row);
+          }
         }
       } catch (messageError) {
-        debugPrint('Latest-message preview query failed; keeping chat list: $messageError');
+        // Never show a message preview until its per-user deletion state is verified.
+        latestByConversation.clear();
+        debugPrint('Latest-message/deletion preview sync failed; hiding previews: $messageError');
       }
 
       // The RPC counts messages against message_reads for auth.uid(), so
@@ -5891,7 +5908,14 @@ class _HomePageState extends State<HomePage> {
                 .limit(1)
                 .timeout(const Duration(seconds: 4));
             final list = List<Map<String, dynamic>>.from(rows as List);
-            return list.isEmpty ? null : list.first;
+            if (list.isEmpty) return null;
+            final deletion = await supabase.from('message_user_deletions')
+                .select('message_id')
+                .eq('user_id', uid)
+                .eq('message_id', list.first['id'])
+                .maybeSingle()
+                .timeout(const Duration(seconds: 4));
+            return deletion == null ? list.first : null;
           } catch (messageError) {
             debugPrint('Latest message lookup failed for $id: $messageError');
             return null;
@@ -8645,13 +8669,16 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
           final hiddenRows = await supabase.from('message_user_deletions')
               .select('message_id')
               .eq('user_id', currentUid)
-              .inFilter('message_id', messageIds);
+              .inFilter('message_id', messageIds)
+              .timeout(const Duration(seconds: 6));
           final hiddenIds = (hiddenRows as List)
               .map((r) => '${r['message_id']}')
               .toSet();
           ms.removeWhere((m) => hiddenIds.contains('${m['id']}'));
         } catch (visibilityError) {
-          debugPrint('Shared-media deletion filter unavailable: $visibilityError');
+          // Fail closed: do not expose media while deletion state is unknown.
+          ms.clear();
+          debugPrint('Shared-media deletion sync failed; hiding media: $visibilityError');
         }
       }
       final ids=ms.map((m)=>'${m['id']}').toList();
@@ -9506,9 +9533,10 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
             .timeout(Duration(seconds: 4));
         hiddenForUser.addAll(List<Map<String,dynamic>>.from(deletedRows)
             .map((row) => '${row['message_id']}'));
-      } catch (_) {
-        // Keep search usable if deletion metadata is temporarily unavailable;
-        // server-deleted messages are already excluded by deleted_at above.
+      } catch (deletionSyncError) {
+        // A failed deletion lookup must never make a previously hidden result visible.
+        searchMessages.clear();
+        debugPrint('Global search deletion sync failed; hiding message results: $deletionSyncError');
       }
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -10235,6 +10263,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> load() async {
+    var deletionSyncFailed = false;
     // Serialize refreshes triggered by sends, Realtime and screen lifecycle.
     // A burst queues at most one follow-up refresh instead of racing state writes.
     if (_chatLoadInProgress) {
@@ -10383,8 +10412,11 @@ class _ChatPageState extends State<ChatPage> {
                 await prefs.setStringList(_hiddenMessageIdsKey, _locallyHiddenMessageIds.toList());
               } catch (_) {}
             }
-          } catch (_) {
-            // Continue with local tombstones and the remaining server messages.
+          } catch (deletionSyncError) {
+            // Do not publish a new server history when per-user deletion markers
+            // cannot be checked; that could resurrect a message after reinstall.
+            deletionSyncFailed = true;
+            throw StateError('حذف‌های قبلی همگام نشدند: $deletionSyncError');
           }
         }
       }
@@ -10553,8 +10585,20 @@ class _ChatPageState extends State<ChatPage> {
       await markRead();
     } catch (e) {
       if (mounted) {
-        setState(() { loading = false; _isSyncing = false; });
-        if (messages.isEmpty) {
+        setState(() {
+          loading = false;
+          _isSyncing = false;
+          if (deletionSyncFailed) {
+            messages = [];
+            timelineItems = [];
+            attachments = {};
+            reactions = {};
+            readReceipts = {};
+          }
+        });
+        if (deletionSyncFailed) {
+          showMsg(context, 'برای جلوگیری از برگشت پیام‌های حذف‌شده، وضعیت حذف از سرور تأیید نشد. اتصال را بررسی و دوباره تلاش کنید.');
+        } else if (messages.isEmpty) {
           showMsg(context, _isNetworkFailure(e)
               ? 'اینترنت در دسترس نیست و هنوز نسخهٔ ذخیره‌شده‌ای از این گفتگو ندارید.'
               : 'گفتگو بارگذاری نشد: ${_friendlyError(e.toString())}');
@@ -11627,6 +11671,8 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> deleteForMe(Map<String, dynamic> message) async {
     final messageId = '${message['id']}';
+    // Hide locally immediately, but do not call this deletion complete until the
+    // server has durably stored the account-specific tombstone.
     final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
     final previousMessages = List<Map<String, dynamic>>.from(messages);
     // Optimistic UI: remove the message immediately, then persist in the background.
@@ -11636,10 +11682,20 @@ class _ChatPageState extends State<ChatPage> {
     });
     try {
       await _setLocalMessageHidden(messageId, true);
-      await supabase.from('message_user_deletions').upsert({
-        'message_id': message['id'],
-        'user_id': supabase.auth.currentUser!.id,
-      });
+      try {
+        // INSERT is intentionally used instead of upsert: tombstones are
+        // append-only and the table has no UPDATE policy.
+        await supabase.from('message_user_deletions').insert({
+          'message_id': message['id'],
+          'user_id': supabase.auth.currentUser!.id,
+        });
+      } catch (insertError) {
+        final errorText = insertError.toString().toLowerCase();
+        final alreadyRecorded = errorText.contains('23505') ||
+            errorText.contains('duplicate key') ||
+            errorText.contains('unique constraint');
+        if (!alreadyRecorded) rethrow;
+      }
       await _saveCachedChat(messages);
       // The current screen is already updated optimistically; a full history
       // reload here only adds latency and another round-trip.
@@ -11648,7 +11704,13 @@ class _ChatPageState extends State<ChatPage> {
       // the network/RLS write fails. Keep the tombstone and filtered cache;
       // report that cloud sync failed rather than resurrecting the message.
       await _saveCachedChat(messages);
-      if (mounted) showMsg(context, 'پیام از این دستگاه حذف شد؛ همگام‌سازی حذف با سرور ناموفق بود. اتصال را بررسی کنید.');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final pendingKey = 'arad_pending_message_deletions_v1_${supabase.auth.currentUser!.id}_${widget.id}';
+        final pending = (prefs.getStringList(pendingKey) ?? <String>[]).toSet()..add(messageId);
+        await prefs.setStringList(pendingKey, pending.toList());
+      } catch (_) {}
+      if (mounted) showMsg(context, 'پیام فعلاً از این دستگاه پنهان شد؛ ثبت دائمی در سرور ناموفق بود. تا تأیید همگام‌سازی، برنامه را حذف نکنید و اتصال را دوباره امتحان کنید.');
     }
   }
 
