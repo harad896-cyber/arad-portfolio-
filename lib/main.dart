@@ -5708,7 +5708,8 @@ class _HomePageState extends State<HomePage> {
       final isUnread = unreadCount > 0 || c['unread'] == true;
       final peer = c['_peer'] as Map<String,dynamic>?;
       final isArchived = archivedChatIds.contains(c['id'].toString());
-      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread);
+      final matchesArchive = c['type'] == 'saved' ? !archivedOnly : (archivedOnly ? isArchived : !isArchived);
+      return matchesType && matchesFolder && matchesArchive && (!unreadOnly || isUnread);
     }).toList()..sort((a,b) { final asaved=a['type']=='saved'; final bsaved=b['type']=='saved'; if(asaved!=bsaved) return asaved?-1:1; final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
@@ -6784,7 +6785,13 @@ class _HomePageState extends State<HomePage> {
                                 icon: Icon(Icons.more_horiz_rounded, size: 21),
                                 onSelected: (action) {
                                   if (action == 'open') Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load());
-                                  if (action == 'info') Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: id, fallbackTitle: title)));
+                                  if (action == 'info') {
+                                    if (type == 'saved') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesSettingsPage(conversationId: id))).then((_) => load());
+                                    } else {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: id, fallbackTitle: title)));
+                                    }
+                                  }
                                   if (action == 'archive') _toggleArchive(c);
                                   if (action == 'unread') _toggleManualUnread(c);
                                   if (action == 'pin') _togglePin(c);
@@ -6792,11 +6799,14 @@ class _HomePageState extends State<HomePage> {
                                 },
                                 itemBuilder: (_) => [
                                   PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
-                                  PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
-                                  PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
-                                  PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن گفتگو')),
-                                  PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
-                                  if (type == 'saved') PopupMenuItem(value: 'saved_settings', child: Text('شخصی‌سازی پیام‌های ذخیره‌شده')),
+                                  if (type == 'saved')
+                                    PopupMenuItem(value: 'saved_settings', child: Text('شخصی‌سازی پیام‌های ذخیره‌شده'))
+                                  else ...[
+                                    PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
+                                    PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
+                                    PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن گفتگو')),
+                                    PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
+                                  ],
                                 ],
                               ),
                             ]),
