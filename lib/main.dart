@@ -4108,7 +4108,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final visibleDevices = _visibleDevices;\n    final activeCount = visibleDevices.where(_isRecent).length;
+    final visibleDevices = _visibleDevices;
+    final activeCount = visibleDevices.where(_isRecent).length;
     return Scaffold(
       appBar: AppBar(
         title: Text(trUi('امنیت و دستگاه‌ها')),
