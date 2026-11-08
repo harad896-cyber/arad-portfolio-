@@ -3661,7 +3661,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                           final unread = int.tryParse('${row['unread_count'] ?? 0}') ?? 0;
                           final peer = row['_peer'] is Map ? Map<String, dynamic>.from(row['_peer'] as Map) : <String, dynamic>{};
                           final avatar = (type == 'direct' ? peer['avatar_url'] : row['avatar_url'])?.toString() ?? '';
-                          final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                          final icon = type == 'saved' ? Icons.bookmark_rounded : type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                           return Card(
                             clipBehavior: Clip.antiAlias,
                             child: ListTile(
@@ -5709,7 +5709,7 @@ class _HomePageState extends State<HomePage> {
       final peer = c['_peer'] as Map<String,dynamic>?;
       final isArchived = archivedChatIds.contains(c['id'].toString());
       return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread);
-    }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
+    }).toList()..sort((a,b) { final asaved=a['type']=='saved'; final bsaved=b['type']=='saved'; if(asaved!=bsaved) return asaved?-1:1; final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
   String get _homeCacheKey {
@@ -5734,6 +5734,11 @@ class _HomePageState extends State<HomePage> {
     try {
       if (uid == null) {
         throw StateError('برای دیدن گفتگوها ابتدا وارد حساب شوید.');
+      }
+      try {
+        await supabase.rpc('get_or_create_saved_messages').timeout(const Duration(seconds: 8));
+      } catch (savedChatError) {
+        debugPrint('Saved Messages bootstrap unavailable: $savedChatError');
       }
 
       // 1) Membership is the source of truth: never expose conversations
@@ -5936,6 +5941,21 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
+      Map<String, dynamic>? savedSettings;
+      String? savedAvatarUrl;
+      try {
+        savedSettings = await supabase.from('saved_chat_settings')
+            .select('display_name,avatar_path').eq('user_id', uid)
+            .maybeSingle().timeout(const Duration(seconds: 5));
+        final avatarPath = savedSettings?['avatar_path']?.toString() ?? '';
+        if (avatarPath.isNotEmpty) {
+          savedAvatarUrl = await supabase.storage.from('saved-messages')
+              .createSignedUrl(avatarPath, 3600).timeout(const Duration(seconds: 5));
+        }
+      } catch (savedSettingsError) {
+        debugPrint('Saved Messages profile unavailable: $savedSettingsError');
+      }
+
       final nextChats = <Map<String, dynamic>>[];
       for (final id in visibleIds) {
         final row = conversationsById[id]!;
@@ -5948,9 +5968,11 @@ class _HomePageState extends State<HomePage> {
             : type == 'channel'
                 ? 'کانال'
                 : 'گفتگوی شخصی';
-        final rawTitle = (type == 'direct'
-                ? (peer?['display_name'] ?? peer?['username'] ?? row['title'] ?? fallbackTitle)
-                : (row['title'] ?? row['username'] ?? fallbackTitle))
+        final rawTitle = (type == 'saved'
+                ? (savedSettings?['display_name'] ?? row['title'] ?? 'پیام‌های ذخیره‌شده')
+                : type == 'direct'
+                    ? (peer?['display_name'] ?? peer?['username'] ?? row['title'] ?? fallbackTitle)
+                    : (row['title'] ?? row['username'] ?? fallbackTitle))
             .toString().trim();
         final preview = last == null
             ? 'هنوز پیامی ارسال نشده'
@@ -5962,7 +5984,7 @@ class _HomePageState extends State<HomePage> {
           'id': id,
           'type': type,
           'title': rawTitle.isEmpty ? fallbackTitle : rawTitle,
-          'avatar_url': row['avatar_url'] ?? peer?['avatar_url'],
+          'avatar_url': type == 'saved' ? (savedAvatarUrl ?? '') : (row['avatar_url'] ?? peer?['avatar_url']),
           '_peer': peer ?? <String, dynamic>{},
           '_last': last,
           '_preview': preview,
@@ -6655,9 +6677,9 @@ class _HomePageState extends State<HomePage> {
                       final id = c['id'].toString();
                       final type = c['type'].toString();
                       final peer = c['_peer'] as Map<String,dynamic>?;
-                      final title = (type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? c['title'] ?? 'گفتگوی شخصی') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
+                      final title = (type == 'saved' ? (c['title'] ?? 'پیام‌های ذخیره‌شده') : type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? c['title'] ?? 'گفتگوی شخصی') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
                       final avatarUrl = (type == 'direct' ? (peer?['avatar_url'] ?? '') : (c['avatar_url'] ?? '')).toString();
-                      final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      final icon = type == 'saved' ? Icons.bookmark_rounded : type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                       final last = c['_last'] as Map<String,dynamic>?;
                       final preview = (c['_preview'] ?? 'شروع گفتگو').toString();
                       final lastAt = last?['created_at'];
@@ -6766,6 +6788,7 @@ class _HomePageState extends State<HomePage> {
                                   if (action == 'archive') _toggleArchive(c);
                                   if (action == 'unread') _toggleManualUnread(c);
                                   if (action == 'pin') _togglePin(c);
+                                  if (action == 'saved_settings') Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesSettingsPage(conversationId: id))).then((_) => load());
                                 },
                                 itemBuilder: (_) => [
                                   PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
@@ -6773,6 +6796,7 @@ class _HomePageState extends State<HomePage> {
                                   PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
                                   PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن گفتگو')),
                                   PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
+                                  if (type == 'saved') PopupMenuItem(value: 'saved_settings', child: Text('شخصی‌سازی پیام‌های ذخیره‌شده')),
                                 ],
                               ),
                             ]),
@@ -8628,12 +8652,12 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
       }
       final ids=ms.map((m)=>'${m['id']}').toList();
       final aa=<String,Map<String,dynamic>>{};
-      if(ids.isNotEmpty){ final ar=await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id',ids); for(final a in List<Map<String,dynamic>>.from(ar)) aa['${a['message_id']}']=a; }
+      if(ids.isNotEmpty){ final ar=await supabase.from('message_attachments').select('message_id,storage_path,bucket_id,file_name,mime_type,file_size,duration_ms').inFilter('message_id',ids); for(final a in List<Map<String,dynamic>>.from(ar)) aa['${a['message_id']}']=a; }
       if(mounted)setState((){rows=ms;attachments=aa;loading=false;});
     }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'رسانه‌ها بارگذاری نشد: '+_friendlyError(e.toString()));}}
   }
   bool _matches(Map<String,dynamic> m){ final type='${m['message_type']??'text'}'; if(tab==0)return type=='image'||type=='video'; if(tab==1)return type=='file'; return type=='audio'||type=='voice'; }
-  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from('chat-media').createSignedUrl(path,3600);}catch(_){return null;} }
+  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from((a?['bucket_id'] ?? 'chat-media').toString()).createSignedUrl(path,3600);}catch(_){return null;} }
   @override Widget build(BuildContext context){
     final filtered=rows.where(_matches).toList();
     return Scaffold(
@@ -9850,10 +9874,21 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<String?> _attachmentUrl(String path) async {
+  String get _attachmentBucket => _chatType == 'saved' ? 'saved-messages' : 'chat-media';
+
+  String _attachmentStoragePath(String fileName) {
+    final uid = supabase.auth.currentUser?.id ?? 'unknown';
+    final folder = _chatType == 'saved' ? '$uid/${widget.id}' : widget.id;
+    return '$folder/$fileName';
+  }
+
+  String _bucketForAttachment(Map<String, dynamic>? attachment) =>
+      (attachment?['bucket_id'] ?? _attachmentBucket).toString();
+
+  Future<String?> _attachmentUrl(String path, {String? bucketId}) async {
     if (path.isEmpty) return null;
     try {
-      return await supabase.storage.from('chat-media').createSignedUrl(path, 3600);
+      return await supabase.storage.from(bucketId ?? _attachmentBucket).createSignedUrl(path, 3600);
     } catch (_) {
       return null;
     }
@@ -9864,7 +9899,7 @@ class _ChatPageState extends State<ChatPage> {
       final a = attachments[messageId];
       final path = a?['storage_path']?.toString() ?? '';
       if (path.isEmpty) throw Exception('مسیر فایل صوتی خالی است');
-      final bytes = await supabase.storage.from('chat-media').download(path);
+      final bytes = await supabase.storage.from(_bucketForAttachment(a)).download(path);
       if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
       await _voicePlayer.stop();
       final mime = (a?['mime_type'] ?? 'audio/mp4').toString();
@@ -9878,7 +9913,7 @@ class _ChatPageState extends State<ChatPage> {
     final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) { if (mounted) showMsg(context, 'تصویر پیدا نشد'); return; }
-    final url = await _attachmentUrl(path);
+    final url = await _attachmentUrl(path, bucketId: a?['bucket_id']?.toString());
     if (!mounted || url == null || url.isEmpty) { if (mounted) showMsg(context, 'باز کردن تصویر ناموفق بود'); return; }
     await showDialog<void>(
       context: context,
@@ -9906,7 +9941,7 @@ class _ChatPageState extends State<ChatPage> {
       mine: false,
       mimeType: (a?['mime_type'] ?? 'audio/mp4').toString(),
       loadAudio: () async {
-        final bytes = await supabase.storage.from('chat-media').download(path);
+        final bytes = await supabase.storage.from(_bucketForAttachment(a)).download(path);
         if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
         return bytes;
       },
@@ -10427,7 +10462,7 @@ class _ChatPageState extends State<ChatPage> {
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
           supabase.from('message_attachments')
-              .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
+              .select('message_id,storage_path,bucket_id,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
               .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
@@ -10873,9 +10908,9 @@ class _ChatPageState extends State<ChatPage> {
       final isAudio = mime.startsWith('audio/');
       final isImage = mime.startsWith('image/');
       final safeName = f.name.trim().replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-      final path = '${widget.id}/${DateTime.now().microsecondsSinceEpoch}_${safeName.isEmpty ? 'attachment' : safeName}';
+      final path = _attachmentStoragePath('${DateTime.now().microsecondsSinceEpoch}_${safeName.isEmpty ? 'attachment' : safeName}');
       uploadedPath = path;
-      await supabase.storage.from('chat-media').uploadBinary(
+      await supabase.storage.from(_attachmentBucket).uploadBinary(
         path, bytes, fileOptions: FileOptions(contentType: mime, upsert: false));
       if (!mounted) return;
       final msg = await supabase.from('messages').insert({
@@ -10888,6 +10923,7 @@ class _ChatPageState extends State<ChatPage> {
       createdMessageId = msg['id']?.toString();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': path,
         'file_name': f.name,
         'file_size': f.size,
@@ -10902,7 +10938,7 @@ class _ChatPageState extends State<ChatPage> {
         try { await supabase.from('messages').delete().eq('id', createdMessageId!); } catch (_) {}
       }
       if (uploadedPath != null) {
-        try { await supabase.storage.from('chat-media').remove([uploadedPath!]); } catch (_) {}
+        try { await supabase.storage.from(_attachmentBucket).remove([uploadedPath!]); } catch (_) {}
       }
       if (mounted) showMsg(context, 'فایل ارسال نشد: ${_friendlyError(e.toString())}');
     } finally {
@@ -11012,8 +11048,8 @@ class _ChatPageState extends State<ChatPage> {
       if (mounted) setState(() => sending = true);
       final voiceMime = kIsWeb ? 'audio/webm' : 'audio/mp4';
       final voiceExtension = kIsWeb ? 'webm' : 'm4a';
-      final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension';
-      await supabase.storage.from('chat-media').uploadBinary(
+      final storagePath = _attachmentStoragePath('voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension');
+      await supabase.storage.from(_attachmentBucket).uploadBinary(
         storagePath,
         bytes,
         fileOptions: FileOptions(contentType: voiceMime, upsert: false),
@@ -11027,6 +11063,7 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': storagePath,
         'file_name': storagePath.split('/').last,
         'mime_type': voiceMime,
@@ -11062,10 +11099,10 @@ class _ChatPageState extends State<ChatPage> {
       if (video == null) return;
       final bytes = await video.readAsBytes();
       if (bytes.isEmpty) throw Exception('ویدئو خالی است');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_video_${video.name}';
+      final path = _attachmentStoragePath('${DateTime.now().millisecondsSinceEpoch}_video_${video.name}');
       final videoMime = _mimeType(video.name);
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(
+      await supabase.storage.from(_attachmentBucket).uploadBinary(
         path,
         bytes,
         fileOptions: FileOptions(contentType: videoMime.startsWith('video/') ? videoMime : 'video/mp4', upsert: false),
@@ -11079,6 +11116,7 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': path,
         'file_name': video.name,
         'mime_type': videoMime.startsWith('video/') ? videoMime : 'video/mp4',
@@ -11101,11 +11139,11 @@ class _ChatPageState extends State<ChatPage> {
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}';
+      final path = _attachmentStoragePath('${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}');
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.storage.from(_attachmentBucket).uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': image.name, 'message_type': 'image', 'reply_to': replyMessage?['id']}).select().single();
-      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
+      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'bucket_id': _attachmentBucket, 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
       if (mounted) setState(() => replyMessage = null);
       await load();
       _restoreComposerFocus();
@@ -11156,9 +11194,9 @@ class _ChatPageState extends State<ChatPage> {
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final path = _attachmentStoragePath('${DateTime.now().millisecondsSinceEpoch}_${image.name}');
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.storage.from(_attachmentBucket).uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
         'sender_id': supabase.auth.currentUser!.id,
@@ -11168,6 +11206,7 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': path,
         'file_name': image.name,
         'mime_type': 'image/jpeg',
@@ -11742,6 +11781,12 @@ class _ChatPageState extends State<ChatPage> {
       }
       final rows = await supabase.from('conversations').select('id,title,type,avatar_url,created_at').inFilter('id', ids).order('created_at', ascending: false);
       final rawTargets = List<Map<String, dynamic>>.from(rows).where((c) => '${c['id']}' != '${widget.id}').toList();
+      rawTargets.sort((a, b) {
+        final aSaved = a['type'] == 'saved';
+        final bSaved = b['type'] == 'saved';
+        if (aSaved != bSaved) return aSaved ? -1 : 1;
+        return '${b['created_at'] ?? ''}'.compareTo('${a['created_at'] ?? ''}');
+      });
       final targets = <Map<String, dynamic>>[];
       for (final c in rawTargets) {
         var displayTitle = '${c['title'] ?? ''}'.trim();
@@ -11796,7 +11841,7 @@ class _ChatPageState extends State<ChatPage> {
                       return ListTile(
                         leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
                         title: Text(title, style: TextStyle(fontWeight: FontWeight.w700)),
-                        subtitle: Text(type == 'group' ? trUi('گروه') : type == 'channel' ? trUi('کانال') : trUi('گفتگوی شخصی')),
+                        subtitle: Text(type == 'saved' ? trUi('گفت‌وگوی شخصی شما') : type == 'group' ? trUi('گروه') : type == 'channel' ? trUi('کانال') : trUi('گفتگوی شخصی')),
                         trailing: Icon(Icons.chevron_left_rounded),
                         onTap: () => Navigator.pop(sheetContext, c),
                       );
@@ -11851,13 +11896,26 @@ class _ChatPageState extends State<ChatPage> {
       if (type != 'text') {
         try {
           final attachment = await supabase.from('message_attachments')
-              .select('storage_path,file_name,file_size,mime_type,duration_ms')
+              .select('storage_path,bucket_id,file_name,file_size,mime_type,duration_ms')
               .eq('message_id', message['id'])
               .maybeSingle();
           if (attachment != null) {
+            final sourceBucket = (attachment['bucket_id'] ?? _attachmentBucket).toString();
+            final targetBucket = target['type'] == 'saved' ? 'saved-messages' : 'chat-media';
+            final sourcePath = attachment['storage_path'].toString();
+            final fileBytes = await supabase.storage.from(sourceBucket).download(sourcePath);
+            final uid = supabase.auth.currentUser!.id;
+            final safeName = (attachment['file_name'] ?? 'forwarded_file').toString().replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+            final targetFolder = targetBucket == 'saved-messages' ? '$uid/${target['id']}' : '${target['id']}';
+            final targetPath = '$targetFolder/forward_${DateTime.now().microsecondsSinceEpoch}_$safeName';
+            await supabase.storage.from(targetBucket).uploadBinary(
+              targetPath, fileBytes,
+              fileOptions: FileOptions(contentType: (attachment['mime_type'] ?? 'application/octet-stream').toString(), upsert: false),
+            );
             await supabase.from('message_attachments').insert({
               'message_id': inserted['id'],
-              'storage_path': attachment['storage_path'],
+              'bucket_id': targetBucket,
+              'storage_path': targetPath,
               'file_name': attachment['file_name'],
               'file_size': attachment['file_size'],
               'mime_type': attachment['mime_type'],
@@ -12377,7 +12435,7 @@ class _ChatPageState extends State<ChatPage> {
     final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString();
     if (path == null || path.isEmpty) return Icon(Icons.video_file_rounded, size: 42);
-    return _ChatVideoAttachment(storagePath: path);
+    return _ChatVideoAttachment(storagePath: path, bucketId: _bucketForAttachment(a));
   }
 
   Widget _fileAttachment(Map<String, dynamic> m) {
@@ -12391,7 +12449,7 @@ class _ChatPageState extends State<ChatPage> {
         mine: m['sender_id'] == supabase.auth.currentUser?.id,
         mimeType: mime,
         loadAudio: () async {
-          final bytes = await supabase.storage.from('chat-media').download(path);
+          final bytes = await supabase.storage.from(_bucketForAttachment(a)).download(path);
           if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
           return bytes;
         },
@@ -12797,7 +12855,7 @@ class _ChatPageState extends State<ChatPage> {
           } else {
             final rows = List<Map<String, dynamic>>.from(
               await supabase.from('message_attachments')
-                .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms')
+                .select('message_id,storage_path,bucket_id,file_name,mime_type,file_size,duration_ms')
                 .eq('message_id', messageId)
                 .timeout(Duration(seconds: 5)),
             );
@@ -13865,7 +13923,8 @@ class _ChatPageState extends State<ChatPage> {
   }}
 class _ChatVideoAttachment extends StatefulWidget {
   final String storagePath;
-  const _ChatVideoAttachment({required this.storagePath});
+  final String bucketId;
+  const _ChatVideoAttachment({required this.storagePath, required this.bucketId});
   @override State<_ChatVideoAttachment> createState() => _ChatVideoAttachmentState();
 }
 
@@ -13876,7 +13935,7 @@ class _ChatVideoAttachmentState extends State<_ChatVideoAttachment> {
 
   Future<void> _load() async {
     try {
-      final url = await supabase.storage.from('chat-media').createSignedUrl(widget.storagePath, 3600);
+      final url = await supabase.storage.from(widget.bucketId).createSignedUrl(widget.storagePath, 3600);
       final c = VideoPlayerController.networkUrl(Uri.parse(url));
       await c.initialize();
       await c.setLooping(false);
@@ -14368,6 +14427,143 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+class SavedMessagesSettingsPage extends StatefulWidget {
+  final String conversationId;
+  const SavedMessagesSettingsPage({super.key, required this.conversationId});
+
+  @override
+  State<SavedMessagesSettingsPage> createState() => _SavedMessagesSettingsPageState();
+}
+
+class _SavedMessagesSettingsPageState extends State<SavedMessagesSettingsPage> {
+  final TextEditingController _name = TextEditingController(text: 'پیام‌های ذخیره‌شده');
+  bool _loading = true;
+  bool _saving = false;
+  String? _avatarPath;
+  String? _avatarUrl;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  @override
+  void dispose() { _name.dispose(); super.dispose(); }
+
+  Future<void> _load() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final row = await supabase.from('saved_chat_settings')
+          .select('display_name,avatar_path').eq('user_id', uid).maybeSingle();
+      if (!mounted) return;
+      _name.text = (row?['display_name'] ?? 'پیام‌های ذخیره‌شده').toString();
+      _avatarPath = row?['avatar_path']?.toString();
+      if ((_avatarPath ?? '').isNotEmpty) {
+        _avatarUrl = await supabase.storage.from('saved-messages').createSignedUrl(_avatarPath!, 3600);
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'بارگذاری تنظیمات ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _pickAvatar() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || _saving) return;
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 86, maxWidth: 1200);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (bytes.isEmpty) throw Exception('تصویر خالی است');
+      setState(() => _saving = true);
+      final path = '$uid/${widget.conversationId}/avatar_${DateTime.now().microsecondsSinceEpoch}.jpg';
+      await supabase.storage.from('saved-messages').uploadBinary(
+        path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.from('saved_chat_settings').update({
+        'avatar_path': path,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('user_id', uid);
+      final url = await supabase.storage.from('saved-messages').createSignedUrl(path, 3600);
+      if (mounted) setState(() { _avatarPath = path; _avatarUrl = url; });
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر تصویر ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _saveName() async {
+    final uid = supabase.auth.currentUser?.id;
+    final value = _name.text.trim();
+    if (uid == null || value.isEmpty || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await supabase.from('saved_chat_settings').update({
+        'display_name': value,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('user_id', uid);
+      if (mounted) {
+        showMsg(context, 'نام گفت‌وگوی شخصی ذخیره شد.');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('شخصی‌سازی پیام‌های ذخیره‌شده')),
+      body: _loading ? const Center(child: CircularProgressIndicator()) : ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(
+            child: InkWell(
+              onTap: _saving ? null : _pickAvatar,
+              borderRadius: BorderRadius.circular(64),
+              child: Stack(children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: scheme.primaryContainer,
+                  backgroundImage: (_avatarUrl ?? '').isNotEmpty ? NetworkImage(_avatarUrl!) : null,
+                  child: (_avatarUrl ?? '').isEmpty ? Icon(Icons.bookmark_rounded, size: 38, color: scheme.primary) : null,
+                ),
+                Positioned(right: 0, bottom: 0,
+                  child: CircleAvatar(radius: 17, backgroundColor: scheme.primary,
+                    child: const Icon(Icons.camera_alt_rounded, size: 17, color: Colors.white))),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(child: Text('تصویر گفت‌وگوی شخصی', style: TextStyle(color: scheme.onSurfaceVariant))),
+          const SizedBox(height: 28),
+          TextField(
+            controller: _name, maxLength: 40, textDirection: TextDirection.rtl,
+            decoration: const InputDecoration(labelText: 'نام گفت‌وگو', prefixIcon: Icon(Icons.edit_rounded), border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _saving ? null : _saveName,
+            icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save_rounded),
+            label: const Text('ذخیره تغییرات'),
+          ),
+          const SizedBox(height: 18),
+          const ListTile(
+            leading: Icon(Icons.lock_outline_rounded),
+            title: Text('خصوصی برای همین حساب'),
+            subtitle: Text('این گفت‌وگو مخاطب، عضو یا گروه دیگری ندارد.'),
+          ),
+        ],
       ),
     );
   }
