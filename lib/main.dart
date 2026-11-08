@@ -10212,6 +10212,37 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
+  Future<void> _syncPendingMessageDeletions() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final pendingKey = 'arad_pending_message_deletions_v1_${uid}_${widget.id}';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pending = (prefs.getStringList(pendingKey) ?? const <String>[]).toSet();
+      if (pending.isEmpty) return;
+      final remaining = <String>{};
+      // Bound the retry work so a large offline backlog cannot delay chat startup.
+      for (final messageId in pending.take(30)) {
+        try {
+          await supabase.from('message_user_deletions').insert({
+            'message_id': messageId,
+            'user_id': uid,
+          }).timeout(const Duration(seconds: 5));
+        } catch (error) {
+          final errorText = error.toString().toLowerCase();
+          final alreadyRecorded = errorText.contains('23505') ||
+              errorText.contains('duplicate key') ||
+              errorText.contains('unique constraint');
+          if (!alreadyRecorded) remaining.add(messageId);
+        }
+      }
+      if (pending.length > 30) remaining.addAll(pending.skip(30));
+      await prefs.setStringList(pendingKey, remaining.toList());
+    } catch (error) {
+      debugPrint('Pending message deletion sync unavailable: $error');
+    }
+  }
+
   Future<void> _restoreCachedChat() async {
     await _ensureLocalHiddenIds();
     try {
@@ -10273,6 +10304,7 @@ class _ChatPageState extends State<ChatPage> {
     _chatLoadInProgress = true;
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     await _ensureLocalHiddenIds();
+    await _syncPendingMessageDeletions();
     await _restoreCachedChat();
     if (mounted) setState(() { _isSyncing = true; loading = messages.isEmpty; });
     try {
