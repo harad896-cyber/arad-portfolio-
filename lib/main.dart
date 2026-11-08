@@ -3928,7 +3928,18 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_heartbeat());
+    if (state == AppLifecycleState.resumed) {
+      _heartbeatTimer ??= Timer.periodic(
+        Duration(seconds: 30),
+        (_) => unawaited(_heartbeat()),
+      );
+      unawaited(_heartbeat());
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      // Stop heartbeats in the background; any other active device can keep
+      // refreshing the shared profile timestamp.
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = null;
+    }
   }
 
   Future<void> _heartbeat() async {
@@ -3946,6 +3957,16 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
       if (active != true && mounted && !_signedOut) {
         _signedOut = true;
         await supabase.auth.signOut(scope: SignOutScope.local);
+      }
+      // Persist activity every 30 seconds. If the app is killed or disconnected,
+      // the 90-second freshness window makes the account appear offline.
+      final activeUserId = supabase.auth.currentUser?.id;
+      if (active == true && activeUserId != null) {
+        await supabase.from('profiles').upsert({
+          'id': activeUserId,
+          'is_online': true,
+          'last_seen': DateTime.now().toUtc().toIso8601String(),
+        }).timeout(Duration(seconds: 5));
       }
     } catch (_) {
       // Temporary network failure must not log a user out. Retry on the next
@@ -5546,6 +5567,27 @@ String _homeTime(dynamic value) {
   if (dt.year == now.year && dt.month == now.month && dt.day == now.day) return dt.hour.toString().padLeft(2, '0') + ':' + dt.minute.toString().padLeft(2, '0');
   return dt.day.toString().padLeft(2, '0') + '/' + dt.month.toString().padLeft(2, '0');
 }
+
+// Online status is valid only while the activity heartbeat is fresh.
+bool _profileIsOnline(dynamic profile) {
+  if (profile is! Map || profile['is_online'] != true) return false;
+  final lastSeen = DateTime.tryParse('${profile['last_seen'] ?? ''}')?.toLocal();
+  if (lastSeen == null) return false;
+  final age = DateTime.now().difference(lastSeen);
+  return !age.isNegative && age <= const Duration(seconds: 90);
+}
+
+String _lastSeenDetailed(dynamic value) {
+  final dt = DateTime.tryParse('$value')?.toLocal();
+  if (dt == null) return 'زمان فعالیت مشخص نیست';
+  final now = DateTime.now();
+  final time = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(dt.year, dt.month, dt.day);
+  if (day == today) return 'امروز ساعت $time';
+  if (day == today.subtract(const Duration(days: 1))) return 'دیروز ساعت $time';
+  return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')} ساعت $time';
+}
 Future<void> openAradLink(BuildContext context, Uri uri) async {
   if (uri.scheme.toLowerCase() != 'arad') return;
   final host = uri.host.toLowerCase();
@@ -5955,7 +5997,7 @@ class _HomePageState extends State<HomePage> {
         try {
           final profileResponse = await supabase
               .from('profiles')
-              .select('id,username,display_name,avatar_url,is_online')
+              .select('id,username,display_name,avatar_url,is_online,last_seen')
               .inFilter('id', peerIds)
               .timeout(const Duration(seconds: 8));
           for (final row in List<Map<String, dynamic>>.from(profileResponse as List)) {
@@ -6016,7 +6058,7 @@ class _HomePageState extends State<HomePage> {
           '_last': last,
           '_preview': preview,
           'unread_count': unreadByConversation[id] ?? 0,
-          'is_online': peer?['is_online'] == true,
+          'is_online': _profileIsOnline(peer),
         });
       }
       nextChats.sort((a, b) {
@@ -9400,7 +9442,7 @@ class _ConversationInfoPageState extends State<ConversationInfoPage> {
             SizedBox(height:12),
             Row(mainAxisAlignment:MainAxisAlignment.center,children:[Flexible(child:Text(title,textAlign:TextAlign.center,style:TextStyle(fontSize:23,fontWeight:FontWeight.w900))),if(type=='direct'&&peer['is_verified']==true) Padding(padding:EdgeInsets.only(right:5),child:Icon(Icons.verified_rounded,color:Color(0xFF2F9BFF)))]),
             if(type=='direct'&&'${peer['username'] ?? ''}'.isNotEmpty) Text('@'+'${peer['username']}',style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w700)),
-            if(type=='direct') Text(peer['is_online']==true?'آنلاین':'آخرین بازدید: '+_homeTime(peer['last_seen']),style:TextStyle(color:scheme.onSurfaceVariant)),
+            if(type=='direct') Text(_profileIsOnline(peer) ? 'آنلاین' : 'آخرین بازدید: ${_lastSeenDetailed(peer['last_seen'])}',style:TextStyle(color:scheme.onSurfaceVariant)),
             if(bio.trim().isNotEmpty) Padding(padding:const EdgeInsets.only(top:10),child:Text(bio,textAlign:TextAlign.center,style:TextStyle(height:1.45,color:scheme.onSurfaceVariant))),
             if(type=='direct') ...[
               SizedBox(height:18),
@@ -10617,7 +10659,7 @@ class _ChatPageState extends State<ChatPage> {
           _groupAvatarUrl = '${conversation['avatar_url'] ?? ''}';
           _groupMemberCount = groupMembers.length;
           _groupOnlineCount = groupMembers.where((member) =>
-            profiles[member['user_id']?.toString()]?['is_online'] == true).length;
+            _profileIsOnline(profiles[member['user_id']?.toString()])).length;
           reactions = loadedReactions;
           readReceipts = loadedReadReceipts;
           attachments = loadedAttachments;
@@ -12332,7 +12374,6 @@ class _ChatPageState extends State<ChatPage> {
     final pending = message['__pending'] == true;
     final receipts = readReceipts['${message['id']}'] ?? <Map<String, dynamic>>[];
     final readerIds = receipts.map((r) => r['reader_id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
-    final readerNames = readerIds.map((id) => (profiles[id]?['display_name'] ?? profiles[id]?['username'] ?? 'کاربر')).join('، ');
     final isMine = message['sender_id'] == supabase.auth.currentUser?.id;
     await showDialog<void>(
       context: context,
@@ -12363,7 +12404,23 @@ class _ChatPageState extends State<ChatPage> {
                 SizedBox(height: 8),
                 Text(trUi('خوانده‌شده توسط:')),
                 SizedBox(height: 4),
-                Text(readerNames),
+                ...receipts.map<Widget>((receipt) {
+                  final readerId = receipt['reader_id']?.toString() ?? '';
+                  final readerName = profiles[readerId]?['display_name'] ??
+                      profiles[readerId]?['username'] ?? 'کاربر';
+                  final readerReadAt = DateTime.tryParse('${receipt['read_at'] ?? ''}')?.toLocal();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 5),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.done_all_rounded, size: 16, color: Theme.of(dialogContext).colorScheme.primary),
+                        SizedBox(width: 6),
+                        Expanded(child: Text('$readerName — ${stamp(readerReadAt)}')),
+                      ],
+                    ),
+                  );
+                }),
               ],
               if (readAt != null) ...[
                 SizedBox(height: 8),
