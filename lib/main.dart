@@ -3930,7 +3930,18 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_heartbeat());
+    if (state == AppLifecycleState.resumed) {
+      _heartbeatTimer ??= Timer.periodic(
+        Duration(seconds: 30),
+        (_) => unawaited(_heartbeat()),
+      );
+      unawaited(_heartbeat());
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      // Stop advertising activity while the app is in the background. Other
+      // active devices keep refreshing the shared profile timestamp.
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = null;
+    }
   }
 
   Future<void> _heartbeat() async {
