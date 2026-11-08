@@ -10134,7 +10134,9 @@ class _ChatPageState extends State<ChatPage> {
         final uid = supabase.auth.currentUser?.id;
         if (uid == null) return;
         final settings = await supabase.from('saved_chat_settings')
-            .select('avatar_path').eq('user_id', uid).maybeSingle();
+            .select('display_name,avatar_path').eq('user_id', uid).maybeSingle();
+        final savedName = (settings?['display_name'] ?? widget.title).toString();
+        if (mounted) setState(() => _localChatTitle = savedName);
         final path = settings?['avatar_path']?.toString() ?? '';
         if (path.isNotEmpty) {
           final url = await supabase.storage.from('saved-messages').createSignedUrl(path, 3600);
@@ -13183,6 +13185,7 @@ class _ChatPageState extends State<ChatPage> {
       await Navigator.push(context, MaterialPageRoute(
         builder: (_) => SavedMessagesSettingsPage(conversationId: widget.id),
       ));
+      if (mounted) await _loadChatType();
       return;
     }
     if (_chatType != 'direct') {
@@ -13321,13 +13324,14 @@ class _ChatPageState extends State<ChatPage> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => SharedMediaPage(conversationId: widget.id)));
                   break;
                 case 'info':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+                  if (_chatType == 'saved') {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesSettingsPage(conversationId: widget.id))).then((_) { if (mounted) _loadChatType(); });
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+                  }
                   break;
                 case 'settings':
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ChatSettingsPage()));
-                  break;
-                case 'saved':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()));
                   break;
                 case 'appearance':
                   Navigator.push(context, MaterialPageRoute(builder: (_) => AppAppearancePage()));
@@ -13345,7 +13349,6 @@ class _ChatPageState extends State<ChatPage> {
               PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text(trUi('رسانه‌ها و فایل‌ها')))),
               PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text(trUi('اطلاعات گفتگو')))),
               PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('تنظیمات گفتگو')))),
-              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text(trUi('پیام‌های ذخیره‌شده')))),
             ],
           ),
           FutureBuilder<bool>(
