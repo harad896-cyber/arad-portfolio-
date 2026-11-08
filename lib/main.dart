@@ -9,6 +9,8 @@ import 'package:app_links/app_links.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:android_id/android_id.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -3798,30 +3800,64 @@ class StickersGifsPage extends StatelessWidget {
     ));
   }
 }
-const _deviceSessionIdKey = 'arad_device_session_id_v1';
+const _deviceSessionIdKey = 'arad_device_session_id_v2';
+const FlutterSecureStorage _deviceIdentityStorage = FlutterSecureStorage();
 
 Future<String> _getDeviceSessionId() async {
-  final prefs = await SharedPreferences.getInstance();
-  final saved = prefs.getString(_deviceSessionIdKey);
-  if (saved != null && saved.length >= 32) return saved;
+  // Prefer the operating system's stable per-device identifier. This keeps
+  // app reinstalls/logins on the same physical phone from creating new rows.
+  try {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final androidId = await AndroidId().getId();
+      if (androidId != null && androidId.trim().isNotEmpty) {
+        return 'android:${androidId.trim()}';
+      }
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      final info = await DeviceInfoPlugin().iosInfo;
+      final vendorId = info.identifierForVendor;
+      if (vendorId != null && vendorId.isNotEmpty) return 'ios:$vendorId';
+    }
+  } catch (_) {
+    // Fall back to an app-private persistent identifier if platform metadata
+    // is unavailable (for example, restricted browser/OS environments).
+  }
+
+  final saved = await _deviceIdentityStorage.read(key: _deviceSessionIdKey);
+  if (saved != null && saved.length >= 16) return saved;
   final random = math.Random.secure();
   final id = List<int>.generate(32, (_) => random.nextInt(256))
       .map((value) => value.toRadixString(16).padLeft(2, '0'))
       .join();
-  await prefs.setString(_deviceSessionIdKey, id);
+  await _deviceIdentityStorage.write(key: _deviceSessionIdKey, value: id);
   return id;
 }
 
-String _deviceDisplayName() {
+Future<String> _deviceDisplayName() async {
   if (kIsWeb) return 'مرورگر وب';
-  return switch (defaultTargetPlatform) {
-    TargetPlatform.android => 'گوشی اندروید',
-    TargetPlatform.iOS => 'آیفون یا آیپد',
-    TargetPlatform.windows => 'رایانه ویندوز',
-    TargetPlatform.macOS => 'رایانه مک',
-    TargetPlatform.linux => 'رایانه لینوکس',
-    TargetPlatform.fuchsia => 'دستگاه',
-  };
+  try {
+    final info = DeviceInfoPlugin();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final android = await info.androidInfo;
+      final maker = android.manufacturer.trim();
+      final model = android.model.trim();
+      final label = [maker, model]
+          .where((part) => part.isNotEmpty)
+          .toSet()
+          .join(' ');
+      return label.isEmpty ? 'گوشی اندروید' : label;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = await info.iosInfo;
+      return ios.name.isNotEmpty ? ios.name : 'دستگاه اپل';
+    }
+    if (defaultTargetPlatform == TargetPlatform.windows) return 'رایانه ویندوز';
+    if (defaultTargetPlatform == TargetPlatform.macOS) return 'رایانه مک';
+    if (defaultTargetPlatform == TargetPlatform.linux) return 'رایانه لینوکس';
+  } catch (_) {
+    // Use a safe generic name if device-info is unavailable.
+  }
+  return 'دستگاه';
 }
 
 class DeviceSessionGate extends StatefulWidget {
@@ -3863,7 +3899,7 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
         'register_device_session',
         params: {
           'p_device_id': _deviceId,
-          'p_device_name': _deviceDisplayName(),
+          'p_device_name': await _deviceDisplayName(),
         },
       ).timeout(Duration(seconds: 8));
       if (active != true && mounted && !_signedOut) {
