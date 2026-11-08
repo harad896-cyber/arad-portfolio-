@@ -3973,15 +3973,42 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     return last != null && DateTime.now().difference(last).inMinutes < 2;
   }
 
+  DateTime? _deviceDate(Map<String, dynamic> row, String field) =>
+      DateTime.tryParse('${row[field] ?? ''}')?.toLocal();
+
+  String _formatDeviceDate(DateTime? date) {
+    if (date == null) return 'نامشخص';
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
   String _lastSeen(Map<String, dynamic> row) {
-    if (row['revoked_at'] != null) return 'دسترسی این دستگاه لغو شده';
-    final last = DateTime.tryParse('${row['last_seen_at'] ?? ''}')?.toLocal();
-    if (last == null) return 'زمان فعالیت نامشخص';
+    final last = _deviceDate(row, 'last_seen_at');
+    if (last == null) return 'آخرین فعالیت: نامشخص';
     final difference = DateTime.now().difference(last);
-    if (difference.inSeconds < 60) return 'فعال همین لحظه';
-    if (difference.inMinutes < 60) return '${difference.inMinutes} دقیقه پیش';
-    if (difference.inHours < 24) return '${difference.inHours} ساعت پیش';
-    return '${last.year}/${last.month.toString().padLeft(2, '0')}/${last.day.toString().padLeft(2, '0')}';
+    if (difference.inSeconds < 60) return 'آخرین فعالیت: همین لحظه';
+    if (difference.inMinutes < 60) return 'آخرین فعالیت: ${difference.inMinutes} دقیقه پیش';
+    if (difference.inHours < 24) return 'آخرین فعالیت: ${difference.inHours} ساعت پیش';
+    return 'آخرین فعالیت: ${_formatDeviceDate(last)}';
+  }
+
+  List<Map<String, dynamic>> get _visibleDevices {
+    final byId = <String, Map<String, dynamic>>{};
+    for (final row in devices) {
+      final id = row['device_id']?.toString().trim() ?? '';
+      if (id.length < 16 || row['revoked_at'] != null) continue;
+      final existing = byId[id];
+      final currentDate = _deviceDate(row, 'last_seen_at');
+      final existingDate = existing == null ? null : _deviceDate(existing, 'last_seen_at');
+      if (existing == null ||
+          (currentDate != null && (existingDate == null || currentDate.isAfter(existingDate)))) {
+        byId[id] = row;
+      }
+    }
+    final result = byId.values.toList();
+    result.sort((a, b) =>
+        (_deviceDate(b, 'last_seen_at') ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(_deviceDate(a, 'last_seen_at') ?? DateTime.fromMillisecondsSinceEpoch(0)));
+    return result;
   }
 
   Future<bool> _confirmRevoke({required String title, required String message}) async {
@@ -4081,7 +4108,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final activeCount = devices.where(_isRecent).length;
+    final visibleDevices = _visibleDevices;\n    final activeCount = visibleDevices.where(_isRecent).length;
     return Scaffold(
       appBar: AppBar(
         title: Text(trUi('امنیت و دستگاه‌ها')),
@@ -4136,12 +4163,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                         padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
                         child: Text(trUi('دستگاه‌های حساب'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
                       ),
-                      if (devices.isEmpty)
+                      if (visibleDevices.isEmpty)
                         Card(child: Padding(
                           padding: EdgeInsets.all(18),
                           child: Text(trUi('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.')),
                         )),
-                      ...devices.map((row) {
+                      ...visibleDevices.map((row) {
                         final id = row['device_id']?.toString() ?? '';
                         final name = row['device_name']?.toString() ?? 'دستگاه';
                         final current = id.isNotEmpty && id == currentDeviceId;
@@ -4158,7 +4185,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                               ),
                             ),
                             title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)),
-                            subtitle: Text('${current ? 'این دستگاه • ' : ''}${_lastSeen(row)}'),
+                            subtitle: Text('${current ? 'این دستگاه\\n' : ''}فعال‌شده از: ${_formatDeviceDate(_deviceDate(row, 'created_at'))}\\n${_lastSeen(row)}'),
                             trailing: current
                                 ? Chip(label: Text(trUi('فعلی')))
                                 : revoked
