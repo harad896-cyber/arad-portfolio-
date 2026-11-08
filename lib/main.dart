@@ -3804,25 +3804,39 @@ const _deviceSessionIdKey = 'arad_device_session_id_v2';
 const FlutterSecureStorage _deviceIdentityStorage = FlutterSecureStorage();
 
 Future<String> _getDeviceSessionId() async {
-  // Prefer the operating system's stable per-device identifier. This keeps
-  // app reinstalls/logins on the same physical phone from creating new rows.
-  try {
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+  // Android's SSAID (ANDROID_ID) is the primary identity for this app on this
+  // physical device. Never silently replace it with a random ID: doing so
+  // turns a temporary plugin/OS failure into a brand-new registered device.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    try {
       final androidId = await AndroidId().getId();
       if (androidId != null && androidId.trim().isNotEmpty) {
         return 'android:${androidId.trim()}';
       }
+      throw StateError('Android returned an empty device identifier.');
+    } catch (error, stackTrace) {
+      debugPrint('Stable Android device ID unavailable; registration paused: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      final info = await DeviceInfoPlugin().iosInfo;
-      final vendorId = info.identifierForVendor;
-      if (vendorId != null && vendorId.isNotEmpty) return 'ios:$vendorId';
-    }
-  } catch (_) {
-    // Fall back to an app-private persistent identifier if platform metadata
-    // is unavailable (for example, restricted browser/OS environments).
   }
 
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      final info = await DeviceInfoPlugin().iosInfo;
+      final vendorId = info.identifierForVendor;
+      if (vendorId != null && vendorId.trim().isNotEmpty) return 'ios:${vendorId.trim()}';
+      throw StateError('iOS returned an empty vendor identifier.');
+    } catch (error, stackTrace) {
+      debugPrint('Stable iOS device ID unavailable; registration paused: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  // Browsers/desktop platforms do not expose a cross-install hardware ID.
+  // Keep one app-profile identity in secure storage instead of generating a
+  // new value on every login. Clearing browser/app data can reset this ID.
   final saved = await _deviceIdentityStorage.read(key: _deviceSessionIdKey);
   if (saved != null && saved.length >= 16) return saved;
   final random = math.Random.secure();
