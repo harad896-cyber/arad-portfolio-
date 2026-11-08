@@ -3997,8 +3997,9 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           .from('device_sessions')
           .select('id,device_id,device_name,created_at,last_seen_at,revoked_at')
           .eq('user_id', user.id)
+          .isFilter('revoked_at', null)
           .order('last_seen_at', ascending: false)
-          .limit(50);
+          .limit(100);
       if (!mounted) return;
       setState(() {
         devices = List<Map<String, dynamic>>.from(result);
@@ -4028,10 +4029,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     final last = _deviceDate(row, 'last_seen_at');
     if (last == null) return 'آخرین فعالیت: نامشخص';
     final difference = DateTime.now().difference(last);
-    if (difference.inSeconds < 60) return 'آخرین فعالیت: همین لحظه';
-    if (difference.inMinutes < 60) return 'آخرین فعالیت: ${difference.inMinutes} دقیقه پیش';
-    if (difference.inHours < 24) return 'آخرین فعالیت: ${difference.inHours} ساعت پیش';
-    return 'آخرین فعالیت: ${_formatDeviceDate(last)}';
+    final relative = difference.inSeconds < 60
+        ? 'همین لحظه'
+        : difference.inMinutes < 60
+            ? '${difference.inMinutes} دقیقه پیش'
+            : difference.inHours < 24
+                ? '${difference.inHours} ساعت پیش'
+                : '${difference.inDays} روز پیش';
+    return 'آخرین فعالیت: ${_formatDeviceDate(last)} ($relative)';
   }
 
   List<Map<String, dynamic>> get _visibleDevices {
@@ -4190,8 +4195,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             backgroundColor: scheme.primaryContainer,
                             child: Icon(Icons.devices_rounded, color: scheme.primary),
                           ),
-                          title: Text(trUi('$activeCount دستگاه فعال برای این حساب'), style: TextStyle(fontWeight: FontWeight.w900)),
-                          subtitle: Text(trUi('فقط نشست‌های همین حساب نمایش داده می‌شوند؛ ورود به حساب دیگر، دستگاه‌های آن را اینجا نشان نمی‌دهد. فعالیت هر ۳۰ ثانیه بررسی می‌شود و دستگاه خارج‌شده نمی‌تواند این نشست را ادامه دهد.')),
+                          title: Text(trUi('${visibleDevices.length} نشست فعال برای این حساب'), style: TextStyle(fontWeight: FontWeight.w900)),
+                          subtitle: Text(trUi('$activeCount دستگاه در حال فعالیت‌اند. وضعیت فعالیت با آخرین ضربان ثبت‌شده در دو دقیقهٔ اخیر مشخص می‌شود؛ زمان پیوستن و آخرین فعالیت هر دستگاه جداگانه نمایش داده می‌شود. فقط دستگاه‌های همین حساب که نشست‌شان لغو نشده باشد در این فهرست می‌آیند.')), 
                         ),
                       ),
                       if (devices.where((row) => row['revoked_at'] == null).any((row) => '${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
@@ -4217,8 +4222,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                         final name = row['device_name']?.toString() ?? 'دستگاه';
                         final current = id.isNotEmpty && id == currentDeviceId;
                         final recent = _isRecent(row);
-                        final revoked = row['revoked_at'] != null;
-                        final color = revoked ? scheme.error : recent ? Colors.green : scheme.onSurfaceVariant;
+                        final color = recent ? Colors.green : scheme.onSurfaceVariant;
                         return Card(
                           child: ListTile(
                             leading: CircleAvatar(
@@ -4229,16 +4233,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                               ),
                             ),
                             title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)),
-                            subtitle: Text('${current ? 'این دستگاه\\n' : ''}فعال‌شده از: ${_formatDeviceDate(_deviceDate(row, 'created_at'))}\\n${_lastSeen(row)}'),
+                            subtitle: Text('${current ? 'این دستگاه\\n' : ''}پیوستن به گپ‌رسان: ${_formatDeviceDate(_deviceDate(row, 'created_at'))}\\nوضعیت: ${recent ? 'در حال فعالیت' : 'نشست معتبر؛ فعالیت تازه ثبت نشده'}\\n${_lastSeen(row)}'),
                             trailing: current
                                 ? Chip(label: Text(trUi('فعلی')))
-                                : revoked
-                                    ? Icon(Icons.block_rounded)
-                                    : IconButton(
-                                        tooltip: 'خروج از این دستگاه',
-                                        onPressed: busy ? null : () => _revoke(id, name),
-                                        icon: Icon(Icons.logout_rounded),
-                                      ),
+                                : IconButton(
+                                    tooltip: 'خروج از این دستگاه',
+                                    onPressed: busy ? null : () => _revoke(id, name),
+                                    icon: Icon(Icons.logout_rounded),
+                                  ),
                           ),
                         );
                       }),
