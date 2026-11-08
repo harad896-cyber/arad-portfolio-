@@ -33,7 +33,8 @@ jobs:
         run: |
           flutter create --platforms=android,web --org com.gapresan --project-name arad_messenger .
           test -s android/app/src/main/AndroidManifest.xml
-          test -s android/app/build.gradle
+          test -s android/app/build.gradle.kts
+          test -s android/gradle/wrapper/gradle-wrapper.properties
           test -s web/index.html
 
       - name: Install dependencies
