@@ -9794,6 +9794,7 @@ class _ChatPageState extends State<ChatPage> {
   String _chatType = 'direct';
   String? _localChatTitle;
   String _groupAvatarUrl = '';
+  String _savedAvatarUrl = '';
   String _directPeerId = '';
   List<Map<String, dynamic>> _mentionSuggestions = [];
   int _mentionStart = -1;
@@ -10127,7 +10128,19 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _loadChatType() async {
     try {
       final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();
-      if (mounted) setState(() { _chatType = (r?['type'] ?? 'direct').toString(); });
+      final nextType = (r?['type'] ?? 'direct').toString();
+      if (mounted) setState(() { _chatType = nextType; });
+      if (nextType == 'saved') {
+        final uid = supabase.auth.currentUser?.id;
+        if (uid == null) return;
+        final settings = await supabase.from('saved_chat_settings')
+            .select('avatar_path').eq('user_id', uid).maybeSingle();
+        final path = settings?['avatar_path']?.toString() ?? '';
+        if (path.isNotEmpty) {
+          final url = await supabase.storage.from('saved-messages').createSignedUrl(path, 3600);
+          if (mounted) setState(() => _savedAvatarUrl = url);
+        }
+      }
     } catch (_) {}
   }
 
@@ -13166,6 +13179,12 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openChatProfile() async {
+    if (_chatType == 'saved') {
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => SavedMessagesSettingsPage(conversationId: widget.id),
+      ));
+      return;
+    }
     if (_chatType != 'direct') {
       if (mounted) await Navigator.push(context, MaterialPageRoute(
         builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title),
@@ -13354,9 +13373,9 @@ class _ChatPageState extends State<ChatPage> {
                     child: (() {
                       final avatar = _chatType == 'direct'
                           ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim()
-                          : (_chatType == 'group' ? _groupAvatarUrl.trim() : '');
+                          : (_chatType == 'group' ? _groupAvatarUrl.trim() : (_chatType == 'saved' ? _savedAvatarUrl.trim() : ''));
                       if (avatar.isEmpty) {
-                        return Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 18, color: scheme.primary);
+                        return Icon(_chatType == 'saved' ? Icons.bookmark_rounded : _chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 18, color: scheme.primary);
                       }
                       return Image.network(
                         avatar,
@@ -13394,11 +13413,13 @@ class _ChatPageState extends State<ChatPage> {
                   Text(
                     _isSyncing
                         ? 'در حال اتصال…'
-                        : (_chatType == 'direct'
-                            ? 'گفتگوی خصوصی'
-                            : (_chatType == 'group'
-                                ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
-                                : 'کانال')),
+                        : (_chatType == 'saved'
+                            ? 'فقط برای شما'
+                            : _chatType == 'direct'
+                                ? 'گفتگوی خصوصی'
+                                : (_chatType == 'group'
+                                    ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
+                                    : 'کانال')),
                     style: TextStyle(
                       fontSize: 10,
                       height: 1.1,
