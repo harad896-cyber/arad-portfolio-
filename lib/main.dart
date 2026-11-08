@@ -12409,7 +12409,7 @@ class _ChatPageState extends State<ChatPage> {
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) return Icon(Icons.image_rounded, size: 42);
     return FutureBuilder<String?>(
-      future: _attachmentUrl(path),
+      future: _attachmentUrl(path, bucketId: a?['bucket_id']?.toString()),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
         final url = snapshot.data;
@@ -12886,8 +12886,7 @@ class _ChatPageState extends State<ChatPage> {
     _composerFocus.addListener(_onComposerFocus);
     _messagesScroll.addListener(_onMessagesScroll);
     _loadChatNotificationPreference();
-    load();
-    _loadChatType();
+    _loadChatType().then((_) { if (mounted) load(); });
     channel = supabase.channel('chat-${widget.id}')
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
