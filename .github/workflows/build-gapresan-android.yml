@@ -1,0 +1,94 @@
+name: GapResan Android Test APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - project2/theme-foundation
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/build-gapresan-android.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gapresan-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build and publish GapResan test APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Project 2 test branch
+        uses: actions/checkout@v4
+        with:
+          ref: project2/theme-foundation
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version
+          java -version
+
+      - name: Generate Android platform files
+        run: |
+          flutter create --platforms=android --org com.gapresan --project-name arad_messenger .
+          test -s android/app/src/main/AndroidManifest.xml
+          test -s android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Generate Android launcher icons
+        run: dart run flutter_launcher_icons
+
+      - name: Build release APK
+        run: flutter build apk --release --build-number=${GITHUB_RUN_NUMBER}
+
+      - name: Verify APK and create checksum
+        shell: bash
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          mkdir -p release
+          cp "$APK" release/GapResan-Android.apk
+          sha256sum release/GapResan-Android.apk | tee release/SHA256SUMS.txt
+          ls -lh release/
+
+      - name: Upload APK artifact (ZIP backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-release-${{ github.run_number }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish direct APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: gapresan-android-${{ github.run_number }}
+          name: GapResan Android ${{ github.run_number }}
+          prerelease: true
+          generate_release_notes: false
+          files: |
+            release/GapResan-Android.apk
+            release/SHA256SUMS.txt

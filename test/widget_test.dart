@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:arad_messenger/main.dart';
 
@@ -23,6 +24,30 @@ void main() {
 
     test('unknown translation key falls back safely', () {
       expect(t('unknown_label', 'en'), 'unknown_label');
+    });
+
+    test('Hazaragi core messenger labels use Hazaragi wording', () {
+      final previousLocale = aradLanguageController.locale;
+      try {
+        aradLanguageController.locale = const Locale('haz');
+        expect(trUi('مخاطبین'), 'مخاطب‌ها');
+        expect(trUi('ارسال پیام'), 'پیغام ره بفرست');
+        expect(trUi('زبان رابط کاربری'), 'زبان برنامه');
+      } finally {
+        aradLanguageController.locale = previousLocale;
+      }
+    });
+
+    test('Afghan Dari uses local interface wording', () {
+      final previousLocale = aradLanguageController.locale;
+      try {
+        aradLanguageController.locale = const Locale('prs');
+        expect(trUi('گفتگو'), 'گپ');
+        expect(trUi('مصرف داده'), 'مصرف اینترنت');
+        expect(trUi('دوربین'), 'کمره');
+      } finally {
+        aradLanguageController.locale = previousLocale;
+      }
     });
   });
 }

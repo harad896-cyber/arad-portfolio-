@@ -9,6 +9,8 @@ import 'package:app_links/app_links.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:android_id/android_id.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,6 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
@@ -36,6 +39,8 @@ import 'chat_background_page.dart';
 import 'call_session.dart';
 import 'voice_message_player.dart';
 import 'polish_widgets.dart';
+import 'support_bot.dart';
+import 'app_theme.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
 
@@ -632,6 +637,58 @@ final Map<String, String> _hazaragiUi = <String, String>{
   'ویرایش گروه':'گروپ ره جور کو',
   'تغییر عکس کانال':'عکس کانال ره تبدیل کو',
   'انتخاب از گالری':'از گالری انتخاب کو',
+  // Common settings and navigation labels that previously fell through to
+  // Persian unchanged when Hazaragi was selected.
+  'تنظیمات':'تنظیمات',
+  'حساب شما':'حساب شُما',
+  'خروج از حساب':'از حساب بیرون شو',
+  'حریم خصوصی':'محرمیت',
+  'امنیت':'امنیت',
+  'اعلان‌ها':'خبرتیاها',
+  'مصرف داده':'مصرف اینترنت',
+  'تماس‌ها':'تماس‌ها',
+  'ظاهر':'ظاهر',
+  'زبان رابط کاربری':'زبان برنامه',
+  'پروفایل':'پروفایل',
+  'مخاطبین':'مخاطب‌ها',
+  'گروه‌ها':'گروپ‌ها',
+  'پیام':'پیغام',
+  'پیام‌ها':'پیغام‌ها',
+  'پیام جدید':'پیغام نو',
+  'گفتگوی جدید':'گپ نو',
+  'ساخت گروه':'گروپ جور کو',
+  'ساخت کانال':'کانال جور کو',
+  'ارسال':'بفرست',
+  'ارسال پیام':'پیغام ره بفرست',
+  'ذخیره':'ذخیره کو',
+  'ذخیره تغییرات':'تغییرات ره ذخیره کو',
+  'لغو':'لغو کو',
+  'تأیید':'تأیید کو',
+  'ویرایش':'جور کو',
+  'حذف':'پاک کو',
+  'حذف پیام':'پیغام ره پاک کو',
+  'حذف برای من':'برای مه پاک کو',
+  'حذف برای همه':'برای همه پاک کو',
+  'پاسخ':'جواب بده',
+  'جستجو':'جستجو کو',
+  'جستجو در تنظیمات':'د تنظیمات جستجو کو',
+  'آنلاین':'آنلاین',
+  'آخرین بازدید':'آخرین دیدار',
+  'در حال بارگذاری…':'د حال بارگذاری…',
+  'تلاش دوباره':'دوباره کوشش کو',
+  'روشن':'روشن',
+  'تاریک':'تاریک',
+  'پس‌زمینه چت':'پس‌زمینه گپ',
+  'ارسال فایل':'فایل ره بفرست',
+  'ارسال تصویر':'عکس ره بفرست',
+  'ارسال ویدیو':'ویدیو ره بفرست',
+  'دوربین':'کمره',
+  'گالری':'گالری',
+  'فایل‌ها':'فایل‌ها',
+  'اتصال برقرار نیست':'وصل نیست',
+  'آفلاین • پیام‌های ذخیره‌شده در دسترس‌اند':'آفلاین • پیغام‌های ذخیره‌شده در دسترس است',
+  'اینترنت در دسترس نیست و هنوز نسخهٔ ذخیره‌شده‌ای از این گفتگو ندارید.':'اینترنت وصل نیست و از ای گپ نسخهٔ ذخیره‌شده ندارین.',
+  'اتصال ضعیف است؛ پیام‌های ذخیره‌شده نمایش داده می‌شوند.':'وصل ضعیف است؛ پیغام‌های ذخیره‌شده نشان داده می‌شه.',
 
 };
 
@@ -1482,10 +1539,20 @@ class LanguageController extends ChangeNotifier {
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
+// Keep app surfaces coordinated with the selected chat palette without
+// allowing a light wallpaper to wash out dark mode (or vice versa).
+Color _gapPaletteSurface({required bool dark, required int backgroundSeed, required Color fallback, required double strength}) {
+  final selected = Color(backgroundSeed);
+  final luminance = selected.computeLuminance();
+  final matchesBrightness = dark ? luminance < .42 : luminance > .58;
+  if (!matchesBrightness) return fallback;
+  return Color.lerp(fallback, selected, strength)!;
+}
+
 class AppThemeController extends ChangeNotifier {
   bool dark = true;
-  int seed = 0xFF00C2A8;
-  int backgroundSeed = 0xFF071A2D;
+  int seed = 0xFF0B9658;
+  int backgroundSeed = 0xFF071A13;
   String? backgroundImageBase64;
   bool backgroundEffects = true;
   static const int _themeRevision = 6;
@@ -1501,18 +1568,23 @@ class AppThemeController extends ChangeNotifier {
     final key = _scope;
     final revision = p.getInt('theme_revision_$key') ?? 0;
     if (revision < _themeRevision) {
-      // One-time migration to the polished dark neon visual system.
-      dark = true;
-      seed = 0xFF00C2A8;
-      backgroundSeed = 0xFF071A2D;
+      // Migrate old installs without overwriting a user's existing choices.
+      dark = p.getBool('dark_mode_$key') ?? true;
+      final savedSeed = p.getInt('accent_seed_$key');
+      seed = savedSeed == null || savedSeed == 0xFF00C2A8
+          ? 0xFF0B9658
+          : savedSeed;
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A13;
       await p.setBool('dark_mode_$key', dark);
       await p.setInt('accent_seed_$key', seed);
       await p.setInt('chat_background_seed_$key', backgroundSeed);
       await p.setInt('theme_revision_$key', _themeRevision);
     } else {
       dark = p.getBool('dark_mode_$key') ?? true;
-      seed = p.getInt('accent_seed_$key') ?? 0xFF00C2A8;
-      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A2D;
+      final savedSeed = p.getInt('accent_seed_$key');
+      seed = savedSeed == null || savedSeed == 0xFF00C2A8 ? 0xFF0B9658 : savedSeed;
+      if (savedSeed == 0xFF00C2A8) await p.setInt('accent_seed_$key', seed);
+      backgroundSeed = p.getInt('chat_background_seed_$key') ?? 0xFF071A13;
     }
     backgroundImageBase64 = p.getString('chat_background_image_$key');
     backgroundEffects = p.getBool('chat_background_effects_$key') ?? true;
@@ -1639,6 +1711,11 @@ String? authRedirectUrl() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Bound decoded-image memory so long chat sessions do not retain an excessive
+  // number of off-screen avatars and media thumbnails.
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSize = 180;
+  imageCache.maximumSizeBytes = 64 * 1024 * 1024;
 
   // Keep unexpected framework/async failures visible in device logs instead
   // of letting an unhandled callback silently terminate a user interaction.
@@ -1663,12 +1740,8 @@ Future<void> main() async {
     await Supabase.initialize(
       url: supabaseUrl,
       publishableKey: supabasePublishableKey,
-    ).timeout(
-      Duration(seconds: 10),
-      onTimeout: () => throw TimeoutException(
-        'اتصال به سرویس ورود بیش از ۱۰ ثانیه طول کشید. اینترنت یا دسترسی به سرویس را بررسی کنید و دوباره تلاش کنید.',
-      ),
     );
+
   } catch (error, stack) {
     debugPrint('گپ‌رسان startup failed: $error');
     debugPrintStack(stackTrace: stack);
@@ -1707,7 +1780,7 @@ class StartupLoadingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFF071A2D),
+        backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1718,15 +1791,15 @@ class StartupLoadingApp extends StatelessWidget {
                   Container(
                     width: 76, height: 76,
                     decoration: BoxDecoration(
-                      color: Color(0xFF00C2A8).withValues(alpha: .14),
+                      color: Color(0xFF0B9658).withValues(alpha: .16),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/app_icon.jpg', width: 76, height: 76, fit: BoxFit.cover)),
                   ),
                   SizedBox(height: 18),
-                  Text(trUi('پیام رسان'), style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
+                  Text('گپ‌رسان', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)), 
                   SizedBox(height: 12),
-                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00C2A8))),
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF20C879))),
                   SizedBox(height: 12),
                   Text(trUi('در حال آماده‌سازی برنامه…'), style: TextStyle(color: Colors.white70)),
                 ],
@@ -1748,7 +1821,7 @@ class StartupFailureApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFFF8F7FC),
+        backgroundColor: Color(0xFFF4F8F5),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -1759,8 +1832,8 @@ class StartupFailureApp extends StatelessWidget {
                   ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.asset('assets/app_icon.jpg', width: 88, height: 88, fit: BoxFit.cover)),
                   SizedBox(height: 16),
                   Text(
-                    'پیام رسان',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    'گپ‌رسان',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0B9658)), 
                   ),
                   SizedBox(height: 12),
                   Text(
@@ -1774,7 +1847,7 @@ class StartupFailureApp extends StatelessWidget {
                     message,
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
-                    style: TextStyle(fontSize: 13, color: Color(0xFF5B5568)),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF52645A)), 
                   ),
                   SizedBox(height: 20),
                   FilledButton.icon(
@@ -1791,6 +1864,10 @@ class StartupFailureApp extends StatelessWidget {
     );
   }
 }
+
+// Shared network state lets chat screens refresh their local snapshot as soon as
+// connectivity returns, instead of waiting for the user to pull-to-refresh.
+final ValueNotifier<bool> appNetworkOffline = ValueNotifier<bool>(false);
 
 class _NetworkStatusBanner extends StatefulWidget {
   final Widget child;
@@ -1826,6 +1903,7 @@ class _NetworkStatusBannerState extends State<_NetworkStatusBanner> {
 
   void _update(List<ConnectivityResult> results) {
     final next = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+    if (next != appNetworkOffline.value) appNetworkOffline.value = next;
     if (mounted && next != offline) setState(() => offline = next);
   }
 
@@ -1902,9 +1980,19 @@ class AradMessenger extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
-        final base = dark ? Color(0xFF10121A) : Color(0xFFF6F7FB);
-        final glowA = dark ? Color(0xFF171827) : Color(0xFFF0EDFA);
-        final glowB = dark ? Color(0xFF111D28) : Color(0xFFEDF4FB);
+        final accent = Color(appTheme.seed);
+        final fallback = dark ? const Color(0xFF0B1710) : const Color(0xFFF4F8F5);
+        // The selected chat palette must also reach the app shell. Previously
+        // the root backdrop stayed green regardless of the chosen preset, so
+        // users saw little or no visible change outside the palette picker.
+        final base = _gapPaletteSurface(
+          dark: dark,
+          backgroundSeed: appTheme.backgroundSeed,
+          fallback: fallback,
+          strength: dark ? .28 : .18,
+        );
+        final glowA = Color.lerp(base, accent, dark ? .17 : .10)!;
+        final glowB = Color.lerp(base, accent, dark ? .09 : .055)!;
         return _NetworkStatusBanner(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -1961,7 +2049,7 @@ class AradMessenger extends StatelessWidget {
         );
       },
       debugShowCheckedModeBanner: false,
-      title: 'پیام رسان',
+      title: 'گپ‌رسان',
       themeMode: appTheme.dark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
@@ -1969,8 +2057,11 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.light,
-          surface: Color(0xFFFCFCFE),
+          surface: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
         ),
+        extensions: <ThemeExtension<dynamic>>[
+          GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed)),
+        ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
@@ -1984,16 +2075,16 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .10),
-          backgroundColor: Color(0xFFFCFCFE),
+          backgroundColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF171320)),
+          titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFF18251C)),
           iconTheme: IconThemeData(color: Color(appTheme.seed)), 
         ),
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFFFFFFFF),
+          color: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .97),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2004,29 +2095,29 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFFFFFFFF),
+          tileColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .97),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .13),
-          iconColor: Color(0xFF766A88),
+          iconColor: Color(appTheme.seed),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFF0F2F8),
+          fillColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFEDF4EF), strength: .86),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 14),
-          labelStyle: TextStyle(color: Color(0xFF171320), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFF647268), fontSize: 14),
+          labelStyle: TextStyle(color: Color(0xFF18251C), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: Color(0xFF6C7180), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFF647268), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFB42318), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: Color(0xFF6C7180),
+          suffixIconColor: Color(0xFF647268),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFE2E6F0)),
+            borderSide: BorderSide(color: Color(0xFFDDE8E0)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFFE2E6F0)),
+            borderSide: BorderSide(color: Color(0xFFDDE8E0)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -2063,8 +2154,11 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: Color(0xFF071A2D),
+          surface: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
         ),
+        extensions: <ThemeExtension<dynamic>>[
+          GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed)),
+        ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
         splashFactory: InkSparkle.splashFactory,
@@ -2078,14 +2172,19 @@ class AradMessenger extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           shadowColor: Color(appTheme.seed).withValues(alpha: .16),
-          backgroundColor: Color(0xFF071A2D),
+          backgroundColor: _gapPaletteSurface(
+            dark: true,
+            backgroundSeed: appTheme.backgroundSeed,
+            fallback: const Color(0xFF071A13),
+            strength: .22,
+          ),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: Color(0xFF0D2336),
+          color: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2096,29 +2195,29 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: Color(0xFF0D2336),
+          tileColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
-          iconColor: Color(0xFFBDB1D0),
+          iconColor: Color(0xFFA6B9AC),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFF0B2032),
+          fillColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0B2016), strength: .08),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          hintStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 14),
+          hintStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 14),
           labelStyle: TextStyle(color: Color(0xFFE8EDF5), fontSize: 14),
           floatingLabelStyle: TextStyle(color: Color(appTheme.seed), fontWeight: FontWeight.w700),
-          helperStyle: TextStyle(color: Color(0xFF9DAFC0), fontSize: 12),
+          helperStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 12),
           errorStyle: TextStyle(color: Color(0xFFFF8A8A), fontSize: 12),
           prefixIconColor: Color(appTheme.seed),
-          suffixIconColor: Color(0xFF9DAFC0),
+          suffixIconColor: Color(0xFFA6B9AC),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF263653))
+            borderSide: BorderSide(color: Color(0xFF294234))
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
-            borderSide: BorderSide(color: Color(0xFF2A3349)),
+            borderSide: BorderSide(color: Color(0xFF294234)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -2268,6 +2367,7 @@ class ProfessionalSettingsPage extends StatefulWidget {
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   final search=TextEditingController();
   String theme='تاریک',language='فارسی';
+  bool savingPreference = false;
   @override void initState(){super.initState();_load();}
   @override void dispose(){search.dispose();super.dispose();}
   Future<void> _load() async {
@@ -2286,7 +2386,6 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     {'cat':'ظاهر و شخصی‌سازی','title':'زبان','desc':'زبان رابط کاربری'},
     {'cat':'گفتگو و پیام‌ها','title':'تنظیمات گفتگو','desc':'رسید خواندن، پیش‌نمایش لینک، ارسال با Enter و پخش صدا'},
     {'cat':'گفتگو و پیام‌ها','title':'پوشه‌های گفتگو','desc':'ساخت و مدیریت پوشه‌های گفتگو'},
-    {'cat':'گفتگو و پیام‌ها','title':'پیام‌های ذخیره‌شده','desc':'پیام‌هایی که برای خودتان ذخیره کرده‌اید'},
     {'cat':'محتوا','title':'پیام‌رسانی پیشرفته','desc':'ابزارهای پیشرفته متصل به Backend'},
     {'cat':'درباره','title':'درباره برنامه','desc':'نسخه، معماری و اطلاعات برنامه'},
   ];
@@ -2298,7 +2397,11 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     return Scaffold(
       appBar:AppBar(title:Text(trUi('تنظیمات')),bottom:PreferredSize(preferredSize:const Size.fromHeight(66),child:Padding(
         padding:const EdgeInsets.fromLTRB(16,4,14,10),
-        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(hintText:trUi('جستجو در تنظیمات'),prefixIcon:Icon(Icons.search_rounded))),
+        child:TextField(controller:search,onChanged:(_)=>setState((){}),decoration:InputDecoration(
+          hintText:trUi('جستجو در تنظیمات'),
+          prefixIcon:Icon(Icons.search_rounded),
+          suffixIcon:search.text.isEmpty?null:IconButton(tooltip:trUi('پاک کردن جستجو'),icon:Icon(Icons.close_rounded),onPressed:(){search.clear();setState((){});}),
+        )),
       ))),
       body:ListView(padding:const EdgeInsets.fromLTRB(12,0,12,24),children:[
         Card(child:ListTile(
@@ -2333,7 +2436,7 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
     'حساب کاربری'=>Icons.manage_accounts_rounded,'حریم خصوصی'=>Icons.lock_outline_rounded,'امنیت'=>Icons.security_rounded,
     'اعلان‌ها'=>Icons.notifications_none_rounded,'مصرف داده'=>Icons.data_saver_on_rounded,'دسترسی‌پذیری'=>Icons.accessibility_new_rounded,'دسترسی‌های برنامه'=>Icons.admin_panel_settings_rounded,
     'تماس‌ها'=>Icons.call_rounded,'ظاهر'=>Icons.palette_outlined,'پس‌زمینه چت'=>Icons.wallpaper_rounded,'زبان'=>Icons.language_rounded,
-    'تنظیمات گفتگو'=>Icons.chat_bubble_outline_rounded,'پوشه‌های گفتگو'=>Icons.folder_copy_outlined,'پیام‌های ذخیره‌شده'=>Icons.bookmark_outline_rounded,
+    'تنظیمات گفتگو'=>Icons.chat_bubble_outline_rounded,'پوشه‌های گفتگو'=>Icons.folder_copy_outlined,
     'داده و ذخیره‌سازی'=>Icons.data_usage_rounded,'پشتیبان‌گیری'=>Icons.backup_outlined,'استیکر و ایموجی'=>Icons.emoji_emotions_outlined,
     'پیام‌رسانی پیشرفته'=>Icons.auto_awesome_rounded,'درباره برنامه'=>Icons.info_outline_rounded,_=>Icons.settings_outlined};
   void _open(String title){
@@ -2350,16 +2453,38 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       case 'زبان': _showLanguageSheet(); break;
       case 'تنظیمات گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatSettingsPage())); break;
       case 'پوشه‌های گفتگو': Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatFoldersPage())); break;
-      case 'پیام‌های ذخیره‌شده': Navigator.push(context,MaterialPageRoute(builder:(_)=>SavedMessagesPage())); break;
       case 'پیام‌رسانی پیشرفته': Navigator.push(context,MaterialPageRoute(builder:(_)=>AdvancedFeaturesPage())); break;
       case 'درباره برنامه': Navigator.push(context,MaterialPageRoute(builder:(_)=>AboutAppPage())); break;
     }
   }
-  void _showThemeSheet()=>showModalBottomSheet(context:context,builder:(_)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Padding(padding:EdgeInsets.all(18),child:Text(trUi('ظاهر برنامه'),style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
-    RadioListTile<String>(value:'تاریک',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(true);await saveUserSettings({'theme_mode':'dark'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('تاریک'))),
-    RadioListTile<String>(value:'روشن',groupValue:theme,onChanged:(v)async{if(v==null)return;await appTheme.setDark(false);await saveUserSettings({'theme_mode':'light'});if(mounted){setState(()=>theme=v);Navigator.pop(context);}},title:Text(trUi('روشن'))),
-  ])));
+  Future<void> _selectTheme(String value, BuildContext sheetContext) async {
+    if (savingPreference || value == theme) return;
+    final previous = theme;
+    setState(() => savingPreference = true);
+    try {
+      await appTheme.setDark(value == 'تاریک');
+      await saveUserSettings({'theme_mode': value == 'تاریک' ? 'dark' : 'light'});
+      if (!mounted) return;
+      setState(() => theme = value);
+      if (sheetContext.mounted) Navigator.pop(sheetContext);
+      showMsg(context, 'ظاهر برنامه ذخیره شد.');
+    } catch (e) {
+      await appTheme.setDark(previous == 'تاریک');
+      if (mounted) showMsg(context, 'ذخیره ظاهر برنامه ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => savingPreference = false);
+    }
+  }
+  void _showThemeSheet() => showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Padding(padding: const EdgeInsets.all(18), child: Text(trUi('ظاهر برنامه'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+      if (savingPreference) const Padding(padding: EdgeInsets.symmetric(horizontal: 18), child: LinearProgressIndicator()),
+      RadioListTile<String>(value: 'تاریک', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('تاریک'))),
+      RadioListTile<String>(value: 'روشن', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('روشن'))),
+    ])),
+  );
   void _showLanguageSheet() => showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -2960,32 +3085,25 @@ class AppAppearancePage extends StatefulWidget {
 }
 class _AppAppearancePageState extends State<AppAppearancePage> {
   bool picking = false;
+  // Curated palettes: each wallpaper and accent are paired for readable,
+  // coordinated previews and message colors in both light and dark modes.
   static const presets = <({String name, int color, int accent})>[
-    (name: 'شب آرام', color: 0xFF10131C, accent: 0xFF229ED9),
-    (name: 'آبی اقیانوسی', color: 0xFF102B3A, accent: 0xFF2A9D8F),
-    (name: 'بنفش مدرن', color: 0xFF25183D, accent: 0xFF8B5CF6),
-    (name: 'سبز جنگلی', color: 0xFF142D26, accent: 0xFF4CAF80),
-    (name: 'ذغالی', color: 0xFF25272B, accent: 0xFF5C9DED),
-    (name: 'روشن مینیمال', color: 0xFFF2F3F7, accent: 0xFF229ED9),
-    (name: 'صورتی ملایم', color: 0xFFF6EAF0, accent: 0xFFD85D91),
-    (name: 'آبی یخی', color: 0xFFE8F2FA, accent: 0xFF3689C9),
-    (name: 'غروب بنفش', color: 0xFF2B1B3D, accent: 0xFFE879F9),
-    (name: 'فیروزه‌ای', color: 0xFF103A3A, accent: 0xFF2DD4BF),
-    (name: 'کهکشانی', color: 0xFF17162E, accent: 0xFF818CF8),
-    (name: 'طلوع گرم', color: 0xFF3A241E, accent: 0xFFFF9F68),
-    (name: 'زمردی', color: 0xFF102A27, accent: 0xFF34D399),
-    (name: 'یاسی روشن', color: 0xFFF0EAFE, accent: 0xFF8B5CF6),
-    (name: 'رزگلد', color: 0xFF38212D, accent: 0xFFFB7185),
-    (name: 'آبی نیمه‌شب', color: 0xFF101D36, accent: 0xFF60A5FA),
-    (name: 'شن و ماسه', color: 0xFFF1E8D8, accent: 0xFFB77936),
-    (name: 'سبز نعنایی', color: 0xFFE4F7EF, accent: 0xFF159D78),
-    (name: 'مرجانی', color: 0xFF3A2024, accent: 0xFFFF7F6A),
-    (name: 'شفق قطبی', color: 0xFF10252D, accent: 0xFF6EE7B7),
-    (name: 'آبی سلطنتی', color: 0xFF101D43, accent: 0xFF60A5FA),
-    (name: 'طلایی لوکس', color: 0xFF292319, accent: 0xFFE8BD67),
-    (name: 'گرافیتی', color: 0xFF20242D, accent: 0xFFA3B3C7),
-    (name: 'بنفش نئونی', color: 0xFF211536, accent: 0xFFC084FC),
-    (name: 'جنگل مه‌آلود', color: 0xFF172B28, accent: 0xFF86B99B),
+    (name: 'زمردی گپ‌رسان', color: 0xFF071A13, accent: 0xFF0B9658),
+    (name: 'جنگل عمیق', color: 0xFF10271D, accent: 0xFF3FA66B),
+    (name: 'نعنایی روشن', color: 0xFFE7F5EC, accent: 0xFF16845A),
+    (name: 'اقیانوسی', color: 0xFF102D32, accent: 0xFF159A91),
+    (name: 'فیروزه‌ای آرام', color: 0xFFE5F5F1, accent: 0xFF168F83),
+    (name: 'ذغالی حرفه‌ای', color: 0xFF202923, accent: 0xFF8BAE98),
+    (name: 'سنگ روشن', color: 0xFFF0F2ED, accent: 0xFF526B5A),
+    (name: 'طلایی گرم', color: 0xFF302719, accent: 0xFFD5A64A),
+    (name: 'شن و ماسه', color: 0xFFF3EBDD, accent: 0xFF9A6A32),
+    (name: 'غروب مسی', color: 0xFF38251E, accent: 0xFFE18A58),
+    (name: 'رز ملایم', color: 0xFFF5E9E9, accent: 0xFFB65F68),
+    (name: 'آلبالویی تیره', color: 0xFF321D24, accent: 0xFFD47780),
+    (name: 'زیتونی', color: 0xFF252A19, accent: 0xFFA5A85A),
+    (name: 'سبز مه‌آلود', color: 0xFFE9F0E9, accent: 0xFF668B70),
+    (name: 'آسمان خاکستری', color: 0xFF26333A, accent: 0xFF83A6AD),
+    (name: 'یخی مینیمال', color: 0xFFEDF3F1, accent: 0xFF527D79),
   ];
 
   Future<void> _pickWallpaper() async {
@@ -3541,7 +3659,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                           final unread = int.tryParse('${row['unread_count'] ?? 0}') ?? 0;
                           final peer = row['_peer'] is Map ? Map<String, dynamic>.from(row['_peer'] as Map) : <String, dynamic>{};
                           final avatar = (type == 'direct' ? peer['avatar_url'] : row['avatar_url'])?.toString() ?? '';
-                          final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                          final icon = type == 'saved' ? Icons.bookmark_rounded : type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                           return Card(
                             clipBehavior: Clip.antiAlias,
                             child: ListTile(
@@ -3680,30 +3798,107 @@ class StickersGifsPage extends StatelessWidget {
     ));
   }
 }
-const _deviceSessionIdKey = 'arad_device_session_id_v1';
+const _deviceSessionIdKey = 'gapresan_device_identity_v3';
+const _legacyDeviceSessionIdKey = 'arad_device_session_id_v2';
+const FlutterSecureStorage _deviceIdentityStorage = FlutterSecureStorage();
 
-Future<String> _getDeviceSessionId() async {
-  final prefs = await SharedPreferences.getInstance();
-  final saved = prefs.getString(_deviceSessionIdKey);
-  if (saved != null && saved.length >= 32) return saved;
-  final random = math.Random.secure();
-  final id = List<int>.generate(32, (_) => random.nextInt(256))
-      .map((value) => value.toRadixString(16).padLeft(2, '0'))
-      .join();
-  await prefs.setString(_deviceSessionIdKey, id);
-  return id;
+// One in-flight identity lookup for the whole process. Without this guard,
+// the security page and the background heartbeat can both observe an empty
+// secure-storage key and race to create two different IDs for the same phone.
+Future<String>? _deviceSessionIdFuture;
+
+Future<String> _getDeviceSessionId() {
+  return _deviceSessionIdFuture ??= _createStableDeviceSessionId().catchError(
+    (Object error) {
+      _deviceSessionIdFuture = null;
+      throw error;
+    },
+  );
 }
 
-String _deviceDisplayName() {
+Future<String> _createStableDeviceSessionId() async {
+  // First reuse the identity already stored for this app installation.
+  // It is intentionally shared across all accounts signed in on this device.
+  final saved = await _deviceIdentityStorage.read(key: _deviceSessionIdKey);
+  if (saved != null && saved.trim().length >= 16) return saved.trim();
+
+  // Migrate the previous app key rather than creating a fresh device entry
+  // after an app update.
+  final legacy = await _deviceIdentityStorage.read(key: _legacyDeviceSessionIdKey);
+  if (legacy != null && legacy.trim().length >= 16) {
+    final migrated = legacy.trim();
+    await _deviceIdentityStorage.write(key: _deviceSessionIdKey, value: migrated);
+    return migrated;
+  }
+
+  String stableId;
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    // Android ID is stable for the app-signing key, Android user and device.
+    // If the OS/plugin cannot provide it, fail closed: never invent a new ID
+    // on a transient error, because that would register a fake new device.
+    try {
+      final androidId = await AndroidId().getId();
+      if (androidId == null || androidId.trim().isEmpty) {
+        throw StateError('Android returned an empty device identifier.');
+      }
+      stableId = 'android:${androidId.trim()}';
+    } catch (error, stackTrace) {
+      debugPrint('Stable Android device ID unavailable; registration paused: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
+  } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      final info = await DeviceInfoPlugin().iosInfo;
+      final vendorId = info.identifierForVendor;
+      if (vendorId == null || vendorId.trim().isEmpty) {
+        throw StateError('iOS returned an empty vendor identifier.');
+      }
+      stableId = 'ios:${vendorId.trim()}';
+    } catch (error, stackTrace) {
+      debugPrint('Stable iOS device ID unavailable; registration paused: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
+  } else {
+    // Web/desktop cannot expose a hardware ID. Generate once, then persist
+    // it securely so logins and concurrent calls reuse the same profile ID.
+    final random = math.Random.secure();
+    final randomId = List<int>.generate(32, (_) => random.nextInt(256))
+        .map((value) => value.toRadixString(16).padLeft(2, '0'))
+        .join();
+    stableId = 'profile:$randomId';
+  }
+
+  await _deviceIdentityStorage.write(key: _deviceSessionIdKey, value: stableId);
+  return stableId;
+}
+
+Future<String> _deviceDisplayName() async {
   if (kIsWeb) return 'مرورگر وب';
-  return switch (defaultTargetPlatform) {
-    TargetPlatform.android => 'گوشی اندروید',
-    TargetPlatform.iOS => 'آیفون یا آیپد',
-    TargetPlatform.windows => 'رایانه ویندوز',
-    TargetPlatform.macOS => 'رایانه مک',
-    TargetPlatform.linux => 'رایانه لینوکس',
-    TargetPlatform.fuchsia => 'دستگاه',
-  };
+  try {
+    final info = DeviceInfoPlugin();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final android = await info.androidInfo;
+      final maker = android.manufacturer.trim();
+      final model = android.model.trim();
+      final label = [maker, model]
+          .where((part) => part.isNotEmpty)
+          .toSet()
+          .join(' ');
+      return label.isEmpty ? 'گوشی اندروید' : label;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = await info.iosInfo;
+      return ios.name.isNotEmpty ? ios.name : 'دستگاه اپل';
+    }
+    if (defaultTargetPlatform == TargetPlatform.windows) return 'رایانه ویندوز';
+    if (defaultTargetPlatform == TargetPlatform.macOS) return 'رایانه مک';
+    if (defaultTargetPlatform == TargetPlatform.linux) return 'رایانه لینوکس';
+  } catch (_) {
+    // Use a safe generic name if device-info is unavailable.
+  }
+  return 'دستگاه';
 }
 
 class DeviceSessionGate extends StatefulWidget {
@@ -3745,7 +3940,7 @@ class _DeviceSessionGateState extends State<DeviceSessionGate>
         'register_device_session',
         params: {
           'p_device_id': _deviceId,
-          'p_device_name': _deviceDisplayName(),
+          'p_device_name': await _deviceDisplayName(),
         },
       ).timeout(Duration(seconds: 8));
       if (active != true && mounted && !_signedOut) {
@@ -3800,8 +3995,9 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           .from('device_sessions')
           .select('id,device_id,device_name,created_at,last_seen_at,revoked_at')
           .eq('user_id', user.id)
+          .isFilter('revoked_at', null)
           .order('last_seen_at', ascending: false)
-          .limit(50);
+          .limit(1000);
       if (!mounted) return;
       setState(() {
         devices = List<Map<String, dynamic>>.from(result);
@@ -3819,15 +4015,46 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     return last != null && DateTime.now().difference(last).inMinutes < 2;
   }
 
+  DateTime? _deviceDate(Map<String, dynamic> row, String field) =>
+      DateTime.tryParse('${row[field] ?? ''}')?.toLocal();
+
+  String _formatDeviceDate(DateTime? date) {
+    if (date == null) return 'نامشخص';
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
+  }
+
   String _lastSeen(Map<String, dynamic> row) {
-    if (row['revoked_at'] != null) return 'دسترسی این دستگاه لغو شده';
-    final last = DateTime.tryParse('${row['last_seen_at'] ?? ''}')?.toLocal();
-    if (last == null) return 'زمان فعالیت نامشخص';
+    final last = _deviceDate(row, 'last_seen_at');
+    if (last == null) return 'آخرین فعالیت: نامشخص';
     final difference = DateTime.now().difference(last);
-    if (difference.inSeconds < 60) return 'فعال همین لحظه';
-    if (difference.inMinutes < 60) return '${difference.inMinutes} دقیقه پیش';
-    if (difference.inHours < 24) return '${difference.inHours} ساعت پیش';
-    return '${last.year}/${last.month.toString().padLeft(2, '0')}/${last.day.toString().padLeft(2, '0')}';
+    final relative = difference.inSeconds < 60
+        ? 'همین لحظه'
+        : difference.inMinutes < 60
+            ? '${difference.inMinutes} دقیقه پیش'
+            : difference.inHours < 24
+                ? '${difference.inHours} ساعت پیش'
+                : '${difference.inDays} روز پیش';
+    return 'آخرین فعالیت: ${_formatDeviceDate(last)} ($relative)';
+  }
+
+  List<Map<String, dynamic>> get _visibleDevices {
+    final byId = <String, Map<String, dynamic>>{};
+    for (final row in devices) {
+      final id = row['device_id']?.toString().trim() ?? '';
+      if (id.length < 16 || row['revoked_at'] != null) continue;
+      final existing = byId[id];
+      final currentDate = _deviceDate(row, 'last_seen_at');
+      final existingDate = existing == null ? null : _deviceDate(existing, 'last_seen_at');
+      if (existing == null ||
+          (currentDate != null && (existingDate == null || currentDate.isAfter(existingDate)))) {
+        byId[id] = row;
+      }
+    }
+    final result = byId.values.toList();
+    result.sort((a, b) =>
+        (_deviceDate(b, 'last_seen_at') ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(_deviceDate(a, 'last_seen_at') ?? DateTime.fromMillisecondsSinceEpoch(0)));
+    return result;
   }
 
   Future<bool> _confirmRevoke({required String title, required String message}) async {
@@ -3927,7 +4154,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final activeCount = devices.where(_isRecent).length;
+    final visibleDevices = _visibleDevices;
+    final activeCount = visibleDevices.where(_isRecent).length;
     return Scaffold(
       appBar: AppBar(
         title: Text(trUi('امنیت و دستگاه‌ها')),
@@ -3965,8 +4193,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             backgroundColor: scheme.primaryContainer,
                             child: Icon(Icons.devices_rounded, color: scheme.primary),
                           ),
-                          title: Text(trUi('$activeCount دستگاه فعال برای این حساب'), style: TextStyle(fontWeight: FontWeight.w900)),
-                          subtitle: Text(trUi('فقط نشست‌های همین حساب نمایش داده می‌شوند؛ ورود به حساب دیگر، دستگاه‌های آن را اینجا نشان نمی‌دهد. فعالیت هر ۳۰ ثانیه بررسی می‌شود و دستگاه خارج‌شده نمی‌تواند این نشست را ادامه دهد.')),
+                          title: Text(trUi('${visibleDevices.length} نشست فعال برای این حساب'), style: TextStyle(fontWeight: FontWeight.w900)),
+                          subtitle: Text(trUi('$activeCount دستگاه در حال فعالیت‌اند. وضعیت فعالیت با آخرین ضربان ثبت‌شده در دو دقیقهٔ اخیر مشخص می‌شود؛ زمان پیوستن و آخرین فعالیت هر دستگاه جداگانه نمایش داده می‌شود. فقط دستگاه‌های همین حساب که نشست‌شان لغو نشده باشد در این فهرست می‌آیند.')), 
                         ),
                       ),
                       if (devices.where((row) => row['revoked_at'] == null).any((row) => '${row['device_id'] ?? ''}' != (currentDeviceId ?? '')))
@@ -3982,18 +4210,17 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                         padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
                         child: Text(trUi('دستگاه‌های حساب'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
                       ),
-                      if (devices.isEmpty)
+                      if (visibleDevices.isEmpty)
                         Card(child: Padding(
                           padding: EdgeInsets.all(18),
-                          child: Text(trUi('هنوز دستگاهی ثبت نشده است. این دستگاه پس از اتصال به سرویس در فهرست ثبت می‌شود.')),
+                          child: Text(trUi('هیچ دستگاه فعالی برای این حساب ثبت نشده است.')),
                         )),
-                      ...devices.map((row) {
+                      ...visibleDevices.map((row) {
                         final id = row['device_id']?.toString() ?? '';
                         final name = row['device_name']?.toString() ?? 'دستگاه';
                         final current = id.isNotEmpty && id == currentDeviceId;
                         final recent = _isRecent(row);
-                        final revoked = row['revoked_at'] != null;
-                        final color = revoked ? scheme.error : recent ? Colors.green : scheme.onSurfaceVariant;
+                        final color = recent ? Colors.green : scheme.onSurfaceVariant;
                         return Card(
                           child: ListTile(
                             leading: CircleAvatar(
@@ -4004,16 +4231,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                               ),
                             ),
                             title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)),
-                            subtitle: Text('${current ? 'این دستگاه • ' : ''}${_lastSeen(row)}'),
+                            subtitle: Text('${current ? 'این دستگاه\\n' : ''}پیوستن به گپ‌رسان: ${_formatDeviceDate(_deviceDate(row, 'created_at'))}\\nوضعیت: ${recent ? 'در حال فعالیت' : 'نشست معتبر؛ فعالیت تازه ثبت نشده'}\\n${_lastSeen(row)}'),
                             trailing: current
                                 ? Chip(label: Text(trUi('فعلی')))
-                                : revoked
-                                    ? Icon(Icons.block_rounded)
-                                    : IconButton(
-                                        tooltip: 'خروج از این دستگاه',
-                                        onPressed: busy ? null : () => _revoke(id, name),
-                                        icon: Icon(Icons.logout_rounded),
-                                      ),
+                                : IconButton(
+                                    tooltip: 'خروج از این دستگاه',
+                                    onPressed: busy ? null : () => _revoke(id, name),
+                                    icon: Icon(Icons.logout_rounded),
+                                  ),
                           ),
                         );
                       }),
@@ -5451,6 +5676,10 @@ class _HomePageState extends State<HomePage> {
   Timer? _homeRefreshTimer;
   bool _homeLoadInProgress = false;
   bool _homeLoadQueued = false;
+
+  void _onNetworkStatusChanged() {
+    if (!appNetworkOffline.value && mounted) unawaited(load());
+  }
   RealtimeChannel? _callChannel;
   final Set<String> _handledIncomingCalls = <String>{};
   final AppLinks _appLinks = AppLinks();
@@ -5477,8 +5706,9 @@ class _HomePageState extends State<HomePage> {
       final isUnread = unreadCount > 0 || c['unread'] == true;
       final peer = c['_peer'] as Map<String,dynamic>?;
       final isArchived = archivedChatIds.contains(c['id'].toString());
-      return matchesType && matchesFolder && (archivedOnly ? isArchived : !isArchived) && (!unreadOnly || isUnread);
-    }).toList()..sort((a,b) { final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
+      final matchesArchive = c['type'] == 'saved' ? !archivedOnly : (archivedOnly ? isArchived : !isArchived);
+      return matchesType && matchesFolder && matchesArchive && (!unreadOnly || isUnread);
+    }).toList()..sort((a,b) { final asaved=a['type']=='saved'; final bsaved=b['type']=='saved'; if(asaved!=bsaved) return asaved?-1:1; final ap=pinnedChatIds.contains(a['id'].toString()); final bp=pinnedChatIds.contains(b['id'].toString()); if(ap!=bp) return ap?-1:1; final at=(a['_last']?['created_at']??'').toString(); final bt=(b['_last']?['created_at']??'').toString(); return bt.compareTo(at); });
   }
 
   String get _homeCacheKey {
@@ -5504,6 +5734,11 @@ class _HomePageState extends State<HomePage> {
       if (uid == null) {
         throw StateError('برای دیدن گفتگوها ابتدا وارد حساب شوید.');
       }
+      try {
+        await supabase.rpc('get_or_create_saved_messages').timeout(const Duration(seconds: 8));
+      } catch (savedChatError) {
+        debugPrint('Saved Messages bootstrap unavailable: $savedChatError');
+      }
 
       // 1) Membership is the source of truth: never expose conversations
       // simply because the current user created them.
@@ -5511,7 +5746,14 @@ class _HomePageState extends State<HomePage> {
       // must never make the user's chat history disappear from the UI.
       try {
         final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 3));
-        final cached = prefs.getString('arad_home_chats_cache_$uid');
+        final cacheKey = 'arad_home_chats_cache_$uid';
+        final cachedAt = prefs.getInt('${cacheKey}_saved_at');
+        final isExpired = cachedAt != null && DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(cachedAt)) > const Duration(days: 30);
+        if (isExpired) {
+          await prefs.remove(cacheKey);
+          await prefs.remove('${cacheKey}_saved_at');
+        }
+        final cached = isExpired ? null : prefs.getString(cacheKey);
         if (supabase.auth.currentUser?.id != uid) return;
         if (chats.isEmpty && cached != null && cached.isNotEmpty) {
           final decoded = jsonDecode(cached);
@@ -5608,12 +5850,29 @@ class _HomePageState extends State<HomePage> {
             .order('created_at', ascending: false)
             .limit(1000)
             .timeout(const Duration(seconds: 10));
-        for (final row in List<Map<String, dynamic>>.from(messageResponse as List)) {
+        final previewRows = List<Map<String, dynamic>>.from(messageResponse as List);
+        final previewIds = previewRows.map((row) => '${row['id']}').toList();
+        final hiddenPreviewIds = <String>{};
+        if (previewIds.isNotEmpty) {
+          final deletionRows = await supabase
+              .from('message_user_deletions')
+              .select('message_id')
+              .eq('user_id', uid)
+              .inFilter('message_id', previewIds)
+              .timeout(const Duration(seconds: 6));
+          hiddenPreviewIds.addAll(List<Map<String, dynamic>>.from(deletionRows)
+              .map((row) => '${row['message_id']}'));
+        }
+        for (final row in previewRows) {
           final id = row['conversation_id']?.toString() ?? '';
-          if (id.isNotEmpty) latestByConversation.putIfAbsent(id, () => row);
+          if (id.isNotEmpty && !hiddenPreviewIds.contains('${row['id']}')) {
+            latestByConversation.putIfAbsent(id, () => row);
+          }
         }
       } catch (messageError) {
-        debugPrint('Latest-message preview query failed; keeping chat list: $messageError');
+        // Never show a message preview until its per-user deletion state is verified.
+        latestByConversation.clear();
+        debugPrint('Latest-message/deletion preview sync failed; hiding previews: $messageError');
       }
 
       // The RPC counts messages against message_reads for auth.uid(), so
@@ -5646,10 +5905,21 @@ class _HomePageState extends State<HomePage> {
                 .eq('conversation_id', id)
                 .isFilter('deleted_at', null)
                 .order('created_at', ascending: false)
-                .limit(1)
+                .limit(30)
                 .timeout(const Duration(seconds: 4));
             final list = List<Map<String, dynamic>>.from(rows as List);
-            return list.isEmpty ? null : list.first;
+            if (list.isEmpty) return null;
+            final deletionRows = await supabase.from('message_user_deletions')
+                .select('message_id')
+                .eq('user_id', uid)
+                .inFilter('message_id', list.map((row) => '${row['id']}').toList())
+                .timeout(const Duration(seconds: 4));
+            final hiddenIds = List<Map<String, dynamic>>.from(deletionRows)
+                .map((row) => '${row['message_id']}').toSet();
+            for (final row in list) {
+              if (!hiddenIds.contains('${row['id']}')) return row;
+            }
+            return null;
           } catch (messageError) {
             debugPrint('Latest message lookup failed for $id: $messageError');
             return null;
@@ -5698,6 +5968,21 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
+      Map<String, dynamic>? savedSettings;
+      String? savedAvatarUrl;
+      try {
+        savedSettings = await supabase.from('saved_chat_settings')
+            .select('display_name,avatar_path').eq('user_id', uid)
+            .maybeSingle().timeout(const Duration(seconds: 5));
+        final avatarPath = savedSettings?['avatar_path']?.toString() ?? '';
+        if (avatarPath.isNotEmpty) {
+          savedAvatarUrl = await supabase.storage.from('saved-messages')
+              .createSignedUrl(avatarPath, 3600).timeout(const Duration(seconds: 5));
+        }
+      } catch (savedSettingsError) {
+        debugPrint('Saved Messages profile unavailable: $savedSettingsError');
+      }
+
       final nextChats = <Map<String, dynamic>>[];
       for (final id in visibleIds) {
         final row = conversationsById[id]!;
@@ -5710,9 +5995,11 @@ class _HomePageState extends State<HomePage> {
             : type == 'channel'
                 ? 'کانال'
                 : 'گفتگوی شخصی';
-        final rawTitle = (type == 'direct'
-                ? (peer?['display_name'] ?? peer?['username'] ?? row['title'] ?? fallbackTitle)
-                : (row['title'] ?? row['username'] ?? fallbackTitle))
+        final rawTitle = (type == 'saved'
+                ? (savedSettings?['display_name'] ?? row['title'] ?? 'پیام‌های ذخیره‌شده')
+                : type == 'direct'
+                    ? (peer?['display_name'] ?? peer?['username'] ?? row['title'] ?? fallbackTitle)
+                    : (row['title'] ?? row['username'] ?? fallbackTitle))
             .toString().trim();
         final preview = last == null
             ? 'هنوز پیامی ارسال نشده'
@@ -5724,7 +6011,7 @@ class _HomePageState extends State<HomePage> {
           'id': id,
           'type': type,
           'title': rawTitle.isEmpty ? fallbackTitle : rawTitle,
-          'avatar_url': row['avatar_url'] ?? peer?['avatar_url'],
+          'avatar_url': type == 'saved' ? (savedAvatarUrl ?? '') : (row['avatar_url'] ?? peer?['avatar_url']),
           '_peer': peer ?? <String, dynamic>{},
           '_last': last,
           '_preview': preview,
@@ -5751,7 +6038,9 @@ class _HomePageState extends State<HomePage> {
       try {
         final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
         if (supabase.auth.currentUser?.id != uid) return;
-        await prefs.setString('arad_home_chats_cache_$uid', jsonEncode(nextChats)).timeout(const Duration(seconds: 2));
+        final cacheKey = 'arad_home_chats_cache_$uid';
+        await prefs.setString(cacheKey, jsonEncode(nextChats)).timeout(const Duration(seconds: 2));
+        await prefs.setInt('${cacheKey}_saved_at', DateTime.now().millisecondsSinceEpoch).timeout(const Duration(seconds: 2));
       } catch (cacheError) {
         debugPrint('Conversation cache save failed: $cacheError');
       }
@@ -6068,6 +6357,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    appNetworkOffline.addListener(_onNetworkStatusChanged);
     _observedAuthUserId = supabase.auth.currentUser?.id;
     load();
     // Auth restoration/refresh can finish after this page first builds. Reload
@@ -6214,6 +6504,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    appNetworkOffline.removeListener(_onNetworkStatusChanged);
     _homeAuthSubscription?.cancel();
     _homeRefreshTimer?.cancel();
     _inviteLinkSubscription?.cancel();
@@ -6413,9 +6704,9 @@ class _HomePageState extends State<HomePage> {
                       final id = c['id'].toString();
                       final type = c['type'].toString();
                       final peer = c['_peer'] as Map<String,dynamic>?;
-                      final title = (type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? c['title'] ?? 'گفتگوی شخصی') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
+                      final title = (type == 'saved' ? (c['title'] ?? 'پیام‌های ذخیره‌شده') : type == 'direct' ? (peer?['display_name'] ?? peer?['username'] ?? c['title'] ?? 'گفتگوی شخصی') : (c['title'] ?? (type == 'group' ? 'گروه' : 'کانال'))).toString();
                       final avatarUrl = (type == 'direct' ? (peer?['avatar_url'] ?? '') : (c['avatar_url'] ?? '')).toString();
-                      final icon = type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      final icon = type == 'saved' ? Icons.bookmark_rounded : type == 'group' ? Icons.groups_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                       final last = c['_last'] as Map<String,dynamic>?;
                       final preview = (c['_preview'] ?? 'شروع گفتگو').toString();
                       final lastAt = last?['created_at'];
@@ -6520,17 +6811,28 @@ class _HomePageState extends State<HomePage> {
                                 icon: Icon(Icons.more_horiz_rounded, size: 21),
                                 onSelected: (action) {
                                   if (action == 'open') Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(id: id, title: title))).then((_) => load());
-                                  if (action == 'info') Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: id, fallbackTitle: title)));
+                                  if (action == 'info') {
+                                    if (type == 'saved') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesSettingsPage(conversationId: id))).then((_) => load());
+                                    } else {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: id, fallbackTitle: title)));
+                                    }
+                                  }
                                   if (action == 'archive') _toggleArchive(c);
                                   if (action == 'unread') _toggleManualUnread(c);
                                   if (action == 'pin') _togglePin(c);
+                                  if (action == 'saved_settings') Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesSettingsPage(conversationId: id))).then((_) => load());
                                 },
                                 itemBuilder: (_) => [
                                   PopupMenuItem(value: 'open', child: Text(trUi('باز کردن گفتگو'))),
-                                  PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
-                                  PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
-                                  PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن گفتگو')),
-                                  PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
+                                  if (type == 'saved')
+                                    PopupMenuItem(value: 'saved_settings', child: Text('شخصی‌سازی پیام‌های ذخیره‌شده'))
+                                  else ...[
+                                    PopupMenuItem(value: 'info', child: Text(trUi('پروفایل و اطلاعات'))),
+                                    PopupMenuItem(value: 'unread', child: Text(manuallyUnreadChatIds.contains(id) ? 'علامت خوانده‌شده' : 'علامت خوانده‌نشده')),
+                                    PopupMenuItem(value: 'pin', child: Text(isPinned ? 'برداشتن سنجاق' : 'سنجاق کردن گفتگو')),
+                                    PopupMenuItem(value: 'archive', child: Text(archived ? 'خارج کردن از آرشیو' : 'آرشیو گفتگو')),
+                                  ],
                                 ],
                               ),
                             ]),
@@ -6619,11 +6921,7 @@ class _HomePageState extends State<HomePage> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        child: Row(children: [
-          Expanded(child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelCreatePage())).then((_) => load()))),
-          SizedBox(width: 8),
-          Expanded(child: _glassAction(Icons.bookmark_rounded, 'پیام‌های ذخیره‌شده', () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage())))),
-        ]),
+        child: _glassAction(Icons.campaign_rounded, 'ایجاد کانال', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelCreatePage())).then((_) => load())),
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -6884,23 +7182,45 @@ class _HomePageState extends State<HomePage> {
           );
       },
       child: Scaffold(
-      body: SafeArea(child: AnimatedSwitcher(duration: Duration(milliseconds: 180), child: KeyedSubtree(
-        key: ValueKey('$navIndex-$showContacts'),
-        child: showContacts
-            ? Column(children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
-                  child: Row(children: [
-                    IconButton(onPressed: () => setState(() { showContacts = false; _homeChromeVisible = true; _chatTopGlowVisible = true; }), icon: Icon(Icons.arrow_back_rounded)),
-                    Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
-                  ]),
-                ),
-                Expanded(child: contactsView()),
-              ])
-            : navIndex == 0
-                ? chatsView()
-                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; })),
-      ))),
+      body: NotificationListener<ScrollNotification>(
+        // Keep the floating navigation out of the way while reading long
+        // pages, not only while scrolling the chat list. Scrolling back up
+        // or returning to the top reveals it again.
+        onNotification: (notification) {
+          if (notification.metrics.axis == Axis.vertical) {
+            bool? show;
+            if (notification is UserScrollNotification) {
+              if (notification.direction == ScrollDirection.reverse) show = false;
+              if (notification.direction == ScrollDirection.forward) show = true;
+            } else if (notification is ScrollUpdateNotification &&
+                notification.metrics.pixels <= 8) {
+              show = true;
+            }
+            if (show != null && mounted && show != _homeChromeVisible) {
+              setState(() => _homeChromeVisible = show!);
+            }
+          }
+          return false;
+        },
+        child: SafeArea(child: AnimatedSwitcher(duration: Duration(milliseconds: 180), child: KeyedSubtree(
+          key: ValueKey('$navIndex-$showContacts'),
+          child: showContacts
+              ? Column(children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+                    child: Row(children: [
+                      IconButton(onPressed: () => setState(() { showContacts = false; _homeChromeVisible = true; _chatTopGlowVisible = true; }), icon: Icon(Icons.arrow_back_rounded)),
+                      Expanded(child: Text(trUi('مخاطبین'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                    ]),
+                  ),
+                  Expanded(child: contactsView()),
+                ])
+              : navIndex == 0
+                  ? chatsView()
+                  : navIndex == 1
+                      ? ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; }))
+                      : const SupportBotPage(),
+        )))),
       floatingActionButton: navIndex == 0 ? IgnorePointer(ignoring: !_homeChromeVisible, child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: _homeChromeVisible ? 1 : 0, child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _homeChromeVisible ? 1 : .78, child: FloatingActionButton(tooltip: trUi('گفتگوی جدید'), onPressed: createDirect, child: Icon(Icons.edit_rounded))))) : null,
       bottomNavigationBar: AnimatedSize(
         duration: const Duration(milliseconds: 230),
@@ -6947,6 +7267,7 @@ class _HomePageState extends State<HomePage> {
                       destinations: [
                         NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
                         NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+                        NavigationDestination(icon: Icon(Icons.smart_toy_outlined), selectedIcon: Icon(Icons.smart_toy_rounded), label: trUi('راهنما')),
                       ],
                     ),
                   ),
@@ -8124,56 +8445,112 @@ class DataSettingsPage extends StatefulWidget {
 }
 class _DataSettingsPageState extends State<DataSettingsPage> {
   bool low = false, wifi = true, loading = true;
-  @override void initState() { super.initState(); _load(); }
+  bool savingLow = false, savingWifi = false;
+  String? loadError;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
   Future<void> _load() async {
+    if (mounted) setState(() { loading = true; loadError = null; });
     try {
       final values = await loadUserSettings();
       if (!mounted) return;
       setState(() {
-        low = values['low_data_mode'] ?? false;
-        wifi = values['wifi_only'] ?? true;
+        low = values['low_data_mode'] is bool ? values['low_data_mode'] as bool : false;
+        wifi = values['wifi_only'] is bool ? values['wifi_only'] as bool : true;
         loading = false;
+        loadError = null;
       });
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        loadError = _friendlyError(e.toString());
+      });
     }
   }
-  Future<void> _change(String key, bool value, bool previous, ValueChanged<bool> update) async {
-    if (mounted) setState(() => update(value));
+
+  Future<void> _change(String key, bool value) async {
+    final isLow = key == 'low_data_mode';
+    final previous = isLow ? low : wifi;
+    if ((isLow && savingLow) || (!isLow && savingWifi) || value == previous) return;
+    setState(() {
+      if (isLow) { savingLow = true; low = value; }
+      else { savingWifi = true; wifi = value; }
+    });
     try {
       await saveUserSettings({key: value});
       if (mounted) showMsg(context, 'تنظیم ذخیره شد.');
     } catch (e) {
       if (!mounted) return;
-      setState(() => update(previous));
-      showMsg(context, 'ذخیره تنظیم انجام نشد: '+_friendlyError(e.toString()));
+      setState(() {
+        if (isLow) low = previous;
+        else wifi = previous;
+      });
+      showMsg(context, 'ذخیره تنظیم انجام نشد؛ مقدار قبلی برگشت. ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() {
+        if (isLow) savingLow = false;
+        else savingWifi = false;
+      });
     }
   }
+
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(trUi('مصرف داده'))),
-    body: loading ? Center(child: CircularProgressIndicator()) : ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(child: SwitchListTile(
-          value: low,
-          onChanged: (v) => _change('low_data_mode', v, low, (next) => low = next),
-          title: Text(trUi('حالت کم‌مصرف')),
-          subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
-          secondary: Icon(Icons.data_saver_on_rounded),
-        )),
-        Card(child: SwitchListTile(
-          value: wifi,
-          onChanged: (v) => _change('wifi_only', v, wifi, (next) => wifi = next),
-          title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
-          subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
-          secondary: Icon(Icons.wifi_rounded),
-        )),
-        Padding(
-          padding: EdgeInsets.all(8),
-          child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.')),
+    appBar: AppBar(
+      title: Text(trUi('مصرف داده')),
+      actions: [
+        IconButton(
+          tooltip: trUi('تازه‌سازی'),
+          onPressed: loading ? null : _load,
+          icon: const Icon(Icons.refresh_rounded),
         ),
       ],
     ),
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : loadError != null
+            ? Center(child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.cloud_off_rounded, size: 42, color: Theme.of(context).colorScheme.error),
+                  const SizedBox(height: 12),
+                  Text(trUi('تنظیمات مصرف داده بارگذاری نشد.')),
+                  const SizedBox(height: 8),
+                  Text(loadError!, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh_rounded), label: Text(trUi('تلاش دوباره'))),
+                ]),
+              ))
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(child: SwitchListTile.adaptive(
+                    value: low,
+                    onChanged: savingLow ? null : (v) => _change('low_data_mode', v),
+                    title: Text(trUi('حالت کم‌مصرف')),
+                    subtitle: Text(trUi('ترجیح برای کاهش مصرف اینترنت و داده')),
+                    secondary: const Icon(Icons.data_saver_on_rounded),
+                  )),
+                  Card(child: SwitchListTile.adaptive(
+                    value: wifi,
+                    onChanged: savingWifi ? null : (v) => _change('wifi_only', v),
+                    title: Text(trUi('دانلود خودکار فقط با وای‌فای')),
+                    subtitle: Text(trUi('برای جلوگیری از مصرف ناخواسته اینترنت همراه')),
+                    secondary: const Icon(Icons.wifi_rounded),
+                  )),
+                  const SizedBox(height: 8),
+                  Card(child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(trUi('این تنظیمات در حساب شما ذخیره می‌شوند؛ اعمال محدودیت روی همه انواع رسانه به پشتیبانی هر بخش از برنامه بستگی دارد.'))),
+                    ]),
+                  )),
+                ],
+              ),
   );
 }
 
@@ -8296,23 +8673,26 @@ class _SharedMediaPageState extends State<SharedMediaPage>{
           final hiddenRows = await supabase.from('message_user_deletions')
               .select('message_id')
               .eq('user_id', currentUid)
-              .inFilter('message_id', messageIds);
+              .inFilter('message_id', messageIds)
+              .timeout(const Duration(seconds: 6));
           final hiddenIds = (hiddenRows as List)
               .map((r) => '${r['message_id']}')
               .toSet();
           ms.removeWhere((m) => hiddenIds.contains('${m['id']}'));
         } catch (visibilityError) {
-          debugPrint('Shared-media deletion filter unavailable: $visibilityError');
+          // Fail closed: do not expose media while deletion state is unknown.
+          ms.clear();
+          debugPrint('Shared-media deletion sync failed; hiding media: $visibilityError');
         }
       }
       final ids=ms.map((m)=>'${m['id']}').toList();
       final aa=<String,Map<String,dynamic>>{};
-      if(ids.isNotEmpty){ final ar=await supabase.from('message_attachments').select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id',ids); for(final a in List<Map<String,dynamic>>.from(ar)) aa['${a['message_id']}']=a; }
+      if(ids.isNotEmpty){ final ar=await supabase.from('message_attachments').select('message_id,storage_path,bucket_id,file_name,mime_type,file_size,duration_ms').inFilter('message_id',ids); for(final a in List<Map<String,dynamic>>.from(ar)) aa['${a['message_id']}']=a; }
       if(mounted)setState((){rows=ms;attachments=aa;loading=false;});
     }catch(e){if(mounted){setState(()=>loading=false);showMsg(context,'رسانه‌ها بارگذاری نشد: '+_friendlyError(e.toString()));}}
   }
   bool _matches(Map<String,dynamic> m){ final type='${m['message_type']??'text'}'; if(tab==0)return type=='image'||type=='video'; if(tab==1)return type=='file'; return type=='audio'||type=='voice'; }
-  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from('chat-media').createSignedUrl(path,3600);}catch(_){return null;} }
+  Future<String?> _url(Map<String,dynamic> m) async { final a=attachments['${m['id']}']; final path=a?['storage_path']?.toString()??''; if(path.isEmpty)return null; try{return await supabase.storage.from((a?['bucket_id'] ?? 'chat-media').toString()).createSignedUrl(path,3600);}catch(_){return null;} }
   @override Widget build(BuildContext context){
     final filtered=rows.where(_matches).toList();
     return Scaffold(
@@ -9157,9 +9537,10 @@ class GlobalSearchDelegate extends SearchDelegate<Map<String,dynamic>?> {
             .timeout(Duration(seconds: 4));
         hiddenForUser.addAll(List<Map<String,dynamic>>.from(deletedRows)
             .map((row) => '${row['message_id']}'));
-      } catch (_) {
-        // Keep search usable if deletion metadata is temporarily unavailable;
-        // server-deleted messages are already excluded by deleted_at above.
+      } catch (deletionSyncError) {
+        // A failed deletion lookup must never make a previously hidden result visible.
+        searchMessages.clear();
+        debugPrint('Global search deletion sync failed; hiding message results: $deletionSyncError');
       }
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -9449,6 +9830,7 @@ class _ChatPageState extends State<ChatPage> {
   String _chatType = 'direct';
   String? _localChatTitle;
   String _groupAvatarUrl = '';
+  String _savedAvatarUrl = '';
   String _directPeerId = '';
   List<Map<String, dynamic>> _mentionSuggestions = [];
   int _mentionStart = -1;
@@ -9466,6 +9848,10 @@ class _ChatPageState extends State<ChatPage> {
   bool _keepLatestVisibleOnKeyboard = false;
   final Set<String> _locallyHiddenMessageIds = <String>{};
   bool _localHiddenIdsLoaded = false;
+
+  void _onNetworkStatusChanged() {
+    if (!appNetworkOffline.value && mounted) unawaited(load());
+  }
 
   void _onMessagesScroll() {
     if (!_messagesScroll.hasClients || !mounted) return;
@@ -9525,10 +9911,21 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<String?> _attachmentUrl(String path) async {
+  String get _attachmentBucket => _chatType == 'saved' ? 'saved-messages' : 'chat-media';
+
+  String _attachmentStoragePath(String fileName) {
+    final uid = supabase.auth.currentUser?.id ?? 'unknown';
+    final folder = _chatType == 'saved' ? '$uid/${widget.id}' : widget.id;
+    return '$folder/$fileName';
+  }
+
+  String _bucketForAttachment(Map<String, dynamic>? attachment) =>
+      (attachment?['bucket_id'] ?? _attachmentBucket).toString();
+
+  Future<String?> _attachmentUrl(String path, {String? bucketId}) async {
     if (path.isEmpty) return null;
     try {
-      return await supabase.storage.from('chat-media').createSignedUrl(path, 3600);
+      return await supabase.storage.from(bucketId ?? _attachmentBucket).createSignedUrl(path, 3600);
     } catch (_) {
       return null;
     }
@@ -9539,7 +9936,7 @@ class _ChatPageState extends State<ChatPage> {
       final a = attachments[messageId];
       final path = a?['storage_path']?.toString() ?? '';
       if (path.isEmpty) throw Exception('مسیر فایل صوتی خالی است');
-      final bytes = await supabase.storage.from('chat-media').download(path);
+      final bytes = await supabase.storage.from(_bucketForAttachment(a)).download(path);
       if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
       await _voicePlayer.stop();
       final mime = (a?['mime_type'] ?? 'audio/mp4').toString();
@@ -9553,7 +9950,7 @@ class _ChatPageState extends State<ChatPage> {
     final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) { if (mounted) showMsg(context, 'تصویر پیدا نشد'); return; }
-    final url = await _attachmentUrl(path);
+    final url = await _attachmentUrl(path, bucketId: a?['bucket_id']?.toString());
     if (!mounted || url == null || url.isEmpty) { if (mounted) showMsg(context, 'باز کردن تصویر ناموفق بود'); return; }
     await showDialog<void>(
       context: context,
@@ -9581,7 +9978,7 @@ class _ChatPageState extends State<ChatPage> {
       mine: false,
       mimeType: (a?['mime_type'] ?? 'audio/mp4').toString(),
       loadAudio: () async {
-        final bytes = await supabase.storage.from('chat-media').download(path);
+        final bytes = await supabase.storage.from(_bucketForAttachment(a)).download(path);
         if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
         return bytes;
       },
@@ -9767,7 +10164,21 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _loadChatType() async {
     try {
       final r = await supabase.from('conversations').select('type').eq('id', widget.id).maybeSingle();
-      if (mounted) setState(() { _chatType = (r?['type'] ?? 'direct').toString(); });
+      final nextType = (r?['type'] ?? 'direct').toString();
+      if (mounted) setState(() { _chatType = nextType; });
+      if (nextType == 'saved') {
+        final uid = supabase.auth.currentUser?.id;
+        if (uid == null) return;
+        final settings = await supabase.from('saved_chat_settings')
+            .select('display_name,avatar_path').eq('user_id', uid).maybeSingle();
+        final savedName = (settings?['display_name'] ?? widget.title).toString();
+        if (mounted) setState(() => _localChatTitle = savedName);
+        final path = settings?['avatar_path']?.toString() ?? '';
+        if (path.isNotEmpty) {
+          final url = await supabase.storage.from('saved-messages').createSignedUrl(path, 3600);
+          if (mounted) setState(() => _savedAvatarUrl = url);
+        }
+      }
     } catch (_) {}
   }
 
@@ -9805,10 +10216,66 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
+  Future<void> _syncPendingMessageDeletions() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final pendingKey = 'arad_pending_message_deletions_v1_${uid}_${widget.id}';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pending = (prefs.getStringList(pendingKey) ?? const <String>[]).toSet();
+      if (pending.isEmpty) return;
+      final remaining = <String>{};
+      // Bound the retry work so a large offline backlog cannot delay chat startup.
+      for (final messageId in pending.take(30)) {
+        try {
+          await supabase.from('message_user_deletions').insert({
+            'message_id': messageId,
+            'user_id': uid,
+          }).timeout(const Duration(seconds: 5));
+        } catch (error) {
+          final errorText = error.toString().toLowerCase();
+          final alreadyRecorded = errorText.contains('23505') ||
+              errorText.contains('duplicate key') ||
+              errorText.contains('unique constraint');
+          if (!alreadyRecorded) remaining.add(messageId);
+        }
+      }
+      if (pending.length > 30) remaining.addAll(pending.skip(30));
+      await prefs.setStringList(pendingKey, remaining.toList());
+    } catch (error) {
+      debugPrint('Pending message deletion sync unavailable: $error');
+    }
+  }
+
+  Future<void> _setPendingDeletionSync(String messageId, bool pending) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    final key = 'arad_pending_message_deletions_v1_${uid}_${widget.id}';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = (prefs.getStringList(key) ?? <String>[]).toSet();
+      if (pending) {
+        ids.add(messageId);
+      } else {
+        ids.remove(messageId);
+      }
+      await prefs.setStringList(key, ids.toList());
+    } catch (error) {
+      debugPrint('Could not persist pending message deletion: $error');
+    }
+  }
+
   Future<void> _restoreCachedChat() async {
     await _ensureLocalHiddenIds();
     try {
       final prefs = await SharedPreferences.getInstance();
+      final cachedAt = prefs.getInt('${_chatCacheKey}_saved_at');
+      final isExpired = cachedAt != null && DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(cachedAt)) > const Duration(days: 30);
+      if (isExpired) {
+        await prefs.remove(_chatCacheKey);
+        await prefs.remove('${_chatCacheKey}_saved_at');
+        return;
+      }
       final raw = prefs.getString(_chatCacheKey);
       if (raw == null || raw.isEmpty || !mounted) return;
       final decoded = jsonDecode(raw);
@@ -9842,12 +10309,14 @@ class _ChatPageState extends State<ChatPage> {
           m['__kind'] != 'system' &&
           m['__kind'] != 'call').toList();
       await prefs.setString(_chatCacheKey, jsonEncode(cacheable.take(120).toList()));
+      await prefs.setInt('${_chatCacheKey}_saved_at', DateTime.now().millisecondsSinceEpoch);
     } catch (_) {
       // Cache is an optimization; the server remains the source of truth.
     }
   }
 
   Future<void> load() async {
+    var deletionSyncFailed = false;
     // Serialize refreshes triggered by sends, Realtime and screen lifecycle.
     // A burst queues at most one follow-up refresh instead of racing state writes.
     if (_chatLoadInProgress) {
@@ -9857,6 +10326,7 @@ class _ChatPageState extends State<ChatPage> {
     _chatLoadInProgress = true;
     final stickToBottom = !_messagesScroll.hasClients || (_messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels < 80);
     await _ensureLocalHiddenIds();
+    await _syncPendingMessageDeletions();
     await _restoreCachedChat();
     if (mounted) setState(() { _isSyncing = true; loading = messages.isEmpty; });
     try {
@@ -9996,8 +10466,11 @@ class _ChatPageState extends State<ChatPage> {
                 await prefs.setStringList(_hiddenMessageIdsKey, _locallyHiddenMessageIds.toList());
               } catch (_) {}
             }
-          } catch (_) {
-            // Continue with local tombstones and the remaining server messages.
+          } catch (deletionSyncError) {
+            // Do not publish a new server history when per-user deletion markers
+            // cannot be checked; that could resurrect a message after reinstall.
+            deletionSyncFailed = true;
+            throw StateError('حذف‌های قبلی همگام نشدند: $deletionSyncError');
           }
         }
       }
@@ -10094,7 +10567,7 @@ class _ChatPageState extends State<ChatPage> {
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
           supabase.from('message_attachments')
-              .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
+              .select('message_id,storage_path,bucket_id,file_name,mime_type,file_size,duration_ms').inFilter('message_id', ids)
               .timeout(Duration(seconds: 5))
               .then<dynamic>((value) => value)
               .catchError((_) => <Map<String, dynamic>>[]),
@@ -10166,8 +10639,20 @@ class _ChatPageState extends State<ChatPage> {
       await markRead();
     } catch (e) {
       if (mounted) {
-        setState(() { loading = false; _isSyncing = false; });
-        if (messages.isEmpty) {
+        setState(() {
+          loading = false;
+          _isSyncing = false;
+          if (deletionSyncFailed) {
+            messages = [];
+            timelineItems = [];
+            attachments = {};
+            reactions = {};
+            readReceipts = {};
+          }
+        });
+        if (deletionSyncFailed) {
+          showMsg(context, 'برای جلوگیری از برگشت پیام‌های حذف‌شده، وضعیت حذف از سرور تأیید نشد. اتصال را بررسی و دوباره تلاش کنید.');
+        } else if (messages.isEmpty) {
           showMsg(context, _isNetworkFailure(e)
               ? 'اینترنت در دسترس نیست و هنوز نسخهٔ ذخیره‌شده‌ای از این گفتگو ندارید.'
               : 'گفتگو بارگذاری نشد: ${_friendlyError(e.toString())}');
@@ -10540,9 +11025,9 @@ class _ChatPageState extends State<ChatPage> {
       final isAudio = mime.startsWith('audio/');
       final isImage = mime.startsWith('image/');
       final safeName = f.name.trim().replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-      final path = '${widget.id}/${DateTime.now().microsecondsSinceEpoch}_${safeName.isEmpty ? 'attachment' : safeName}';
+      final path = _attachmentStoragePath('${DateTime.now().microsecondsSinceEpoch}_${safeName.isEmpty ? 'attachment' : safeName}');
       uploadedPath = path;
-      await supabase.storage.from('chat-media').uploadBinary(
+      await supabase.storage.from(_attachmentBucket).uploadBinary(
         path, bytes, fileOptions: FileOptions(contentType: mime, upsert: false));
       if (!mounted) return;
       final msg = await supabase.from('messages').insert({
@@ -10555,6 +11040,7 @@ class _ChatPageState extends State<ChatPage> {
       createdMessageId = msg['id']?.toString();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': path,
         'file_name': f.name,
         'file_size': f.size,
@@ -10569,7 +11055,7 @@ class _ChatPageState extends State<ChatPage> {
         try { await supabase.from('messages').delete().eq('id', createdMessageId!); } catch (_) {}
       }
       if (uploadedPath != null) {
-        try { await supabase.storage.from('chat-media').remove([uploadedPath!]); } catch (_) {}
+        try { await supabase.storage.from(_attachmentBucket).remove([uploadedPath!]); } catch (_) {}
       }
       if (mounted) showMsg(context, 'فایل ارسال نشد: ${_friendlyError(e.toString())}');
     } finally {
@@ -10679,8 +11165,8 @@ class _ChatPageState extends State<ChatPage> {
       if (mounted) setState(() => sending = true);
       final voiceMime = kIsWeb ? 'audio/webm' : 'audio/mp4';
       final voiceExtension = kIsWeb ? 'webm' : 'm4a';
-      final storagePath = '${widget.id}/voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension';
-      await supabase.storage.from('chat-media').uploadBinary(
+      final storagePath = _attachmentStoragePath('voice_${DateTime.now().millisecondsSinceEpoch}.$voiceExtension');
+      await supabase.storage.from(_attachmentBucket).uploadBinary(
         storagePath,
         bytes,
         fileOptions: FileOptions(contentType: voiceMime, upsert: false),
@@ -10694,6 +11180,7 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': storagePath,
         'file_name': storagePath.split('/').last,
         'mime_type': voiceMime,
@@ -10729,10 +11216,10 @@ class _ChatPageState extends State<ChatPage> {
       if (video == null) return;
       final bytes = await video.readAsBytes();
       if (bytes.isEmpty) throw Exception('ویدئو خالی است');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_video_${video.name}';
+      final path = _attachmentStoragePath('${DateTime.now().millisecondsSinceEpoch}_video_${video.name}');
       final videoMime = _mimeType(video.name);
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(
+      await supabase.storage.from(_attachmentBucket).uploadBinary(
         path,
         bytes,
         fileOptions: FileOptions(contentType: videoMime.startsWith('video/') ? videoMime : 'video/mp4', upsert: false),
@@ -10746,6 +11233,7 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': path,
         'file_name': video.name,
         'mime_type': videoMime.startsWith('video/') ? videoMime : 'video/mp4',
@@ -10768,11 +11256,11 @@ class _ChatPageState extends State<ChatPage> {
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}';
+      final path = _attachmentStoragePath('${DateTime.now().millisecondsSinceEpoch}_camera_${image.name}');
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.storage.from(_attachmentBucket).uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({'conversation_id': widget.id, 'sender_id': supabase.auth.currentUser!.id, 'body': image.name, 'message_type': 'image', 'reply_to': replyMessage?['id']}).select().single();
-      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
+      await supabase.from('message_attachments').insert({'message_id': msg['id'], 'bucket_id': _attachmentBucket, 'storage_path': path, 'file_name': image.name, 'mime_type': 'image/jpeg', 'file_size': bytes.length});
       if (mounted) setState(() => replyMessage = null);
       await load();
       _restoreComposerFocus();
@@ -10823,9 +11311,9 @@ class _ChatPageState extends State<ChatPage> {
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (bytes.isEmpty) throw Exception('تصویر خالی است');
-      final path = '${widget.id}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final path = _attachmentStoragePath('${DateTime.now().millisecondsSinceEpoch}_${image.name}');
       setState(() => sending = true);
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.storage.from(_attachmentBucket).uploadBinary(path, bytes, fileOptions: FileOptions(contentType: 'image/jpeg', upsert: false));
       final msg = await supabase.from('messages').insert({
         'conversation_id': widget.id,
         'sender_id': supabase.auth.currentUser!.id,
@@ -10835,6 +11323,7 @@ class _ChatPageState extends State<ChatPage> {
       }).select().single();
       await supabase.from('message_attachments').insert({
         'message_id': msg['id'],
+        'bucket_id': _attachmentBucket,
         'storage_path': path,
         'file_name': image.name,
         'mime_type': 'image/jpeg',
@@ -11236,6 +11725,8 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> deleteForMe(Map<String, dynamic> message) async {
     final messageId = '${message['id']}';
+    // Hide locally immediately, but do not call this deletion complete until the
+    // server has durably stored the account-specific tombstone.
     final previousTimeline = List<Map<String, dynamic>>.from(timelineItems);
     final previousMessages = List<Map<String, dynamic>>.from(messages);
     // Optimistic UI: remove the message immediately, then persist in the background.
@@ -11245,10 +11736,24 @@ class _ChatPageState extends State<ChatPage> {
     });
     try {
       await _setLocalMessageHidden(messageId, true);
-      await supabase.from('message_user_deletions').upsert({
-        'message_id': message['id'],
-        'user_id': supabase.auth.currentUser!.id,
-      });
+      // Persist a retry marker before the network request, so an app close
+      // during a weak connection cannot lose the deletion operation.
+      await _setPendingDeletionSync(messageId, true);
+      try {
+        // INSERT is intentionally used instead of upsert: tombstones are
+        // append-only and the table has no UPDATE policy.
+        await supabase.from('message_user_deletions').insert({
+          'message_id': message['id'],
+          'user_id': supabase.auth.currentUser!.id,
+        });
+      } catch (insertError) {
+        final errorText = insertError.toString().toLowerCase();
+        final alreadyRecorded = errorText.contains('23505') ||
+            errorText.contains('duplicate key') ||
+            errorText.contains('unique constraint');
+        if (!alreadyRecorded) rethrow;
+      }
+      await _setPendingDeletionSync(messageId, false);
       await _saveCachedChat(messages);
       // The current screen is already updated optimistically; a full history
       // reload here only adds latency and another round-trip.
@@ -11257,7 +11762,8 @@ class _ChatPageState extends State<ChatPage> {
       // the network/RLS write fails. Keep the tombstone and filtered cache;
       // report that cloud sync failed rather than resurrecting the message.
       await _saveCachedChat(messages);
-      if (mounted) showMsg(context, 'پیام از این دستگاه حذف شد؛ همگام‌سازی حذف با سرور ناموفق بود. اتصال را بررسی کنید.');
+      await _setPendingDeletionSync(messageId, true);
+      if (mounted) showMsg(context, 'پیام فعلاً از این دستگاه پنهان شد؛ ثبت دائمی در سرور ناموفق بود. تا تأیید همگام‌سازی، برنامه را حذف نکنید و اتصال را دوباره امتحان کنید.');
     }
   }
 
@@ -11310,28 +11816,80 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> saveMessage(Map<String, dynamic> message) async {
     final uid = supabase.auth.currentUser?.id;
     final sourceId = message['id']?.toString();
-    if (uid == null || sourceId == null || sourceId.startsWith('pending-')) {
-      if (mounted) showMsg(context, 'این پیام هنوز در سرور ثبت نشده است؛ کمی بعد دوباره امتحان کنید.');
+    if (uid == null || sourceId == null || sourceId.startsWith('pending-') || message['deleted_at'] != null) {
+      if (mounted) showMsg(context, 'این پیام هنوز در سرور ثبت نشده یا حذف شده است.');
       return;
     }
+    String? uploadedPath;
+    String? insertedMessageId;
     try {
-      final payload = <String, dynamic>{
-        'user_id': uid,
-        'source_message_id': sourceId,
-        // saved_messages.body is NOT NULL in the live database; media messages
-        // may have no textual caption, so store a useful fallback label.
-        'body': (message['body'] ?? '').toString().trim().isNotEmpty
-            ? message['body'].toString()
-            : ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[message['message_type']?.toString()] ?? 'پیام'),
-        'message_type': message['message_type'] ?? 'text',
-      };
-      // The unique key makes this one request both idempotent and race-safe.
-      await supabase.from('saved_messages').upsert(
-        payload,
-        onConflict: 'user_id,source_message_id',
-      );
-      if (mounted) showMsg(context, 'پیام در پیام‌های ذخیره‌شده ثبت شد.');
+      final savedConversationId = (await supabase.rpc('get_or_create_saved_messages')).toString();
+      if (savedConversationId == widget.id) {
+        if (mounted) showMsg(context, 'این پیام همین‌حالا در پیام‌های ذخیره‌شده است.');
+        return;
+      }
+
+      final type = (message['message_type'] ?? 'text').toString();
+      Map<String, dynamic>? attachment = attachments[sourceId];
+      final needsAttachment = ['image', 'video', 'audio', 'file'].contains(type);
+      if (needsAttachment && attachment == null) {
+        attachment = await supabase.from('message_attachments')
+            .select('storage_path,bucket_id,file_name,file_size,mime_type,duration_ms')
+            .eq('message_id', sourceId).maybeSingle();
+      }
+      if (needsAttachment && attachment == null) {
+        throw StateError('فایل پیوست این پیام پیدا نشد.');
+      }
+      if (attachment != null && needsAttachment) {
+        final sourceBucket = (attachment['bucket_id'] ?? _attachmentBucket).toString();
+        final sourcePath = attachment['storage_path'].toString();
+        final bytes = await supabase.storage.from(sourceBucket).download(sourcePath);
+        final safeName = (attachment['file_name'] ?? 'saved_file').toString()
+            .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+        uploadedPath = '$uid/$savedConversationId/save_${DateTime.now().microsecondsSinceEpoch}_$safeName';
+        await supabase.storage.from('saved-messages').uploadBinary(
+          uploadedPath!, bytes,
+          fileOptions: FileOptions(contentType: (attachment['mime_type'] ?? 'application/octet-stream').toString(), upsert: false),
+        );
+      }
+
+      final rawBody = (message['body'] ?? '').toString();
+      final fallbackBody = ({'image':'تصویر','video':'ویدئو','audio':'پیام صوتی','file':'فایل'}[type] ?? 'پیام');
+      final visibleBody = rawBody.trim().isNotEmpty ? rawBody : fallbackBody;
+      var savedBody = visibleBody;
+      if (!savedBody.startsWith('[[ARAD_FORWARD]]')) {
+        final senderId = (message['sender_id'] ?? uid).toString();
+        final author = _senderName(message).replaceAll('|', ' ').replaceAll(RegExp(r'[\\r\\n]+'), ' ').trim();
+        savedBody = '[[ARAD_FORWARD]]$senderId|${author.isEmpty ? 'کاربر' : author}\\n$visibleBody';
+      }
+      final inserted = await supabase.from('messages').insert({
+        'conversation_id': savedConversationId,
+        'sender_id': uid,
+        'body': savedBody,
+        'message_type': type,
+        'reply_to': null,
+      }).select().single();
+      insertedMessageId = inserted['id']?.toString();
+
+      if (needsAttachment && attachment != null && uploadedPath != null) {
+        await supabase.from('message_attachments').insert({
+          'message_id': inserted['id'],
+          'bucket_id': 'saved-messages',
+          'storage_path': uploadedPath,
+          'file_name': attachment['file_name'],
+          'file_size': attachment['file_size'],
+          'mime_type': attachment['mime_type'],
+          if (attachment['duration_ms'] != null) 'duration_ms': attachment['duration_ms'],
+        });
+      }
+      if (mounted) showMsg(context, 'پیام به گفت‌وگوی شخصی شما منتقل شد.');
     } catch (e) {
+      if (insertedMessageId != null) {
+        try { await supabase.from('messages').delete().eq('id', insertedMessageId!); } catch (_) {}
+      }
+      if (uploadedPath != null) {
+        try { await supabase.storage.from('saved-messages').remove([uploadedPath!]); } catch (_) {}
+      }
       if (mounted) showMsg(context, 'ذخیره پیام انجام نشد: ${_friendlyError(e.toString())}');
     }
   }
@@ -11409,9 +11967,28 @@ class _ChatPageState extends State<ChatPage> {
       }
       final rows = await supabase.from('conversations').select('id,title,type,avatar_url,created_at').inFilter('id', ids).order('created_at', ascending: false);
       final rawTargets = List<Map<String, dynamic>>.from(rows).where((c) => '${c['id']}' != '${widget.id}').toList();
+      rawTargets.sort((a, b) {
+        final aSaved = a['type'] == 'saved';
+        final bSaved = b['type'] == 'saved';
+        if (aSaved != bSaved) return aSaved ? -1 : 1;
+        return '${b['created_at'] ?? ''}'.compareTo('${a['created_at'] ?? ''}');
+      });
+      Map<String, dynamic>? savedDestinationSettings;
+      try {
+        savedDestinationSettings = await supabase.from('saved_chat_settings')
+            .select('display_name,avatar_path').eq('user_id', uid).maybeSingle();
+      } catch (_) {}
       final targets = <Map<String, dynamic>>[];
       for (final c in rawTargets) {
-        var displayTitle = '${c['title'] ?? ''}'.trim();
+        var displayTitle = c['type'] == 'saved'
+            ? '${savedDestinationSettings?['display_name'] ?? c['title'] ?? 'پیام‌های ذخیره‌شده'}'.trim()
+            : '${c['title'] ?? ''}'.trim();
+        if (c['type'] == 'saved') {
+          final avatarPath = savedDestinationSettings?['avatar_path']?.toString() ?? '';
+          if (avatarPath.isNotEmpty) {
+            try { c['_peer_avatar_url'] = await supabase.storage.from('saved-messages').createSignedUrl(avatarPath, 3600); } catch (_) {}
+          }
+        }
         if (displayTitle.isEmpty && '${c['type']}' == 'direct') {
           final other = await supabase.from('conversation_members').select('user_id').eq('conversation_id', c['id']).neq('user_id', uid).maybeSingle();
           if (other != null) {
@@ -11458,12 +12035,12 @@ class _ChatPageState extends State<ChatPage> {
                       final c = targets[index];
                       final type = '${c['type']}';
                       final title = '${c['_display_title'] ?? c['title'] ?? (type == 'group' ? 'گروه' : type == 'channel' ? 'کانال' : 'گفتگو')}';
-                      final icon = type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
+                      final icon = type == 'saved' ? Icons.bookmark_rounded : type == 'group' ? Icons.group_rounded : type == 'channel' ? Icons.campaign_rounded : Icons.person_rounded;
                       final avatarUrl = '${c['_peer_avatar_url'] ?? c['avatar_url'] ?? ''}'.trim();
                       return ListTile(
                         leading: CircleAvatar(backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null, child: avatarUrl.isEmpty ? Icon(icon) : null),
                         title: Text(title, style: TextStyle(fontWeight: FontWeight.w700)),
-                        subtitle: Text(type == 'group' ? trUi('گروه') : type == 'channel' ? trUi('کانال') : trUi('گفتگوی شخصی')),
+                        subtitle: Text(type == 'saved' ? trUi('گفت‌وگوی شخصی شما') : type == 'group' ? trUi('گروه') : type == 'channel' ? trUi('کانال') : trUi('گفتگوی شخصی')),
                         trailing: Icon(Icons.chevron_left_rounded),
                         onTap: () => Navigator.pop(sheetContext, c),
                       );
@@ -11515,16 +12092,29 @@ class _ChatPageState extends State<ChatPage> {
 
       final type = '${message['message_type'] ?? 'text'}';
       var attachmentCopied = true;
-      if (type != 'text') {
+      if (['image', 'video', 'audio', 'file'].contains(type)) {
         try {
           final attachment = await supabase.from('message_attachments')
-              .select('storage_path,file_name,file_size,mime_type,duration_ms')
+              .select('storage_path,bucket_id,file_name,file_size,mime_type,duration_ms')
               .eq('message_id', message['id'])
               .maybeSingle();
           if (attachment != null) {
+            final sourceBucket = (attachment['bucket_id'] ?? _attachmentBucket).toString();
+            final targetBucket = target['type'] == 'saved' ? 'saved-messages' : 'chat-media';
+            final sourcePath = attachment['storage_path'].toString();
+            final fileBytes = await supabase.storage.from(sourceBucket).download(sourcePath);
+            final ownerId = supabase.auth.currentUser!.id;
+            final safeName = (attachment['file_name'] ?? 'forwarded_file').toString().replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+            final targetFolder = targetBucket == 'saved-messages' ? '$ownerId/${target['id']}' : '${target['id']}';
+            final targetPath = '$targetFolder/forward_${DateTime.now().microsecondsSinceEpoch}_$safeName';
+            await supabase.storage.from(targetBucket).uploadBinary(
+              targetPath, fileBytes,
+              fileOptions: FileOptions(contentType: (attachment['mime_type'] ?? 'application/octet-stream').toString(), upsert: false),
+            );
             await supabase.from('message_attachments').insert({
               'message_id': inserted['id'],
-              'storage_path': attachment['storage_path'],
+              'bucket_id': targetBucket,
+              'storage_path': targetPath,
               'file_name': attachment['file_name'],
               'file_size': attachment['file_size'],
               'mime_type': attachment['mime_type'],
@@ -12018,7 +12608,7 @@ class _ChatPageState extends State<ChatPage> {
     final path = a?['storage_path']?.toString() ?? '';
     if (path.isEmpty) return Icon(Icons.image_rounded, size: 42);
     return FutureBuilder<String?>(
-      future: _attachmentUrl(path),
+      future: _attachmentUrl(path, bucketId: a?['bucket_id']?.toString()),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return SizedBox(width: 190, height: 150, child: Center(child: CircularProgressIndicator()));
         final url = snapshot.data;
@@ -12044,7 +12634,7 @@ class _ChatPageState extends State<ChatPage> {
     final a = attachments['${m['id']}'];
     final path = a?['storage_path']?.toString();
     if (path == null || path.isEmpty) return Icon(Icons.video_file_rounded, size: 42);
-    return _ChatVideoAttachment(storagePath: path);
+    return _ChatVideoAttachment(storagePath: path, bucketId: _bucketForAttachment(a));
   }
 
   Widget _fileAttachment(Map<String, dynamic> m) {
@@ -12058,7 +12648,7 @@ class _ChatPageState extends State<ChatPage> {
         mine: m['sender_id'] == supabase.auth.currentUser?.id,
         mimeType: mime,
         loadAudio: () async {
-          final bytes = await supabase.storage.from('chat-media').download(path);
+          final bytes = await supabase.storage.from(_bucketForAttachment(a)).download(path);
           if (bytes.isEmpty) throw Exception('فایل صوتی خالی است');
           return bytes;
         },
@@ -12464,7 +13054,7 @@ class _ChatPageState extends State<ChatPage> {
           } else {
             final rows = List<Map<String, dynamic>>.from(
               await supabase.from('message_attachments')
-                .select('message_id,storage_path,file_name,mime_type,file_size,duration_ms')
+                .select('message_id,storage_path,bucket_id,file_name,mime_type,file_size,duration_ms')
                 .eq('message_id', messageId)
                 .timeout(Duration(seconds: 5)),
             );
@@ -12490,12 +13080,12 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    appNetworkOffline.addListener(_onNetworkStatusChanged);
     _openChatConversationCounts.update(widget.id, (count) => count + 1, ifAbsent: () => 1);
     _composerFocus.addListener(_onComposerFocus);
     _messagesScroll.addListener(_onMessagesScroll);
     _loadChatNotificationPreference();
-    load();
-    _loadChatType();
+    _loadChatType().then((_) { if (mounted) load(); });
     channel = supabase.channel('chat-${widget.id}')
       .onPostgresChanges(
         event: PostgresChangeEvent.insert,
@@ -12581,6 +13171,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    appNetworkOffline.removeListener(_onNetworkStatusChanged);
     final openCount = _openChatConversationCounts[widget.id] ?? 0;
     if (openCount <= 1) {
       _openChatConversationCounts.remove(widget.id);
@@ -12774,6 +13365,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openChatProfile() async {
+    if (_chatType == 'saved') {
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => SavedMessagesSettingsPage(conversationId: widget.id),
+      ));
+      if (mounted) await _loadChatType();
+      return;
+    }
     if (_chatType != 'direct') {
       if (mounted) await Navigator.push(context, MaterialPageRoute(
         builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title),
@@ -12910,13 +13508,14 @@ class _ChatPageState extends State<ChatPage> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => SharedMediaPage(conversationId: widget.id)));
                   break;
                 case 'info':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+                  if (_chatType == 'saved') {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesSettingsPage(conversationId: widget.id))).then((_) { if (mounted) _loadChatType(); });
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => ConversationInfoPage(conversationId: widget.id, fallbackTitle: widget.title)));
+                  }
                   break;
                 case 'settings':
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ChatSettingsPage()));
-                  break;
-                case 'saved':
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => SavedMessagesPage()));
                   break;
                 case 'appearance':
                   Navigator.push(context, MaterialPageRoute(builder: (_) => AppAppearancePage()));
@@ -12934,7 +13533,6 @@ class _ChatPageState extends State<ChatPage> {
               PopupMenuItem(value: 'media', child: ListTile(dense: true, leading: Icon(Icons.photo_library_outlined), title: Text(trUi('رسانه‌ها و فایل‌ها')))),
               PopupMenuItem(value: 'info', child: ListTile(dense: true, leading: Icon(Icons.info_outline_rounded), title: Text(trUi('اطلاعات گفتگو')))),
               PopupMenuItem(value: 'settings', child: ListTile(dense: true, leading: Icon(Icons.tune_rounded), title: Text(trUi('تنظیمات گفتگو')))),
-              PopupMenuItem(value: 'saved', child: ListTile(dense: true, leading: Icon(Icons.bookmark_border_rounded), title: Text(trUi('پیام‌های ذخیره‌شده')))),
             ],
           ),
           FutureBuilder<bool>(
@@ -12962,9 +13560,9 @@ class _ChatPageState extends State<ChatPage> {
                     child: (() {
                       final avatar = _chatType == 'direct'
                           ? '${profiles[_directPeerId]?['avatar_url'] ?? ''}'.trim()
-                          : (_chatType == 'group' ? _groupAvatarUrl.trim() : '');
+                          : (_chatType == 'group' ? _groupAvatarUrl.trim() : (_chatType == 'saved' ? _savedAvatarUrl.trim() : ''));
                       if (avatar.isEmpty) {
-                        return Icon(_chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 18, color: scheme.primary);
+                        return Icon(_chatType == 'saved' ? Icons.bookmark_rounded : _chatType == 'group' ? Icons.groups_rounded : _chatType == 'channel' ? Icons.campaign_rounded : Icons.person_rounded, size: 18, color: scheme.primary);
                       }
                       return Image.network(
                         avatar,
@@ -13002,11 +13600,13 @@ class _ChatPageState extends State<ChatPage> {
                   Text(
                     _isSyncing
                         ? 'در حال اتصال…'
-                        : (_chatType == 'direct'
-                            ? 'گفتگوی خصوصی'
-                            : (_chatType == 'group'
-                                ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
-                                : 'کانال')),
+                        : (_chatType == 'saved'
+                            ? 'فقط برای شما'
+                            : _chatType == 'direct'
+                                ? 'گفتگوی خصوصی'
+                                : (_chatType == 'group'
+                                    ? '$_groupMemberCount عضو • $_groupOnlineCount فعال'
+                                    : 'کانال')),
                     style: TextStyle(
                       fontSize: 10,
                       height: 1.1,
@@ -13530,7 +14130,8 @@ class _ChatPageState extends State<ChatPage> {
   }}
 class _ChatVideoAttachment extends StatefulWidget {
   final String storagePath;
-  const _ChatVideoAttachment({required this.storagePath});
+  final String bucketId;
+  const _ChatVideoAttachment({required this.storagePath, required this.bucketId});
   @override State<_ChatVideoAttachment> createState() => _ChatVideoAttachmentState();
 }
 
@@ -13541,7 +14142,7 @@ class _ChatVideoAttachmentState extends State<_ChatVideoAttachment> {
 
   Future<void> _load() async {
     try {
-      final url = await supabase.storage.from('chat-media').createSignedUrl(widget.storagePath, 3600);
+      final url = await supabase.storage.from(widget.bucketId).createSignedUrl(widget.storagePath, 3600);
       final c = VideoPlayerController.networkUrl(Uri.parse(url));
       await c.initialize();
       await c.setLooping(false);
@@ -13854,24 +14455,323 @@ class AppLockGate extends StatefulWidget {
   State<AppLockGate> createState() => _AppLockGateState();
 }
 
-class _AppLockGateState extends State<AppLockGate> {
+class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
+  final _storage = const FlutterSecureStorage();
+  final _auth = LocalAuthentication();
+  final _pinController = TextEditingController();
+  bool _ready = false;
+  bool _locked = false;
+  bool _busy = false;
+  bool _biometricEnabled = false;
+  String? _pin;
+  DateTime? _backgroundedAt;
+  bool _storageUnavailable = false;
+  int _failedPinAttempts = 0;
+  DateTime? _pinLockedUntil;
+
   @override
   void initState() {
     super.initState();
-    _disableLocalAppLock();
+    WidgetsBinding.instance.addObserver(this);
+    _loadLockState();
   }
 
-  Future<void> _disableLocalAppLock() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadLockState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('app_lock_enabled', false);
-      await prefs.setBool('app_lock_biometric', false);
-      await const FlutterSecureStorage().delete(key: 'app_lock_pin');
+      final enabled = prefs.getBool('app_lock_enabled') ?? false;
+      final pin = await _storage.read(key: 'app_lock_pin');
+      final valid = enabled && pin != null && pin.length >= 4;
+      if (!valid && enabled) {
+        await prefs.setBool('app_lock_enabled', false);
+        await prefs.setBool('app_lock_biometric', false);
+      }
+      if (!mounted) return;
+      setState(() {
+        _pin = valid ? pin : null;
+        _biometricEnabled = valid && (prefs.getBool('app_lock_biometric') ?? false);
+        _locked = valid;
+        _storageUnavailable = false;
+        _ready = true;
+      });
+      if (valid && _biometricEnabled) _unlockBiometric();
     } catch (error) {
-      debugPrint('Could not clear disabled app PIN settings: $error');
+      debugPrint('App lock initialization failed: $error');
+      // Fail closed: never bypass an enabled local lock because secure storage
+      // temporarily failed. Keep the app behind a retry screen instead.
+      if (mounted) setState(() { _ready = true; _locked = true; _storageUnavailable = true; });
     }
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _backgroundedAt ??= DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final since = _backgroundedAt;
+      _backgroundedAt = null;
+      if (since != null && DateTime.now().difference(since) >= const Duration(seconds: 30) && _pin != null) {
+        _loadLockState();
+      }
+    }
+  }
+
+  Future<void> _unlockBiometric() async {
+    if (!_locked || _busy || !_biometricEnabled) return;
+    _busy = true;
+    try {
+      final ok = await _auth.authenticate(
+        localizedReason: 'برای بازکردن گپ‌رسان هویت خود را تأیید کن',
+        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+      );
+      if (ok && mounted) setState(() => _locked = false);
+    } catch (error) {
+      debugPrint('Biometric unlock unavailable: $error');
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _unlockWithPin(String value) async {
+    if (_storageUnavailable) return;
+    final lockUntil = _pinLockedUntil;
+    if (lockUntil != null && DateTime.now().isBefore(lockUntil)) {
+      final remaining = lockUntil.difference(DateTime.now()).inSeconds + 1;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('برای امنیت، $remaining ثانیه صبر کن.')));
+      return;
+    }
+    final normalized = value.runes.map((r) {
+      if (r >= 0x06F0 && r <= 0x06F9) return String.fromCharCode(0x30 + r - 0x06F0);
+      if (r >= 0x0660 && r <= 0x0669) return String.fromCharCode(0x30 + r - 0x0660);
+      return String.fromCharCode(r);
+    }).join().replaceAll(RegExp(r'[^0-9]'), '');
+    if (normalized == _pin && mounted) {
+      FocusScope.of(context).unfocus();
+      _pinController.clear();
+      _failedPinAttempts = 0;
+      _pinLockedUntil = null;
+      setState(() => _locked = false);
+    } else {
+      _failedPinAttempts++;
+      if (_failedPinAttempts >= 5) {
+        _failedPinAttempts = 0;
+        _pinLockedUntil = DateTime.now().add(const Duration(seconds: 30));
+        _pinController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('۵ بار رمز اشتباه بود؛ برای ۳۰ ثانیه ورود با PIN بسته شد.')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('رمز درست نیست؛ ${5 - _failedPinAttempts} تلاش باقی مانده.')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return const Material(color: Color(0xFF081712), child: Center(child: CircularProgressIndicator()));
+    if (_storageUnavailable) {
+      return Material(
+        color: const Color(0xFF081712),
+        child: SafeArea(child: Center(child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.shield_outlined, size: 52, color: Color(0xFFFFC36A)),
+            const SizedBox(height: 16),
+            const Text('حافظهٔ امن در دسترس نیست', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('برای محافظت از حساب، برنامه باز نمی‌شود. اتصال دستگاه را بررسی کن و دوباره تلاش کن.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFB4C6BC))),
+            const SizedBox(height: 18),
+            FilledButton.icon(onPressed: _loadLockState, icon: const Icon(Icons.refresh), label: const Text('تلاش دوباره')),
+          ]),
+        ))),
+      );
+    }
+    if (!_locked) return widget.child;
+    return PopScope(
+      canPop: false,
+      child: Material(
+        color: const Color(0xFF081712),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.lock_rounded, size: 54, color: Color(0xFF35C99A)),
+                  const SizedBox(height: 18),
+                  const Text('گپ‌رسان قفل است', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text('برای ادامه رمز برنامه را وارد کن.', style: TextStyle(color: Color(0xFFB4C6BC))),
+                  const SizedBox(height: 22),
+                  TextField(
+                    controller: _pinController,
+                    autofocus: true,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 8,
+                    style: const TextStyle(color: Colors.white, letterSpacing: 8),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: '••••',
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      filled: true,
+                      fillColor: const Color(0xFF193329),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    ),
+                    onSubmitted: _unlockWithPin,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(width: double.infinity, child: FilledButton(onPressed: () => _unlockWithPin(_pinController.text), child: const Text('بازکردن قفل'))),
+                  if (_biometricEnabled) TextButton.icon(onPressed: _busy ? null : _unlockBiometric, icon: const Icon(Icons.fingerprint), label: const Text('استفاده از اثرانگشت')),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class SavedMessagesSettingsPage extends StatefulWidget {
+  final String conversationId;
+  const SavedMessagesSettingsPage({super.key, required this.conversationId});
+
+  @override
+  State<SavedMessagesSettingsPage> createState() => _SavedMessagesSettingsPageState();
+}
+
+class _SavedMessagesSettingsPageState extends State<SavedMessagesSettingsPage> {
+  final TextEditingController _name = TextEditingController(text: 'پیام‌های ذخیره‌شده');
+  bool _loading = true;
+  bool _saving = false;
+  String? _avatarPath;
+  String? _avatarUrl;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  @override
+  void dispose() { _name.dispose(); super.dispose(); }
+
+  Future<void> _load() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final row = await supabase.from('saved_chat_settings')
+          .select('display_name,avatar_path').eq('user_id', uid).maybeSingle();
+      if (!mounted) return;
+      _name.text = (row?['display_name'] ?? 'پیام‌های ذخیره‌شده').toString();
+      _avatarPath = row?['avatar_path']?.toString();
+      if ((_avatarPath ?? '').isNotEmpty) {
+        _avatarUrl = await supabase.storage.from('saved-messages').createSignedUrl(_avatarPath!, 3600);
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'بارگذاری تنظیمات ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _pickAvatar() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || _saving) return;
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 86, maxWidth: 1200);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (bytes.isEmpty) throw Exception('تصویر خالی است');
+      setState(() => _saving = true);
+      final path = '$uid/${widget.conversationId}/avatar_${DateTime.now().microsecondsSinceEpoch}.jpg';
+      await supabase.storage.from('saved-messages').uploadBinary(
+        path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+      await supabase.from('saved_chat_settings').update({
+        'avatar_path': path,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('user_id', uid);
+      final url = await supabase.storage.from('saved-messages').createSignedUrl(path, 3600);
+      if (mounted) setState(() { _avatarPath = path; _avatarUrl = url; });
+    } catch (e) {
+      if (mounted) showMsg(context, 'تغییر تصویر ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _saveName() async {
+    final uid = supabase.auth.currentUser?.id;
+    final value = _name.text.trim();
+    if (uid == null || value.isEmpty || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await supabase.from('saved_chat_settings').update({
+        'display_name': value,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('user_id', uid);
+      if (mounted) {
+        showMsg(context, 'نام گفت‌وگوی شخصی ذخیره شد.');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('شخصی‌سازی پیام‌های ذخیره‌شده')),
+      body: _loading ? const Center(child: CircularProgressIndicator()) : ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Center(
+            child: InkWell(
+              onTap: _saving ? null : _pickAvatar,
+              borderRadius: BorderRadius.circular(64),
+              child: Stack(children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: scheme.primaryContainer,
+                  backgroundImage: (_avatarUrl ?? '').isNotEmpty ? NetworkImage(_avatarUrl!) : null,
+                  child: (_avatarUrl ?? '').isEmpty ? Icon(Icons.bookmark_rounded, size: 38, color: scheme.primary) : null,
+                ),
+                Positioned(right: 0, bottom: 0,
+                  child: CircleAvatar(radius: 17, backgroundColor: scheme.primary,
+                    child: const Icon(Icons.camera_alt_rounded, size: 17, color: Colors.white))),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(child: Text('تصویر گفت‌وگوی شخصی', style: TextStyle(color: scheme.onSurfaceVariant))),
+          const SizedBox(height: 28),
+          TextField(
+            controller: _name, maxLength: 40, textDirection: TextDirection.rtl,
+            decoration: const InputDecoration(labelText: 'نام گفت‌وگو', prefixIcon: Icon(Icons.edit_rounded), border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _saving ? null : _saveName,
+            icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save_rounded),
+            label: const Text('ذخیره تغییرات'),
+          ),
+          const SizedBox(height: 18),
+          const ListTile(
+            leading: Icon(Icons.lock_outline_rounded),
+            title: Text('خصوصی برای همین حساب'),
+            subtitle: Text('این گفت‌وگو مخاطب، عضو یا گروه دیگری ندارد.'),
+          ),
+        ],
+      ),
+    );
+  }
 }
