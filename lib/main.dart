@@ -1533,9 +1533,11 @@ String trUi(String source) {
   return source;
 }
 class LanguageController extends ChangeNotifier {
-  Locale locale = Locale('fa');
+  // Dari Afghanistan is the default for fresh installs; an explicitly saved
+  // language choice is always respected on later launches.
+  Locale locale = const Locale('prs');
 
-  Future<void> load() async { final p = await SharedPreferences.getInstance(); locale = Locale(p.getString('locale') ?? 'fa'); notifyListeners(); }
+  Future<void> load() async { final p = await SharedPreferences.getInstance(); locale = Locale(p.getString('locale') ?? 'prs'); notifyListeners(); }
   Future<void> setLocale(String code) async { locale = Locale(code); final p = await SharedPreferences.getInstance(); await p.setString('locale', code); notifyListeners(); }
 }
 
@@ -1677,9 +1679,9 @@ final appAccessibility = AppAccessibilityController();
 
 class AppStrings {
   // prs = Dari (Afghanistan), ps = Pashto. Both choices are saved locally and restored on next launch.
-  static const supported = ['fa', 'prs', 'haz', 'ps', 'en', 'ar', 'tr', 'fr', 'de', 'ur', 'hi', 'es', 'ru', 'zh', 'it', 'pt', 'id', 'ja', 'ko', 'bn'];
+  static const supported = ['prs', 'ps', 'haz', 'en', 'fa', 'ar', 'tr', 'fr', 'de', 'ur', 'hi', 'es', 'ru', 'zh', 'it', 'pt', 'id', 'ja', 'ko', 'bn'];
   static const names = {
-    'fa':'فارسی', 'prs':'دری', 'haz':'هزارگی', 'ps':'پښتو',
+    'prs':'دری افغانستان', 'ps':'پښتو افغانستان', 'haz':'هزارگی افغانستان', 'en':'English', 'fa':'فارسی',
     'en':'English', 'ar':'العربية', 'tr':'Türkçe', 'fr':'Français',
     'de':'Deutsch', 'ur':'اردو', 'hi':'हिन्दी', 'es':'Español',
     'ru':'Русский', 'zh':'中文', 'it':'Italiano', 'pt':'Português',
@@ -2366,13 +2368,13 @@ class ProfessionalSettingsPage extends StatefulWidget {
 }
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   final search=TextEditingController();
-  String theme='تاریک',language='فارسی';
+  String theme='تاریک',language='دری افغانستان';
   bool savingPreference = false;
   @override void initState(){super.initState();_load();}
   @override void dispose(){search.dispose();super.dispose();}
   Future<void> _load() async {
     if(!mounted)return;
-    setState((){theme=appTheme.dark?'تاریک':'روشن';language=AppStrings.names[aradLanguageController.locale.languageCode]??'فارسی';});
+    setState((){theme=appTheme.dark?'تاریک':'روشن';language=AppStrings.names[aradLanguageController.locale.languageCode]??'دری افغانستان';});
   }
   List<Map<String,String>> get items=>[
     {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل'},
@@ -2488,51 +2490,78 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   void _showLanguageSheet() => showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(sheetContext).size.height * .72,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
-              child: Row(children: [
-                Expanded(child: Text(trUi('زبان رابط کاربری'),
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
-                IconButton(
-                  tooltip: trUi('بستن'),
-                  onPressed: () => Navigator.pop(sheetContext),
-                  icon: const Icon(Icons.close_rounded),
+    builder: (sheetContext) {
+      var query = '';
+      return StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(sheetContext).size.height * .78,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+                  child: Row(children: [
+                    Expanded(child: Text(trUi('زبان رابط کاربری'),
+                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+                    IconButton(
+                      tooltip: trUi('بستن'),
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ]),
                 ),
-              ]),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: TextField(
+                    autofocus: false,
+                    onChanged: (value) => setSheetState(() => query = value.trim().toLowerCase()),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      hintText: trUi('جستجوی زبان'),
+                      isDense: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: Builder(builder: (context) {
+                    final matches = AppStrings.supported.where((code) {
+                      final label = (AppStrings.names[code] ?? code).toLowerCase();
+                      return query.isEmpty || label.contains(query) || code.toLowerCase().contains(query);
+                    }).toList();
+                    if (matches.isEmpty) {
+                      return Center(child: Text(trUi('زبانی پیدا نشد')));
+                    }
+                    return ListView.builder(
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) {
+                        final code = matches[index];
+                        return RadioListTile<String>(
+                          key: ValueKey('language-$code'),
+                          value: code,
+                          groupValue: aradLanguageController.locale.languageCode,
+                          title: Text(AppStrings.names[code] ?? code),
+                          onChanged: (value) async {
+                            if (value == null) return;
+                            await aradLanguageController.setLocale(value);
+                            await saveUserSettings({'language_code': value});
+                            if (mounted) {
+                              setState(() => language = AppStrings.names[value] ?? value);
+                              Navigator.pop(sheetContext);
+                            }
+                          },
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ],
             ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView.builder(
-                itemCount: AppStrings.supported.length,
-                itemBuilder: (context, index) {
-                  final code = AppStrings.supported[index];
-                  return RadioListTile<String>(
-                    key: ValueKey('language-$code'),
-                    value: code,
-                    groupValue: aradLanguageController.locale.languageCode,
-                    title: Text(AppStrings.names[code] ?? code),
-                    onChanged: (value) async {
-                      if (value == null) return;
-                      await aradLanguageController.setLocale(value);
-                      await saveUserSettings({'language_code': value});
-                      if (mounted) {
-                        setState(() => language = AppStrings.names[value] ?? value);
-                        Navigator.pop(sheetContext);
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
   Future<void> _signOut()async{
     final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
