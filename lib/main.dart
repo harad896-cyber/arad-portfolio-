@@ -10100,60 +10100,69 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onMessagesScroll() {
     if (!_messagesScroll.hasClients || !mounted) return;
-    final distance = _messagesScroll.position.maxScrollExtent - _messagesScroll.position.pixels;
-    final show = distance > 220;
-    if (show != _showJumpToLatest) setState(() => _showJumpToLatest = show);
+    final position = _messagesScroll.position;
+    if (!position.hasContentDimensions) return;
+    final distance = position.maxScrollExtent - position.pixels;
+    // Keep the control out of the way during ordinary reading. It appears
+    // only when the user has moved meaningfully away from the latest messages.
+    final show = distance > 420 && !_composerFocus.hasFocus;
+    if (show != _showJumpToLatest) {
+      setState(() => _showJumpToLatest = show);
+    }
   }
 
   void _onComposerFocus() {
     // Preserve the current reading position when the keyboard opens.
+    if (_composerFocus.hasFocus && _showJumpToLatest && mounted) {
+      setState(() => _showJumpToLatest = false);
+    }
   }
 
   void _scheduleKeyboardScroll() {
     if (!_keepLatestVisibleOnKeyboard) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_composerFocus.hasFocus || !_messagesScroll.hasClients) return;
-      _messagesScroll.jumpTo(_messagesScroll.position.maxScrollExtent);
+      final position = _messagesScroll.position;
+      if (!position.hasContentDimensions) return;
+      final target = position.maxScrollExtent;
+      if ((position.pixels - target).abs() < 3) return;
+      // Animate after the keyboard/layout has completed this frame. Never
+      // jumpTo here: an instant correction while the IME is resizing looks
+      // like the conversation suddenly switches position.
+      position.animateTo(
+        target,
+        duration: const Duration(milliseconds: 230),
+        curve: Curves.easeOutQuart,
+      );
     });
   }
 
   void _jumpToLatest() {
     if (!_messagesScroll.hasClients) return;
-    _messagesScroll.animateTo(_messagesScroll.position.maxScrollExtent,
-      duration: Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+    final position = _messagesScroll.position;
+    if (!position.hasContentDimensions) return;
+    position.animateTo(
+      position.maxScrollExtent,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   void _scrollToLatestForKeyboard() {
     if (!mounted || !_messagesScroll.hasClients) return;
     final position = _messagesScroll.position;
     if (!position.hasContentDimensions) return;
-
-    // First make the actual last bubble visible. This is more reliable than
-    // relying only on maxScrollExtent while Android is animating the IME.
-    final latestContext = _latestMessageKey.currentContext;
-    if (_lastKeyboardInset > 0 && latestContext != null) {
-      Scrollable.ensureVisible(
-        latestContext,
-        alignment: 1.0,
-        duration: Duration(milliseconds: 120),
-        curve: Curves.easeOutCubic,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-      );
-    }
-
     final target = position.maxScrollExtent;
-    if ((position.pixels - target).abs() < 2) return;
-    // After the keyboard resize settles, force the list to its real bottom.
-    // The extra bottom padding keeps the final bubble above the composer/IME.
-    if (_lastKeyboardInset > 0) {
-      position.jumpTo(target);
-    } else {
-      position.animateTo(
-        target,
-        duration: Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-      );
-    }
+    if ((position.pixels - target).abs() < 3) return;
+
+    // Use one coordinated animation instead of ensureVisible + jumpTo.
+    // Competing scroll commands during Android keyboard animation caused
+    // visible jumps and occasional flicker.
+    position.animateTo(
+      target,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutQuart,
+    );
   }
 
   String get _attachmentBucket => _chatType == 'saved' ? 'saved-messages' : 'chat-media';
@@ -13881,22 +13890,38 @@ class _ChatPageState extends State<ChatPage> {
         ),
         ),
       ),
-      floatingActionButton: _showJumpToLatest
-          ? Padding(
-              // Lift the jump control clear of the Android system bar and
-              // leave a reliable touch gap above the composer when typing.
-              padding: EdgeInsets.only(bottom: keyboardInset > 0 ? 120 : 104),
-              child: FloatingActionButton.small(
-                heroTag: 'jump-to-latest-${widget.id}',
-                onPressed: _jumpToLatest,
-                tooltip: trUi('رفتن به آخرین پیام'),
-                backgroundColor: scheme.surface.withValues(alpha: .72),
-                foregroundColor: scheme.primary,
-                elevation: 2,
-                child: Icon(Icons.keyboard_double_arrow_down_rounded),
+      floatingActionButton: AnimatedSlide(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        offset: _showJumpToLatest && keyboardInset <= 0 && !_composerFocus.hasFocus
+            ? Offset.zero
+            : const Offset(0, .35),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          opacity: _showJumpToLatest && keyboardInset <= 0 && !_composerFocus.hasFocus ? 1 : 0,
+          child: IgnorePointer(
+            ignoring: !_showJumpToLatest || keyboardInset > 0 || _composerFocus.hasFocus,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 72, right: 4),
+              child: SizedBox(
+                width: 42,
+                height: 42,
+                child: FloatingActionButton(
+                  heroTag: 'jump-to-latest-${widget.id}',
+                  onPressed: _jumpToLatest,
+                  tooltip: trUi('رفتن به آخرین پیام'),
+                  mini: true,
+                  backgroundColor: scheme.surface.withValues(alpha: .88),
+                  foregroundColor: scheme.primary,
+                  elevation: 1,
+                  child: Icon(Icons.keyboard_double_arrow_down_rounded, size: 19),
+                ),
               ),
-            )
-          : null,
+            ),
+          ),
+        ),
+      ),
       body: AnimatedPadding(
         duration: Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
@@ -13940,8 +13965,9 @@ class _ChatPageState extends State<ChatPage> {
                       ? Center(child: Text(trUi('هنوز پیامی یا سابقه تماسی وجود ندارد.')))
                       : ListView.builder(
                           controller: _messagesScroll,
-                          physics: BouncingScrollPhysics(),
+                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                          cacheExtent: 720,
                           // Keep a real breathing zone below the last bubble.
                           // It scales with the IME instead of using a fixed value,
                           // so tall keyboards cannot cover the final message.
