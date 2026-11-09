@@ -2367,13 +2367,13 @@ class ProfessionalSettingsPage extends StatefulWidget {
 }
 class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
   final search=TextEditingController();
-  String theme='تاریک',language='دری افغانستان';
+  String theme='تاریک',language='دری';
   bool savingPreference = false;
   @override void initState(){super.initState();_load();}
   @override void dispose(){search.dispose();super.dispose();}
   Future<void> _load() async {
     if(!mounted)return;
-    setState((){theme=appTheme.dark?'تاریک':'روشن';language=AppStrings.names[aradLanguageController.locale.languageCode]??'دری افغانستان';});
+    setState((){theme=appTheme.dark?'تاریک':'روشن';language=AppStrings.names[aradLanguageController.locale.languageCode]??'دری';});
   }
   List<Map<String,String>> get items=>[
     {'cat':'حریم خصوصی و امنیت','title':'حریم خصوصی','desc':'آخرین بازدید، وضعیت آنلاین، شماره تلفن و دیده‌شدن پروفایل'},
@@ -2476,15 +2476,53 @@ class _ProfessionalSettingsPageState extends State<ProfessionalSettingsPage>{
       if (mounted) setState(() => savingPreference = false);
     }
   }
+  Future<void> _selectAccent(int value) async {
+    if (savingPreference || appTheme.seed == value) return;
+    setState(() => savingPreference = true);
+    try {
+      await appTheme.setSeed(value);
+      if (mounted) showMsg(context, 'رنگ برنامه ذخیره شد.');
+    } catch (e) {
+      if (mounted) showMsg(context, 'ذخیره رنگ برنامه ناموفق بود: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => savingPreference = false);
+    }
+  }
+
   void _showThemeSheet() => showModalBottomSheet(
     context: context,
     showDragHandle: true,
-    builder: (sheetContext) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+    builder: (sheetContext) => SafeArea(child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Padding(padding: const EdgeInsets.all(18), child: Text(trUi('ظاهر برنامه'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
       if (savingPreference) const Padding(padding: EdgeInsets.symmetric(horizontal: 18), child: LinearProgressIndicator()),
       RadioListTile<String>(value: 'تاریک', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('تاریک'))),
       RadioListTile<String>(value: 'روشن', groupValue: theme, onChanged: savingPreference ? null : (v) { if (v != null) _selectTheme(v, sheetContext); }, title: Text(trUi('روشن'))),
-    ])),
+      const Divider(height: 1),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+        child: Align(alignment: Alignment.centerRight, child: Text(trUi('رنگ رابط برنامه'), style: const TextStyle(fontWeight: FontWeight.w800))),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: const <MapEntry<int, String>>[
+            MapEntry(0xFF0B9658, 'سبز'),
+            MapEntry(0xFF1687D9, 'آبی'),
+            MapEntry(0xFF6750A4, 'بنفش'),
+            MapEntry(0xFF008C95, 'اقیانوسی'),
+            MapEntry(0xFFE07832, 'کهربایی'),
+            MapEntry(0xFFD14F78, 'صورتی'),
+          ].map((entry) => ChoiceChip(
+            avatar: CircleAvatar(radius: 8, backgroundColor: Color(entry.key)),
+            label: Text(entry.value),
+            selected: appTheme.seed == entry.key,
+            onSelected: savingPreference ? null : (_) => _selectAccent(entry.key),
+          )).toList(),
+        ),
+      ),
+    ]))),
   );
   void _showLanguageSheet() => showModalBottomSheet(
     context: context,
