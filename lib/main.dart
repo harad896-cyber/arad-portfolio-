@@ -1681,7 +1681,7 @@ class AppStrings {
   // prs = Dari (Afghanistan), ps = Pashto. Both choices are saved locally and restored on next launch.
   static const supported = ['prs', 'ps', 'haz', 'en', 'fa', 'ar', 'tr', 'fr', 'de', 'ur', 'hi', 'es', 'ru', 'zh', 'it', 'pt', 'id', 'ja', 'ko', 'bn'];
   static const names = {
-    'prs':'دری افغانستان', 'ps':'پښتو افغانستان', 'haz':'هزارگی افغانستان', 'en':'English', 'fa':'فارسی', 'ar':'العربية', 'tr':'Türkçe', 'fr':'Français',
+    'prs':'دری', 'ps':'پښتو', 'haz':'هزارگی', 'en':'English', 'fa':'فارسی', 'ar':'العربية', 'tr':'Türkçe', 'fr':'Français',
     'de':'Deutsch', 'ur':'اردو', 'hi':'हिन्दी', 'es':'Español',
     'ru':'Русский', 'zh':'中文', 'it':'Italiano', 'pt':'Português',
     'id':'Bahasa Indonesia', 'ja':'日本語', 'ko':'한국어', 'bn':'বাংলা',
