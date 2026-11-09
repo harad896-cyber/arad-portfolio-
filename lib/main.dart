@@ -4115,8 +4115,25 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     return 'آخرین فعالیت: ${_formatDeviceDate(last)} ($relative)';
   }
 
+  // ANDROID_ID is scoped to the app signing certificate. Older test APKs
+  // signed with a different debug certificate can leave multiple IDs for one
+  // physical handset. Group Android sessions by manufacturer + model, while
+  // retaining every ID so sign-out actions can revoke the whole group.
+  String _physicalDeviceKey(String id, String name) {
+    final model = RegExp(r'\b([A-Z]{1,5}-[A-Z0-9]{2,})\b', caseSensitive: false)
+        .firstMatch(name)?.group(1)?.toUpperCase();
+    if (id.startsWith('android:') && model != null) {
+      final prefix = name.substring(0, name.toUpperCase().indexOf(model));
+      final parts = prefix.replaceAll(RegExp(r'[^A-Za-z0-9]+'), ' ')
+          .trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty);
+      final manufacturer = parts.isEmpty ? 'android' : parts.first.toLowerCase();
+      return 'android-model:$manufacturer:$model';
+    }
+    return 'id:$id';
+  }
+
   List<Map<String, dynamic>> get _visibleDevices {
-    final byId = <String, Map<String, dynamic>>{};
+    final byPhysicalDevice = <String, Map<String, dynamic>>{};
     for (final row in devices) {
       final id = row['device_id']?.toString().trim() ?? '';
       final name = row['device_name']?.toString().trim() ?? '';
@@ -4130,17 +4147,49 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           name == 'رایانه مک' ||
           name == 'رایانه لینوکس' ||
           name == 'مرورگر وب';
-      if (id.length < 16 || !recognizedIdentity ||
-          placeholderName || row['revoked_at'] != null) continue;
-      final existing = byId[id];
-      final currentDate = _deviceDate(row, 'last_seen_at');
-      final existingDate = existing == null ? null : _deviceDate(existing, 'last_seen_at');
-      if (existing == null ||
-          (currentDate != null && (existingDate == null || currentDate.isAfter(existingDate)))) {
-        byId[id] = row;
+      if (id.length < 16 || !recognizedIdentity || placeholderName ||
+          row['revoked_at'] != null) continue;
+
+      final key = _physicalDeviceKey(id, name);
+      final existing = byPhysicalDevice[key];
+      if (existing == null) {
+        byPhysicalDevice[key] = {...row, '_device_ids': <String>[id]};
+        continue;
+      }
+
+      final ids = existing['_device_ids'] as List<String>;
+      if (!ids.contains(id)) ids.add(id);
+      final incomingDate = _deviceDate(row, 'last_seen_at');
+      final existingDate = _deviceDate(existing, 'last_seen_at');
+      final incomingIsCurrent = id == currentDeviceId;
+      final existingIsCurrent = ids.contains(currentDeviceId);
+      final incomingCreated = _deviceDate(row, 'created_at');
+      final existingCreated = _deviceDate(existing, 'created_at');
+      final earliestCreated = incomingCreated != null &&
+              (existingCreated == null || incomingCreated.isBefore(existingCreated))
+          ? incomingCreated : existingCreated;
+      final latestSeen = incomingDate != null &&
+              (existingDate == null || incomingDate.isAfter(existingDate))
+          ? incomingDate : existingDate;
+
+      if (incomingIsCurrent || (!existingIsCurrent && incomingDate != null &&
+          (existingDate == null || incomingDate.isAfter(existingDate)))) {
+        byPhysicalDevice[key] = {
+          ...row,
+          '_device_ids': ids,
+          if (earliestCreated != null) 'created_at': earliestCreated.toUtc().toIso8601String(),
+          if (latestSeen != null) 'last_seen_at': latestSeen.toUtc().toIso8601String(),
+        };
+      } else {
+        if (earliestCreated != null) {
+          existing['created_at'] = earliestCreated.toUtc().toIso8601String();
+        }
+        if (latestSeen != null) {
+          existing['last_seen_at'] = latestSeen.toUtc().toIso8601String();
+        }
       }
     }
-    final result = byId.values.toList();
+    final result = byPhysicalDevice.values.toList();
     result.sort((a, b) =>
         (_deviceDate(b, 'last_seen_at') ?? DateTime.fromMillisecondsSinceEpoch(0))
             .compareTo(_deviceDate(a, 'last_seen_at') ?? DateTime.fromMillisecondsSinceEpoch(0)));
@@ -4180,6 +4229,39 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       );
       if (result != true) throw Exception('این دستگاه قبلاً خارج شده یا دیگر فعال نیست.');
       if (mounted) showMsg(context, 'دسترسی دستگاه لغو شد.');
+      await _loadDevices();
+    } catch (e) {
+      if (mounted) showMsg(context, 'خروج از دستگاه انجام نشد: ${_friendlyError(e.toString())}');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _revokeDeviceGroup(Map<String, dynamic> row, String deviceName) async {
+    if (busy) return;
+    final ids = (row['_device_ids'] as List<dynamic>? ?? [row['device_id']])
+        .map((value) => value?.toString() ?? '')
+        .where((value) => value.isNotEmpty && value != currentDeviceId)
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return;
+    final confirmed = await _confirmRevoke(
+      title: 'خروج از $deviceName؟',
+      message: 'همه نشست‌های ثبت‌شده برای این دستگاه از حساب خارج می‌شوند.',
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => busy = true);
+    try {
+      final results = await Future.wait(ids.map((id) => supabase.rpc(
+        'revoke_device_session',
+        params: {'p_device_id': id},
+      ).timeout(const Duration(seconds: 10)).catchError((_) => false)));
+      final count = results.where((result) => result == true).length;
+      if (mounted) {
+        showMsg(context, count == ids.length
+            ? 'دسترسی این دستگاه لغو شد.'
+            : 'دسترسی $count از ${ids.length} نشست لغو شد؛ دوباره بررسی کنید.');
+      }
       await _loadDevices();
     } catch (e) {
       if (mounted) showMsg(context, 'خروج از دستگاه انجام نشد: ${_friendlyError(e.toString())}');
@@ -4283,7 +4365,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                             backgroundColor: scheme.primaryContainer,
                             child: Icon(Icons.devices_rounded, color: scheme.primary),
                           ),
-                          title: Text(trUi('${visibleDevices.length} نشست فعال برای این حساب'), style: TextStyle(fontWeight: FontWeight.w900)),
+                          title: Text(trUi('${visibleDevices.length} دستگاه ثبت‌شده برای این حساب'), style: TextStyle(fontWeight: FontWeight.w900)),
                           subtitle: Text(trUi('$activeCount دستگاه در حال فعالیت‌اند. وضعیت فعالیت با آخرین ضربان ثبت‌شده در دو دقیقهٔ اخیر مشخص می‌شود؛ زمان پیوستن و آخرین فعالیت هر دستگاه جداگانه نمایش داده می‌شود. فقط دستگاه‌های همین حساب که نشست‌شان لغو نشده باشد در این فهرست می‌آیند.')), 
                         ),
                       ),
@@ -4321,12 +4403,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                               ),
                             ),
                             title: Text(name, style: TextStyle(fontWeight: FontWeight.w800)),
-                            subtitle: Text('${current ? 'این دستگاه\\n' : ''}پیوستن به گپ‌رسان: ${_formatDeviceDate(_deviceDate(row, 'created_at'))}\\nوضعیت: ${recent ? 'در حال فعالیت' : 'نشست معتبر؛ فعالیت تازه ثبت نشده'}\\n${_lastSeen(row)}'),
+                            subtitle: Text('${current ? 'این دستگاه\n' : ''}پیوستن به گپ‌رسان: ${_formatDeviceDate(_deviceDate(row, 'created_at'))}\nوضعیت: ${recent ? 'در حال فعالیت' : 'نشست معتبر؛ فعالیت تازه ثبت نشده'}\n${_lastSeen(row)}'),
                             trailing: current
                                 ? Chip(label: Text(trUi('فعلی')))
                                 : IconButton(
                                     tooltip: 'خروج از این دستگاه',
-                                    onPressed: busy ? null : () => _revoke(id, name),
+                                    onPressed: busy ? null : () => _revokeDeviceGroup(row, name),
                                     icon: Icon(Icons.logout_rounded),
                                   ),
                           ),
