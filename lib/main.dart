@@ -5009,14 +5009,17 @@ class _LoginPageState extends State<LoginPage>{
           'از گوگل ID token دریافت نشد. شناسه Web OAuth و تنظیمات OAuth اندروید را بررسی کنید.',
         );
       }
-      // Supabase Google native sign-in requires both ID and access tokens.
-      final authorization = await account.authorizationClient.authorizationForScopes(
-        const <String>[],
-      );
-      final accessToken = authorization?.accessToken;
-      if (accessToken == null || accessToken.isEmpty) {
+      // Supabase requires Google's ID token and access token for native sign-in.
+      // Request the standard profile scopes and prompt only if authorization
+      // has not already been granted; an empty scope list can return no token.
+      const googleScopes = <String>['email', 'profile'];
+      final authorization =
+          await account.authorizationClient.authorizationForScopes(googleScopes) ??
+          await account.authorizationClient.authorizeScopes(googleScopes);
+      final accessToken = authorization.accessToken;
+      if (accessToken.isEmpty) {
         throw AuthException(
-          'از گوگل access token دریافت نشد. تنظیمات OAuth و مجوزهای حساب را بررسی کنید.',
+          'از گوگل access token دریافت نشد. مجوز ایمیل و پروفایل را تأیید کنید.',
         );
       }
       await supabase.auth.signInWithIdToken(
