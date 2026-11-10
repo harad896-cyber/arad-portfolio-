@@ -3095,7 +3095,9 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
     (name: 'فیروزه‌ای آرام', color: 0xFFE5F5F1, accent: 0xFF168F83),
     (name: 'ذغالی حرفه‌ای', color: 0xFF202923, accent: 0xFF8BAE98),
     (name: 'سنگ روشن', color: 0xFFF0F2ED, accent: 0xFF526B5A),
-    (name: 'طلایی گرم', color: 0xFF302719, accent: 0xFFD5A64A),
+    (name: 'طلایی کلاسیک', color: 0xFF302719, accent: 0xFFD5A64A),
+    // Premium emerald-and-gold palette inspired by the supplied GapResan promo.
+    (name: 'طلایی سلطنتی', color: 0xFF06190F, accent: 0xFFD4A017),
     (name: 'شن و ماسه', color: 0xFFF3EBDD, accent: 0xFF9A6A32),
     (name: 'غروب مسی', color: 0xFF38251E, accent: 0xFFE18A58),
     (name: 'رز ملایم', color: 0xFFF5E9E9, accent: 0xFFB65F68),
