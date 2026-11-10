@@ -67,10 +67,8 @@ jobs:
         run: flutter pub get
 
       - name: Build Android APK
-        env:
-          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
         run: |
-          GOOGLE_CLIENT_ID="${GOOGLE_SERVER_CLIENT_ID:-641767616232-bk6t4vhokbpjdj57uih2gjd10bls5lo3.apps.googleusercontent.com}"
+          GOOGLE_CLIENT_ID="641767616232-bk6t4vhokbpjdj57uih2gjd10bls5lo3.apps.googleusercontent.com"
           flutter build apk --release --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_CLIENT_ID"
 
       - name: Print Android test signing SHA-1 for Google OAuth
