@@ -1625,6 +1625,14 @@ class AppThemeController extends ChangeNotifier {
     await p.setInt('accent_seed_$_scope', value);
     notifyListeners();
   }
+  Future<void> setPalette({required int accent, required int background}) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setInt('accent_seed_$_scope', accent);
+    await p.setInt('chat_background_seed_$_scope', background);
+    seed = accent;
+    backgroundSeed = background;
+    notifyListeners();
+  }
 }
 final appTheme = AppThemeController();
 
@@ -1780,7 +1788,7 @@ class StartupLoadingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
+        backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .28),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -2060,7 +2068,7 @@ class AradMessenger extends StatelessWidget {
           surface: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFFFCFEFC), strength: .94),
         ),
         extensions: <ThemeExtension<dynamic>>[
-          GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed)),
+          GapResanThemeTokens.forBrightness(dark: false, accent: Color(appTheme.seed), backgroundSeed: appTheme.backgroundSeed),
         ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
@@ -2154,10 +2162,10 @@ class AradMessenger extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(appTheme.seed),
           brightness: Brightness.dark,
-          surface: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .10),
+          surface: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF071A13), strength: .28),
         ),
         extensions: <ThemeExtension<dynamic>>[
-          GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed)),
+          GapResanThemeTokens.forBrightness(dark: true, accent: Color(appTheme.seed), backgroundSeed: appTheme.backgroundSeed),
         ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
@@ -2176,7 +2184,7 @@ class AradMessenger extends StatelessWidget {
             dark: true,
             backgroundSeed: appTheme.backgroundSeed,
             fallback: const Color(0xFF071A13),
-            strength: .22,
+            strength: .48,
           ),
           surfaceTintColor: Colors.transparent,
           titleTextStyle: GoogleFonts.vazirmatn(fontSize: 19, fontWeight: FontWeight.w800, color: Color(0xFFF4F2FA)),
@@ -2184,7 +2192,7 @@ class AradMessenger extends StatelessWidget {
         cardTheme: CardThemeData(
           elevation: 0,
           shadowColor: Colors.transparent,
-          color: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
+          color: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .58),
           surfaceTintColor: Colors.transparent,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -2195,14 +2203,14 @@ class AradMessenger extends StatelessWidget {
         listTileTheme: ListTileThemeData(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          tileColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .18),
+          tileColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .58),
           selectedTileColor: Color(appTheme.seed).withValues(alpha: .25),
           iconColor: Color(0xFFA6B9AC),
           minVerticalPadding: 10,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0B2016), strength: .08),
+          fillColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0B2016), strength: .34),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           hintStyle: TextStyle(color: Color(0xFFA6B9AC), fontSize: 14),
           labelStyle: TextStyle(color: Color(0xFFE8EDF5), fontSize: 14),
@@ -3317,13 +3325,13 @@ class _AppAppearancePageState extends State<AppAppearancePage> {
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.15),
             itemBuilder: (context, i) {
               final p = presets[i];
-              final selected = appTheme.backgroundSeed == p.color && !hasImage;
+              final selected = appTheme.backgroundSeed == p.color && appTheme.seed == p.accent && !hasImage;
               return InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () async {
                   await appTheme.setBackgroundImage(null);
-                  await appTheme.setSeed(p.accent);
-                  await appTheme.setBackgroundSeed(p.color);
+                  await appTheme.setPalette(accent: p.accent, background: p.color);
+                  if (p.name == 'طلایی سلطنتی') await appTheme.setBackgroundEffects(true);
                   if (mounted) setState(() {});
                 },
                 child: Ink(
@@ -12729,8 +12737,9 @@ class _ChatPageState extends State<ChatPage> {
     final dark = Theme.of(context).brightness == Brightness.dark;
     // Use the active app accent in both light and dark modes so selecting a
     // palette changes real message bubbles, not just the settings preview.
-    final myBubble = scheme.primary.withValues(alpha: dark ? .88 : .82);
-    final otherBubble = scheme.surfaceContainerHighest.withValues(alpha: dark ? .94 : .92);
+    final palette = Theme.of(context).extension<GapResanThemeTokens>();
+    final myBubble = palette?.outgoingBubble ?? scheme.primary.withValues(alpha: dark ? .88 : .82);
+    final otherBubble = palette?.incomingBubble ?? scheme.surfaceContainerHighest.withValues(alpha: dark ? .94 : .92);
     final textColor = mine
         ? Colors.white
         : scheme.onSurface;
@@ -12770,7 +12779,7 @@ class _ChatPageState extends State<ChatPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF352064), Color(0xFF7951C7), Color(0xFF1C315C)]),
+            colors: [Color.lerp(scheme.primary, scheme.surface, .12)!, scheme.primary, Color.lerp(scheme.primary, scheme.surface, .48)!]),
           border: Border.all(color: Colors.white.withValues(alpha: .28)),
           boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: .22), blurRadius: 16, spreadRadius: 1, offset: Offset(0, 5))],
         ),
