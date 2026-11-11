@@ -6277,7 +6277,7 @@ class _HomePageState extends State<HomePage> {
         child: ClipRect(
           child: Align(
             alignment: Alignment.topCenter,
-            heightFactor: _homeChromeVisible ? 1 : 0,
+            heightFactor: (_homeChromeVisible || navIndex == 2) ? 1 : 0,
             child: Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(8, 1, 8, 0),
