@@ -398,33 +398,150 @@ class _StickerMemePageState extends State<_StickerMemePage> {
 class _ConnectFourPage extends StatefulWidget {
  const _ConnectFourPage(); @override State<_ConnectFourPage> createState()=>_ConnectFourPageState();
 }
-class _ConnectFourPageState extends State<_ConnectFourPage>{
- static const rows=6,cols=7; List<int> board=List.filled(rows*cols,0);
- int turn=1,redWins=0,yellowWins=0; int? winner; bool draw=false;
- bool inside(int r,int c)=>r>=0&&r<rows&&c>=0&&c<cols;
- bool wins(int r,int c,int p){
-  const dirs=[(0,1),(1,0),(1,1),(1,-1)];
-  for(final (dr,dc) in dirs){var count=1;for(final sign in [-1,1]){var nr=r+dr*sign,nc=c+dc*sign;while(inside(nr,nc)&&board[nr*cols+nc]==p){count++;nr+=dr*sign;nc+=dc*sign;}}if(count>=4)return true;}return false;
- }
- void drop(int col){
-  if(winner!=null||draw)return;var row=-1;for(var r=rows-1;r>=0;r--){if(board[r*cols+col]==0){row=r;break;}}
-  if(row<0){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('این ستون پُر است.')));return;}
-  setState(() { board[row*cols+col]=turn; });
-  if(wins(row,col,turn)){setState(() { winner=turn; if(turn==1){redWins++;}else{yellowWins++;} });}
-  else if(board.every((v)=>v!=0)){setState(() { draw=true; });}
-  else{setState(() { turn=turn==1?2:1; });}
- }
- void reset()=>setState(() { board=List.filled(rows*cols,0);turn=1;winner=null;draw=false; });
- @override Widget build(BuildContext context)=>_GameScaffold(title:'چهار در یک خط',child:Padding(padding:const EdgeInsets.all(14),child:Column(children:[
-  Text('سرخ: '+redWins.toString()+' برد  ·  زرد: '+yellowWins.toString()+' برد',style:const TextStyle(fontWeight:FontWeight.w900)),
-  const SizedBox(height:8),
-  Text(winner!=null?(winner==1?'مهره سرخ برنده شد!':'مهره زرد برنده شد!'):draw?'بازی مساوی شد.':'نوبت بازیکن '+(turn==1?'سرخ':'زرد')),
-  const SizedBox(height:12),
-  Expanded(child:Center(child:AspectRatio(aspectRatio:cols/rows,child:Container(padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:const Color(0xFF2459A6),borderRadius:BorderRadius.circular(18)),child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:rows*cols,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:cols,crossAxisSpacing:5,mainAxisSpacing:5),itemBuilder:(_,i)=>GestureDetector(onTap:()=>drop(i%cols),child:DecoratedBox(decoration:BoxDecoration(shape:BoxShape.circle,color:board[i]==1?const Color(0xFFE64B4B):board[i]==2?const Color(0xFFFFD447):const Color(0xFFEAF1FA)))))))),
-  const Text('هر نفر یک مهره در ستون انتخابی می‌اندازد. چهار مهرهٔ هم‌رنگ را افقی، عمودی یا مورب ردیف کن.',textAlign:TextAlign.center,style:TextStyle(fontSize:12)),
-  const SizedBox(height:10),FilledButton.icon(onPressed:reset,icon:const Icon(Icons.refresh),label:const Text('دور تازه')),
- ])));
+class _ConnectFourPageState extends State<_ConnectFourPage> {
+  static const rows = 6, cols = 7;
+  List<int> board = List.filled(rows * cols, 0);
+  int turn = 1, redWins = 0, yellowWins = 0;
+  int? winner;
+  bool draw = false;
+
+  bool inside(int r, int c) => r >= 0 && r < rows && c >= 0 && c < cols;
+
+  bool wins(int r, int c, int player) {
+    const directions = [(0, 1), (1, 0), (1, 1), (1, -1)];
+    for (final (dr, dc) in directions) {
+      var count = 1;
+      for (final sign in [-1, 1]) {
+        var nr = r + dr * sign;
+        var nc = c + dc * sign;
+        while (inside(nr, nc) && board[nr * cols + nc] == player) {
+          count++;
+          nr += dr * sign;
+          nc += dc * sign;
+        }
+      }
+      if (count >= 4) return true;
+    }
+    return false;
+  }
+
+  void drop(int col) {
+    if (winner != null || draw) return;
+    var row = -1;
+    for (var r = rows - 1; r >= 0; r--) {
+      if (board[r * cols + col] == 0) {
+        row = r;
+        break;
+      }
+    }
+    if (row < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('این ستون پُر است.')),
+      );
+      return;
+    }
+    setState(() {
+      board[row * cols + col] = turn;
+      if (wins(row, col, turn)) {
+        winner = turn;
+        if (turn == 1) {
+          redWins++;
+        } else {
+          yellowWins++;
+        }
+      } else if (board.every((value) => value != 0)) {
+        draw = true;
+      } else {
+        turn = turn == 1 ? 2 : 1;
+      }
+    });
+  }
+
+  void reset() {
+    setState(() {
+      board = List.filled(rows * cols, 0);
+      turn = 1;
+      winner = null;
+      draw = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = winner != null
+        ? (winner == 1 ? 'مهره سرخ برنده شد!' : 'مهره زرد برنده شد!')
+        : draw
+            ? 'بازی مساوی شد.'
+            : 'نوبت بازیکن ' + (turn == 1 ? 'سرخ' : 'زرد');
+    return _GameScaffold(
+      title: 'چهار در یک خط',
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Text(
+              'سرخ: ' + redWins.toString() + ' برد  ·  زرد: ' +
+                  yellowWins.toString() + ' برد',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            Text(status),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: cols / rows,
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2459A6),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: rows * cols,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        crossAxisSpacing: 5,
+                        mainAxisSpacing: 5,
+                      ),
+                      itemBuilder: (_, i) => GestureDetector(
+                        onTap: () => drop(i % cols),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: board[i] == 1
+                                ? const Color(0xFFE64B4B)
+                                : board[i] == 2
+                                    ? const Color(0xFFFFD447)
+                                    : const Color(0xFFEAF1FA),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Text(
+              'هر نفر یک مهره در ستون انتخابی می‌اندازد. چهار مهرهٔ هم‌رنگ را افقی، عمودی یا مورب ردیف کن.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: reset,
+              icon: const Icon(Icons.refresh),
+              label: const Text('دور تازه'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
 class _MemoryGamePage extends StatefulWidget{
  const _MemoryGamePage();@override State<_MemoryGamePage> createState()=>_MemoryGamePageState();
 }
