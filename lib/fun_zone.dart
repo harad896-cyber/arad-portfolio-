@@ -17,8 +17,8 @@ class FunZonePage extends StatelessWidget {
     _FunItem('مسابقه و معما', 'سؤال‌های کوتاه و امتیاز', Icons.quiz_rounded, _FunKind.quiz, Color(0xFF4776E6)),
     _FunItem('گردونه شانس', 'یک چرخش و یک جایزه مجازی', Icons.casino_rounded, _FunKind.wheel, Color(0xFFE6A23C)),
     _FunItem('استیکر و میم‌ساز', 'ساخت متن و استیکر ساده', Icons.emoji_emotions_rounded, _FunKind.stickers, Color(0xFFE76F9A)),
-    _FunItem('شطرنج', 'صفحه تمرینی دونفره', Icons.grid_on_rounded, _FunKind.chess, Color(0xFF6574CD)),
-    _FunItem('تخته‌نرد', 'بازی تمرینی با تاس', Icons.casino_outlined, _FunKind.backgammon, Color(0xFF9B6B43)),
+    _FunItem('چهار در یک خط', 'چهار مهره را ردیف کن', Icons.view_week_rounded, _FunKind.connectFour, Color(0xFF6574CD)),
+    _FunItem('بازی حافظه', 'جفت شکل‌های پنهان را پیدا کن', Icons.grid_view_rounded, _FunKind.memory, Color(0xFF9B6B43)),
     _FunItem('بازی مار', 'رکورد خودت را بشکن', Icons.videogame_asset_rounded, _FunKind.snake, Color(0xFF42A66C)),
     _FunItem('آزمون شخصیت و فال', 'فقط برای سرگرمی', Icons.auto_awesome_rounded, _FunKind.personality, Color(0xFF9B68C8)),
   ];
@@ -83,8 +83,8 @@ class FunZonePage extends StatelessWidget {
       _FunKind.quiz => const _QuizPage(),
       _FunKind.wheel => const _WheelPage(),
       _FunKind.stickers => const _StickerMemePage(),
-      _FunKind.chess => const _BoardPracticePage(chess: true),
-      _FunKind.backgammon => const _BoardPracticePage(chess: false),
+      _FunKind.connectFour => const _ConnectFourPage(),
+      _FunKind.memory => const _MemoryGamePage(),
       _FunKind.snake => const _SnakePage(),
       _FunKind.personality => const _PersonalityPage(),
     };
@@ -92,7 +92,7 @@ class FunZonePage extends StatelessWidget {
   }
 }
 
-enum _FunKind { duel, quiz, wheel, stickers, chess, backgammon, snake, personality }
+enum _FunKind { duel, quiz, wheel, stickers, connectFour, memory, snake, personality }
 
 class _FunItem {
   final String title, subtitle;
@@ -387,24 +387,62 @@ class _StickerMemePageState extends State<_StickerMemePage> {
   ]));
 }
 
-class _BoardPracticePage extends StatefulWidget { final bool chess; const _BoardPracticePage({required this.chess}); @override State<_BoardPracticePage> createState() => _BoardPracticePageState(); }
-class _BoardPracticePageState extends State<_BoardPracticePage> {
-  late List<String> board; int? selected; bool whiteTurn = true; int dice = 0;
-  @override void initState() { super.initState(); board = widget.chess ? _chessStart() : _backgammonStart(); }
-  List<String> _chessStart() { final b=List<String>.filled(64,''); const row=['♜','♞','♝','♛','♚','♝','♞','♜']; for(var i=0;i<8;i++){b[i]=row[i];b[8+i]='♟';b[48+i]='♙';b[56+i]=['♖','♘','♗','♕','♔','♗','♘','♖'][i];} return b; }
-  List<String> _backgammonStart() { final b=List<String>.filled(24,''); b[0]='⚪⚪';b[5]='⚫⚫⚫';b[7]='⚫⚫';b[11]='⚪⚪⚪';b[12]='⚫⚫⚫';b[16]='⚪⚪';b[18]='⚪⚪⚪';b[23]='⚫⚫';return b; }
-  void tap(int i) { if (widget.chess) { setState(() { if (selected == null && board[i].isNotEmpty) { selected=i; } else if (selected != null && selected != i) { board[i]=board[selected!]; board[selected!]=''; selected=null; whiteTurn=!whiteTurn; } else { selected=null; } }); } else { if(dice==0) return; setState(() { if(selected==null && board[i].isNotEmpty) selected=i; else if(selected!=null && selected!=i) { board[i]=board[selected!];board[selected!]='';selected=null;dice=0;whiteTurn=!whiteTurn; } else selected=null; }); } }
-  @override Widget build(BuildContext context) => _GameScaffold(title: widget.chess ? 'شطرنج · تمرینی' : 'تخته‌نرد · تمرینی', child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
-    Text(widget.chess ? 'نوبت ${whiteTurn?'سفید':'سیاه'}' : 'نوبت ${whiteTurn?'مهره سفید':'مهره سیاه'}  ·  تاس: $dice', style: const TextStyle(fontWeight: FontWeight.bold)),
-    const SizedBox(height: 14),
-    Expanded(child: AspectRatio(aspectRatio: 1, child: GridView.builder(physics: const NeverScrollableScrollPhysics(), itemCount: widget.chess?64:24, gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: widget.chess?8:6), itemBuilder: (_,i) {
-      final light = widget.chess ? ((i~/8+i%8)%2==0) : ((i~/6+i%6)%2==0);
-      return InkWell(onTap: ()=>tap(i), child: Container(decoration: BoxDecoration(color:selected==i?Colors.amber:light?const Color(0xFFE8D5B5):const Color(0xFF916B4D), border: Border.all(color: Colors.black12)), child: Center(child: FittedBox(child: Text(board[i], style: TextStyle(fontSize: widget.chess?29:17))))));
-    }))),
-    if(!widget.chess) FilledButton(onPressed: ()=>setState(()=>dice=math.Random().nextInt(6)+1), child: const Text('انداختن تاس')),
-    const SizedBox(height: 8), Text(widget.chess ? 'صفحه تمرینی برای جابه‌جایی مهره‌هاست؛ قوانین کامل شطرنج و داوری حرکت هنوز فعال نیست.' : 'نسخه نمایشی تخته و تاس است؛ قوانین کامل حرکت و زدن مهره هنوز فعال نیست.', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
-    TextButton(onPressed: ()=>setState(() {board=widget.chess?_chessStart():_backgammonStart();selected=null;whiteTurn=true;dice=0;}), child: const Text('شروع دوباره')),
-  ])));
+class _ConnectFourPage extends StatefulWidget {
+ const _ConnectFourPage(); @override State<_ConnectFourPage> createState()=>_ConnectFourPageState();
+}
+class _ConnectFourPageState extends State<_ConnectFourPage>{
+ static const rows=6,cols=7; List<int> board=List.filled(rows*cols,0);
+ int turn=1,redWins=0,yellowWins=0; int? winner; bool draw=false;
+ bool inside(int r,int c)=>r>=0&&r<rows&&c>=0&&c<cols;
+ bool wins(int r,int c,int p){
+  const dirs=[(0,1),(1,0),(1,1),(1,-1)];
+  for(final (dr,dc) in dirs){var count=1;for(final sign in [-1,1]){var nr=r+dr*sign,nc=c+dc*sign;while(inside(nr,nc)&&board[nr*cols+nc]==p){count++;nr+=dr*sign;nc+=dc*sign;}}if(count>=4)return true;}return false;
+ }
+ void drop(int col){
+  if(winner!=null||draw)return;var row=-1;for(var r=rows-1;r>=0;r--){if(board[r*cols+col]==0){row=r;break;}}
+  if(row<0){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('این ستون پُر است.')));return;}
+  setState(()=>{board[row*cols+col]=turn});
+  if(wins(row,col,turn)){setState(()=>{winner=turn});if(turn==1){redWins++;}else{yellowWins++;}}
+  else if(board.every((v)=>v!=0)){setState(()=>{draw=true});}
+  else{setState(()=>{turn=turn==1?2:1});}
+ }
+ void reset()=>setState(()=>{board=List.filled(rows*cols,0),turn=1,winner=null,draw=false});
+ @override Widget build(BuildContext context)=>_GameScaffold(title:'چهار در یک خط',child:Padding(padding:const EdgeInsets.all(14),child:Column(children:[
+  Text('سرخ: '+redWins.toString()+' برد  ·  زرد: '+yellowWins.toString()+' برد',style:const TextStyle(fontWeight:FontWeight.w900)),
+  const SizedBox(height:8),
+  Text(winner!=null?(winner==1?'مهره سرخ برنده شد!':'مهره زرد برنده شد!'):draw?'بازی مساوی شد.':'نوبت بازیکن '+(turn==1?'سرخ':'زرد')),
+  const SizedBox(height:12),
+  Expanded(child:Center(child:AspectRatio(aspectRatio:cols/rows,child:Container(padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:const Color(0xFF2459A6),borderRadius:BorderRadius.circular(18)),child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:rows*cols,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:cols,crossAxisSpacing:5,mainAxisSpacing:5),itemBuilder:(_,i)=>GestureDetector(onTap:()=>drop(i%cols),child:DecoratedBox(decoration:BoxDecoration(shape:BoxShape.circle,color:board[i]==1?const Color(0xFFE64B4B):board[i]==2?const Color(0xFFFFD447):const Color(0xFFEAF1FA)))))))),
+  const Text('هر نفر یک مهره در ستون انتخابی می‌اندازد. چهار مهرهٔ هم‌رنگ را افقی، عمودی یا مورب ردیف کن.',textAlign:TextAlign.center,style:TextStyle(fontSize:12)),
+  const SizedBox(height:10),FilledButton.icon(onPressed:reset,icon:const Icon(Icons.refresh),label:const Text('دور تازه')),
+ ])));
+}
+class _MemoryGamePage extends StatefulWidget{
+ const _MemoryGamePage();@override State<_MemoryGamePage> createState()=>_MemoryGamePageState();
+}
+class _MemoryGamePageState extends State<_MemoryGamePage>{
+ static const symbols=['🍎','🚀','🐼','⚽','🌙','🎧','🍀','🦋'];
+ late List<String> cards;final Set<int> revealed={};final Set<int> matched={};int moves=0;bool resolving=false,finished=false;
+ @override void initState(){super.initState();newGame();}
+ void newGame(){cards=[...symbols,...symbols]..shuffle(math.Random());revealed.clear();matched.clear();moves=0;resolving=false;finished=false;}
+ Future<void> flip(int i)async{
+  if(resolving||finished||matched.contains(i)||revealed.contains(i))return;
+  setState(()=>revealed.add(i));if(revealed.length<2)return;moves++;
+  final pair=revealed.toList(growable:false);
+  if(cards[pair[0]]==cards[pair[1]]){setState(()=>{matched.addAll(pair),revealed.clear(),finished=matched.length==cards.length});return;}
+  setState(()=>resolving=true);await Future.delayed(const Duration(milliseconds:850));if(!mounted)return;setState(()=>{revealed.clear(),resolving=false});
+ }
+ @override Widget build(BuildContext context)=>_GameScaffold(title:'بازی حافظه',child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
+  Text('حرکت‌ها: '+moves.toString()+'  ·  جفت‌ها: '+(matched.length~/2).toString()+' از '+symbols.length.toString(),style:const TextStyle(fontWeight:FontWeight.w900)),
+  const SizedBox(height:12),
+  Expanded(child:Center(child:AspectRatio(aspectRatio:1,child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:cards.length,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:4,crossAxisSpacing:8,mainAxisSpacing:8),itemBuilder:(_,i){
+   final visible=revealed.contains(i)||matched.contains(i);
+   return Material(color:matched.contains(i)?Colors.green.withValues(alpha:.18):visible?Theme.of(context).colorScheme.surfaceContainerHighest:const Color(0xFF087F68),borderRadius:BorderRadius.circular(15),child:InkWell(borderRadius:BorderRadius.circular(15),onTap:()=>flip(i),child:Center(child:Text(visible?cards[i]:'؟',style:TextStyle(fontSize:visible?30:28,color:visible?null:Colors.white,fontWeight:FontWeight.w900)))));
+  })))),
+  if(finished)const Text('آفرین! همه جفت‌ها را پیدا کردی.',style:TextStyle(color:Colors.green,fontWeight:FontWeight.w900)),
+  const Text('دو کارت را باز کن؛ اگر شکل‌ها یکسان باشند، جفت می‌شوند. همه جفت‌ها را با حرکت کمتر پیدا کن.',textAlign:TextAlign.center,style:TextStyle(fontSize:12)),
+  const SizedBox(height:10),FilledButton.icon(onPressed:()=>setState(newGame),icon:const Icon(Icons.refresh),label:const Text('بازی تازه')),
+ ])));
 }
 
 class _SnakePage extends StatefulWidget { const _SnakePage(); @override State<_SnakePage> createState() => _SnakePageState(); }
