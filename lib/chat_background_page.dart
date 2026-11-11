@@ -135,7 +135,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
                           Positioned(
                             bottom: -95 + t * 18, left: -45 + t * 12, width: 220, height: 220,
                             child: IgnorePointer(child: DecoratedBox(
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(colors: [
                                   Theme.of(context).colorScheme.secondary.withValues(alpha: .20), Theme.of(context).colorScheme.secondary.withValues(alpha: .07), Colors.transparent,
