@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:arad_messenger/main.dart';
 import 'package:arad_messenger/fun_zone.dart';
-import 'package:flutter/material.dart';
 
 void main() {
+  setUp(() {});
   group('input normalization', () {
     test('OTP digits normalize Persian, Arabic and ASCII numerals', () {
       expect(normalizeOtpDigits('۱۲۳۴۵۶'), '123456');
@@ -27,50 +28,57 @@ void main() {
       expect(t('unknown_label', 'en'), 'unknown_label');
     });
   });
+
   group('GapResan entertainment games', () {
-    testWidgets('Connect Four opens with turn and rules', (tester) async {
+    Future<void> openGame(WidgetTester tester, String title) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
-      final game = find.text('چهار در یک خط');
-      await tester.scrollUntilVisible(game, 260, scrollable: find.byType(Scrollable).first);
+      final game = find.text(title);
+      await tester.ensureVisible(game);
+      await tester.pumpAndSettle();
       await tester.tap(game);
       await tester.pumpAndSettle();
+    }
+
+    testWidgets('Connect Four opens with turn and rules', (tester) async {
+      await openGame(tester, 'چهار در یک خط');
       expect(find.text('نوبت بازیکن سرخ'), findsOneWidget);
       expect(find.textContaining('چهار مهرهٔ هم‌رنگ'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
     });
 
     testWidgets('Connect Four recognizes a horizontal win', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
-      final game = find.text('چهار در یک خط');
-      await tester.scrollUntilVisible(game, 260, scrollable: find.byType(Scrollable).first);
-      await tester.tap(game);
-      await tester.pumpAndSettle();
+      await openGame(tester, 'چهار در یک خط');
       final cells = find.descendant(
         of: find.byType(GridView),
         matching: find.byType(GestureDetector),
       );
+      expect(cells, findsNWidgets(42));
       for (final column in [0, 0, 1, 1, 2, 2, 3]) {
-        await tester.tap(cells.at(35 + column));
+        await tester.tap(cells.at(column));
         await tester.pump();
       }
       expect(find.text('مهره سرخ برنده شد!'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
     });
 
     testWidgets('Memory game opens with cards and move counter', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
-      final game = find.text('بازی حافظه');
-      await tester.scrollUntilVisible(game, 260, scrollable: find.byType(Scrollable).first);
-      await tester.tap(game);
-      await tester.pumpAndSettle();
+      await openGame(tester, 'بازی حافظه');
       expect(find.textContaining('حرکت‌ها:'), findsOneWidget);
       expect(find.text('بازی تازه'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
     });
 
     testWidgets('Quiz starts with a ten-question round', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
-      await tester.tap(find.text('مسابقه و معما'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('از ۱۰'), findsOneWidget);
+      await openGame(tester, 'مسابقه و معما');
+      expect(find.textContaining('پرسش ۱ از ۱۰'), findsOneWidget);
+      expect(find.textContaining('امتیاز:'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
     });
   });
-
 }
