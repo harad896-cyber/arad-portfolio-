@@ -9,10 +9,34 @@ void main() {
       final dark = GapResanThemeTokens.forBrightness(dark: true, accent: accent);
       final light = GapResanThemeTokens.forBrightness(dark: false, accent: accent);
       expect(dark.canvas, const Color(0xFF081712));
-      expect(dark.incomingBubble, const Color(0xFF193329));
+      expect(dark.incomingBubble, isNot(dark.canvas));
+      expect(dark.incomingBubble.computeLuminance(), greaterThan(dark.canvas.computeLuminance()));
       expect(dark.accent, accent);
       expect(light.canvas, const Color(0xFFF5F8F6));
       expect(light.surface, Colors.white);
+    });
+
+    test('royal gold palette updates real surfaces and outgoing bubbles', () {
+      const gold = Color(0xFFD4A017);
+      const emerald = Color(0xFF06190F);
+      final dark = GapResanThemeTokens.forBrightness(
+        dark: true,
+        accent: gold,
+        backgroundSeed: emerald.value,
+      );
+      final light = GapResanThemeTokens.forBrightness(
+        dark: false,
+        accent: gold,
+        backgroundSeed: emerald.value,
+      );
+
+      expect(dark.canvas, emerald);
+      expect(dark.accent, gold);
+      expect(dark.surface, isNot(const Color(0xFF10251D)));
+      expect(dark.outgoingBubble, isNot(gold));
+      expect(light.canvas, const Color(0xFFF5F8F6));
+      expect(light.surface, Colors.white);
+      expect(light.outgoingBubble.computeLuminance(), lessThan(gold.computeLuminance()));
     });
 
     test('copyWith changes only the requested token', () {
