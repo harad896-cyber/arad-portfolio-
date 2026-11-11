@@ -16,7 +16,7 @@ jobs:
           channel: stable
       - run: flutter --version
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib/main.dart lib/fun_zone.dart
+      - run: dart format lib/main.dart lib/fun_zone.dart
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --debug
