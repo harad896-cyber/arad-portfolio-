@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:arad_messenger/main.dart';
+import 'package:arad_messenger/fun_zone.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   group('input normalization', () {
@@ -25,4 +27,33 @@ void main() {
       expect(t('unknown_label', 'en'), 'unknown_label');
     });
   });
+  group('GapResan entertainment games', () {
+    testWidgets('Connect Four opens with turn and rules', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      final game = find.text('چهار در یک خط');
+      await tester.scrollUntilVisible(game, 260, scrollable: find.byType(Scrollable).first);
+      await tester.tap(game);
+      await tester.pumpAndSettle();
+      expect(find.text('نوبت بازیکن سرخ'), findsOneWidget);
+      expect(find.textContaining('چهار مهرهٔ هم‌رنگ'), findsOneWidget);
+    });
+
+    testWidgets('Memory game opens with cards and move counter', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      final game = find.text('بازی حافظه');
+      await tester.scrollUntilVisible(game, 260, scrollable: find.byType(Scrollable).first);
+      await tester.tap(game);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('حرکت‌ها:'), findsOneWidget);
+      expect(find.text('بازی تازه'), findsOneWidget);
+    });
+
+    testWidgets('Quiz starts with a ten-question round', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      await tester.tap(find.text('مسابقه و معما'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('از ۱۰'), findsOneWidget);
+    });
+  });
+
 }
