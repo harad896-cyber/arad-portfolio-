@@ -180,14 +180,36 @@ class _TicTacToePageState extends State<_TicTacToePage> {
 
 class _QuizPage extends StatefulWidget { const _QuizPage(); @override State<_QuizPage> createState() => _QuizPageState(); }
 class _QuizPageState extends State<_QuizPage> {
-  final questions = const [
+  static const questionBank = <(String, List<String>, int)>[
     ('بزرگ‌ترین سیاره منظومه شمسی کدام است؟', ['زمین','مشتری','زهره','مریخ'], 1),
     ('آب در فشار معمول در چند درجه می‌جوشد؟', ['۵۰','۸۰','۱۰۰','۱۲۰'], 2),
     ('کدام حیوان پستاندار است؟', ['کوسه','دلفین','اختاپوس','قزل‌آلا'], 1),
     ('حاصل ۹ × ۷ چند است؟', ['۵۶','۶۳','۷۲','۶۷'], 1),
     ('کدام گاز بیشترین سهم هوای زمین را دارد؟', ['اکسیژن','کربن‌دی‌اکسید','نیتروژن','هیدروژن'], 2),
+    ('پایتخت جاپان کدام شهر است؟', ['سئول','توکیو','پکن','بانکوک'], 1),
+    ('یک ساعت چند دقیقه است؟', ['۳۰','۴۵','۶۰','۹۰'], 2),
+    ('کدام سیاره به حلقه‌هایش مشهور است؟', ['زحل','عطارد','مریخ','زمین'], 0),
+    ('حاصل ۱۲ × ۸ چند است؟', ['۸۶','۹۶','۱۰۸','۱۱۲'], 1),
+    ('کدام اقیانوس بزرگ‌تر است؟', ['هند','اطلس','آرام','منجمد شمالی'], 2),
+    ('گیاهان بیشتر کدام گاز را جذب می‌کنند؟', ['اکسیژن','نیتروژن','کربن‌دی‌اکسید','هلیم'], 2),
+    ('عدد اول بعد از ۷ کدام است؟', ['۸','۹','۱۰','۱۱'], 3),
+    ('کدام جانور سریع‌تر می‌دود؟', ['یوزپلنگ','فیل','لاک‌پشت','خرس'], 0),
+    ('آب چند اتم هیدروژن دارد؟', ['۱','۲','۳','۴'], 1),
+    ('کدام قاره بزرگ‌ترین است؟', ['افریقا','اروپا','آسیا','استرالیا'], 2),
+    ('حاصل ۱۵ + ۲۷ چند است؟', ['۳۲','۴۰','۴۲','۴۵'], 2),
+    ('برای دیدن ستاره‌ها از چه وسیله‌ای استفاده می‌شود؟', ['میکروسکوپ','تلسکوپ','قطب‌نما','دماسنج'], 1),
+    ('پس از تابستان کدام فصل می‌آید؟', ['بهار','زمستان','خزان','تابستان'], 2),
+    ('شش‌ضلعی چند ضلع دارد؟', ['۵','۶','۷','۸'], 1),
+    ('کدام فلز در دمای اتاق مایع است؟', ['آهن','مس','جیوه','طلا'], 2),
   ];
+  late List<(String, List<String>, int)> questions;
   int index = 0, score = 0;
+  @override
+  void initState() { super.initState(); _newRound(); }
+  void _newRound() {
+    final pool = List<(String, List<String>, int)>.of(questionBank)..shuffle(math.Random());
+    questions = pool.take(10).toList();
+  }
   bool? answered;
   int? selectedOption;
 
@@ -222,7 +244,7 @@ class _QuizPageState extends State<_QuizPage> {
               const Icon(Icons.emoji_events_rounded, size: 64, color: Colors.amber),
               const Text('مسابقه تمام شد!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               Text('امتیاز تو: $score از ${questions.length}'),
-              FilledButton(onPressed: () => setState(() { index = 0; score = 0; answered = null; selectedOption = null; }), child: const Text('شروع دوباره')),
+              FilledButton(onPressed: () => setState(() { index = 0; score = 0; answered = null; selectedOption = null; _newRound(); }), child: const Text('مسابقه تازه')),
             ]))
           : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text('پرسش ${index + 1} از ${questions.length}  ·  امتیاز: $score', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -280,64 +302,50 @@ class _QuizPageState extends State<_QuizPage> {
 
 class _WheelPage extends StatefulWidget { const _WheelPage(); @override State<_WheelPage> createState() => _WheelPageState(); }
 class _WheelPageState extends State<_WheelPage> {
-  final prizes = const ['۱۰ امتیاز مجازی','یک ستاره طلایی','یک شانس دوباره','۲۰ امتیاز مجازی','عنوان خوش‌شانس','یک لبخند بزرگ'];
-  String? result;
-  bool spinning = false;
-  int turns = 0;
-
-  Future<void> spin() async {
-    if (spinning) return;
-    final prize = prizes[math.Random().nextInt(prizes.length)];
-    setState(() {
-      spinning = true;
-      result = null;
-      turns += 5 + math.Random().nextInt(4);
-    });
-    await Future.delayed(const Duration(milliseconds: 2500));
-    if (!mounted) return;
-    setState(() {
-      result = prize;
-      spinning = false;
-    });
+ static const prizes=['۱۰ امتیاز','ستاره طلایی','شانس دوباره','۲۰ امتیاز','خوش‌شانس','لبخند'];
+ static const colors=[Color(0xFFE45B5B),Color(0xFFF39B38),Color(0xFFE8C547),Color(0xFF45A978),Color(0xFF3989C9),Color(0xFF8C63C7)];
+ String? result;bool spinning=false;double turns=0;final random=math.Random();
+ Future<void> spin() async {
+  if(spinning)return;
+  final next=turns+5+random.nextDouble();
+  setState(() {spinning=true;result=null;turns=next;});
+  await Future.delayed(const Duration(milliseconds:3200));
+  if(!mounted)return;
+  final fraction=next-next.floor();
+  final pointerProgress=(1-fraction)%1;
+  final index=(pointerProgress*prizes.length).floor()%prizes.length;
+  setState(() {result=prizes[index];spinning=false;});
+ }
+ @override Widget build(BuildContext context)=>_GameScaffold(title:'گردونه شانس',child:Center(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[
+  Stack(alignment:Alignment.topCenter,children:[
+   Padding(padding:const EdgeInsets.only(top:16),child:AnimatedRotation(turns:turns,duration:const Duration(milliseconds:3200),curve:Curves.easeOutCubic,child:SizedBox(width:270,height:270,child:CustomPaint(painter:_PrizeWheelPainter(prizes:prizes,colors:colors))))),
+   const Icon(Icons.arrow_drop_down_rounded,size:48,color:Colors.deepOrange),
+  ]),
+  const SizedBox(height:20),
+  if(result!=null)Text('جایزه تو: '+result!,style:const TextStyle(fontSize:21,fontWeight:FontWeight.w900)),
+  const SizedBox(height:16),
+  FilledButton.icon(onPressed:spinning?null:spin,icon:const Icon(Icons.casino),label:Text(spinning?'در حال چرخش…':'چرخاندن گردونه')),
+  const SizedBox(height:10),
+  const Text('جایزه مطابق خانهٔ زیر نشانگر تعیین می‌شود؛ همه جایزه‌ها مجازی‌اند.',textAlign:TextAlign.center,style:TextStyle(fontSize:12)),
+ ]))));
+}
+class _PrizeWheelPainter extends CustomPainter {
+ final List<String> prizes;final List<Color> colors;
+ const _PrizeWheelPainter({required this.prizes,required this.colors});
+ @override void paint(Canvas canvas,Size size){
+  final center=Offset(size.width/2,size.height/2),radius=math.min(size.width,size.height)/2,sweep=2*math.pi/prizes.length;
+  for(var i=0;i<prizes.length;i++){
+   final start=-math.pi/2+i*sweep;
+   canvas.drawArc(Rect.fromCircle(center:center,radius:radius),start,sweep,true,Paint()..color=colors[i%colors.length]);
+   canvas.drawArc(Rect.fromCircle(center:center,radius:radius),start,sweep,true,Paint()..color=Colors.white..style=PaintingStyle.stroke..strokeWidth=2);
+   final angle=start+sweep/2,p=center+Offset(math.cos(angle),math.sin(angle))*radius*.64;
+   final label=TextPainter(text:TextSpan(text:prizes[i],style:const TextStyle(color:Colors.white,fontSize:12,fontWeight:FontWeight.w900)),textDirection:TextDirection.rtl,textAlign:TextAlign.center)..layout(maxWidth:radius*.62);
+   canvas.save();canvas.translate(p.dx,p.dy);canvas.rotate(angle+math.pi/2);label.paint(canvas,Offset(-label.width/2,-label.height/2));canvas.restore();
   }
-
-  @override
-  Widget build(BuildContext context) => _GameScaffold(
-    title: 'گردونه شانس',
-    child: Center(child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Stack(alignment: Alignment.topCenter, children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 14),
-            child: AnimatedRotation(
-              turns: turns.toDouble(),
-              duration: const Duration(milliseconds: 2500),
-              curve: Curves.easeOutCubic,
-              child: Container(
-                width: 230,
-                height: 230,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const SweepGradient(colors: [Colors.red, Colors.orange, Colors.amber, Colors.green, Colors.teal, Colors.blue, Colors.purple, Colors.red]),
-                  border: Border.all(color: Colors.white, width: 5),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 18)],
-                ),
-                child: const Center(child: Icon(Icons.star_rounded, color: Colors.white, size: 70)),
-              ),
-            ),
-          ),
-          const Icon(Icons.arrow_drop_down_rounded, size: 42, color: Colors.deepOrange),
-        ]),
-        const SizedBox(height: 24),
-        if (result != null) Text('جایزه تو: $result', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
-        const SizedBox(height: 18),
-        FilledButton.icon(onPressed: spinning ? null : spin, icon: const Icon(Icons.casino), label: Text(spinning ? 'در حال چرخش…' : 'چرخاندن گردونه')),
-        const SizedBox(height: 12),
-        const Text('امتیازها و جایزه‌ها فعلاً نمایشی و مجازی‌اند.', style: TextStyle(fontSize: 12)),
-      ]),
-    )),
-  );
+  canvas.drawCircle(center,radius*.13,Paint()..color=Colors.white);
+  canvas.drawCircle(center,radius*.08,Paint()..color=const Color(0xFF087F68));
+ }
+ @override bool shouldRepaint(covariant _PrizeWheelPainter old)=>old.prizes!=prizes||old.colors!=colors;
 }
 
 class _StickerMemePage extends StatefulWidget { const _StickerMemePage(); @override State<_StickerMemePage> createState() => _StickerMemePageState(); }
