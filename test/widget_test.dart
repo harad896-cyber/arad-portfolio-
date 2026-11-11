@@ -75,7 +75,7 @@ void main() {
 
     testWidgets('Quiz starts with a ten-question round', (tester) async {
       await openGame(tester, 'مسابقه و معما');
-      expect(find.textContaining('پرسش ۱ از ۱۰'), findsOneWidget);
+      expect(find.textContaining('پرسش 1 از 10'), findsOneWidget);
       expect(find.textContaining('امتیاز:'), findsOneWidget);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
