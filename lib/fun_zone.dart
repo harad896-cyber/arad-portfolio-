@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+import 'package:cross_file/cross_file.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -215,15 +218,48 @@ class _WheelPageState extends State<_WheelPage> {
 
 class _StickerMemePage extends StatefulWidget { const _StickerMemePage(); @override State<_StickerMemePage> createState() => _StickerMemePageState(); }
 class _StickerMemePageState extends State<_StickerMemePage> {
-  final controller = TextEditingController(text: 'امروز عالیه!'); String emoji = '😎';
+  final controller = TextEditingController(text: 'امروز عالیه!');
+  final previewKey = GlobalKey();
+  bool exporting = false;
+  String emoji = '😎';
+  Future<void> shareMeme() async {
+    if (exporting) return;
+    setState(() => exporting = true);
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      final renderObject = previewKey.currentContext?.findRenderObject();
+      if (renderObject is! RenderRepaintBoundary) {
+        throw StateError('پیش‌نمایش برای ساخت تصویر آماده نیست.');
+      }
+      final image = await renderObject.toImage(pixelRatio: 3);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      if (data == null) throw StateError('ساخت تصویر ناموفق بود.');
+      final bytes = data.buffer.asUint8List();
+      await Share.shareXFiles(
+        [XFile.fromData(bytes, mimeType: 'image/png', name: 'gapresan-meme.png')],
+        text: 'ساخته‌شده با گپ‌رسان',
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ساخت یا شریک‌سازی تصویر انجام نشد: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => exporting = false);
+    }
+  }
   final emojis = const ['😎','😂','😍','🔥','💚','🥳','🤩','😴','🚀','🌟','🙌','❤️'];
   @override void dispose() { controller.dispose(); super.dispose(); }
   @override Widget build(BuildContext context) => _GameScaffold(title: 'استیکر و میم‌ساز', child: ListView(padding: const EdgeInsets.all(18), children: [
-    Container(height: 240, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)), child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(emoji, style: const TextStyle(fontSize: 76)), Padding(padding: const EdgeInsets.all(14), child: Text(controller.text.isEmpty ? 'متن میم تو' : controller.text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)))]))),
+    RepaintBoundary(key: previewKey, child: Container(height: 240, width: double.infinity, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)), child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(emoji, style: const TextStyle(fontSize: 76)), Padding(padding: const EdgeInsets.all(14), child: Text(controller.text.isEmpty ? 'متن میم تو' : controller.text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)))])))),
     const SizedBox(height: 16), TextField(controller: controller, onChanged: (_) => setState(() {}), maxLength: 50, decoration: const InputDecoration(labelText: 'متن استیکر', border: OutlineInputBorder())),
     const SizedBox(height: 8), Wrap(spacing: 8, runSpacing: 8, children: emojis.map((e) => ChoiceChip(label: Text(e, style: const TextStyle(fontSize: 24)), selected: emoji == e, onSelected: (_) => setState(() => emoji=e))).toList()),
-    const SizedBox(height: 18), FilledButton.icon(onPressed: () async { await Clipboard.setData(ClipboardData(text: '$emoji  ${controller.text}')); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('متن استیکر کاپی شد.'))); }, icon: const Icon(Icons.copy), label: const Text('کاپی متن استیکر')),
-    const Text('این نسخه متن و ایموجی را آماده می‌کند؛ خروجی تصویر و بسته استیکر در مرحله بعد اضافه می‌شود.', style: TextStyle(fontSize: 12)),
+    const SizedBox(height: 18),
+    FilledButton.icon(onPressed: exporting ? null : shareMeme, icon: exporting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.image_rounded), label: Text(exporting ? 'در حال ساخت تصویر…' : 'ساخت و شریک‌سازی تصویر PNG')),
+    const SizedBox(height: 8),
+    OutlinedButton.icon(onPressed: () async { await Clipboard.setData(ClipboardData(text: '$emoji  ${controller.text}')); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('متن استیکر کاپی شد.'))); }, icon: const Icon(Icons.copy), label: const Text('کاپی متن')),
   ]));
 }
 
@@ -251,7 +287,39 @@ class _SnakePage extends StatefulWidget { const _SnakePage(); @override State<_S
 class _SnakePageState extends State<_SnakePage> {
   static const n=16; final random=math.Random(); List<int> snake=[117,118,119]; int food=85, direction=-1, score=0; Timer? timer; bool running=false, over=false;
   void start() { timer?.cancel(); setState(() {snake=[117,118,119];do{food=random.nextInt(n*n);}while(snake.contains(food));direction=-1;score=0;over=false;running=true;}); timer=Timer.periodic(const Duration(milliseconds:180), (_) => step()); }
-  void step() { if(!running)return; final head=snake.first; final next=head+direction; final valid=next>=0&&next<n*n&&!(direction==1&&head%n==n-1)&&!(direction==-1&&head%n==0)&&!(direction==n&&head~/n==n-1)&&!(direction==-n&&head~/n==0)&&!snake.contains(next); if(!valid){timer?.cancel();setState((){running=false;over=true;});return;} setState(() {snake.insert(0,next);if(next==food){score++;do{food=random.nextInt(n*n);}while(snake.contains(food));}else{snake.removeLast();}}); }
+  void step() {
+    if (!running || snake.isEmpty) return;
+    final head = snake.first;
+    final next = head + direction;
+    final willEat = next == food;
+    final bodyToCheck = willEat ? snake : snake.take(snake.length - 1);
+    final insideBoard = next >= 0 && next < n * n;
+    final crossedEdge = (direction == 1 && head % n == n - 1) ||
+        (direction == -1 && head % n == 0) ||
+        (direction == n && head ~/ n == n - 1) ||
+        (direction == -n && head ~/ n == 0);
+    final hitSelf = bodyToCheck.contains(next);
+    if (!insideBoard || crossedEdge || hitSelf) {
+      timer?.cancel();
+      setState(() { running = false; over = true; });
+      return;
+    }
+    setState(() {
+      snake.insert(0, next);
+      if (willEat) {
+        score++;
+        if (snake.length == n * n) {
+          timer?.cancel();
+          running = false;
+          over = true;
+        } else {
+          do { food = random.nextInt(n * n); } while (snake.contains(food));
+        }
+      } else {
+        snake.removeLast();
+      }
+    });
+  }
   void turn(int d){if((direction==-d)||d==direction)return;setState(()=>direction=d);}
   @override void dispose(){timer?.cancel();super.dispose();}
   @override Widget build(BuildContext context)=>_GameScaffold(title:'بازی مار',child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
