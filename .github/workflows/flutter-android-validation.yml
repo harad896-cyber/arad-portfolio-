@@ -15,8 +15,22 @@ jobs:
         with:
           channel: stable
       - run: flutter --version
+      # This repository currently contains Flutter sources but no committed Android
+      # runner. Generate the standard Android host project before building the APK.
+      - name: Generate Android platform files when missing
+        run: |
+          if [ ! -f android/app/build.gradle ] && [ ! -f android/app/build.gradle.kts ]; then
+            flutter create --platforms=android --org com.gapresan .
+          fi
       - run: flutter pub get
       - run: dart format lib/main.dart lib/fun_zone.dart
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test
       - run: flutter build apk --debug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
