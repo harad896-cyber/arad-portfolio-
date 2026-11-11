@@ -496,6 +496,14 @@ class _SnakePageState extends State<_SnakePage> {
     Text('امتیاز: $score',style:const TextStyle(fontSize:20,fontWeight:FontWeight.bold)),
     const SizedBox(height:16),
     Expanded(child:Center(child:AspectRatio(aspectRatio:1,child:GestureDetector(onVerticalDragUpdate:(d){if(d.delta.dy>0)turn(n);else if(d.delta.dy<0)turn(-n);},onHorizontalDragUpdate:(d){if(d.delta.dx>0)turn(1);else if(d.delta.dx<0)turn(-1);},child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:n*n,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:n),itemBuilder:(_,i)=>Container(margin:const EdgeInsets.all(1),decoration:BoxDecoration(color:snake.contains(i)?Colors.green:food==i?Colors.red:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(3)))))))),
+    Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+      IconButton.filledTonal(onPressed:()=>turn(-1),icon:const Icon(Icons.arrow_left_rounded),tooltip:'چپ'),
+      Column(mainAxisSize:MainAxisSize.min,children:[
+        IconButton.filledTonal(onPressed:()=>turn(-n),icon:const Icon(Icons.arrow_upward_rounded),tooltip:'بالا'),
+        IconButton.filledTonal(onPressed:()=>turn(n),icon:const Icon(Icons.arrow_downward_rounded),tooltip:'پایین'),
+      ]),
+      IconButton.filledTonal(onPressed:()=>turn(1),icon:const Icon(Icons.arrow_right_rounded),tooltip:'راست'),
+    ]),
     if(over) const Text('بازی تمام شد! دوباره تلاش کن.'),
     FilledButton(onPressed:start,child:Text(running?'شروع دوباره':'شروع بازی')),
     const Text('برای تغییر مسیر، روی صفحه به بالا، پایین، چپ یا راست بکش.',style:TextStyle(fontSize:11)),
