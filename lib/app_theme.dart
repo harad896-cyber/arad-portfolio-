@@ -56,7 +56,9 @@ class GapResanThemeTokens extends ThemeExtension<GapResanThemeTokens> {
     final canvas = matchesBrightness
         ? selectedBackground
         : const Color(0xFFF5F8F6);
-    final surface = Color.lerp(canvas, Colors.white, .72)!;
+    final surface = matchesBrightness
+        ? Color.lerp(canvas, Colors.white, .72)!
+        : Colors.white;
     return GapResanThemeTokens(
       canvas: canvas,
       surface: surface,
