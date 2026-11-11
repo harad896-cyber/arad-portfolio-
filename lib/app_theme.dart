@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Semantic color tokens shared by GapResan surfaces and feature pages.
-///
-/// This first foundation step intentionally preserves the current appearance;
-/// widgets can migrate from hard-coded colors to these semantic roles gradually.
+/// Semantic color roles shared by the whole GapResan interface.
+/// Palette surfaces are derived from the selected background so presets
+/// affect real screens, not only the theme picker preview.
 @immutable
 class GapResanThemeTokens extends ThemeExtension<GapResanThemeTokens> {
   const GapResanThemeTokens({
@@ -25,39 +24,53 @@ class GapResanThemeTokens extends ThemeExtension<GapResanThemeTokens> {
   factory GapResanThemeTokens.forBrightness({
     required bool dark,
     required Color accent,
+    int backgroundSeed = 0xFF081712,
   }) {
+    final selectedBackground = Color(backgroundSeed);
+    final luminance = selectedBackground.computeLuminance();
+    final matchesBrightness = dark ? luminance < .42 : luminance > .58;
+
     if (dark) {
-      const canvas = Color(0xFF081712);
+      final canvas = matchesBrightness
+          ? selectedBackground
+          : const Color(0xFF081712);
+      final surface = Color.lerp(canvas, Colors.white, .075)!;
+      final elevated = Color.lerp(canvas, Colors.white, .12)!;
       return GapResanThemeTokens(
         canvas: canvas,
-        surface: const Color(0xFF10251D),
-        elevatedSurface: const Color(0xFF183329),
-        subtleSurface: const Color(0xFF0D2119),
+        surface: surface,
+        elevatedSurface: elevated,
+        subtleSurface: Color.lerp(canvas, Colors.white, .045)!,
         textPrimary: const Color(0xFFF7FBF8),
         textSecondary: const Color(0xFFB4C6BC),
-        divider: const Color(0xFF304A3D),
+        divider: Color.lerp(canvas, Colors.white, .19)!,
         accent: accent,
         accentSoft: accent.withValues(alpha: .16),
         outgoingBubble: Color.lerp(accent, canvas, .34)!,
-        incomingBubble: const Color(0xFF193329),
+        incomingBubble: Color.lerp(surface, canvas, .30)!,
         chatBackdrop: canvas,
         danger: const Color(0xFFFF8A8A),
       );
     }
 
-    const canvas = Color(0xFFF5F8F6);
+    final canvas = matchesBrightness
+        ? selectedBackground
+        : const Color(0xFFF5F8F6);
+    final surface = Color.lerp(canvas, Colors.white, .72)!;
     return GapResanThemeTokens(
       canvas: canvas,
-      surface: const Color(0xFFFFFFFF),
-      elevatedSurface: const Color(0xFFFCFCFE),
-      subtleSurface: const Color(0xFFF0F5F1),
+      surface: surface,
+      elevatedSurface: Colors.white,
+      subtleSurface: Color.lerp(canvas, Colors.white, .48)!,
       textPrimary: const Color(0xFF17231C),
       textSecondary: const Color(0xFF65756B),
-      divider: const Color(0xFFDCE7DF),
+      divider: Color.lerp(canvas, Colors.black, .10)!,
       accent: accent,
       accentSoft: accent.withValues(alpha: .12),
-      outgoingBubble: Color.lerp(accent, Colors.white, .12)!,
-      incomingBubble: const Color(0xFFFFFFFF),
+      // Darken the outgoing bubble in light mode to keep white message text
+      // legible even when the selected accent is bright gold or yellow.
+      outgoingBubble: Color.lerp(accent, Colors.black, .25)!,
+      incomingBubble: surface,
       chatBackdrop: canvas,
       danger: const Color(0xFFB42318),
     );
@@ -79,10 +92,18 @@ class GapResanThemeTokens extends ThemeExtension<GapResanThemeTokens> {
 
   @override
   GapResanThemeTokens copyWith({
-    Color? canvas, Color? surface, Color? elevatedSurface,
-    Color? subtleSurface, Color? textPrimary, Color? textSecondary,
-    Color? divider, Color? accent, Color? accentSoft,
-    Color? outgoingBubble, Color? incomingBubble, Color? chatBackdrop,
+    Color? canvas,
+    Color? surface,
+    Color? elevatedSurface,
+    Color? subtleSurface,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? divider,
+    Color? accent,
+    Color? accentSoft,
+    Color? outgoingBubble,
+    Color? incomingBubble,
+    Color? chatBackdrop,
     Color? danger,
   }) => GapResanThemeTokens(
     canvas: canvas ?? this.canvas,
