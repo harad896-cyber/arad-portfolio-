@@ -59,6 +59,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
     0xFF20242B,
     0xFF302047,
     0xFF173A45,
+    0xFF06190F,
     0xFF3B2437,
     0xFF0B1220,
     0xFFF5F5F7,
@@ -75,6 +76,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
     0xFF20242B: 'خاکستری تیره',
     0xFF302047: 'بنفش عمیق',
     0xFF173A45: 'سبز دریایی',
+    0xFF06190F: 'زمردی طلایی',
     0xFF3B2437: 'زرشکی تیره',
     0xFF0B1220: 'سرمه‌ای',
     0xFFF5F5F7: 'سفید روشن',
@@ -133,10 +135,10 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
                           Positioned(
                             bottom: -95 + t * 18, left: -45 + t * 12, width: 220, height: 220,
                             child: IgnorePointer(child: DecoratedBox(
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(colors: [
-                                  Color(0x4436B8FF), Color(0x1036B8FF), Colors.transparent,
+                                  Theme.of(context).colorScheme.secondary.withValues(alpha: .20), Theme.of(context).colorScheme.secondary.withValues(alpha: .07), Colors.transparent,
                                 ]),
                               ),
                             )),
@@ -204,6 +206,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> with SingleTick
               _ChatPreset(label: 'بنفش فضایی', colors: [Color(0xFF302047), Color(0xFF11131A)], seed: 0xFF8B5CF6),
               _ChatPreset(label: 'اقیانوس آبی', colors: [Color(0xFF10202D), Color(0xFF0B1220)], seed: 0xFF36B8FF),
               _ChatPreset(label: 'سبز آرام', colors: [Color(0xFF173A45), Color(0xFF11131A)], seed: 0xFF39C6A5),
+              _ChatPreset(label: 'طلایی سلطنتی', colors: [Color(0xFF06190F), Color(0xFF10271B)], seed: 0xFFD4A017),
               _ChatPreset(label: 'رز تیره', colors: [Color(0xFF3B2437), Color(0xFF17152B)], seed: 0xFFFF78B7),
               _ChatPreset(label: 'یاسی روشن', colors: [Color(0xFFF1ECFF), Color(0xFFF6F7FB)], seed: 0xFF8B5CF6),
               _ChatPreset(label: 'سفید مینیمال', colors: [Color(0xFFF5F5F7), Color(0xFFEAF4FF)], seed: 0xFF5264D8),
@@ -270,7 +273,7 @@ class _ChatPreset extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = appTheme.backgroundSeed == colors.first.value;
+    final selected = appTheme.backgroundSeed == colors.first.value && appTheme.seed == seed;
     final scheme = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
@@ -278,8 +281,7 @@ class _ChatPreset extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: () async {
           HapticFeedback.selectionClick();
-          await appTheme.setBackgroundSeed(colors.first.value);
-          await appTheme.setSeed(seed);
+          await appTheme.setPalette(accent: seed, background: colors.first.value);
           await appTheme.setBackgroundEffects(true);
         },
         child: Ink(
