@@ -2072,6 +2072,21 @@ class AradMessenger extends StatelessWidget {
         ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
+        dividerTheme: DividerThemeData(
+          color: Color(appTheme.seed).withValues(alpha: .14),
+          thickness: 1,
+          space: 1,
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .94),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: _gapPaletteSurface(dark: false, backgroundSeed: appTheme.backgroundSeed, fallback: Colors.white, strength: .94),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        ),
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: PageTransitionsTheme(
           builders: {
@@ -2169,6 +2184,21 @@ class AradMessenger extends StatelessWidget {
         ],
         scaffoldBackgroundColor: Colors.transparent,
         visualDensity: VisualDensity.standard,
+        dividerTheme: DividerThemeData(
+          color: Color(appTheme.seed).withValues(alpha: .22),
+          thickness: 1,
+          space: 1,
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .58),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: _gapPaletteSurface(dark: true, backgroundSeed: appTheme.backgroundSeed, fallback: const Color(0xFF0D251A), strength: .58),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        ),
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: PageTransitionsTheme(
           builders: {
