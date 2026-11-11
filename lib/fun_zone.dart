@@ -264,11 +264,96 @@ class _SnakePageState extends State<_SnakePage> {
   ])));
 }
 
-class _PersonalityPage extends StatefulWidget { const _PersonalityPage(); @override State<_PersonalityPage> createState()=>_PersonalityPageState(); }
-class _PersonalityPageState extends State<_PersonalityPage>{
-  final qs=const ['در یک روز آزاد کدام را انتخاب می‌کنی؟','در جمع دوستان معمولاً…','وقتی با چالش روبه‌رو می‌شوی…'];
-  final opts=const [['ماجراجویی تازه','کتاب و آرامش','دیدار دوستان'],['سر صحبت را باز می‌کنم','بیشتر گوش می‌دهم','همه را می‌خندانم'],['سریع اقدام می‌کنم','اول خوب فکر می‌کنم','از دیگران کمک می‌گیرم']];
-  final answers=<int>[]; int page=0;
-  String get result { final a=answers.fold<int>(0,(p,e)=>p+e); return a<=2?'روحیه ماجراجو 🚀':a<=4?'ذهن آرام و تحلیل‌گر 🧠':'همراه و اجتماعی 💚'; }
-  @override Widget build(BuildContext context)=>_GameScaffold(title:'آزمون شخصیت و فال',child:Padding(padding:const EdgeInsets.all(20),child:page>=qs.length?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.auto_awesome,size:60,color:Colors.amber),const Text('نتیجه سرگرمی تو',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),Text(result,style:const TextStyle(fontSize:19)),const SizedBox(height:8),const Text('این آزمون علمی یا تشخیص شخصیت نیست؛ فقط برای تفریح است.',textAlign:TextAlign.center),FilledButton(onPressed:()=>setState(() { answers.clear(); page=0; }),child:const Text('دوباره انجام بده'))])):Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Text('پرسش ${page+1} از ${qs.length}',style:const TextStyle(fontWeight:FontWeight.bold)),const SizedBox(height:20),Text(qs[page],style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800)),const SizedBox(height:16),...List.generate(3,(i)=>Padding(padding:const EdgeInsets.only(bottom:10),child: OutlinedButton(onPressed:(){setState(() { answers.add(i); page++; });},child:Padding(padding:const EdgeInsets.all(12),child:Text(opts[page][i]))))))])));
+class _PersonalityPage extends StatefulWidget {
+  const _PersonalityPage();
+  @override
+  State<_PersonalityPage> createState() => _PersonalityPageState();
+}
+
+class _PersonalityPageState extends State<_PersonalityPage> {
+  final List<String> questions = const [
+    'در یک روز آزاد کدام را انتخاب می‌کنی؟',
+    'در جمع دوستان معمولاً…',
+    'وقتی با چالش روبه‌رو می‌شوی…',
+  ];
+  final List<List<String>> options = const [
+    ['ماجراجویی تازه', 'کتاب و آرامش', 'دیدار دوستان'],
+    ['سر صحبت را باز می‌کنم', 'بیشتر گوش می‌دهم', 'همه را می‌خندانم'],
+    ['سریع اقدام می‌کنم', 'اول خوب فکر می‌کنم', 'از دیگران کمک می‌گیرم'],
+  ];
+  final List<int> answers = [];
+  int page = 0;
+
+  String get result {
+    final total = answers.fold<int>(0, (sum, value) => sum + value);
+    if (total <= 2) return 'روحیه ماجراجو 🚀';
+    if (total <= 4) return 'ذهن آرام و تحلیل‌گر 🧠';
+    return 'همراه و اجتماعی 💚';
+  }
+
+  void restart() {
+    setState(() {
+      answers.clear();
+      page = 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _GameScaffold(
+      title: 'آزمون شخصیت و فال',
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: page >= questions.length
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.auto_awesome, size: 60, color: Colors.amber),
+                    const SizedBox(height: 12),
+                    const Text('نتیجه سرگرمی تو', style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(result, style: const TextStyle(fontSize: 19)),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'این آزمون علمی یا تشخیص شخصیت نیست؛ فقط برای تفریح است.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
+                    FilledButton(onPressed: restart, child: const Text('دوباره انجام بده')),
+                  ],
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('پرسش ${page + 1} از ${questions.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  LinearProgressIndicator(value: (page + 1) / questions.length),
+                  const SizedBox(height: 22),
+                  Text(questions[page], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 16),
+                  ...List.generate(
+                    options[page].length,
+                    (i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            answers.add(i);
+                            page++;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(options[page][i]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
 }
