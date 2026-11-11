@@ -401,12 +401,12 @@ class _ConnectFourPageState extends State<_ConnectFourPage>{
  void drop(int col){
   if(winner!=null||draw)return;var row=-1;for(var r=rows-1;r>=0;r--){if(board[r*cols+col]==0){row=r;break;}}
   if(row<0){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('این ستون پُر است.')));return;}
-  setState(()=>{board[row*cols+col]=turn});
-  if(wins(row,col,turn)){setState(()=>{winner=turn});if(turn==1){redWins++;}else{yellowWins++;}}
-  else if(board.every((v)=>v!=0)){setState(()=>{draw=true});}
-  else{setState(()=>{turn=turn==1?2:1});}
+  setState(() { board[row*cols+col]=turn; });
+  if(wins(row,col,turn)){setState(() { winner=turn; if(turn==1){redWins++;}else{yellowWins++;} });}
+  else if(board.every((v)=>v!=0)){setState(() { draw=true; });}
+  else{setState(() { turn=turn==1?2:1; });}
  }
- void reset()=>setState(()=>{board=List.filled(rows*cols,0),turn=1,winner=null,draw=false});
+ void reset()=>setState(() { board=List.filled(rows*cols,0);turn=1;winner=null;draw=false; });
  @override Widget build(BuildContext context)=>_GameScaffold(title:'چهار در یک خط',child:Padding(padding:const EdgeInsets.all(14),child:Column(children:[
   Text('سرخ: '+redWins.toString()+' برد  ·  زرد: '+yellowWins.toString()+' برد',style:const TextStyle(fontWeight:FontWeight.w900)),
   const SizedBox(height:8),
@@ -429,8 +429,8 @@ class _MemoryGamePageState extends State<_MemoryGamePage>{
   if(resolving||finished||matched.contains(i)||revealed.contains(i))return;
   setState(()=>revealed.add(i));if(revealed.length<2)return;moves++;
   final pair=revealed.toList(growable:false);
-  if(cards[pair[0]]==cards[pair[1]]){setState(()=>{matched.addAll(pair),revealed.clear(),finished=matched.length==cards.length});return;}
-  setState(()=>resolving=true);await Future.delayed(const Duration(milliseconds:850));if(!mounted)return;setState(()=>{revealed.clear(),resolving=false});
+  if(cards[pair[0]]==cards[pair[1]]){setState(() { matched.addAll(pair);revealed.clear();finished=matched.length==cards.length; });return;}
+  setState(() { resolving=true; });await Future.delayed(const Duration(milliseconds:850));if(!mounted)return;setState(() { revealed.clear();resolving=false; });
  }
  @override Widget build(BuildContext context)=>_GameScaffold(title:'بازی حافظه',child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
   Text('حرکت‌ها: '+moves.toString()+'  ·  جفت‌ها: '+(matched.length~/2).toString()+' از '+symbols.length.toString(),style:const TextStyle(fontWeight:FontWeight.w900)),
