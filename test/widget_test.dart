@@ -38,6 +38,23 @@ void main() {
       expect(find.textContaining('چهار مهرهٔ هم‌رنگ'), findsOneWidget);
     });
 
+    testWidgets('Connect Four recognizes a horizontal win', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      final game = find.text('چهار در یک خط');
+      await tester.scrollUntilVisible(game, 260, scrollable: find.byType(Scrollable).first);
+      await tester.tap(game);
+      await tester.pumpAndSettle();
+      final cells = find.descendant(
+        of: find.byType(GridView),
+        matching: find.byType(GestureDetector),
+      );
+      for (final column in [0, 0, 1, 1, 2, 2, 3]) {
+        await tester.tap(cells.at(35 + column));
+        await tester.pump();
+      }
+      expect(find.text('مهره سرخ برنده شد!'), findsOneWidget);
+    });
+
     testWidgets('Memory game opens with cards and move counter', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
       final game = find.text('بازی حافظه');
