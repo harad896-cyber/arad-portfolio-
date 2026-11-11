@@ -249,8 +249,8 @@ class _BoardPracticePageState extends State<_BoardPracticePage> {
 
 class _SnakePage extends StatefulWidget { const _SnakePage(); @override State<_SnakePage> createState() => _SnakePageState(); }
 class _SnakePageState extends State<_SnakePage> {
-  static const n=16; final random=math.Random(); List<int> snake=[119,118,117]; int food=85, direction=-1, score=0; Timer? timer; bool running=false, over=false;
-  void start() { timer?.cancel(); setState(() {snake=[119,118,117];food=random.nextInt(n*n);direction=-1;score=0;over=false;running=true;}); timer=Timer.periodic(const Duration(milliseconds:180), (_) => step()); }
+  static const n=16; final random=math.Random(); List<int> snake=[117,118,119]; int food=85, direction=-1, score=0; Timer? timer; bool running=false, over=false;
+  void start() { timer?.cancel(); setState(() {snake=[117,118,119];do{food=random.nextInt(n*n);}while(snake.contains(food));direction=-1;score=0;over=false;running=true;}); timer=Timer.periodic(const Duration(milliseconds:180), (_) => step()); }
   void step() { if(!running)return; final head=snake.first; final next=head+direction; final valid=next>=0&&next<n*n&&!(direction==1&&head%n==n-1)&&!(direction==-1&&head%n==0)&&!(direction==n&&head~/n==n-1)&&!(direction==-n&&head~/n==0)&&!snake.contains(next); if(!valid){timer?.cancel();setState((){running=false;over=true;});return;} setState(() {snake.insert(0,next);if(next==food){score++;do{food=random.nextInt(n*n);}while(snake.contains(food));}else{snake.removeLast();}}); }
   void turn(int d){if((direction==-d)||d==direction)return;setState(()=>direction=d);}
   @override void dispose(){timer?.cancel();super.dispose();}
