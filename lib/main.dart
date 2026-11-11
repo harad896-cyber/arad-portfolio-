@@ -38,6 +38,7 @@ import 'voice_message_player.dart';
 import 'polish_widgets.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
+import 'fun_zone.dart';
 
 /// Supplied by the build workflows from pubspec.yaml so release UI and APK share one version source.
 const String kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
@@ -6899,7 +6900,9 @@ class _HomePageState extends State<HomePage> {
               ])
             : navIndex == 0
                 ? chatsView()
-                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; })),
+                : navIndex == 1
+                    ? ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; }))
+                    : const FunZonePage(),
       ))),
       floatingActionButton: navIndex == 0 ? IgnorePointer(ignoring: !_homeChromeVisible, child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: _homeChromeVisible ? 1 : 0, child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _homeChromeVisible ? 1 : .78, child: FloatingActionButton(tooltip: trUi('گفتگوی جدید'), onPressed: createDirect, child: Icon(Icons.edit_rounded))))) : null,
       bottomNavigationBar: AnimatedSize(
@@ -6947,6 +6950,7 @@ class _HomePageState extends State<HomePage> {
                       destinations: [
                         NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
                         NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+                        NavigationDestination(icon: Icon(Icons.sports_esports_outlined), selectedIcon: Icon(Icons.sports_esports_rounded), label: trUi('سرگرمی')),
                       ],
                     ),
                   ),
