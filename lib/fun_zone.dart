@@ -186,33 +186,157 @@ class _QuizPageState extends State<_QuizPage> {
     ('حاصل ۹ × ۷ چند است؟', ['۵۶','۶۳','۷۲','۶۷'], 1),
     ('کدام گاز بیشترین سهم هوای زمین را دارد؟', ['اکسیژن','کربن‌دی‌اکسید','نیتروژن','هیدروژن'], 2),
   ];
-  int index = 0, score = 0; bool? answered;
-  void choose(int i) { if (answered != null) return; setState(() { answered = i == questions[index].$3; if (answered!) score++; }); }
-  void next() { setState(() { if (index < questions.length - 1) { index++; answered = null; } else { index = questions.length; } }); }
-  @override Widget build(BuildContext context) => _GameScaffold(title: 'مسابقه و معما', child: Padding(padding: const EdgeInsets.all(18), child: index >= questions.length
-    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.emoji_events_rounded, size: 64, color: Colors.amber), const Text('مسابقه تمام شد!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), Text('امتیاز تو: $score از ${questions.length}'), FilledButton(onPressed: () => setState(() { index=0; score=0; answered=null; }), child: const Text('شروع دوباره'))]))
-    : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('پرسش ${index+1} از ${questions.length}  ·  امتیاز: $score', style: const TextStyle(fontWeight: FontWeight.bold)),
-      const SizedBox(height: 20), LinearProgressIndicator(value: (index+1)/questions.length),
-      const SizedBox(height: 24), Text(questions[index].$1, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 18),
-      ...List.generate(4, (i) => Padding(padding: const EdgeInsets.only(bottom: 10), child: OutlinedButton(
-        onPressed: () => choose(i), child: Padding(padding: const EdgeInsets.all(9), child: Text(questions[index].$2[i]))))),
-      if (answered != null) ...[Text(answered! ? 'آفرین! پاسخ درست بود.' : 'این پاسخ درست نبود.'), const SizedBox(height: 12), FilledButton(onPressed: next, child: Text(index == questions.length-1 ? 'دیدن نتیجه' : 'پرسش بعدی'))],
-    ])));
+  int index = 0, score = 0;
+  bool? answered;
+  int? selectedOption;
+
+  void choose(int i) {
+    if (answered != null) return;
+    setState(() {
+      selectedOption = i;
+      answered = i == questions[index].$3;
+      if (answered!) score++;
+    });
+  }
+
+  void next() {
+    setState(() {
+      if (index < questions.length - 1) {
+        index++;
+        answered = null;
+        selectedOption = null;
+      } else {
+        index = questions.length;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => _GameScaffold(
+    title: 'مسابقه و معما',
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: index >= questions.length
+          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.emoji_events_rounded, size: 64, color: Colors.amber),
+              const Text('مسابقه تمام شد!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text('امتیاز تو: $score از ${questions.length}'),
+              FilledButton(onPressed: () => setState(() { index = 0; score = 0; answered = null; selectedOption = null; }), child: const Text('شروع دوباره')),
+            ]))
+          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('پرسش ${index + 1} از ${questions.length}  ·  امتیاز: $score', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              LinearProgressIndicator(value: (index + 1) / questions.length),
+              const SizedBox(height: 24),
+              Text(questions[index].$1, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 18),
+              ...List.generate(4, (i) {
+                final isCorrectAnswer = i == questions[index].$3;
+                final isSelected = i == selectedOption;
+                final tint = answered == null
+                    ? null
+                    : isCorrectAnswer
+                        ? Colors.green.withValues(alpha: .12)
+                        : isSelected
+                            ? Colors.red.withValues(alpha: .12)
+                            : null;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: OutlinedButton(
+                    onPressed: answered == null ? () => choose(i) : null,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: tint,
+                      side: BorderSide(
+                        color: answered == null
+                            ? Theme.of(context).colorScheme.outline
+                            : isCorrectAnswer
+                                ? Colors.green
+                                : isSelected
+                                    ? Colors.red
+                                    : Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(9),
+                      child: Row(children: [
+                        Expanded(child: Text(questions[index].$2[i])),
+                        if (answered != null && isCorrectAnswer) const Icon(Icons.check_circle, color: Colors.green),
+                        if (answered != null && isSelected && !isCorrectAnswer) const Icon(Icons.cancel, color: Colors.red),
+                      ]),
+                    ),
+                  ),
+                );
+              }),
+              if (answered != null) ...[
+                Text(answered! ? 'آفرین! پاسخ درست بود.' : 'پاسخ درست: ${questions[index].$2[questions[index].$3]}'),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: next, child: Text(index == questions.length - 1 ? 'دیدن نتیجه' : 'پرسش بعدی')),
+              ],
+            ]),
+    ),
+  );
 }
 
 class _WheelPage extends StatefulWidget { const _WheelPage(); @override State<_WheelPage> createState() => _WheelPageState(); }
 class _WheelPageState extends State<_WheelPage> {
   final prizes = const ['۱۰ امتیاز مجازی','یک ستاره طلایی','یک شانس دوباره','۲۰ امتیاز مجازی','عنوان خوش‌شانس','یک لبخند بزرگ'];
-  String? result; bool spinning = false;
-  Future<void> spin() async { if (spinning) return; setState(() { spinning=true; result=null; }); await Future.delayed(const Duration(milliseconds: 1100)); if (!mounted) return; setState(() { result=prizes[math.Random().nextInt(prizes.length)]; spinning=false; }); }
-  @override Widget build(BuildContext context) => _GameScaffold(title: 'گردونه شانس', child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-    AnimatedRotation(turns: spinning ? 3.7 : 0, duration: const Duration(milliseconds: 1100), child: Container(width: 230, height: 230, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const SweepGradient(colors: [Colors.red, Colors.orange, Colors.amber, Colors.green, Colors.teal, Colors.blue, Colors.purple, Colors.red]), border: Border.all(color: Colors.white, width: 5), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 18)]), child: const Center(child: Icon(Icons.star_rounded, color: Colors.white, size: 70)))),
-    const SizedBox(height: 24), if (result != null) Text('جایزه تو: $result', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
-    const SizedBox(height: 18), FilledButton.icon(onPressed: spinning ? null : spin, icon: const Icon(Icons.casino), label: Text(spinning ? 'در حال چرخش…' : 'چرخاندن گردونه')),
-    const SizedBox(height: 12), const Text('امتیازها و جایزه‌ها فعلاً نمایشی و مجازی‌اند.', style: TextStyle(fontSize: 12)),
-  ]))));
+  String? result;
+  bool spinning = false;
+  int turns = 0;
+
+  Future<void> spin() async {
+    if (spinning) return;
+    final prize = prizes[math.Random().nextInt(prizes.length)];
+    setState(() {
+      spinning = true;
+      result = null;
+      turns += 5 + math.Random().nextInt(4);
+    });
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+    setState(() {
+      result = prize;
+      spinning = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => _GameScaffold(
+    title: 'گردونه شانس',
+    child: Center(child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Stack(alignment: Alignment.topCenter, children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: AnimatedRotation(
+              turns: turns.toDouble(),
+              duration: const Duration(milliseconds: 2500),
+              curve: Curves.easeOutCubic,
+              child: Container(
+                width: 230,
+                height: 230,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const SweepGradient(colors: [Colors.red, Colors.orange, Colors.amber, Colors.green, Colors.teal, Colors.blue, Colors.purple, Colors.red]),
+                  border: Border.all(color: Colors.white, width: 5),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 18)],
+                ),
+                child: const Center(child: Icon(Icons.star_rounded, color: Colors.white, size: 70)),
+              ),
+            ),
+          ),
+          const Icon(Icons.arrow_drop_down_rounded, size: 42, color: Colors.deepOrange),
+        ]),
+        const SizedBox(height: 24),
+        if (result != null) Text('جایزه تو: $result', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
+        const SizedBox(height: 18),
+        FilledButton.icon(onPressed: spinning ? null : spin, icon: const Icon(Icons.casino), label: Text(spinning ? 'در حال چرخش…' : 'چرخاندن گردونه')),
+        const SizedBox(height: 12),
+        const Text('امتیازها و جایزه‌ها فعلاً نمایشی و مجازی‌اند.', style: TextStyle(fontSize: 12)),
+      ]),
+    )),
+  );
 }
 
 class _StickerMemePage extends StatefulWidget { const _StickerMemePage(); @override State<_StickerMemePage> createState() => _StickerMemePageState(); }
