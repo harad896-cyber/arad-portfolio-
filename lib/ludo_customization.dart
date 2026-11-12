@@ -55,12 +55,12 @@ class LudoCustomization {
     try {
       final p = await SharedPreferences.getInstance();
       current.value = LudoLook(
-        board: (p.getInt('ludo_board_skin') ?? 0).clamp(0, boardNames.length - 1),
-        avatar: (p.getInt('ludo_avatar') ?? 0).clamp(0, avatars.length - 1),
-        frame: (p.getInt('ludo_avatar_frame') ?? 0).clamp(0, frames.length - 1),
-        banner: (p.getInt('ludo_profile_banner') ?? 0).clamp(0, banners.length - 1),
-        background: (p.getInt('ludo_profile_background') ?? 0).clamp(0, backgrounds.length - 1),
-        charm: (p.getInt('ludo_avatar_charm') ?? 0).clamp(0, charms.length - 1),
+        board: (p.getInt('ludo_board_skin') ?? 0).clamp(0, boardNames.length - 1).toInt(),
+        avatar: (p.getInt('ludo_avatar') ?? 0).clamp(0, avatars.length - 1).toInt(),
+        frame: (p.getInt('ludo_avatar_frame') ?? 0).clamp(0, frames.length - 1).toInt(),
+        banner: (p.getInt('ludo_profile_banner') ?? 0).clamp(0, banners.length - 1).toInt(),
+        background: (p.getInt('ludo_profile_background') ?? 0).clamp(0, backgrounds.length - 1).toInt(),
+        charm: (p.getInt('ludo_avatar_charm') ?? 0).clamp(0, charms.length - 1).toInt(),
       );
     } catch (_) {}
   }
@@ -152,7 +152,7 @@ class LudoCustomizationShowcase extends StatelessWidget {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Text('پروفایل بازیکن من', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text('بنر \${LudoCustomization.banners[look.banner]}  •  قاب \${LudoCustomization.frames[look.frame]}',
+                Text('بنر ${LudoCustomization.banners[look.banner]}  •  قاب ${LudoCustomization.frames[look.frame]}',
                   style: const TextStyle(color: Colors.white70, fontSize: 11)),
               ])),
               Text(LudoCustomization.charms[look.charm], style: const TextStyle(fontSize: 27)),
@@ -161,7 +161,7 @@ class LudoCustomizationShowcase extends StatelessWidget {
             Row(children: [
               const Icon(Icons.palette_outlined, color: Colors.white70, size: 18),
               const SizedBox(width: 7),
-              Expanded(child: Text('تخته: \${LudoCustomization.boardNames[look.board]}',
+              Expanded(child: Text('تخته: ${LudoCustomization.boardNames[look.board]}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))),
               const Icon(Icons.wallpaper_rounded, color: Colors.white70, size: 18),
               const SizedBox(width: 5),
