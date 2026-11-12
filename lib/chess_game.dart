@@ -151,7 +151,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
     return Scaffold(backgroundColor:Colors.transparent,floatingActionButton:const FunZoneThemeButton(),appBar:AppBar(title:const Text('شطرنج'),backgroundColor:Colors.transparent,actions:[
       IconButton(onPressed:()=>setState(()=>mode=null),icon:const Icon(Icons.tune)),
       IconButton(onPressed:()=>setState(reset),icon:const Icon(Icons.refresh)),
-    ]),body:SafeArea(child:Column(children:[
+    ]),body:FunZoneBackdrop(child:SafeArea(child:Column(children:[
       Padding(padding:const EdgeInsets.all(10),child:Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(children:[
         Text(thinking?'ربات در حال فکر کردن است…':status,textAlign:TextAlign.center,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)),
         Text(mode==_ChessMode.bot?'آفلاین با ربات · سطح '+['','آسان','متوسط','سخت'][level]:'آفلاین دونفره · یک دستگاه',style:TextStyle(color:scheme.onSurfaceVariant,fontSize:12)),
@@ -182,6 +182,6 @@ class _ChessGamePageState extends State<ChessGamePage> {
       if(notation.isNotEmpty) SizedBox(height:48,child:ListView(scrollDirection:Axis.horizontal,children:[
         for(var i=0;i<notation.length;i++) Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:Chip(label:Text((i.isEven?(i~/2+1).toString()+'. ':'')+notation[i]))),
       ])),
-    ])));
+    ]))));
   }
 }
