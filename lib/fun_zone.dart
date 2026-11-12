@@ -258,10 +258,10 @@ class _QuizPageState extends State<_QuizPage> {
   }
   void choose(int i){
     if(answered!=null)return;
-    setState(()=>{selectedOption=i,answered=i==questions[index].$3});
+    setState(() { selectedOption = i; answered = i == questions[index].$3; });
     if(i==questions[index].$3)score++;
   }
-  void next(){setState(()=>{index++,selectedOption=null,answered=null});}
+  void next(){setState(() { index++; selectedOption = null; answered = null; });}
 
   @override Widget build(BuildContext context){
     final scheme=Theme.of(context).colorScheme;
@@ -274,7 +274,7 @@ class _QuizPageState extends State<_QuizPage> {
           Text('امتیاز تو: $score از ${questions.length}',style:const TextStyle(fontSize:18)),
           const SizedBox(height:12),
           FilledButton(onPressed:()=>setState(_newRound),child:const Text('مسابقهٔ تازه')),
-          TextButton(onPressed:()=>setState(()=>{category='همه',difficulty=0,_newRound()}),child:const Text('تغییر دسته و سطح')),
+          TextButton(onPressed: () { setState(() { category = 'همه'; difficulty = 0; _newRound(); }); }, child: const Text('تغییر دسته و سطح')),
         ]))
         :Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
           SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: categories.map((c) { return Padding(padding: const EdgeInsets.only(left: 6), child: ChoiceChip(label: Text(c), selected: category == c, onSelected: (_) { setState(() { category = c; _newRound(); }); })); }).toList())),
