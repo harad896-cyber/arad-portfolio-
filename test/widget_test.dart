@@ -40,10 +40,6 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(game);
       await tester.pumpAndSettle();
-      if (title == 'چهار در یک خط' || title == 'بازی دونفره') {
-        await tester.tap(find.text('آفلاین دونفره'));
-        await tester.pumpAndSettle();
-      }
     }
 
     testWidgets('Fun Zone only shows the games that are currently supported', (tester) async {
