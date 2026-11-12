@@ -17,7 +17,7 @@ void main() {
       final result = LudoRules.move(
         positions: [
           [4, -1, -1, -1],
-          [44, -1, -1, -1],
+          [31, -1, -1, -1],
         ],
         player: 0,
         token: 0,
@@ -32,7 +32,7 @@ void main() {
       final result = LudoRules.move(
         positions: [
           [7, -1, -1, -1],
-          [47, -1, -1, -1],
+          [34, -1, -1, -1],
         ],
         player: 0,
         token: 0,
@@ -46,7 +46,7 @@ void main() {
     test('a two-token blockade cannot be crossed', () {
       final positions = [
         [3, -1, -1, -1],
-        [44, 44, -1, -1],
+        [31, 31, -1, -1],
       ];
       expect(LudoRules.legalTokensInGame(positions, 0, 2), isEmpty);
       expect(
