@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gapresan/ludo_customization.dart';
+import 'package:arad_messenger/ludo_customization.dart';
 
 void main() {
   test('all Ludo customization collections have matching palettes', () {
