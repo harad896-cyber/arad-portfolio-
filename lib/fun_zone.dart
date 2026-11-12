@@ -18,7 +18,7 @@ class FunZonePage extends StatelessWidget {
   static const _items = <_FunItem>[
     _FunItem('بازی دونفره', 'ربات، دونفره یا آنلاین', Icons.grid_3x3_rounded, _FunKind.duel, Color(0xFF16A085)),
     _FunItem('مسابقه و معما', 'سؤال‌های کوتاه و امتیاز', Icons.quiz_rounded, _FunKind.quiz, Color(0xFF4776E6)),
-    _FunItem('گردونه شانس', 'یک چرخش و یک جایزه مجازی', Icons.casino_rounded, _FunKind.wheel, Color(0xFFE6A23C)),
+    _FunItem('گردونه شانس', 'امتیاز روزانه و جایزه', Icons.casino_rounded, _FunKind.wheel, Color(0xFFE6A23C)),
     _FunItem('استیکر و میم‌ساز', 'ساخت متن و استیکر ساده', Icons.emoji_emotions_rounded, _FunKind.stickers, Color(0xFFE76F9A)),
     _FunItem('چهار در یک خط', 'آفلاین و رقابت آنلاین', Icons.view_week_rounded, _FunKind.connectFour, Color(0xFF6574CD)),
     _FunItem('شطرنج', 'قوانین کامل، ربات و دونفره آفلاین', Icons.grid_4x4_rounded, _FunKind.chess, Color(0xFF795548)),
@@ -339,7 +339,7 @@ class _WheelPageState extends State<_WheelPage> {
   if(spinning||alreadySpun)return;
   final user=Supabase.instance.client.auth.currentUser;
   if(user==null){setState(()=>error='برای دریافت امتیاز، نخست وارد حساب گپ‌رسان شو.');return;}
-  setState(()=>{spinning=true,error=null,result=null});
+  setState(() { spinning=true; error=null; result=null; });
   try {
    final raw=await Supabase.instance.client.rpc('spin_fun_wheel').timeout(const Duration(seconds:12));
    final row=(raw as List).first as Map;
@@ -382,7 +382,7 @@ class _WheelPageState extends State<_WheelPage> {
    Center(child:Stack(alignment:Alignment.topCenter,children:[
     Padding(padding:const EdgeInsets.only(top:20),child:AnimatedRotation(
      turns:turns,duration:const Duration(milliseconds:3400),curve:Curves.easeOutCubic,
-     child:SizedBox(width: math.min(310.0,MediaQuery.sizeOf(context).width-54),height:math.min(310.0,MediaQuery.sizeOf(context).width-54),
+     child:SizedBox(width: math.min(310.0,MediaQuery.sizeOf(context).width-54).toDouble(),height:math.min(310.0,MediaQuery.sizeOf(context).width-54).toDouble(),
       child:CustomPaint(painter:_PrizeWheelPainter(prizes:prizes,colors:colors))))),
     Container(width:48,height:52,decoration:const BoxDecoration(shape:BoxShape.circle,gradient:LinearGradient(colors:[Color(0xFFFFF1B8),Color(0xFFB78327)]),boxShadow:[BoxShadow(color:Colors.black45,blurRadius:12,offset:Offset(0,4))]),
       child:const Icon(Icons.keyboard_arrow_down_rounded,size:42,color:Color(0xFF4A2B08))),
