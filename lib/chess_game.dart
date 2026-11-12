@@ -22,12 +22,14 @@ class _ChessGamePageState extends State<ChessGamePage> {
   Set<Square> targets = {};
   bool thinking = false;
   String? notice;
+  String? drawClaim;
   Position get pos => history.last;
   String get key => pos.fen.split(' ').take(4).join(' ');
   int get repetitions => history.where((p) => p.fen.split(' ').take(4).join(' ') == key).length;
-  bool get finished => pos.isGameOver || repetitions >= 5 || pos.halfmoves >= 150;
+  bool get finished => drawClaim != null || pos.isGameOver || repetitions >= 5 || pos.halfmoves >= 150;
   bool get canClaim => !finished && (repetitions >= 3 || pos.halfmoves >= 100);
   String get status {
+    if (drawClaim != null) return drawClaim!;
     if (pos.isCheckmate) return 'کیش‌ومات؛ ' + (pos.turn == Side.white ? 'سیاه' : 'سفید') + ' برنده شد.';
     if (pos.isStalemate) return 'مساوی؛ وضعیت پات.';
     if (pos.isInsufficientMaterial) return 'مساوی؛ مهرهٔ کافی برای مات نیست.';
@@ -39,7 +41,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
   Square square(int row, int col) => Square.fromCoords(File(col), Rank(7-row));
   void reset() {
     history..clear()..add(Chess.fromSetup(Setup.parseFen(fen)));
-    notation.clear(); selected=null; targets={}; thinking=false; notice=null;
+    notation.clear(); selected=null; targets={}; thinking=false; notice=null; drawClaim=null;
   }
   void start(_ChessMode m) => setState(() { mode=m; reset(); });
   List<Move> moves(Position p) {
@@ -113,7 +115,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
           final replies=moves(next);
           var worst=1000000;
           for (final reply in replies) worst=math.min(worst,evaluate(next.play(reply)));
-          final score=replies.isEmpty && next.isCheckmate ? 100000 : -worst;
+          final score=replies.isEmpty && next.isCheckmate ? 100000 : worst;
           if (score>best) { best=score; chosen=candidate; }
         }
       }
@@ -173,7 +175,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
       ))))),
       Wrap(alignment:WrapAlignment.center,spacing:8,children:[
         OutlinedButton.icon(onPressed:history.length>1&&!thinking?undo:null,icon:const Icon(Icons.undo),label:const Text('برگشت')),
-        OutlinedButton.icon(onPressed:canClaim?()=>setState(()=>notice=repetitions>=3?'مساوی طبق قانون تکرار سه‌باره اعلام شد.':'مساوی طبق قانون ۵۰ حرکت اعلام شد.'):null,icon:const Icon(Icons.handshake),label:const Text('اعلام مساوی')),
+        OutlinedButton.icon(onPressed:canClaim?()=>setState(()=>drawClaim=repetitions>=3?'مساوی؛ طبق قانون تکرار سه‌باره.':'مساوی؛ طبق قانون ۵۰ حرکت.'):null,icon:const Icon(Icons.handshake),label:const Text('اعلام مساوی')),
         TextButton.icon(onPressed:()=>setState(()=>mode=null),icon:const Icon(Icons.swap_horiz),label:const Text('تغییر حالت')),
       ]),
       if(notation.isNotEmpty) SizedBox(height:48,child:ListView(scrollDirection:Axis.horizontal,children:[
