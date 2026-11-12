@@ -26,7 +26,7 @@ jobs:
             flutter create --platforms=android --org com.gapresan .
           fi
       - run: flutter pub get
-      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart test/widget_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
+      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart lib/ludo_customization.dart test/widget_test.dart test/ludo_customization_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test
       - run: flutter build apk --debug
