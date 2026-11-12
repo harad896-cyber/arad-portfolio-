@@ -63,16 +63,24 @@ class FunZoneLook {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString('gapresan_fun_backdrop');
-      current.value = FunBackdrop.values.firstWhere(
+      final requested = FunBackdrop.values.firstWhere(
         (value) => value.name == saved,
         orElse: () => FunBackdrop.emerald,
       );
+      final access = await FunBackdropAccess.load();
+      current.value = access.canUse(requested) ? requested : FunBackdrop.emerald;
+      if (current.value != requested) {
+        await prefs.setString('gapresan_fun_backdrop', FunBackdrop.emerald.name);
+      }
     } catch (_) {
-      // The default look remains available when local storage is unavailable.
+      // If access cannot be confirmed, keep only the universally unlocked default.
+      current.value = FunBackdrop.emerald;
     }
   }
 
-  static Future<void> select(FunBackdrop value) async {
+  static Future<bool> select(FunBackdrop value) async {
+    final access = await FunBackdropAccess.load();
+    if (!access.canUse(value)) return false;
     current.value = value;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -80,6 +88,7 @@ class FunZoneLook {
     } catch (_) {
       // A failed preference write must not interrupt the current game.
     }
+    return true;
   }
 
   static const labels = <FunBackdrop, String>{
