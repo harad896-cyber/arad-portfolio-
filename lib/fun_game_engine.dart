@@ -84,8 +84,8 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
   }
   Future<void> _pollRoomState()async{
     final id=room?['id']?.toString();
-    if(!mounted||id==null||_reconnecting)return;
-    _reconnecting=true;
+    if(!mounted||id==null||_pollingRoom)return;
+    _pollingRoom=true;
     try{
       final row=await client.from('fun_game_rooms').select().eq('id',id).maybeSingle().timeout(const Duration(seconds:5));
       if(!mounted)return;
@@ -95,9 +95,9 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
           setState(()=>room=latest);
         }
       }
-      _reconnecting=false;
+      _pollingRoom=false;
     }catch(_){
-      _reconnecting=false;
+      _pollingRoom=false;
       if(mounted&&roomStatus=='active'){
         setState(()=>message='اتصال ناپایدار است؛ بازی تا برگشت اینترنت حفظ می‌شود.');
         _scheduleRoomReconnect();
