@@ -23,7 +23,7 @@ jobs:
             flutter create --platforms=android --org com.gapresan .
           fi
       - run: flutter pub get
-      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart test/widget_test.dart
+      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/chess_game.dart test/widget_test.dart test/chess_rules_test.dart
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test
       - run: flutter build apk --debug
