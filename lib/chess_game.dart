@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:dartchess/dartchess.dart';
 import 'package:flutter/material.dart';
+import 'fun_zone_theme.dart';
 
 enum _ChessMode { bot, local }
 
@@ -133,7 +134,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
     });
   }
   @override Widget build(BuildContext context) {
-    if (mode==null) return Scaffold(appBar:AppBar(title:const Text('شطرنج گپ‌رسان')),body:ListView(padding:const EdgeInsets.all(18),children:[
+    if (mode==null) return Scaffold(backgroundColor:Colors.transparent,appBar:AppBar(title:const Text('شطرنج گپ‌رسان'),backgroundColor:Colors.transparent),floatingActionButton:const FunZoneThemeButton(),body:FunZoneBackdrop(child:ListView(padding:const EdgeInsets.all(18),children:[
       const SizedBox(height:18),const Icon(Icons.grid_4x4_rounded,size:60),
       const SizedBox(height:12),const Text('حالت بازی شطرنج',textAlign:TextAlign.center,style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
       const SizedBox(height:20),
@@ -145,9 +146,9 @@ class _ChessGamePageState extends State<ChessGamePage> {
       Card(child:ListTile(leading:const Icon(Icons.people),title:const Text('آفلاین دونفره'),subtitle:const Text('دو نفر روی یک دستگاه؛ نوبت و قوانین کامل'),onTap:()=>start(_ChessMode.local))),
       const Card(child:ListTile(leading:Icon(Icons.public),title:Text('آنلاین با حریف تصادفی'),subtitle:Text('پس از اعتبارسنجی امن حرکت‌ها روی سرور فعال می‌شود.'),enabled:false)),
       const Card(child:ListTile(leading:Icon(Icons.cloud_sync),title:Text('آنلاین با ربات'),subtitle:Text('پس از اتصال موتور قانونی سرور فعال می‌شود.'),enabled:false)),
-    ]));
+    ])));
     final scheme=Theme.of(context).colorScheme;
-    return Scaffold(appBar:AppBar(title:const Text('شطرنج'),actions:[
+    return Scaffold(backgroundColor:Colors.transparent,floatingActionButton:const FunZoneThemeButton(),appBar:AppBar(title:const Text('شطرنج'),backgroundColor:Colors.transparent,actions:[
       IconButton(onPressed:()=>setState(()=>mode=null),icon:const Icon(Icons.tune)),
       IconButton(onPressed:()=>setState(reset),icon:const Icon(Icons.refresh)),
     ]),body:SafeArea(child:Column(children:[
@@ -181,6 +182,6 @@ class _ChessGamePageState extends State<ChessGamePage> {
       if(notation.isNotEmpty) SizedBox(height:48,child:ListView(scrollDirection:Axis.horizontal,children:[
         for(var i=0;i<notation.length;i++) Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:Chip(label:Text((i.isEven?(i~/2+1).toString()+'. ':'')+notation[i]))),
       ])),
-    ])));
+    ]))));
   }
 }
