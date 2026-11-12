@@ -115,25 +115,50 @@ class _FunCard extends StatelessWidget {
   final VoidCallback onTap;
   const _FunCard({required this.item, required this.onTap});
   @override
-  Widget build(BuildContext context) => Material(
-    color: Theme.of(context).colorScheme.surfaceContainerLow,
-    borderRadius: BorderRadius.circular(22),
-    child: InkWell(
-      onTap: onTap, borderRadius: BorderRadius.circular(22),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Container(width: 46, height: 46, decoration: BoxDecoration(color: item.color.withValues(alpha: .14), borderRadius: BorderRadius.circular(15)),
-            child: Icon(item.icon, color: item.color, size: 25)),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-            const SizedBox(height: 4),
-            Text(item.subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          ]),
-        ]),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(23),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [item.color.withValues(alpha: .28), scheme.surfaceContainerLow, scheme.surfaceContainerLow]),
+        border: Border.all(color: item.color.withValues(alpha: .42), width: 1.1),
+        boxShadow: [BoxShadow(color: item.color.withValues(alpha: .10), blurRadius: 16, offset: const Offset(0, 6))],
       ),
-    ),
-  );
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(23),
+        child: InkWell(
+          onTap: onTap, borderRadius: BorderRadius.circular(23),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                      colors: [item.color.withValues(alpha: .95), item.color.withValues(alpha: .55)]),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: item.color.withValues(alpha: .28), blurRadius: 10, offset: const Offset(0, 4))],
+                    border: Border.all(color: Colors.white.withValues(alpha: .45)),
+                  ),
+                  child: Icon(item.icon, color: Colors.white, size: 26)),
+                const Spacer(),
+                Icon(Icons.arrow_outward_rounded, size: 17, color: item.color.withValues(alpha: .9)),
+              ]),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                const SizedBox(height: 5),
+                Text(item.subtitle, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11, height: 1.35, color: scheme.onSurfaceVariant)),
+              ]),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _GameScaffold extends StatelessWidget {
