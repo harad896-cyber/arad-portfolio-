@@ -19,7 +19,6 @@ dependencies:
   connectivity_plus: ^6.1.5
   cryptography: ^2.9.0
   supabase_flutter: ^2.17.2
-  dartchess: ^0.14.0
   flutter_webrtc: ^1.6.2+hotfix.3
   image_picker: ^1.2.0
   record: ^6.1.1
