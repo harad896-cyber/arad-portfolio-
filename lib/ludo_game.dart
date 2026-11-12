@@ -375,15 +375,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ),
               ),
             ),
-            child: Material(
-              type: MaterialType.transparency,
-              child: DefaultTextStyle(
-                style: const TextStyle(color: Colors.white),
-                child: SizedBox.expand(
-                  child: _started ? _gameBody() : _modePicker(),
-                ),
-              ),
-            ),
+            // Keep the actual game widgets as direct children of the bounded
+            // Scaffold body. A transparent Material + expand wrapper previously
+            // made the page fragile on some Android route/theme combinations.
+            child: _started ? _gameBody() : _modePicker(),
           );
         },
       ),
@@ -401,7 +396,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const SizedBox(height: 8),
       Text('مهره‌ها را با تاس حرکت بده، مهره‌های حریف را بزن و زودتر از همه به خانه برس.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.6)),
+        style: const TextStyle(color: Colors.white70, height: 1.6)),
       const SizedBox(height: 20),
       OutlinedButton.icon(
         onPressed: () => LudoCustomizationButton.open(context),
