@@ -306,7 +306,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
       Text('مهره‌ها را با تاس حرکت بده، مهره‌های حریف را بزن و زودتر از همه به خانه برس.',
         textAlign: TextAlign.center,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.6)),
-      const SizedBox(height: 26),
+      const SizedBox(height: 20),
+      const LudoCustomizationShowcase(),
+      const SizedBox(height: 22),
       const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
       Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
