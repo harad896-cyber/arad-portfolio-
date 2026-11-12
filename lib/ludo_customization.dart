@@ -1,12 +1,25 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LudoLook {
   final int board, avatar, frame, banner, background, charm;
-  const LudoLook({this.board = 0, this.avatar = 0, this.frame = 0, this.banner = 0, this.background = 0, this.charm = 0});
-  LudoLook copyWith({int? board, int? avatar, int? frame, int? banner, int? background, int? charm}) => LudoLook(
+  final String? bannerImageBase64, backgroundImageBase64;
+  const LudoLook({
+    this.board = 0, this.avatar = 0, this.frame = 0, this.banner = 0,
+    this.background = 0, this.charm = 0,
+    this.bannerImageBase64, this.backgroundImageBase64,
+  });
+  LudoLook copyWith({
+    int? board, int? avatar, int? frame, int? banner, int? background, int? charm,
+    String? bannerImageBase64, String? backgroundImageBase64,
+  }) => LudoLook(
     board: board ?? this.board, avatar: avatar ?? this.avatar, frame: frame ?? this.frame,
     banner: banner ?? this.banner, background: background ?? this.background, charm: charm ?? this.charm,
+    bannerImageBase64: bannerImageBase64 ?? this.bannerImageBase64,
+    backgroundImageBase64: backgroundImageBase64 ?? this.backgroundImageBase64,
   );
 }
 
@@ -14,12 +27,12 @@ class LudoCustomization {
   LudoCustomization._();
   static final ValueNotifier<LudoLook> current = ValueNotifier(const LudoLook());
   static Future<void>? _loadFuture;
-  static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑'];
-  static const frames = ['طلایی', 'یخی', 'زمردی', 'یاقوتی', 'نئونی', 'نقره‌ای'];
-  static const charms = ['⭐', '⚽', '💎', '🔥', '👑', '🧿', '🍀', '🎯'];
-  static const banners = ['سلطنتی', 'ورزشگاه', 'شفق', 'اقیانوس', 'غروب', 'کهکشانی'];
-  static const backgrounds = ['تیره', 'زمردی', 'آبی', 'بنفش', 'طلایی', 'شب'];
-  static const boardNames = ['کلاسیک طلایی', 'زمرد جنگلی', 'اقیانوس', 'سلطنتی', 'غروب', 'نئون شب'];
+  static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑', '🦅', '🐺'];
+  static const frames = ['طلایی', 'یخی', 'زمردی', 'یاقوتی', 'نئونی', 'نقره‌ای', 'آتشین', 'کریستالی'];
+  static const charms = ['⭐', '⚽', '💎', '🔥', '👑', '🧿', '🍀', '🎯', '⚡', '🏆'];
+  static const banners = ['سلطنتی', 'ورزشگاه', 'شفق', 'اقیانوس', 'غروب', 'کهکشانی', 'زمردی', 'یخی'];
+  static const backgrounds = ['تیره', 'زمردی', 'آبی', 'بنفش', 'طلایی', 'شب', 'یخی', 'آتشفشانی'];
+  static const boardNames = ['کلاسیک طلایی', 'زمرد جنگلی', 'اقیانوس', 'سلطنتی', 'غروب', 'نئون شب', 'یخی کریستالی', 'آتشفشانی'];
   static const boardPalettes = <List<Color>>[
     [Color(0xFF102535), Color(0xFF23495B), Color(0xFF0A1724)],
     [Color(0xFF073B2E), Color(0xFF167653), Color(0xFF06251F)],
@@ -27,10 +40,13 @@ class LudoCustomization {
     [Color(0xFF26143F), Color(0xFF57318A), Color(0xFF160D2A)],
     [Color(0xFF54243A), Color(0xFFB45B48), Color(0xFF2D1427)],
     [Color(0xFF080F24), Color(0xFF173C55), Color(0xFF090A18)],
+    [Color(0xFF17354A), Color(0xFF75C8E8), Color(0xFF091A31)],
+    [Color(0xFF451B1B), Color(0xFFB94A35), Color(0xFF210D16)],
   ];
   static const frameColors = <Color>[
     Color(0xFFE8C36C), Color(0xFFB9E8FF), Color(0xFF55D6A4),
     Color(0xFFFF6D85), Color(0xFF6CEBFF), Color(0xFFC7D1DE),
+    Color(0xFFFF9B54), Color(0xFF9BE7F5),
   ];
   static const bannerPalettes = <List<Color>>[
     [Color(0xFF39234F), Color(0xFFC89A45)],
@@ -39,6 +55,8 @@ class LudoCustomization {
     [Color(0xFF123E69), Color(0xFF35A6C9)],
     [Color(0xFF743B43), Color(0xFFE6A45C)],
     [Color(0xFF171A3C), Color(0xFF7046A5)],
+    [Color(0xFF0B5B45), Color(0xFF8BE0B0)],
+    [Color(0xFF244B68), Color(0xFFB8E9F6)],
   ];
   static const backgroundPalettes = <List<Color>>[
     [Color(0xFF101722), Color(0xFF1D2938)],
@@ -47,6 +65,8 @@ class LudoCustomization {
     [Color(0xFF24153D), Color(0xFF45256D)],
     [Color(0xFF332719), Color(0xFF76552B)],
     [Color(0xFF090D1A), Color(0xFF20284A)],
+    [Color(0xFF163B52), Color(0xFF78B8D7)],
+    [Color(0xFF36191B), Color(0xFF8E3A2C)],
   ];
 
   static Future<void> load() => _loadFuture ??= _loadSavedLook();
@@ -61,8 +81,42 @@ class LudoCustomization {
         banner: (p.getInt('ludo_profile_banner') ?? 0).clamp(0, banners.length - 1).toInt(),
         background: (p.getInt('ludo_profile_background') ?? 0).clamp(0, backgrounds.length - 1).toInt(),
         charm: (p.getInt('ludo_avatar_charm') ?? 0).clamp(0, charms.length - 1).toInt(),
+        bannerImageBase64: p.getString('ludo_banner_image'),
+        backgroundImageBase64: p.getString('ludo_background_image'),
       );
     } catch (_) {}
+  }
+
+  static Uint8List? decodeImage(String? encoded) {
+    if (encoded == null || encoded.isEmpty) return null;
+    try { return base64Decode(encoded); } catch (_) { return null; }
+  }
+
+  static Future<bool> pickProfileImage({required bool banner}) async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery, imageQuality: 68, maxWidth: 1000, maxHeight: 1000,
+      );
+      if (file == null) return false;
+      final encoded = base64Encode(await file.readAsBytes());
+      // Avoid filling preferences with an unusually large original photo.
+      if (encoded.length > 1900000) return false;
+      final prefs = await SharedPreferences.getInstance();
+      final key = banner ? 'ludo_banner_image' : 'ludo_background_image';
+      await prefs.setString(key, encoded);
+      current.value = banner
+          ? current.value.copyWith(bannerImageBase64: encoded)
+          : current.value.copyWith(backgroundImageBase64: encoded);
+      return true;
+    } catch (_) { return false; }
+  }
+
+  static Future<void> clearProfileImage({required bool banner}) async {
+    final key = banner ? 'ludo_banner_image' : 'ludo_background_image';
+    try { final prefs = await SharedPreferences.getInstance(); await prefs.remove(key); } catch (_) {}
+    current.value = banner
+        ? current.value.copyWith(bannerImageBase64: '')
+        : current.value.copyWith(backgroundImageBase64: '');
   }
 
   static Future<bool> shouldShowFirstGuide() async {
@@ -133,6 +187,11 @@ class LudoCustomizationShowcase extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topRight, end: Alignment.bottomLeft,
               colors: LudoCustomization.backgroundPalettes[look.background],
+            ),
+            image: LudoCustomization.decodeImage(look.bannerImageBase64) == null ? null : DecorationImage(
+              image: MemoryImage(LudoCustomization.decodeImage(look.bannerImageBase64)!),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .42), BlendMode.darken),
             ),
             border: Border.all(color: Colors.white.withValues(alpha: .16)),
             boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 16, offset: Offset(0, 7))],
@@ -224,12 +283,46 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
           for (final item in <(String,String)>[
             ('board','قالب تخته'), ('avatar','آواتار'), ('frame','قاب'),
             ('banner','بنر'), ('background','پس‌زمینه'), ('charm','آویز'),
+            ('bannerPhoto','عکس بنر'), ('backgroundPhoto','عکس پس‌زمینه'),
           ])
             ChoiceChip(label: Text(item.$2), selected: category == item.$1,
               onSelected: (_) => setState(() => category = item.$1)),
         ]),
         const SizedBox(height: 12),
-        if (category == 'board' || category == 'banner' || category == 'background')
+        if (category == 'bannerPhoto' || category == 'backgroundPhoto')
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(category == 'bannerPhoto' ? 'عکس دلخواه برای بنر پروفایل' : 'عکس دلخواه برای پس‌زمینه',
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 9),
+            Row(children: [
+              Expanded(child: OutlinedButton.icon(
+                onPressed: () async {
+                  await LudoCustomization.pickProfileImage(banner: category == 'bannerPhoto');
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.photo_library_outlined),
+                label: const Text('انتخاب عکس از گالری'),
+              )),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'حذف عکس انتخاب‌شده',
+                onPressed: () async {
+                  await LudoCustomization.clearProfileImage(banner: category == 'bannerPhoto');
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.delete_outline, color: Colors.white70),
+              ),
+            ]),
+            Builder(builder: (context) {
+              final bytes = LudoCustomization.decodeImage(category == 'bannerPhoto'
+                  ? LudoCustomization.current.value.bannerImageBase64
+                  : LudoCustomization.current.value.backgroundImageBase64);
+              return bytes == null
+                  ? Container(height: 90, alignment: Alignment.center, child: const Text('هنوز عکسی انتخاب نشده است', style: TextStyle(color: Colors.white54)))
+                  : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.memory(bytes, height: 120, width: double.infinity, fit: BoxFit.cover));
+            }),
+          ])
+        else if (category == 'board' || category == 'banner' || category == 'background')
           SizedBox(height: 74, child: ListView(scrollDirection: Axis.horizontal, children: [
             for (var i = 0; i < labels.length; i++)
               GestureDetector(onTap: () { LudoCustomization.select(category, i); setState(() {}); },
@@ -270,6 +363,11 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: LinearGradient(colors: LudoCustomization.bannerPalettes[value.banner]),
+              image: LudoCustomization.decodeImage(value.bannerImageBase64) == null ? null : DecorationImage(
+                image: MemoryImage(LudoCustomization.decodeImage(value.bannerImageBase64)!),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .42), BlendMode.darken),
+              ),
             ),
             child: Row(children: [
               Container(width: 48, height: 48,
