@@ -17,21 +17,21 @@ void main() {
       expect(palette.toSet().length, 3);
     }
   });
+
+  test('expanded Ludo themes, banners, and backgrounds stay in sync', () {
+    expect(LudoCustomization.boardNames.length, 8);
+    expect(LudoCustomization.boardPalettes.length, 8);
+    expect(LudoCustomization.frames.length, 8);
+    expect(LudoCustomization.frameColors.length, 8);
+    expect(LudoCustomization.banners.length, 8);
+    expect(LudoCustomization.bannerPalettes.length, 8);
+    expect(LudoCustomization.backgrounds.length, 8);
+    expect(LudoCustomization.backgroundPalettes.length, 8);
+  });
+
+  test('invalid optional profile photo data safely falls back to no image', () {
+    expect(LudoCustomization.decodeImage(null), isNull);
+    expect(LudoCustomization.decodeImage(''), isNull);
+    expect(LudoCustomization.decodeImage('not-an-image'), isNull);
+  });
 }
-
-test('expanded Ludo themes, banners, and backgrounds stay in sync', () {
-  expect(LudoCustomization.boardNames.length, 8);
-  expect(LudoCustomization.boardPalettes.length, 8);
-  expect(LudoCustomization.frames.length, 8);
-  expect(LudoCustomization.frameColors.length, 8);
-  expect(LudoCustomization.banners.length, 8);
-  expect(LudoCustomization.bannerPalettes.length, 8);
-  expect(LudoCustomization.backgrounds.length, 8);
-  expect(LudoCustomization.backgroundPalettes.length, 8);
-});
-
-test('invalid optional profile photo data safely falls back to no image', () {
-  expect(LudoCustomization.decodeImage(null), isNull);
-  expect(LudoCustomization.decodeImage(''), isNull);
-  expect(LudoCustomization.decodeImage('not-an-image'), isNull);
-});
