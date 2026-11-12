@@ -334,7 +334,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   @override Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.transparent,
+    backgroundColor: const Color(0xFF101722),
     appBar: AppBar(
       title: const Text('لودو'), backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -379,7 +379,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ),
               ),
               Positioned.fill(
-                child: _started ? _gameBody() : _modePicker(),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: DefaultTextStyle(
+                    style: const TextStyle(color: Colors.white),
+                    child: _started ? _gameBody() : _modePicker(),
+                  ),
+                ),
               ),
             ],
           );
