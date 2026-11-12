@@ -133,7 +133,7 @@ class _FunGamePageState extends State<FunGamePage> {
   @override Widget build(BuildContext context){
     if(mode==null)return picker();if(online&&roomStatus=='waiting')return waiting();
     final b=online?room!['board'].toString().split(''):board;final done=ended;final scheme=Theme.of(context).colorScheme;
-    final statusText=online?(done?(room?['winner_mark']=='O'?'ربات برنده شد.':winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.'):botRoom?(version.isEven?'نوبت توست':'نوبت ربات'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
+    final statusText=online?(done?(botRoom?(room?['winner_mark']=='O'?'ربات برنده شد.':room?['winner_mark']=='X'?'آفرین! تو برنده شدی.':'بازی مساوی شد.'):(winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.')):botRoom?(version.isEven?'نوبت توست':'نوبت ربات'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
       :winner!=null?(mode==_PlayMode.bot?(winner=='X'?'آفرین! تو برنده شدی.':'ربات برنده شد.'):'بازیکن $winner برنده شد!'):draw?'بازی مساوی شد.':thinking?'ربات فکر می‌کند…':mode==_PlayMode.bot?(turn=='X'?'نوبت توست':'نوبت ربات'):'نوبت بازیکن $turn';
     return Scaffold(appBar:AppBar(title:Text(widget.title),actions:[IconButton(onPressed:newRound,icon:const Icon(Icons.tune_rounded),tooltip:'تغییر حالت')]),
       body:SafeArea(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
