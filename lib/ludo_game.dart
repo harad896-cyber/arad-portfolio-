@@ -320,7 +320,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           return Stack(children: [
             Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
               colors: _colors, players: _playerCount, positions: _positions,
-              turn: _turn, dice: _moving ? null : _dice, legalTokens: _moving ? const [] : _legal,
+              turn: _turn, dice: _moving ? null : _dice, legalTokens: _moving ? const [] : _legal,\n              look: FunZoneLook.current.value,
             ))),
             for (var player = 0; player < _playerCount; player++)
               for (var token = 0; token < 4; token++) _buildToken(player, token, size),
@@ -492,13 +492,52 @@ class _LudoBoardPainter extends CustomPainter {
     final outer = RRect.fromRectAndRadius(boardRect.deflate(unit * .12), Radius.circular(unit * .72));
     canvas.drawRRect(outer.shift(Offset(0, unit * .13)), Paint()
       ..color = const Color(0x99000000)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13));
-    canvas.drawRRect(outer, Paint()..shader = const LinearGradient(
+    final boardColors = FunZoneLook.colors(look);
+    canvas.drawRRect(outer, Paint()..shader = LinearGradient(
       begin: Alignment.topLeft, end: Alignment.bottomRight,
-      colors: [Color(0xFF36566A), Color(0xFF102433), Color(0xFF081722)],
+      colors: look == FunBackdrop.stadium
+          ? const [Color(0xFF247A49), Color(0xFF125334), Color(0xFF082E25)]
+          : [Color.lerp(boardColors[0], const Color(0xFF36566A), .42)!, boardColors[1], boardColors[0]],
     ).createShader(boardRect));
     canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = const Color(0xFFD6B36B));
     final inner = RRect.fromRectAndRadius(boardRect.deflate(unit * .38), Radius.circular(unit * .48));
     canvas.drawRRect(inner, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .018..color = const Color(0x66F7DFA9));
+
+    if (look == FunBackdrop.stadium) {
+      final pitchPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = unit * .045
+        ..color = Colors.white.withValues(alpha: .19);
+      final pitch = Rect.fromLTRB(unit * 2.35, unit * 2.35, unit * 12.65, unit * 12.65);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(pitch, Radius.circular(unit * .18)),
+        pitchPaint,
+      );
+      canvas.drawLine(
+        Offset(unit * 7.5, pitch.top),
+        Offset(unit * 7.5, pitch.bottom),
+        pitchPaint,
+      );
+      canvas.drawCircle(Offset(unit * 7.5, unit * 7.5), unit * 1.35, pitchPaint);
+      canvas.drawRect(
+        Rect.fromLTRB(unit * 5.5, pitch.top, unit * 9.5, unit * 3.45),
+        pitchPaint,
+      );
+      canvas.drawRect(
+        Rect.fromLTRB(unit * 5.5, unit * 11.55, unit * 9.5, pitch.bottom),
+        pitchPaint,
+      );
+      final stripe = Paint()..color = Colors.white.withValues(alpha: .025);
+      for (var band = 0; band < 7; band++) {
+        if (band.isEven) {
+          canvas.drawRect(
+            Rect.fromLTRB(unit * (2.4 + band * 1.45), unit * 2.4,
+                unit * (3.85 + band * 1.45), unit * 12.6),
+            stripe,
+          );
+        }
+      }
+    }
 
     final texture = Paint()..color = const Color(0x0DFFFFFF)..strokeWidth = .7;
     for (var i = 1; i < 15; i++) {
@@ -653,7 +692,7 @@ class _LudoBoardPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LudoBoardPainter oldDelegate) =>
       oldDelegate.players != players || oldDelegate.turn != turn || oldDelegate.dice != dice ||
-      oldDelegate.positions != positions || oldDelegate.legalTokens != legalTokens || oldDelegate.colors != colors;
+      oldDelegate.positions != positions || oldDelegate.legalTokens != legalTokens || oldDelegate.colors != colors || oldDelegate.look != look;
 }
 
 class _LudoDieFace extends StatelessWidget {
