@@ -108,6 +108,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false;
+  bool _showFirstGuide = false;
   int _botGeneration = 0;
   int? _dice, _winner;
   final List<int?> _diceValues = List<int?>.filled(4, null);
@@ -119,6 +120,17 @@ class _LudoGamePageState extends State<LudoGamePage> {
     super.initState();
     LudoCustomization.current.addListener(_onLookChanged);
     LudoCustomization.load();
+    _loadFirstGuide();
+  }
+
+  Future<void> _loadFirstGuide() async {
+    final show = await LudoCustomization.shouldShowFirstGuide();
+    if (mounted) setState(() => _showFirstGuide = show);
+  }
+
+  void _dismissFirstGuide() {
+    setState(() => _showFirstGuide = false);
+    LudoCustomization.markFirstGuideSeen();
   }
 
   void _onLookChanged() {
@@ -362,11 +374,28 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const SizedBox(height: 10),
       if (_winner != null)
         FilledButton.icon(onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')),
-      if (_winner == null)
-        Text(_dice == null ? 'تاس بازیکن فعال را بزن؛ مسیر حرکت با نور مشخص می‌شود.' :
-          _legal.isEmpty ? 'حرکت ممکن نیست.' : 'یکی از مهره‌های نورانی را انتخاب کن.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+      if (_winner == null && _showFirstGuide)
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: const Color(0xFF142B3B),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: const Color(0xFFD7B56D).withValues(alpha: .7)),
+          ),
+          child: Row(children: [
+            const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFD477), size: 19),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('برای شروع تاس بزن؛ مهرهٔ روشن‌شده را انتخاب کن تا حرکت کند.',
+              style: TextStyle(color: Colors.white, fontSize: 11, height: 1.4))),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: 'دیگر نمایش نده',
+              onPressed: _dismissFirstGuide,
+              icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
+            ),
+          ]),
+        ),
     ],
   );
 
@@ -395,10 +424,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color.lerp(LudoCustomization.bannerPalettes[LudoCustomization.current.value.banner][0], color, .34)!.withValues(alpha: active ? .88 : .58),
-            Color.lerp(LudoCustomization.bannerPalettes[LudoCustomization.current.value.banner][1], color, .18)!.withValues(alpha: active ? .62 : .34),
-          ],
+          colors: player == 0
+              ? [
+                  Color.lerp(LudoCustomization.bannerPalettes[LudoCustomization.current.value.banner][0], color, .34)!.withValues(alpha: active ? .88 : .58),
+                  Color.lerp(LudoCustomization.bannerPalettes[LudoCustomization.current.value.banner][1], color, .18)!.withValues(alpha: active ? .62 : .34),
+                ]
+              : [color.withValues(alpha: active ? .34 : .17), color.withValues(alpha: active ? .14 : .07)],
           begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: color.withValues(alpha: active ? 1 : .35), width: active ? 2 : 1),
@@ -408,11 +439,24 @@ class _LudoGamePageState extends State<LudoGamePage> {
         Stack(clipBehavior: Clip.none, children: [
           Container(width: 43, height: 43,
             decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .94),
-              border: Border.all(color: LudoCustomization.frameColors[LudoCustomization.current.value.frame], width: 3),
-              boxShadow: [BoxShadow(color: LudoCustomization.frameColors[LudoCustomization.current.value.frame].withValues(alpha: .38), blurRadius: 8)]),
-            child: Center(child: Text(LudoCustomization.avatars[LudoCustomization.current.value.avatar], style: const TextStyle(fontSize: 23))),
+              border: Border.all(
+                color: player == 0
+                    ? LudoCustomization.frameColors[LudoCustomization.current.value.frame]
+                    : color,
+                width: 3,
+              ),
+              boxShadow: [BoxShadow(
+                color: (player == 0 ? LudoCustomization.frameColors[LudoCustomization.current.value.frame] : color).withValues(alpha: .38),
+                blurRadius: 8,
+              )]),
+            child: Center(child: Text(
+              player == 0 ? LudoCustomization.avatars[LudoCustomization.current.value.avatar]
+                  : (_againstBot && player == 1 ? '🤖' : ['🙂', '😎', '🦊', '🐼'][player]),
+              style: const TextStyle(fontSize: 23),
+            )),
           ),
-          Positioned(right: -4, bottom: -5, child: Text(LudoCustomization.charms[LudoCustomization.current.value.charm], style: const TextStyle(fontSize: 15))),
+          if (player == 0)
+            Positioned(right: -4, bottom: -5, child: Text(LudoCustomization.charms[LudoCustomization.current.value.charm], style: const TextStyle(fontSize: 15))),
         ]),
         const SizedBox(width: 8),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
