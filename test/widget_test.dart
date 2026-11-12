@@ -39,12 +39,16 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(game);
       await tester.pumpAndSettle();
+      if (title == 'چهار در یک خط') {
+        await tester.tap(find.text('آفلاین دونفره'));
+        await tester.pumpAndSettle();
+      }
     }
 
     testWidgets('Connect Four opens with turn and rules', (tester) async {
       await openGame(tester, 'چهار در یک خط');
-      expect(find.text('نوبت بازیکن سرخ'), findsOneWidget);
-      expect(find.textContaining('چهار مهرهٔ هم‌رنگ'), findsOneWidget);
+      expect(find.text('نوبت بازیکن X'), findsOneWidget);
+      expect(find.textContaining('چهار مهره را افقی'), findsOneWidget);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
     });
@@ -60,7 +64,7 @@ void main() {
         await tester.tap(cells.at(column));
         await tester.pump();
       }
-      expect(find.text('مهره سرخ برنده شد!'), findsOneWidget);
+      expect(find.text('بازیکن X برنده شد!'), findsOneWidget);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
     });
@@ -73,9 +77,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     });
 
-    testWidgets('Quiz starts with a ten-question round', (tester) async {
+    testWidgets('Quiz starts with a twelve-question round', (tester) async {
       await openGame(tester, 'مسابقه و معما');
-      expect(find.textContaining('پرسش 1 از 10'), findsOneWidget);
+      expect(find.textContaining('پرسش 1 از 12'), findsOneWidget);
       expect(find.textContaining('امتیاز:'), findsOneWidget);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
