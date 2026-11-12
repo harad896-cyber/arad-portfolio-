@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'fun_zone_theme.dart';
 import 'ludo_customization.dart';
@@ -106,6 +108,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
   ];
   static const _names = ['سرخ', 'آبی', 'زرد', 'سبز'];
   final _random = math.Random();
+  final AudioPlayer _sfxPlayer = AudioPlayer();
+  bool _soundEnabled = true;
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false;
   bool _showFirstGuide = false;
@@ -140,7 +144,55 @@ class _LudoGamePageState extends State<LudoGamePage> {
   @override
   void dispose() {
     LudoCustomization.current.removeListener(_onLookChanged);
+    _sfxPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _playSfx(String kind) async {
+    if (!_soundEnabled) return;
+    try {
+      final duration = kind == 'roll' ? .34 : kind == 'win' ? .62 : .16;
+      final sampleRate = 22050;
+      final count = (sampleRate * duration).round();
+      final bytes = BytesBuilder();
+      final header = ByteData(44);
+      void putText(int offset, String value) {
+        for (var i = 0; i < value.length; i++) {
+          header.setUint8(offset + i, value.codeUnitAt(i));
+        }
+      }
+      putText(0, 'RIFF');
+      header.setUint32(4, 36 + count * 2, Endian.little);
+      putText(8, 'WAVE');
+      putText(12, 'fmt ');
+      header.setUint32(16, 16, Endian.little);
+      header.setUint16(20, 1, Endian.little);
+      header.setUint16(22, 1, Endian.little);
+      header.setUint32(24, sampleRate, Endian.little);
+      header.setUint32(28, sampleRate * 2, Endian.little);
+      header.setUint16(32, 2, Endian.little);
+      header.setUint16(34, 16, Endian.little);
+      putText(36, 'data');
+      header.setUint32(40, count * 2, Endian.little);
+      bytes.add(header.buffer.asUint8List());
+      final pcm = ByteData(count * 2);
+      for (var i = 0; i < count; i++) {
+        final t = i / sampleRate;
+        final envelope = math.pow(1 - i / count, kind == 'win' ? 1.2 : 2.8).toDouble();
+        final frequency = kind == 'roll' ? 145 + (i % 1700) / 8
+            : kind == 'capture' ? 185 : kind == 'win' ? 520 : 330;
+        final tone = math.sin(2 * math.pi * frequency * t);
+        final overtone = math.sin(2 * math.pi * frequency * 2.01 * t) * .22;
+        final noise = kind == 'roll' ? (_random.nextDouble() - .5) * .75 : 0.0;
+        final value = ((tone + overtone + noise) * envelope * 10500).round().clamp(-32768, 32767);
+        pcm.setInt16(i * 2, value, Endian.little);
+      }
+      bytes.add(pcm.buffer.asUint8List());
+      await _sfxPlayer.stop();
+      await _sfxPlayer.play(BytesSource(bytes.takeBytes()));
+    } catch (_) {
+      // Sound must never interrupt a game action on devices with audio restrictions.
+    }
   }
 
   bool get _botTurn => _againstBot && _turn == 1;
@@ -164,6 +216,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   void _roll({bool fromBot = false}) {
     if (!_started || _winner != null || _dice != null || _moving || (_botBusy && !fromBot)) return;
+    _playSfx('roll');
     final value = _random.nextInt(6) + 1;
     _diceValues[_turn] = value;
     if (value == 6) {
@@ -216,6 +269,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final result = LudoRules.move(positions: before, player: movingPlayer, token: token, dice: rolledValue);
     final rolledSix = rolledValue == 6;
     setState(() => _moving = true);
+    _playSfx('move');
     final current = before[movingPlayer][token];
     final route = current == -1 ? <int>[0] : List<int>.generate(rolledValue, (i) => current + i + 1);
     for (final progress in route) {
@@ -229,7 +283,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
     setState(() {
       _moving = false;
       _positions = result.positions; _dice = null;
+      if (result.captured) _playSfx('capture');
       if (result.won) {
+        _playSfx('win');
         _winner = _turn; _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
       } else if (rolledSix || result.captured || result.finished) {
         _message = result.captured
@@ -282,7 +338,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
     appBar: AppBar(
       title: const Text('لودو'), backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      actions: [const LudoCustomizationButton(), IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded))],
+      actions: [
+        IconButton(
+          tooltip: _soundEnabled ? 'خاموش‌کردن صدا' : 'روشن‌کردن صدا',
+          onPressed: () => setState(() => _soundEnabled = !_soundEnabled),
+          icon: Icon(_soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded),
+        ),
+        const LudoCustomizationButton(),
+        IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded)),
+      ],
     ),
     floatingActionButton: const FunZoneThemeButton(),
     body: SafeArea(child: FunZoneBackdrop(child: Container(
@@ -339,23 +403,30 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _gameBody() => ListView(
-    padding: const EdgeInsets.fromLTRB(10, 10, 10, 22),
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 26),
     children: [
       _playerRow([3, 2]),
-      const SizedBox(height: 8),
+      const SizedBox(height: 12),
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF142B3B), Color(0xFF203E4D)],
-            begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFD7B56D).withValues(alpha: .65)),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 5))],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF092B49), Color(0xFF123F67), Color(0xFF092B49)],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .8)),
+          boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 5))],
         ),
-        child: Text(_message, textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, height: 1.4)),
+        child: Row(children: [
+          Icon(Icons.campaign_rounded, color: const Color(0xFFFFD477), size: 23),
+          const SizedBox(width: 10),
+          Expanded(child: Text(_message, textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, height: 1.4))),
+          Icon(_soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+            color: Colors.white70, size: 20),
+        ]),
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 12),
       ValueListenableBuilder<FunBackdrop>(
         valueListenable: FunZoneLook.current,
         builder: (context, look, _) => AspectRatio(
@@ -376,25 +447,49 @@ class _LudoGamePageState extends State<LudoGamePage> {
           }),
         ),
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 12),
       _playerRow([0, 1]),
-      const SizedBox(height: 10),
+      const SizedBox(height: 14),
+      if (_winner == null)
+        Center(child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: SizedBox(
+            height: 62,
+            child: FilledButton.icon(
+              onPressed: _turn == 0 && _dice == null && !_moving && !_botBusy && !_botTurn
+                  ? _roll : null,
+              icon: const Icon(Icons.casino_rounded, size: 27),
+              label: Text(_dice == null ? 'تاس بینداز' : 'عدد $_dice · مهره را انتخاب کن',
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0878D8),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFF344B61),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: const BorderSide(color: Color(0xFFFFD477), width: 1.5),
+                ),
+                elevation: 8,
+              ),
+            ),
+          ),
+        )),
       if (_winner != null)
         FilledButton.icon(onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')),
       if (_winner == null && _showFirstGuide)
         Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          margin: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF142B3B),
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: const Color(0xFFD7B56D).withValues(alpha: .7)),
+            color: const Color(0xFF0B2B43).withValues(alpha: .94),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .7)),
           ),
           child: Row(children: [
-            const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFD477), size: 19),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('برای شروع تاس بزن؛ مهرهٔ روشن‌شده را انتخاب کن تا حرکت کند.',
-              style: TextStyle(color: Colors.white, fontSize: 11, height: 1.4))),
+            const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFD477), size: 20),
+            const SizedBox(width: 9),
+            const Expanded(child: Text('تاس بینداز؛ سپس مهرهٔ روشن‌شده را انتخاب کن تا حرکت کند.',
+              style: TextStyle(color: Colors.white, fontSize: 12, height: 1.45))),
             IconButton(
               visualDensity: VisualDensity.compact,
               tooltip: 'دیگر نمایش نده',
@@ -483,14 +578,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           if (canRoll) const Text('نوبت تو · تاس بزن', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
         ])),
         const SizedBox(width: 6),
-        Semantics(
-          button: true,
-          label: 'تاس ' + _playerName(player) + '، ' + (_diceValues[player]?.toString() ?? 'آماده'),
-          child: GestureDetector(
-            onTap: canRoll ? _roll : null,
-            child: _LudoDieFace(value: _diceValues[player], color: color, active: active, enabled: canRoll),
-          ),
-        ),
+        _LudoDieFace(value: _diceValues[player], color: color, active: active, enabled: canRoll),
       ]),
     );
   }
