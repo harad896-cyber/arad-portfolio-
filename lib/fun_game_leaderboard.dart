@@ -58,7 +58,7 @@ class _FunGameLeaderboardPageState extends State<FunGameLeaderboardPage> {
               const Text('امتیاز حساب تو', style: TextStyle(color: Color(0xFF38240B), fontWeight: FontWeight.w800)),
               Text(mine == null ? '۰' : (mine['points'] as num).toInt().toString(),
                 style: const TextStyle(color: Color(0xFF38240B), fontSize: 34, fontWeight: FontWeight.w900)),
-              if (mine != null) Text('رتبه \${rows.indexOf(mine) + 1}  ·  \${mine['wins']} برد  ·  \${mine['games_played']} مسابقه',
+              if (mine != null) Text('رتبه ${rows.indexOf(mine) + 1}  ·  ${mine['wins']} برد  ·  ${mine['games_played']} مسابقه',
                 style: const TextStyle(color: Color(0xFF38240B), fontWeight: FontWeight.w700)),
             ])),
           const SizedBox(height: 18),
@@ -96,9 +96,9 @@ class _LeaderboardTile extends StatelessWidget {
         ])),
         title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-        subtitle: Text('\${username == null || username.isEmpty ? 'بازیکن گپ‌رسان' : '@$username'}  ·  \${row['wins']} برد از \${row['games_played']} مسابقه',
+        subtitle: Text('${username == null || username.isEmpty ? 'بازیکن گپ‌رسان' : '@$username'}  ·  ${row['wins']} برد از ${row['games_played']} مسابقه',
           maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-        trailing: Text('\${row['points']} امتیاز', style: const TextStyle(color: Color(0xFFFFD978), fontWeight: FontWeight.w900)),
+        trailing: Text('${row['points']} امتیاز', style: const TextStyle(color: Color(0xFFFFD978), fontWeight: FontWeight.w900)),
       ),
     );
   }
