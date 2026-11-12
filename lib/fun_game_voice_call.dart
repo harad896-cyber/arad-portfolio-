@@ -34,7 +34,8 @@ class _FunGameVoiceCallSheetState extends State<_FunGameVoiceCallSheet> {
   RealtimeChannel? _channel;
   final List<RTCIceCandidate> _pendingIce = [];
   bool _starting = false, _active = false, _muted = false, _remoteDescriptionSet = false;
-  bool _offerSent = false, _readyResponseSent = false;\n  String? _pendingOfferSdp;
+  bool _offerSent = false, _readyResponseSent = false;
+  String? _pendingOfferSdp;
   String _status = 'برای صحبت، میکروفن را روشن کن.';
   String? get _uid => _db.auth.currentUser?.id;
 
