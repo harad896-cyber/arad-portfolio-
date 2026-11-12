@@ -40,7 +40,7 @@ class _FunGameVoiceCallSheetState extends State<_FunGameVoiceCallSheet> {
 
   @override
   void dispose() {
-    unawaited(_cleanup(sendHangup: false));
+    unawaited(_cleanup(sendHangup: true));
     super.dispose();
   }
 
