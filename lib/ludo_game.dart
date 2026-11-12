@@ -104,7 +104,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   static const _names = ['سرخ', 'آبی', 'زرد', 'سبز'];
   final _random = math.Random();
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
-  bool _againstBot = false, _started = false, _botBusy = false;
+  bool _againstBot = false, _started = false, _botBusy = false, _moving = false;
   int _botGeneration = 0;
   int? _dice, _winner;
   final List<int?> _diceValues = List<int?>.filled(4, null);
@@ -125,7 +125,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _positions = List.generate(players, (_) => List.filled(4, -1));
       _turn = 0; _dice = null; _winner = null; _sixStreak = 0;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
-      _botBusy = false; _botGeneration++; _started = true;
+      _botBusy = false; _moving = false; _botGeneration++; _started = true;
       _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
     });
   }
@@ -175,13 +175,27 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
   }
 
-  void _moveToken(int token, {bool fromBot = false}) {
-    if (_dice == null || _winner != null || (_botBusy && !fromBot) || !_legal.contains(token)) return;
-    final result = LudoRules.move(
-      positions: _positions, player: _turn, token: token, dice: _dice!,
-    );
-    final rolledSix = _dice == 6;
+  Future<void> _moveToken(int token, {bool fromBot = false}) async {
+    if (_dice == null || _winner != null || _moving || (_botBusy && !fromBot) || !_legal.contains(token)) return;
+    final movingPlayer = _turn;
+    final rolledValue = _dice!;
+    final generation = _botGeneration;
+    final before = _positions.map((row) => List<int>.from(row)).toList();
+    final result = LudoRules.move(positions: before, player: movingPlayer, token: token, dice: rolledValue);
+    final rolledSix = rolledValue == 6;
+    setState(() => _moving = true);
+    final current = before[movingPlayer][token];
+    final route = current == -1 ? <int>[0] : List<int>.generate(rolledValue, (i) => current + i + 1);
+    for (final progress in route) {
+      if (!mounted || generation != _botGeneration) return;
+      final animatedPositions = _positions.map((row) => List<int>.from(row)).toList();
+      animatedPositions[movingPlayer][token] = progress;
+      setState(() => _positions = animatedPositions);
+      await Future<void>.delayed(const Duration(milliseconds: 115));
+    }
+    if (!mounted || generation != _botGeneration) return;
     setState(() {
+      _moving = false;
       _positions = result.positions; _dice = null;
       if (result.won) {
         _winner = _turn; _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
@@ -304,7 +318,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           return Stack(children: [
             Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
               colors: _colors, players: _playerCount, positions: _positions,
-              turn: _turn, dice: _dice, legalTokens: _legal,
+              turn: _turn, dice: _moving ? null : _dice, legalTokens: _moving ? const [] : _legal,
             ))),
             for (var player = 0; player < _playerCount; player++)
               for (var token = 0; token < 4; token++) _buildToken(player, token, size),
@@ -342,7 +356,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _playerPanel(int player) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy;
+    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final count = _positions[player].where((value) => value == 57).length;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -380,7 +394,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _buildToken(int player, int token, double size) {
     final point = _tokenPoint(player, token, _positions[player][token], size);
-    final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn;
+    final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn && !_moving;
     final diameter = size * .055;
     final color = _playerColor(player);
     return Positioned(
