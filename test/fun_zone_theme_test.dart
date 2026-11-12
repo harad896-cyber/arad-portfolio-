@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:arad_portfolio/fun_zone_theme.dart';
+import 'package:arad_messenger/fun_zone_theme.dart';
 
 void main() {
   group('Fun backdrop access', () {
