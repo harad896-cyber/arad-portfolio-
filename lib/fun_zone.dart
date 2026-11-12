@@ -19,17 +19,13 @@ class FunZonePage extends StatelessWidget {
   const FunZonePage({super.key});
 
   static const _items = <_FunItem>[
-    _FunItem('بازی دونفره', 'ربات، دونفره یا آنلاین', Icons.grid_3x3_rounded, _FunKind.duel, Color(0xFF16A085)),
     _FunItem('لودو', '۲ تا ۴ نفره و بازی با ربات', Icons.casino_rounded, _FunKind.ludo, Color(0xFFF0B83B)),
     _FunItem('مسابقه و معما', 'سؤال‌های کوتاه و امتیاز', Icons.quiz_rounded, _FunKind.quiz, Color(0xFF4776E6)),
     _FunItem('گردونه شانس', 'امتیاز روزانه و جایزه', Icons.casino_rounded, _FunKind.wheel, Color(0xFFE6A23C)),
     _FunItem('جدول امتیازها', 'رتبه و آمار بازیکنان', Icons.leaderboard_rounded, _FunKind.leaderboard, Color(0xFFD0A33D)),
     _FunItem('کیف پول سکه', 'موجودی، انتقال و تاریخچه', Icons.account_balance_wallet_rounded, _FunKind.wallet, Color(0xFFD6A83D)),
-    _FunItem('استیکر و میم‌ساز', 'ساخت متن و استیکر ساده', Icons.emoji_emotions_rounded, _FunKind.stickers, Color(0xFFE76F9A)),
-    _FunItem('چهار در یک خط', 'آفلاین و رقابت آنلاین', Icons.view_week_rounded, _FunKind.connectFour, Color(0xFF6574CD)),
     _FunItem('شطرنج', 'قوانین کامل، ربات و دونفره آفلاین', Icons.grid_4x4_rounded, _FunKind.chess, Color(0xFF795548)),
     _FunItem('بازی حافظه', 'جفت شکل‌های پنهان را پیدا کن', Icons.grid_view_rounded, _FunKind.memory, Color(0xFF9B6B43)),
-    _FunItem('بازی مار', 'رکورد خودت را بشکن', Icons.videogame_asset_rounded, _FunKind.snake, Color(0xFF42A66C)),
     _FunItem('آزمون شخصیت و فال', 'فقط برای سرگرمی', Icons.auto_awesome_rounded, _FunKind.personality, Color(0xFF9B68C8)),
   ];
 
@@ -80,7 +76,7 @@ class FunZonePage extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
-              child: Text('بازی‌های دوز و چهاردرخط سه حالت دارند: آفلاین با ربات، دونفره روی یک دستگاه، و آنلاین با ربات یا کاربر تصادفی. سایر سرگرمی‌ها فعلاً روی همین دستگاه اجرا می‌شوند.',
+              child: Text('بازی‌های موجود را انتخاب کن و از رقابت و سرگرمی لذت ببر.',
                 style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.6)),
             ),
           ),
@@ -91,24 +87,20 @@ class FunZonePage extends StatelessWidget {
 
   void _open(BuildContext context, _FunKind kind) {
     final Widget page = switch (kind) {
-      _FunKind.duel => const FunGamePage(gameType: 'tic_tac_toe', title: 'بازی دوز'),
       _FunKind.ludo => const LudoGamePage(),
       _FunKind.quiz => const _QuizPage(),
       _FunKind.wheel => const _WheelPage(),
       _FunKind.leaderboard => const FunGameLeaderboardPage(),
       _FunKind.wallet => const GapCoinWalletPage(),
-      _FunKind.stickers => const _StickerMemePage(),
-      _FunKind.connectFour => const FunGamePage(gameType: 'connect_four', title: 'چهار در یک خط'),
       _FunKind.chess => const ChessGamePage(),
       _FunKind.memory => const _MemoryGamePage(),
-      _FunKind.snake => const _SnakePage(),
       _FunKind.personality => const _PersonalityPage(),
     };
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 }
 
-enum _FunKind { duel, ludo, quiz, wheel, leaderboard, wallet, stickers, connectFour, chess, memory, snake, personality }
+enum _FunKind { ludo, quiz, wheel, leaderboard, wallet, chess, memory, personality }
 
 class _FunItem {
   final String title, subtitle;
