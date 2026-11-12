@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'fun_game_engine.dart';
 
 /// Local-first entertainment hub for GapResan.
 /// Multiplayer, shared scores and cloud persistence are intentionally not implied:
@@ -79,11 +80,11 @@ class FunZonePage extends StatelessWidget {
 
   void _open(BuildContext context, _FunKind kind) {
     final Widget page = switch (kind) {
-      _FunKind.duel => const _TicTacToePage(),
+      _FunKind.duel => const FunGamePage(gameType: 'tic_tac_toe', title: 'بازی دوز'),
       _FunKind.quiz => const _QuizPage(),
       _FunKind.wheel => const _WheelPage(),
       _FunKind.stickers => const _StickerMemePage(),
-      _FunKind.connectFour => const _ConnectFourPage(),
+      _FunKind.connectFour => const FunGamePage(gameType: 'connect_four', title: 'چهار در یک خط'),
       _FunKind.memory => const _MemoryGamePage(),
       _FunKind.snake => const _SnakePage(),
       _FunKind.personality => const _PersonalityPage(),
