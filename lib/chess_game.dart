@@ -315,7 +315,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
         if (_notation.isNotEmpty) SizedBox(height:48,child:ListView(scrollDirection:Axis.horizontal,children:[
           for (var i=0;i<_notation.length;i++) Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:Chip(label:Text((i.isEven?(i~/2+1).toString()+'. ':'')+_notation[i]))),
         ])),
-      ])))),
+      ]))),
     );
   }
 }
