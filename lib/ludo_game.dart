@@ -313,19 +313,24 @@ class _LudoGamePageState extends State<LudoGamePage> {
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, height: 1.4)),
       ),
       const SizedBox(height: 8),
-      AspectRatio(
-        aspectRatio: 1,
-        child: LayoutBuilder(builder: (context, constraints) {
-          final size = math.min(constraints.maxWidth, constraints.maxHeight);
-          return Stack(children: [
-            Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
-              colors: _colors, players: _playerCount, positions: _positions,
-              turn: _turn, dice: _moving ? null : _dice, legalTokens: _moving ? const [] : _legal,\n              look: FunZoneLook.current.value,
-            ))),
-            for (var player = 0; player < _playerCount; player++)
-              for (var token = 0; token < 4; token++) _buildToken(player, token, size),
-          ]);
-        }),
+      ValueListenableBuilder<FunBackdrop>(
+        valueListenable: FunZoneLook.current,
+        builder: (context, look, _) => AspectRatio(
+          aspectRatio: 1,
+          child: LayoutBuilder(builder: (context, constraints) {
+            final size = math.min(constraints.maxWidth, constraints.maxHeight);
+            return Stack(children: [
+              Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
+                colors: _colors, players: _playerCount, positions: _positions,
+                turn: _turn, dice: _moving ? null : _dice,
+                legalTokens: _moving ? const [] : _legal,
+                look: look,
+              ))),
+              for (var player = 0; player < _playerCount; player++)
+                for (var token = 0; token < 4; token++) _buildToken(player, token, size),
+            ]);
+          }),
+        ),
       ),
       const SizedBox(height: 8),
       _playerRow([0, 1]),
