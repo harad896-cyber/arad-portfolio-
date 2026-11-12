@@ -348,11 +348,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
         IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded)),
       ],
     ),
-    floatingActionButton: const FunZoneThemeButton(),
     body: SafeArea(child: FunZoneBackdrop(child: Container(
       decoration: BoxDecoration(gradient: LinearGradient(
         begin: Alignment.topLeft, end: Alignment.bottomRight,
-        colors: LudoCustomization.backgroundPalettes[LudoCustomization.current.value.background],
+        colors: LudoCustomization.backgroundPalettes[LudoCustomization.current.value.background.clamp(0, LudoCustomization.backgroundPalettes.length - 1)],
       ),
       image: LudoCustomization.decodeImage(LudoCustomization.current.value.backgroundImageBase64) == null ? null : DecorationImage(
         image: MemoryImage(LudoCustomization.decodeImage(LudoCustomization.current.value.backgroundImageBase64)!),
