@@ -141,10 +141,14 @@ class _ChessGamePageState extends State<ChessGamePage> {
       )),
     );
     if (role!=null && mounted) {
-      final moved=game.move({'from':from,'to':to,'promotion':role.name});
+      final move = _legalMoves(from).firstWhere(
+        (candidate) => candidate.toAlgebraic == to && candidate.promotion == role,
+      );
+      final san = game.move_to_san(move);
+      final moved = game.move(move);
       if (moved) {
         setState(() {
-          _notation.add(from+to+'='+role.toUpperCase());
+          _notation.add(san);
           _positions.add(game.fen);
           selected=null; targets={}; notice=null;
         });
@@ -197,7 +201,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
             final response=next.copy()..move(reply);
             worst=math.min(worst,_evaluate(response));
           }
-          final score=replies.isEmpty && next.in_checkmate?100000:worst;
+          final score = replies.isEmpty ? (next.in_checkmate ? 100000 : 0) : worst;
           if (score>best) { best=score; chosen=candidate; }
         }
       }
