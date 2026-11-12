@@ -124,8 +124,11 @@ class _FunGamePageState extends State<FunGamePage> {
       for(final c in cols){if(won(drop(board,c,'X'),'X'))return c;}
       if(difficulty==3){
         var bestScore=-1000000;int? bestColumn;
+        // Search five plies and examine central columns first. This improves
+        // tactical detection while alpha-beta pruning keeps the mobile workload bounded.
+        cols.sort((a,b)=>(a-3).abs().compareTo((b-3).abs()));
         for(final c in cols){
-          final score=connectFourMinimax(drop(board,c,'O'),3,false,-1000000,1000000);
+          final score=connectFourMinimax(drop(board,c,'O'),5,false,-1000000,1000000);
           if(score>bestScore){bestScore=score;bestColumn=c;}
         }
         return bestColumn;
@@ -153,7 +156,8 @@ class _FunGamePageState extends State<FunGamePage> {
   int connectFourMinimax(List<String>b,int depth,bool maximizing,int alpha,int beta){
     if(won(b,'O'))return 100000+depth;
     if(won(b,'X'))return -100000-depth;
-    final cols=List.generate(7,(i)=>i).where((c)=>landing(b,c)!=null).toList();
+    final cols=List.generate(7,(i)=>i).where((c)=>landing(b,c)!=null).toList()
+      ..sort((a,b)=>(a-3).abs().compareTo((b-3).abs()));
     if(depth==0||cols.isEmpty)return evaluateConnectFour(b);
     if(maximizing){
       var best=-1000000;
