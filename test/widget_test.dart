@@ -35,6 +35,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
       final game = find.text(title);
+      await tester.scrollUntilVisible(game, 300, scrollable: find.byType(Scrollable).first);
       await tester.ensureVisible(game);
       await tester.pumpAndSettle();
       await tester.tap(game);
