@@ -89,5 +89,17 @@ void main() {
         throwsStateError,
       );
     });
+
+    test('premium board geometry has 52 unique track cells and four separate home lanes', () {
+      expect(LudoBoardGeometry.trackCells.length, 52);
+      expect(LudoBoardGeometry.trackCells.toSet().length, 52);
+      expect(LudoBoardGeometry.homeLanes.length, 4);
+      for (final lane in LudoBoardGeometry.homeLanes) {
+        expect(lane.length, 6);
+        expect(lane.toSet().length, 6);
+      }
+      expect(LudoRules.trackIndex(1, 0, playerCount: 2), 26);
+      expect(LudoBoardGeometry.trackCells[24], (2, 14));
+    });
   });
 }
