@@ -71,8 +71,8 @@ class _FunZoneBackdropState extends State<FunZoneBackdrop>
     super.initState();
     _motion = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 16),
-    )..repeat();
+      duration: const Duration(milliseconds: 900),
+    )..forward();
     FunZoneLook.load();
   }
 
