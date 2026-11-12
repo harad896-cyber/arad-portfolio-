@@ -354,40 +354,36 @@ class _LudoGamePageState extends State<LudoGamePage> {
         builder: (context, look, _) {
           final backgroundIndex = look.background.clamp(0, LudoCustomization.backgroundPalettes.length - 1).toInt();
           final backgroundBytes = LudoCustomization.decodeImage(look.backgroundImageBase64);
-          // Keep the decorative layer separate from the interactive page.
-          // A stored/custom background must never replace or cover the game UI.
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: LudoCustomization.backgroundPalettes[backgroundIndex],
-                    ),
-                    image: backgroundBytes == null ? null : DecorationImage(
-                      image: MemoryImage(backgroundBytes),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withValues(alpha: .55),
-                        BlendMode.darken,
-                      ),
-                    ),
-                  ),
+          // Paint the background and page content in one bounded body.
+          // Avoid a full-screen Stack here: the game page must remain visible
+          // even when a saved/custom background image is invalid or loading.
+          return Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: LudoCustomization.backgroundPalettes[backgroundIndex],
+              ),
+              image: backgroundBytes == null ? null : DecorationImage(
+                image: MemoryImage(backgroundBytes),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: .55),
+                  BlendMode.darken,
                 ),
               ),
-              Positioned.fill(
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: DefaultTextStyle(
-                    style: const TextStyle(color: Colors.white),
-                    child: _started ? _gameBody() : _modePicker(),
-                  ),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: DefaultTextStyle(
+                style: const TextStyle(color: Colors.white),
+                child: SizedBox.expand(
+                  child: _started ? _gameBody() : _modePicker(),
                 ),
               ),
-            ],
+            ),
           );
         },
       ),
