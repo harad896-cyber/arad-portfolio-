@@ -90,6 +90,15 @@ void main() {
       );
     });
 
+
+    test('a safe-square stack from different players is not a blockade', () {
+      final positions = [
+        [8, -1, -1, -1],
+        [47, -1, -1, -1],
+        [33, -1, -1, -1],
+      ];
+      expect(LudoRules.legalTokensInGame(positions, 2, 1), contains(0));
+    });
     test('premium board geometry has 52 unique track cells and four separate home lanes', () {
       expect(LudoBoardGeometry.trackCells.length, 52);
       expect(LudoBoardGeometry.trackCells.toSet().length, 52);
