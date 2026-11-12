@@ -13,7 +13,7 @@ class LudoLook {
 class LudoCustomization {
   LudoCustomization._();
   static final ValueNotifier<LudoLook> current = ValueNotifier(const LudoLook());
-  static bool _loaded = false;
+  static Future<void>? _loadFuture;
   static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑'];
   static const frames = ['طلایی', 'یخی', 'زمردی', 'یاقوتی', 'نئونی', 'نقره‌ای'];
   static const charms = ['⭐', '⚽', '💎', '🔥', '👑', '🧿', '🍀', '🎯'];
@@ -49,18 +49,18 @@ class LudoCustomization {
     [Color(0xFF090D1A), Color(0xFF20284A)],
   ];
 
-  static Future<void> load() async {
-    if (_loaded) return;
-    _loaded = true;
+  static Future<void> load() => _loadFuture ??= _loadSavedLook();
+
+  static Future<void> _loadSavedLook() async {
     try {
       final p = await SharedPreferences.getInstance();
       current.value = LudoLook(
-        board: p.getInt('ludo_board_skin') ?? 0,
-        avatar: p.getInt('ludo_avatar') ?? 0,
-        frame: p.getInt('ludo_avatar_frame') ?? 0,
-        banner: p.getInt('ludo_profile_banner') ?? 0,
-        background: p.getInt('ludo_profile_background') ?? 0,
-        charm: p.getInt('ludo_avatar_charm') ?? 0,
+        board: (p.getInt('ludo_board_skin') ?? 0).clamp(0, boardNames.length - 1),
+        avatar: (p.getInt('ludo_avatar') ?? 0).clamp(0, avatars.length - 1),
+        frame: (p.getInt('ludo_avatar_frame') ?? 0).clamp(0, frames.length - 1),
+        banner: (p.getInt('ludo_profile_banner') ?? 0).clamp(0, banners.length - 1),
+        background: (p.getInt('ludo_profile_background') ?? 0).clamp(0, backgrounds.length - 1),
+        charm: (p.getInt('ludo_avatar_charm') ?? 0).clamp(0, charms.length - 1),
       );
     } catch (_) {}
   }
@@ -97,19 +97,96 @@ class LudoCustomization {
 class LudoCustomizationButton extends StatelessWidget {
   const LudoCustomizationButton({super.key});
 
+  static Future<void> open(BuildContext context) async {
+    await LudoCustomization.load();
+    if (!context.mounted) return;
+    await showModalBottomSheet<void>(
+      context: context, isScrollControlled: true, showDragHandle: true,
+      backgroundColor: const Color(0xFF101B28),
+      builder: (sheet) => const _LudoCustomizationSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: 'شخصی‌سازی لودو',
     icon: const Icon(Icons.style_rounded),
-    onPressed: () async {
-      await LudoCustomization.load();
-      if (!context.mounted) return;
-      showModalBottomSheet<void>(
-        context: context, isScrollControlled: true, showDragHandle: true,
-        backgroundColor: const Color(0xFF101B28),
-        builder: (sheet) => const _LudoCustomizationSheet(),
-      );
-    },
+    onPressed: () => open(context),
+  );
+}
+
+class LudoCustomizationShowcase extends StatelessWidget {
+  const LudoCustomizationShowcase({super.key});
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<LudoLook>(
+    valueListenable: LudoCustomization.current,
+    builder: (context, look, _) => Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => LudoCustomizationButton.open(context),
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: LinearGradient(
+              begin: Alignment.topRight, end: Alignment.bottomLeft,
+              colors: LudoCustomization.backgroundPalettes[look.background],
+            ),
+            border: Border.all(color: Colors.white.withValues(alpha: .16)),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 16, offset: Offset(0, 7))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 58, height: 58,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle, color: Colors.white,
+                  border: Border.all(color: LudoCustomization.frameColors[look.frame], width: 4),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+                ),
+                child: Center(child: Text(LudoCustomization.avatars[look.avatar], style: const TextStyle(fontSize: 31))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('پروفایل بازیکن من', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                Text('بنر \${LudoCustomization.banners[look.banner]}  •  قاب \${LudoCustomization.frames[look.frame]}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
+              ])),
+              Text(LudoCustomization.charms[look.charm], style: const TextStyle(fontSize: 27)),
+            ]),
+            const SizedBox(height: 13),
+            Row(children: [
+              const Icon(Icons.palette_outlined, color: Colors.white70, size: 18),
+              const SizedBox(width: 7),
+              Expanded(child: Text('تخته: \${LudoCustomization.boardNames[look.board]}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))),
+              const Icon(Icons.wallpaper_rounded, color: Colors.white70, size: 18),
+              const SizedBox(width: 5),
+              Text(LudoCustomization.backgrounds[look.background], style: const TextStyle(color: Colors.white70, fontSize: 11)),
+            ]),
+            const SizedBox(height: 12),
+            Container(
+              height: 7, decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(colors: LudoCustomization.bannerPalettes[look.banner]),
+              ),
+            ),
+            const SizedBox(height: 9),
+            const Row(children: [
+              Icon(Icons.edit_rounded, color: Colors.white, size: 16),
+              SizedBox(width: 6),
+              Text('برای تغییر آواتار، قاب، بنر، پس‌زمینه و آویز بزن',
+                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+              Spacer(),
+              Icon(Icons.chevron_left_rounded, color: Colors.white),
+            ]),
+          ]),
+        ),
+      ),
+    ),
   );
 }
 
