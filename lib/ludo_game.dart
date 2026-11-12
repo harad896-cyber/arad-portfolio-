@@ -24,14 +24,16 @@ class LudoRules {
       final progress = current == -1 ? 0 : current + step;
       final square = trackIndex(player, progress, playerCount: positions.length);
       if (square == null) continue;
-      var occupants = 0;
       for (var p = 0; p < positions.length; p++) {
+        var samePlayerOccupants = 0;
         for (final pieceProgress in positions[p]) {
-          if (trackIndex(p, pieceProgress, playerCount: positions.length) == square) occupants++;
+          if (trackIndex(p, pieceProgress, playerCount: positions.length) == square) {
+            samePlayerOccupants++;
+          }
         }
+        // A blockade is formed by two pieces belonging to the same player.
+        if (samePlayerOccupants >= 2) return false;
       }
-      // Two pieces on one track square form a blockade; nobody may pass it.
-      if (occupants >= 2) return false;
     }
     return true;
   }
