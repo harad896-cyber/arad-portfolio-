@@ -23,12 +23,12 @@ class LudoRules {
     final current = positions[player][token];
     for (var step = 1; step <= dice; step++) {
       final progress = current == -1 ? 0 : current + step;
-      final square = trackIndex(player, progress);
+      final square = trackIndex(player, progress, playerCount: positions.length);
       if (square == null) continue;
       var occupants = 0;
       for (var p = 0; p < positions.length; p++) {
         for (final pieceProgress in positions[p]) {
-          if (trackIndex(p, pieceProgress) == square) occupants++;
+          if (trackIndex(p, pieceProgress, playerCount: positions.length) == square) occupants++;
         }
       }
       // Two pieces on one track square form a blockade; nobody may pass it.
@@ -37,9 +37,12 @@ class LudoRules {
     return true;
   }
 
-  static int? trackIndex(int player, int progress) {
+  static int offsetFor(int player, int playerCount) =>
+      playerCount == 2 && player == 1 ? 26 : startOffsets[player];
+
+  static int? trackIndex(int player, int progress, {int playerCount = 4}) {
     if (progress < 0 || progress > 50) return null;
-    return (startOffsets[player] + progress) % 52;
+    return (offsetFor(player, playerCount) + progress) % 52;
   }
 
   static LudoMoveResult move({
@@ -57,12 +60,12 @@ class LudoRules {
     final updated = positions.map((row) => List<int>.from(row)).toList();
     updated[player][token] = next;
     var captured = false;
-    final landing = trackIndex(player, next);
+    final landing = trackIndex(player, next, playerCount: updated.length);
     if (landing != null && !safeSquares.contains(landing)) {
       for (var other = 0; other < updated.length; other++) {
         if (other == player) continue;
         for (var piece = 0; piece < 4; piece++) {
-          if (trackIndex(other, updated[other][piece]) == landing) {
+          if (trackIndex(other, updated[other][piece], playerCount: updated.length) == landing) {
             updated[other][piece] = -1;
             captured = true;
           }
@@ -369,12 +372,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final center = Offset(size / 2, size / 2), radius = size * .345;
     if (progress == 57) return center + Offset((token - 1.5) * size * .018, (token.isEven ? -1 : 1) * size * .018);
     if (progress >= 51) {
-      final angle = -math.pi / 2 + LudoRules.startOffsets[player] * 2 * math.pi / 52;
+      final angle = -math.pi / 2 + LudoRules.offsetFor(player, _playerCount) * 2 * math.pi / 52;
       final r = radius * (1 - (progress - 50) / 7);
       return center + Offset(math.cos(angle) * r, math.sin(angle) * r);
     }
     if (progress >= 0) {
-      final index = (LudoRules.startOffsets[player] + progress) % 52;
+      final index = (LudoRules.offsetFor(player, _playerCount) + progress) % 52;
       final angle = -math.pi / 2 + index * 2 * math.pi / 52;
       return center + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
     }
@@ -414,7 +417,7 @@ class _LudoBoardPainter extends CustomPainter {
     for (var index = 0; index < 52; index++) {
       final angle = -math.pi / 2 + index * 2 * math.pi / 52;
       final p = center + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
-      final owner = LudoRules.startOffsets.indexOf(index);
+      final owner = List.generate(players, (p) => LudoRules.offsetFor(p, players)).indexOf(index);
       final fill = owner >= 0 ? colors[owner] :
         LudoRules.safeSquares.contains(index) ? const Color(0xFFFFD66B) : const Color(0xFFEAF0F0);
       canvas.drawCircle(p, cellRadius, Paint()..color = fill);
@@ -427,7 +430,7 @@ class _LudoBoardPainter extends CustomPainter {
       }
     }
     for (var player = 0; player < 4; player++) {
-      final angle = -math.pi / 2 + LudoRules.startOffsets[player] * 2 * math.pi / 52;
+      final angle = -math.pi / 2 + LudoRules.offsetFor(player, players) * 2 * math.pi / 52;
       for (var step = 1; step <= 6; step++) {
         final r = radius * (1 - step / 7);
         final p = center + Offset(math.cos(angle) * r, math.sin(angle) * r);
