@@ -65,6 +65,17 @@ class LudoCustomization {
     } catch (_) {}
   }
 
+  static Future<bool> shouldShowFirstGuide() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      return !(p.getBool('ludo_first_guide_seen') ?? false);
+    } catch (_) { return true; }
+  }
+
+  static Future<void> markFirstGuideSeen() async {
+    try { final p = await SharedPreferences.getInstance(); await p.setBool('ludo_first_guide_seen', true); } catch (_) {}
+  }
+
   static Future<void> select(String key, int value) async {
     final old = current.value;
     final next = switch (key) {
