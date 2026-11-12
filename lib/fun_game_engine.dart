@@ -242,7 +242,10 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
         if(!online)Text('X: $xWins برد  •  O: $oWins برد',style:const TextStyle(fontWeight:FontWeight.w800)),
         const SizedBox(height:10),
         Expanded(child:Center(child:connectFour?connectBoard(b,done,scheme):ticBoard(b,done,scheme))),
-        if(online&&roomStatus=='active')Text(botRoom?(version.isEven?'حرکتت را انتخاب کن':'ربات در حال بازی است'):turnUser==uid?'حرکتت را انتخاب کن':'منتظر حرکت حریف باش'),\n        if(online&&!botRoom&&roomStatus=='active')OutlinedButton.icon(onPressed:_openRoomChat,icon:const Icon(Icons.forum_rounded),label:const Text('چت بازی و پیام صوتی')),\n        if(online&&!botRoom&&roomStatus=='active'&&room!=null)FunGameVoiceCallButton(roomId:room!['id'].toString(),isCaller:uid==playerOne),\n        if(_reconnecting)const Text('در حال اتصال دوباره به مسابقه…',style:TextStyle(fontSize:11,color:Colors.orange)),
+        if(online&&roomStatus=='active')Text(botRoom?(version.isEven?'حرکتت را انتخاب کن':'ربات در حال بازی است'):turnUser==uid?'حرکتت را انتخاب کن':'منتظر حرکت حریف باش'),
+        if(online&&!botRoom&&roomStatus=='active')OutlinedButton.icon(onPressed:_openRoomChat,icon:const Icon(Icons.forum_rounded),label:const Text('چت بازی و پیام صوتی')),
+        if(online&&!botRoom&&roomStatus=='active'&&room!=null)FunGameVoiceCallButton(roomId:room!['id'].toString(),isCaller:uid==playerOne),
+        if(_reconnecting)const Text('در حال اتصال دوباره به مسابقه…',style:TextStyle(fontSize:11,color:Colors.orange)),
         if(botRoom&&roomStatus=='active'&&version.isOdd&&!thinking&&!busy)TextButton.icon(onPressed:botTurnOnline,icon:const Icon(Icons.refresh_rounded),label:const Text('تلاش دوباره برای حرکت ربات')),
         if(done)FilledButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('بازی تازه'))
         else if(!online)OutlinedButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('شروع دوباره')),
