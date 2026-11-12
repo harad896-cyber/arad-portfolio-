@@ -41,7 +41,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
   Square square(int row, int col) => Square.fromCoords(File(col), Rank(7-row));
   void reset() {
     history..clear()..add(Chess.fromSetup(Setup.parseFen(fen)));
-    notation.clear(); selected=null; targets={}; thinking=false; notice=null; claimedDraw=null; drawClaim=null;
+    notation.clear(); selected=null; targets={}; thinking=false; notice=null; drawClaim=null;
   }
   void start(_ChessMode m) => setState(() { mode=m; reset(); });
   List<Move> moves(Position p) {
