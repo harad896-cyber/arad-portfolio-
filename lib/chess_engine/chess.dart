@@ -45,7 +45,7 @@ class Chess {
     WHITE: [-16, -32, -17, -15]
   };
 
-  static const Map<PieceType, List<int>> PIECE_OFFSETS = {
+  static final Map<PieceType, List<int>> PIECE_OFFSETS = {
     KNIGHT: [-18, -33, -31, -14, 18, 33, 31, 14],
     BISHOP: [-17, -15, 17, 15],
     ROOK: [-16, 1, 16, -1],
