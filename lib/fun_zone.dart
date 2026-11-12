@@ -179,126 +179,143 @@ class _TicTacToePageState extends State<_TicTacToePage> {
   ));
 }
 
-class _QuizPage extends StatefulWidget { const _QuizPage(); @override State<_QuizPage> createState() => _QuizPageState(); }
+typedef _QuizQuestion = (String, List<String>, int, String, String, int);
+
+class _QuizPage extends StatefulWidget {
+  const _QuizPage();
+  @override State<_QuizPage> createState() => _QuizPageState();
+}
+
 class _QuizPageState extends State<_QuizPage> {
-  static const questionBank = <(String, List<String>, int)>[
-    ('بزرگ‌ترین سیاره منظومه شمسی کدام است؟', ['زمین','مشتری','زهره','مریخ'], 1),
-    ('آب در فشار معمول در چند درجه می‌جوشد؟', ['۵۰','۸۰','۱۰۰','۱۲۰'], 2),
-    ('کدام حیوان پستاندار است؟', ['کوسه','دلفین','اختاپوس','قزل‌آلا'], 1),
-    ('حاصل ۹ × ۷ چند است؟', ['۵۶','۶۳','۷۲','۶۷'], 1),
-    ('کدام گاز بیشترین سهم هوای زمین را دارد؟', ['اکسیژن','کربن‌دی‌اکسید','نیتروژن','هیدروژن'], 2),
-    ('پایتخت جاپان کدام شهر است؟', ['سئول','توکیو','پکن','بانکوک'], 1),
-    ('یک ساعت چند دقیقه است؟', ['۳۰','۴۵','۶۰','۹۰'], 2),
-    ('کدام سیاره به حلقه‌هایش مشهور است؟', ['زحل','عطارد','مریخ','زمین'], 0),
-    ('حاصل ۱۲ × ۸ چند است؟', ['۸۶','۹۶','۱۰۸','۱۱۲'], 1),
-    ('کدام اقیانوس بزرگ‌تر است؟', ['هند','اطلس','آرام','منجمد شمالی'], 2),
-    ('گیاهان بیشتر کدام گاز را جذب می‌کنند؟', ['اکسیژن','نیتروژن','کربن‌دی‌اکسید','هلیم'], 2),
-    ('عدد اول بعد از ۷ کدام است؟', ['۸','۹','۱۰','۱۱'], 3),
-    ('کدام جانور سریع‌تر می‌دود؟', ['یوزپلنگ','فیل','لاک‌پشت','خرس'], 0),
-    ('آب چند اتم هیدروژن دارد؟', ['۱','۲','۳','۴'], 1),
-    ('کدام قاره بزرگ‌ترین است؟', ['افریقا','اروپا','آسیا','استرالیا'], 2),
-    ('حاصل ۱۵ + ۲۷ چند است؟', ['۳۲','۴۰','۴۲','۴۵'], 2),
-    ('برای دیدن ستاره‌ها از چه وسیله‌ای استفاده می‌شود؟', ['میکروسکوپ','تلسکوپ','قطب‌نما','دماسنج'], 1),
-    ('پس از تابستان کدام فصل می‌آید؟', ['بهار','زمستان','خزان','تابستان'], 2),
-    ('شش‌ضلعی چند ضلع دارد؟', ['۵','۶','۷','۸'], 1),
-    ('کدام فلز در دمای اتاق مایع است؟', ['آهن','مس','جیوه','طلا'], 2),
+  static const questionBank = <_QuizQuestion>[
+    ('بزرگ‌ترین سیارهٔ منظومهٔ شمسی کدام است؟',['زمین','مشتری','زهره','مریخ'],1,'علوم','مشتری از همهٔ سیاره‌های منظومهٔ شمسی بزرگ‌تر است.',1),
+    ('آب خالص در فشار معمول نزدیک چند درجه می‌جوشد؟',['۵۰','۸۰','۱۰۰','۱۲۰'],2,'علوم','نقطهٔ جوش آب در فشار یک اتمسفر تقریباً ۱۰۰ درجهٔ سانتی‌گراد است.',1),
+    ('کدام گاز بیشترین سهم هوای خشک زمین را دارد؟',['اکسیژن','نیتروژن','کربن‌دی‌اکسید','هیدروژن'],1,'علوم','نیتروژن نزدیک ۷۸ درصد هوای خشک زمین را تشکیل می‌دهد.',2),
+    ('فرمول کیمیاوی آب چیست؟',['CO₂','O₂','H₂O','NaCl'],2,'علوم','هر مولکول آب دو اتم هیدروژن و یک اتم اکسیژن دارد.',1),
+    ('کدام سیاره به حلقه‌های بزرگش مشهور است؟',['مریخ','زحل','عطارد','زهره'],1,'علوم','حلقه‌های زحل از ذرات یخ و سنگ ساخته شده‌اند.',1),
+    ('نور خورشید تقریباً چند دقیقه تا زمین می‌رسد؟',['۲ دقیقه','۸ دقیقه','۳۰ دقیقه','۶۰ دقیقه'],1,'علوم','نور خورشید تقریباً ۸ دقیقه و ۲۰ ثانیه در راه است.',2),
+    ('واحد اندازه‌گیری نیرو چیست؟',['ژول','وات','نیوتن','پاسکال'],2,'علوم','نیرو در دستگاه بین‌المللی با نیوتن اندازه‌گیری می‌شود.',2),
+    ('کدام ذره بار الکتریکی منفی دارد؟',['پروتون','نوترون','الکترون','فوتون'],2,'علوم','الکترون بار منفی دارد؛ پروتون مثبت و نوترون خنثی است.',2),
+    ('کدام عضو بدن خون را پمپ می‌کند؟',['ریه','قلب','کلیه','معده'],1,'علوم','قلب با انقباض منظم خون را در بدن به گردش درمی‌آورد.',1),
+    ('در دمای اتاق کدام فلز مایع است؟',['آهن','مس','جیوه','آلومینیوم'],2,'علوم','جیوه در دمای اتاق مایع است.',2),
+    ('کدام ویتامین با نور آفتاب در پوست ساخته می‌شود؟',['ویتامین A','ویتامین C','ویتامین D','ویتامین K'],2,'علوم','پوست با کمک نور فرابنفش B می‌تواند ویتامین D بسازد.',2),
+    ('سرعت صوت در هوا در دمای معمول تقریباً چقدر است؟',['۳۴ متر بر ثانیه','۳۴۳ متر بر ثانیه','۳۰۰۰ متر بر ثانیه','۳۰ هزار متر بر ثانیه'],1,'علوم','سرعت صوت در هوای ۲۰ درجه تقریباً ۳۴۳ متر بر ثانیه است.',3),
+    ('کدام جانور پستاندار است؟',['کوسه','دلفین','اختاپوس','قزل‌آلا'],1,'طبیعت','دلفین پستاندار است و برای نفس‌کشیدن به سطح آب می‌آید.',1),
+    ('گیاهان در فتوسنتز بیشتر کدام گاز را جذب می‌کنند؟',['اکسیژن','نیتروژن','کربن‌دی‌اکسید','هلیم'],2,'طبیعت','گیاهان از کربن‌دی‌اکسید و آب برای ساخت مواد غذایی استفاده می‌کنند.',1),
+    ('کدام جانور سریع‌ترین دوندهٔ خشکی است؟',['شیر','یوزپلنگ','اسب','گرگ'],1,'طبیعت','یوزپلنگ در مسافت کوتاه به سرعت بسیار بالا می‌رسد.',1),
+    ('بزرگ‌ترین جانور شناخته‌شدهٔ زمین چیست؟',['فیل افریقایی','کوسه سفید','نهنگ آبی','زرافه'],2,'طبیعت','نهنگ آبی از نظر اندازه بزرگ‌ترین جانور شناخته‌شده است.',1),
+    ('کدام بخش گیاه معمولاً آب و مواد معدنی را جذب می‌کند؟',['گل','ریشه','میوه','برگ'],1,'طبیعت','ریشه آب و مواد معدنی را از خاک جذب می‌کند.',1),
+    ('کدام جانور دگردیسی کامل دارد؟',['پروانه','گربه','مار','کبوتر'],0,'طبیعت','پروانه از تخم به لارو، شفیره و سپس حشرهٔ بالغ تبدیل می‌شود.',2),
+    ('کدام اقیانوس بزرگ‌ترین است؟',['هند','اطلس','آرام','منجمد شمالی'],2,'جغرافیا','اقیانوس آرام بزرگ‌ترین و عمیق‌ترین اقیانوس زمین است.',1),
+    ('بلندترین رشته‌کوه جهان کدام است؟',['آلپ','هیمالیا','آند','قراقروم'],1,'جغرافیا','هیمالیا بلندترین رشته‌کوه روی خشکی است و اورست در آن قرار دارد.',1),
+    ('پایتخت جاپان کدام شهر است؟',['سئول','توکیو','پکن','بانکوک'],1,'جغرافیا','توکیو پایتخت جاپان است.',1),
+    ('کدام قاره از نظر مساحت بزرگ‌ترین است؟',['افریقا','اروپا','آسیا','استرالیا'],2,'جغرافیا','آسیا بزرگ‌ترین قاره از نظر مساحت و جمعیت است.',1),
+    ('رود نیل به کدام دریا می‌ریزد؟',['دریای سرخ','دریای مدیترانه','دریای سیاه','خلیج فارس'],1,'جغرافیا','رود نیل پس از گذر از شمال افریقا به دریای مدیترانه می‌ریزد.',2),
+    ('کدام کشور به شکل چکمه در نقشه مشهور است؟',['یونان','ایتالیا','پرتگال','ناروی'],1,'جغرافیا','شکل شبه‌جزیرهٔ ایتالیا شبیه چکمه است.',1),
+    ('صحرای بزرگ افریقا در کدام قاره قرار دارد؟',['آسیا','افریقا','امریکای جنوبی','استرالیا'],1,'جغرافیا','صحرای بزرگ در شمال قارهٔ افریقا گسترده شده است.',1),
+    ('کدام شهر در دو قارهٔ آسیا و اروپا قرار دارد؟',['پاریس','استانبول','قاهره','دهلی'],1,'جغرافیا','استانبول در دو سوی تنگهٔ بسفر و در دو قاره قرار گرفته است.',3),
+    ('یک ساعت چند دقیقه است؟',['۳۰','۴۵','۶۰','۹۰'],2,'ریاضی','هر ساعت ۶۰ دقیقه دارد.',1),
+    ('حاصل ۹ ضربدر ۷ چند است؟',['۵۶','۶۳','۷۲','۶۷'],1,'ریاضی','۹ ضربدر ۷ برابر با ۶۳ است.',1),
+    ('حاصل ۱۲ ضربدر ۸ چند است؟',['۸۶','۹۶','۱۰۸','۱۱۲'],1,'ریاضی','۱۲ ضربدر ۸ برابر با ۹۶ است.',1),
+    ('عدد اول بعد از ۷ کدام است؟',['۸','۹','۱۰','۱۱'],3,'ریاضی','۱۱ فقط بر ۱ و خودش بخش‌پذیر است.',2),
+    ('مجموع زاویه‌های داخلی مثلث چند درجه است؟',['۹۰','۱۸۰','۲۷۰','۳۶۰'],1,'ریاضی','مجموع زاویه‌های داخلی هر مثلث در هندسهٔ اقلیدسی ۱۸۰ درجه است.',2),
+    ('جذر ۱۴۴ چند است؟',['۱۰','۱۱','۱۲','۱۴'],2,'ریاضی','۱۲ ضربدر ۱۲ برابر ۱۴۴ است.',2),
+    ('اگر نصف ۵۰ را بگیریم و ۵ اضافه کنیم، چند می‌شود؟',['۲۰','۲۵','۳۰','۳۵'],2,'ریاضی','نصف ۵۰ برابر ۲۵ است و با افزودن ۵، جواب ۳۰ می‌شود.',1),
+    ('عدد پی تقریباً برابر با کدام مقدار است؟',['۲٫۱۴','۳٫۱۴','۴٫۱۳','۱٫۳۴'],1,'ریاضی','پی نسبت محیط دایره به قطر آن است و تقریباً ۳٫۱۴۱۵۹ می‌شود.',2),
+    ('کدام دانشمند قانون جاذبهٔ عمومی را صورت‌بندی کرد؟',['نیوتن','ادیسون','داروین','گالیله'],0,'تاریخ','اسحاق نیوتن قانون گرانش عمومی را در اثر مشهور خود توضیح داد.',2),
+    ('اهرام مشهور جیزه در کدام کشور هستند؟',['یونان','مصر','مکزیک','هند'],1,'تاریخ','اهرام جیزه در مصر و نزدیک شهر قاهره قرار دارند.',1),
+    ('خط میخی از کدام تمدن‌های باستانی شناخته شده است؟',['بین‌النهرین','روم','مایا','وایکینگ'],0,'تاریخ','خط میخی در بین‌النهرین و نزد تمدن‌هایی چون سومریان گسترش یافت.',3),
+    ('نخستین سفر انسان به ماه در کدام سال انجام شد؟',['۱۹۵۹','۱۹۶۹','۱۹۷۹','۱۹۸۹'],1,'تاریخ','ماموریت آپولو ۱۱ در سال ۱۹۶۹ انسان را به ماه رساند.',2),
+    ('جادهٔ ابریشم بیشتر برای چه شناخته می‌شود؟',['راه‌های بازرگانی','مسابقه‌های ورزشی','راه‌آهن مدرن','کانال‌های آبی'],0,'تاریخ','جادهٔ ابریشم شبکه‌ای از راه‌های بازرگانی میان شرق و غرب بود.',2),
+    ('کدام تمدن با شهر باستانی بابل پیوند دارد؟',['بین‌النهرین','اسکاندیناوی','مایا','ژاپن باستان'],0,'تاریخ','بابل یکی از شهرهای مهم تمدن بین‌النهرین بود.',2),
+    ('مغز اصلی محاسبات کمپیوتر معمولاً چه نام دارد؟',['CPU','GPS','USB','HDMI'],0,'فناوری','CPU دستورها را اجرا و عملیات اصلی محاسباتی را انجام می‌دهد.',1),
+    ('کدام مورد برای ذخیرهٔ فایل‌ها در اینترنت به کار می‌رود؟',['فضای ابری','بلندگو','میکروفون','چاپگر'],0,'فناوری','فضای ابری فایل‌ها را روی سرورهای اینترنتی نگهداری می‌کند.',1),
+    ('رمز عبور قوی بهتر است چگونه باشد؟',['فقط نام خود','تکرار ۱۲۳۴','ترکیب طولانی و یکتا','تاریخ تولد'],2,'فناوری','رمز طولانی و یکتا که در سرویس‌های دیگر تکرار نشود امن‌تر است.',1),
+    ('کدام فناوری برای ارتباط بی‌سیم نزدیک استفاده می‌شود؟',['Bluetooth','HDMI','Ethernet','VGA'],0,'فناوری','بلوتوث برای ارتباط بی‌سیم در فاصلهٔ کوتاه طراحی شده است.',1),
+    ('فیشینگ معمولاً چه هدفی دارد؟',['سرقت اطلاعات','افزایش سرعت اینترنت','پاک‌کردن گردوغبار','شارژ باتری'],0,'فناوری','فیشینگ کاربر را فریب می‌دهد تا رمز یا اطلاعات حساسش را افشا کند.',2),
+    ('کدام فرمت معمولاً برای عکس فشرده استفاده می‌شود؟',['JPEG','MP3','WAV','TXT'],0,'فناوری','JPEG یک فرمت رایج برای فشرده‌سازی تصویر است.',2),
+    ('کدام زبان برای ساختار صفحهٔ وب استفاده می‌شود؟',['HTML','SQL','Bash','Dart'],0,'فناوری','HTML ساختار و محتوای صفحهٔ وب را مشخص می‌کند.',2),
+    ('زبان رسمی سازمان ملل چند زبان است؟',['۴','۵','۶','۸'],2,'دانش عمومی','سازمان ملل شش زبان رسمی دارد.',2),
+    ('یک سال عادی چند روز دارد؟',['۳۶۰','۳۶۵','۳۶۶','۳۵۴'],1,'دانش عمومی','سال عادی ۳۶۵ روز دارد و سال کبیسه ۳۶۶ روز.',1),
+    ('کدام ساز موسیقی کلیدهای سیاه و سفید دارد؟',['تار','پیانو','دف','نی'],1,'دانش عمومی','پیانو با صفحه‌کلید سیاه و سفید نواخته می‌شود.',1),
+    ('در شطرنج کدام مهره می‌تواند به شکل L حرکت کند؟',['رخ','فیل','اسب','وزیر'],2,'دانش عمومی','اسب در شطرنج به شکل دو خانه و سپس یک خانه عمود بر آن حرکت می‌کند.',2),
+    ('کدام ورزش با راکت و توپ زرد انجام می‌شود؟',['تنیس','بوکس','شنا','کشتی'],0,'دانش عمومی','در تنیس از راکت و توپ مخصوص استفاده می‌شود.',1),
   ];
-  late List<(String, List<String>, int)> questions;
+
+  static const categories = ['همه','علوم','طبیعت','ریاضی','جغرافیا','تاریخ','فناوری','دانش عمومی'];
+  String category = 'همه';
+  int difficulty = 0;
+  late List<_QuizQuestion> questions;
   int index = 0, score = 0;
-  @override
-  void initState() { super.initState(); _newRound(); }
-  void _newRound() {
-    final pool = List<(String, List<String>, int)>.of(questionBank)..shuffle(math.Random());
-    questions = pool.take(10).toList();
-  }
-  bool? answered;
   int? selectedOption;
+  bool? answered;
 
-  void choose(int i) {
-    if (answered != null) return;
-    setState(() {
-      selectedOption = i;
-      answered = i == questions[index].$3;
-      if (answered!) score++;
-    });
+  @override void initState(){super.initState();_newRound();}
+  void _newRound(){
+    final pool=questionBank.where((q)=>(category=='همه'||q.$4==category)&&(difficulty==0||q.$6==difficulty)).toList()..shuffle(math.Random());
+    questions=pool.take(math.min(12,pool.length)).toList();
+    index=0;score=0;selectedOption=null;answered=null;
   }
-
-  void next() {
-    setState(() {
-      if (index < questions.length - 1) {
-        index++;
-        answered = null;
-        selectedOption = null;
-      } else {
-        index = questions.length;
-      }
-    });
+  void choose(int i){
+    if(answered!=null)return;
+    setState(()=>{selectedOption=i,answered=i==questions[index].$3});
+    if(i==questions[index].$3)score++;
   }
+  void next(){setState(()=>{index++,selectedOption=null,answered=null});}
 
-  @override
-  Widget build(BuildContext context) => _GameScaffold(
-    title: 'مسابقه و معما',
-    child: Padding(
-      padding: const EdgeInsets.all(18),
-      child: index >= questions.length
-          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.emoji_events_rounded, size: 64, color: Colors.amber),
-              const Text('مسابقه تمام شد!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              Text('امتیاز تو: $score از ${questions.length}'),
-              FilledButton(onPressed: () => setState(() { index = 0; score = 0; answered = null; selectedOption = null; _newRound(); }), child: const Text('مسابقه تازه')),
-            ]))
-          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('پرسش ${index + 1} از ${questions.length}  ·  امتیاز: $score', style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              LinearProgressIndicator(value: (index + 1) / questions.length),
-              const SizedBox(height: 24),
-              Text(questions[index].$1, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 18),
-              ...List.generate(4, (i) {
-                final isCorrectAnswer = i == questions[index].$3;
-                final isSelected = i == selectedOption;
-                final tint = answered == null
-                    ? null
-                    : isCorrectAnswer
-                        ? Colors.green.withValues(alpha: .12)
-                        : isSelected
-                            ? Colors.red.withValues(alpha: .12)
-                            : null;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: OutlinedButton(
-                    onPressed: answered == null ? () => choose(i) : null,
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: tint,
-                      side: BorderSide(
-                        color: answered == null
-                            ? Theme.of(context).colorScheme.outline
-                            : isCorrectAnswer
-                                ? Colors.green
-                                : isSelected
-                                    ? Colors.red
-                                    : Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(9),
-                      child: Row(children: [
-                        Expanded(child: Text(questions[index].$2[i])),
-                        if (answered != null && isCorrectAnswer) const Icon(Icons.check_circle, color: Colors.green),
-                        if (answered != null && isSelected && !isCorrectAnswer) const Icon(Icons.cancel, color: Colors.red),
-                      ]),
-                    ),
-                  ),
-                );
-              }),
-              if (answered != null) ...[
-                Text(answered! ? 'آفرین! پاسخ درست بود.' : 'پاسخ درست: ${questions[index].$2[questions[index].$3]}'),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: next, child: Text(index == questions.length - 1 ? 'دیدن نتیجه' : 'پرسش بعدی')),
-              ],
-            ]),
-    ),
-  );
+  @override Widget build(BuildContext context){
+    final scheme=Theme.of(context).colorScheme;
+    return _GameScaffold(title:'مسابقهٔ هوشمند',child:Padding(padding:const EdgeInsets.all(16),child:questions.isEmpty
+      ?const Center(child:Text('برای این دسته پرسشی پیدا نشد.'))
+      :index>=questions.length
+        ?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          const Icon(Icons.emoji_events_rounded,size:66,color:Colors.amber),
+          const Text('مسابقه تمام شد!',style:TextStyle(fontSize:23,fontWeight:FontWeight.w900)),
+          Text('امتیاز تو: $score از ${questions.length}',style:const TextStyle(fontSize:18)),
+          const SizedBox(height:12),
+          FilledButton(onPressed:()=>setState(_newRound),child:const Text('مسابقهٔ تازه')),
+          TextButton(onPressed:()=>setState(()=>{category='همه',difficulty=0,_newRound()}),child:const Text('تغییر دسته و سطح')),
+        ]))
+        :Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:categories.map((c)=>Padding(padding:const EdgeInsets.only(left:6),child:ChoiceChip(label:Text(c),selected:category==c,onSelected:(_)=>setState(()=>{category=c,_newRound()}))).toList())),
+          const SizedBox(height:8),
+          Wrap(spacing:6,children:[
+            ChoiceChip(label:const Text('همهٔ سطح‌ها'),selected:difficulty==0,onSelected:(_)=>setState(()=>{difficulty=0,_newRound()})),
+            ChoiceChip(label:const Text('آسان'),selected:difficulty==1,onSelected:(_)=>setState(()=>{difficulty=1,_newRound()})),
+            ChoiceChip(label:const Text('متوسط'),selected:difficulty==2,onSelected:(_)=>setState(()=>{difficulty=2,_newRound()})),
+            ChoiceChip(label:const Text('سخت'),selected:difficulty==3,onSelected:(_)=>setState(()=>{difficulty=3,_newRound()})),
+          ]),
+          const SizedBox(height:12),
+          Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[
+            Text('پرسش ${index+1} از ${questions.length}',style:const TextStyle(fontWeight:FontWeight.w800)),
+            Text('امتیاز: $score',style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w900)),
+          ]),
+          const SizedBox(height:8),LinearProgressIndicator(value:(index+1)/questions.length),
+          const SizedBox(height:22),
+          Text(questions[index].$4,style:TextStyle(color:scheme.primary,fontWeight:FontWeight.w800)),
+          const SizedBox(height:8),
+          Text(questions[index].$1,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+          const SizedBox(height:14),
+          ...List.generate(questions[index].$2.length,(i){
+            final correct=i==questions[index].$3,selected=i==selectedOption;
+            final color=answered==null?scheme.outline:correct?Colors.green:selected?Colors.red:scheme.outline;
+            return Padding(padding:const EdgeInsets.only(bottom:8),child:OutlinedButton(
+              onPressed:answered==null?()=>choose(i):null,
+              style:OutlinedButton.styleFrom(backgroundColor:answered==null?null:correct?Colors.green.withValues(alpha:.10):selected?Colors.red.withValues(alpha:.10):null,side:BorderSide(color:color)),
+              child:Row(children:[Expanded(child:Text(questions[index].$2[i])),if(answered!=null&&correct)const Icon(Icons.check_circle,color:Colors.green),if(answered!=null&&selected&&!correct)const Icon(Icons.cancel,color:Colors.red)]),
+            ));
+          }),
+          if(answered!=null)...[
+            const SizedBox(height:6),
+            Text(answered!?'آفرین! پاسخ درست بود.':'پاسخ درست: '+questions[index].$2[questions[index].$3],style:TextStyle(fontWeight:FontWeight.w900,color:answered!?Colors.green:Colors.red)),
+            const SizedBox(height:6),
+            Text(questions[index].$5,style:TextStyle(color:scheme.onSurfaceVariant,height:1.4)),
+            const Spacer(),
+            FilledButton(onPressed:next,child:Text(index==questions.length-1?'دیدن نتیجه':'پرسش بعدی')),
+          ],
+        ]),
+    ));
+  }
 }
 
 class _WheelPage extends StatefulWidget { const _WheelPage(); @override State<_WheelPage> createState() => _WheelPageState(); }
