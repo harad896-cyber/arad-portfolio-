@@ -184,7 +184,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         final tone = math.sin(2 * math.pi * frequency * t);
         final overtone = math.sin(2 * math.pi * frequency * 2.01 * t) * .22;
         final noise = kind == 'roll' ? (_random.nextDouble() - .5) * .75 : 0.0;
-        final value = ((tone + overtone + noise) * envelope * 10500).round().clamp(-32768, 32767);
+        final value = ((tone + overtone + noise) * envelope * 10500).round().clamp(-32768, 32767).toInt();
         pcm.setInt16(i * 2, value, Endian.little);
       }
       bytes.add(pcm.buffer.asUint8List());
