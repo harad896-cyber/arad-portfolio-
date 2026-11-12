@@ -437,6 +437,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     return Offset((base.$2 + .5 + offset.dx) / 15 * size, (base.$1 + .5 + offset.dy) / 15 * size);
   }
 
+}
 
 class LudoBoardGeometry {
   static const trackCells = <(int, int)>[
