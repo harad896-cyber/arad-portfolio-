@@ -48,7 +48,12 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
       expect(find.text('لودو'), findsOneWidget);
       expect(find.text('شطرنج'), findsOneWidget);
-      expect(find.text('بازی حافظه'), findsOneWidget);
+      // SliverGrid builds cards lazily; scroll the memory tile into view
+      // before asserting that its title is present in the widget tree.
+      final memoryGame = find.text('بازی حافظه');
+      await tester.scrollUntilVisible(memoryGame, 300,
+          scrollable: find.byType(Scrollable).first);
+      expect(memoryGame, findsOneWidget);
       expect(find.text('مسابقه و معما'), findsOneWidget);
       expect(find.text('چهار در یک خط'), findsNothing);
       expect(find.text('بازی دونفره'), findsNothing);
