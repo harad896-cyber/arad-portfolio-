@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'fun_zone_theme.dart';
 
 enum _PlayMode { bot, local, onlineHuman, onlineBot }
 
@@ -178,8 +179,8 @@ class _FunGamePageState extends State<FunGamePage> {
     final b=online?room!['board'].toString().split(''):board;final done=ended;final scheme=Theme.of(context).colorScheme;
     final statusText=online?(roomStatus=='cancelled'?'بازی لغو شد؛ حریف از اتاق خارج شد.':done?(botRoom?(room?['winner_mark']=='O'?'ربات برنده شد.':room?['winner_mark']=='X'?'آفرین! تو برنده شدی.':'بازی مساوی شد.'):(winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.')):botRoom?(version.isEven?'نوبت توست':'نوبت ربات'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
       :winner!=null?(mode==_PlayMode.bot?(winner=='X'?'آفرین! تو برنده شدی.':'ربات برنده شد.'):'بازیکن $winner برنده شد!'):draw?'بازی مساوی شد.':thinking?'ربات فکر می‌کند…':mode==_PlayMode.bot?(turn=='X'?'نوبت توست':'نوبت ربات'):'نوبت بازیکن $turn';
-    return Scaffold(appBar:AppBar(title:Text(widget.title),actions:[IconButton(onPressed:newRound,icon:const Icon(Icons.tune_rounded),tooltip:'تغییر حالت')]),
-      body:SafeArea(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
+    return Scaffold(backgroundColor:Colors.transparent,appBar:AppBar(title:Text(widget.title),backgroundColor:Colors.transparent,actions:[IconButton(onPressed:newRound,icon:const Icon(Icons.tune_rounded),tooltip:'تغییر حالت')]),floatingActionButton:const FunZoneThemeButton(),
+      body:FunZoneBackdrop(child:SafeArea(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
         Card(child:Padding(padding:const EdgeInsets.all(14),child:Column(children:[
           Text(statusText,textAlign:TextAlign.center,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w900)),
           const SizedBox(height:5),
@@ -194,9 +195,9 @@ class _FunGamePageState extends State<FunGamePage> {
         if(done)FilledButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('بازی تازه'))
         else if(!online)OutlinedButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('شروع دوباره')),
         const SizedBox(height:8),Text(connectFour?'چهار مهره را افقی، عمودی یا مورب ردیف کن.':'سه مهره را در یک خط ردیف کن.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant)),
-      ]))));
+      ])))));
   }
-  Widget picker()=>Scaffold(appBar:AppBar(title:Text(widget.title)),body:ListView(padding:const EdgeInsets.all(18),children:[
+  Widget picker()=>Scaffold(backgroundColor:Colors.transparent,appBar:AppBar(title:Text(widget.title),backgroundColor:Colors.transparent),floatingActionButton:const FunZoneThemeButton(),body:FunZoneBackdrop(child:ListView(padding:const EdgeInsets.all(18),children:[
     const SizedBox(height:12),const Icon(Icons.sports_esports_rounded,size:54),const SizedBox(height:12),
     const Text('حالت بازی را انتخاب کن',textAlign:TextAlign.center,style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),const SizedBox(height:22),
     Card(child:ListTile(leading:const Icon(Icons.smart_toy_rounded),title:const Text('آفلاین با ربات'),subtitle:const Text('بدون اینترنت؛ سه سطح دشواری'),onTap:busy?null:()=>choose(_PlayMode.bot))),
@@ -210,13 +211,13 @@ class _FunGamePageState extends State<FunGamePage> {
     Card(child:ListTile(leading:const Icon(Icons.public_rounded),title:const Text('آنلاین با حریف تصادفی'),subtitle:const Text('از میان کاربران گپ‌رسان حریف پیدا کن'),onTap:busy?null:()=>choose(_PlayMode.onlineHuman))),
     if(busy)const Center(child:Padding(padding:EdgeInsets.all(16),child:CircularProgressIndicator())),
     if(message!=null)Padding(padding:const EdgeInsets.all(12),child:Text(message!,textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.error))),
-  ]));
-  Widget waiting()=>Scaffold(appBar:AppBar(title:Text(widget.title),leading:IconButton(onPressed:newRound,icon:const Icon(Icons.arrow_back))),body:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[
+  ])));
+  Widget waiting()=>Scaffold(backgroundColor:Colors.transparent,appBar:AppBar(title:Text(widget.title),backgroundColor:Colors.transparent,leading:IconButton(onPressed:newRound,icon:const Icon(Icons.arrow_back))),floatingActionButton:const FunZoneThemeButton(),body:FunZoneBackdrop(child:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[
     const CircularProgressIndicator(),const SizedBox(height:18),const Text('در حال پیدا کردن حریف آنلاین…',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),
     const SizedBox(height:8),const Text('با ورود بازیکن دیگر، بازی خودکار آغاز می‌شود.',textAlign:TextAlign.center),const SizedBox(height:20),
     OutlinedButton.icon(onPressed:()async{await leaveRoom();if(mounted)setState(() { room = null; mode = _PlayMode.bot; resetBoard(); });},icon:const Icon(Icons.smart_toy),label:const Text('منتظر نمان؛ با ربات بازی کن')),
     TextButton(onPressed:newRound,child:const Text('لغو جستجو')),
-  ]))));
+  ])))));
   Widget ticBoard(List<String>b,bool done,ColorScheme scheme)=>AspectRatio(aspectRatio:1,child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:9,
     gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:3,crossAxisSpacing:8,mainAxisSpacing:8),
     itemBuilder:(_,i){final m=b.length>i&&b[i]!='.'?b[i]:'';final can=!busy&&!thinking&&!done&&(!online||(roomStatus=='active'&&turnUser==uid&&(!botRoom||version.isEven)));return Material(color:scheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(18),child:InkWell(borderRadius:BorderRadius.circular(18),onTap:can?()=>play(i):null,child:Center(child:Text(m,style:TextStyle(fontSize:52,fontWeight:FontWeight.w900,color:m=='X'?Colors.teal:Colors.deepOrange)))));}));
