@@ -46,6 +46,8 @@ alter table public.gap_coin_wallets enable row level security;
 alter table public.gap_coin_transactions enable row level security;
 revoke all on public.gap_coin_wallets, public.gap_coin_transactions from anon, authenticated;
 grant select on public.gap_coin_wallets, public.gap_coin_transactions to authenticated;
+grant select, insert, update on public.gap_coin_wallets to service_role;
+grant select, insert on public.gap_coin_transactions to service_role;
 
 drop policy if exists gap_coin_wallet_read_own on public.gap_coin_wallets;
 create policy gap_coin_wallet_read_own on public.gap_coin_wallets
@@ -191,13 +193,16 @@ begin
     values (p_user_id) on conflict (user_id) do nothing;
   perform 1 from public.gap_coin_wallets where user_id = p_user_id for update;
 
-  select id into v_tx_id from public.gap_coin_transactions
+  select * into v_existing from public.gap_coin_transactions
     where transaction_type = 'purchase'
       and payment_provider = p_payment_provider
       and payment_reference = p_payment_reference;
-  if v_tx_id is not null then
+  if found then
+    if v_existing.to_user_id <> p_user_id or v_existing.amount <> p_amount then
+      raise exception 'purchase_reference_reused' using errcode = '22023';
+    end if;
     select balance into v_balance from public.gap_coin_wallets where user_id = p_user_id;
-    return query select v_tx_id, v_balance;
+    return query select v_existing.id, v_balance;
     return;
   end if;
 
