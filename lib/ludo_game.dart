@@ -123,7 +123,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   void initState() {
     super.initState();
     LudoCustomization.current.addListener(_onLookChanged);
-    LudoCustomization.load();
+    LudoCustomization.load().catchError((_) {});
     _loadFirstGuide();
   }
 
@@ -376,7 +376,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
         textAlign: TextAlign.center,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.6)),
       const SizedBox(height: 20),
-      const LudoCustomizationShowcase(),
+      OutlinedButton.icon(
+        onPressed: () => LudoCustomizationButton.open(context),
+        icon: const Icon(Icons.palette_rounded),
+        label: const Text('شخصی‌سازی ظاهر و تخته'),
+      ),
       const SizedBox(height: 22),
       const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
