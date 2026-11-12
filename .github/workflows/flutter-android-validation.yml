@@ -34,3 +34,12 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+      # Produce smaller per-architecture release APKs for easier phone installation.
+      - run: flutter build apk --release --split-per-abi
+      - name: Upload release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-release-apks
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          if-no-files-found: error
+          retention-days: 14
