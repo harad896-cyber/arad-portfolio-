@@ -304,7 +304,7 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
     final look = LudoCustomization.current.value;
     final selected = switch (category) {
       'board' => look.board, 'avatar' => look.avatar, 'frame' => look.frame,
-      'banner' => look.banner, 'background' => look.background, _ => look.charm,
+      'banner' => look.banner, 'background' => look.background, 'diceSkin' => look.diceSkin, _ => look.charm,
     };
     final labels = switch (category) {
       'board' => LudoCustomization.boardNames,
@@ -312,6 +312,7 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
       'frame' => LudoCustomization.frames,
       'banner' => LudoCustomization.banners,
       'background' => LudoCustomization.backgrounds,
+      'diceSkin' => LudoCustomization.diceSkins,
       _ => LudoCustomization.charms,
     };
     return SafeArea(child: SingleChildScrollView(child: Padding(
@@ -325,7 +326,7 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
           for (final item in <(String,String)>[
             ('board','قالب تخته'), ('avatar','آواتار'), ('frame','قاب'),
             ('banner','بنر'), ('background','پس‌زمینه'), ('charm','آویز'),
-            ('bannerPhoto','عکس بنر'), ('backgroundPhoto','عکس پس‌زمینه'),
+            ('bannerPhoto','عکس بنر'), ('backgroundPhoto','عکس پس‌زمینه'), ('diceSkin','قالب تاس'),
           ])
             ChoiceChip(label: Text(item.$2), selected: category == item.$1,
               onSelected: (_) => setState(() => category = item.$1)),
@@ -364,7 +365,7 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
                   : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.memory(bytes, height: 120, width: double.infinity, fit: BoxFit.cover));
             }),
           ])
-        else if (category == 'board' || category == 'banner' || category == 'background')
+        else if (category == 'board' || category == 'banner' || category == 'background' || category == 'diceSkin')
           SizedBox(height: 74, child: ListView(scrollDirection: Axis.horizontal, children: [
             for (var i = 0; i < labels.length; i++)
               GestureDetector(onTap: () { LudoCustomization.select(category, i); setState(() {}); },
@@ -374,6 +375,7 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
                     gradient: LinearGradient(colors: category == 'board'
                       ? LudoCustomization.boardPalettes[i]
                       : category == 'banner' ? LudoCustomization.bannerPalettes[i]
+                      : category == 'diceSkin' ? LudoCustomization.dicePalettes[i]
                       : LudoCustomization.backgroundPalettes[i]),
                     border: Border.all(color: selected == i ? Colors.white : Colors.white24, width: selected == i ? 2.5 : 1),
                   ),
