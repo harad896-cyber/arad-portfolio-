@@ -14,6 +14,29 @@ class LudoRules {
           (pieces[i] >= 0 && pieces[i] < 57 && pieces[i] + dice <= 57)) i,
   ];
 
+  static List<int> legalTokensInGame(List<List<int>> positions, int player, int dice) =>
+      legalTokens(positions[player], dice)
+          .where((token) => _pathIsClear(positions, player, token, dice))
+          .toList();
+
+  static bool _pathIsClear(List<List<int>> positions, int player, int token, int dice) {
+    final current = positions[player][token];
+    for (var step = 1; step <= dice; step++) {
+      final progress = current == -1 ? 0 : current + step;
+      final square = trackIndex(player, progress);
+      if (square == null) continue;
+      var occupants = 0;
+      for (var p = 0; p < positions.length; p++) {
+        for (final pieceProgress in positions[p]) {
+          if (trackIndex(p, pieceProgress) == square) occupants++;
+        }
+      }
+      // Two pieces on one track square form a blockade; nobody may pass it.
+      if (occupants >= 2) return false;
+    }
+    return true;
+  }
+
   static int? trackIndex(int player, int progress) {
     if (progress < 0 || progress > 50) return null;
     return (startOffsets[player] + progress) % 52;
@@ -27,7 +50,7 @@ class LudoRules {
   }) {
     if (player < 0 || player >= positions.length || token < 0 || token >= 4 ||
         dice < 1 || dice > 6 ||
-        !legalTokens(positions[player], dice).contains(token)) {
+        !legalTokensInGame(positions, player, dice).contains(token)) {
       throw StateError('Illegal Ludo move.');
     }
     final next = positions[player][token] == -1 ? 0 : positions[player][token] + dice;
@@ -85,7 +108,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   List<List<int>> _positions = [];
 
   bool get _botTurn => _againstBot && _turn == 1;
-  List<int> get _legal => _dice == null ? const [] : LudoRules.legalTokens(_positions[_turn], _dice!);
+  List<int> get _legal => _dice == null ? const [] : LudoRules.legalTokensInGame(_positions, _turn, _dice!);
 
   void _start({required int players, required bool bot}) {
     setState(() {
@@ -114,7 +137,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     } else {
       _sixStreak = 0;
     }
-    final options = LudoRules.legalTokens(_positions[_turn], value);
+    final options = LudoRules.legalTokensInGame(_positions, _turn, value);
     if (options.isEmpty && value == 6) {
       setState(() { _dice = null; _message = '۶ آمد؛ مهره‌ای برای حرکت نداری، دوباره تاس بینداز.'; });
       _scheduleBot();
