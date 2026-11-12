@@ -268,7 +268,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
         IconButton(tooltip:'شروع دوباره',onPressed:()=>setState(reset),icon:const Icon(Icons.refresh_rounded)),
       ]),
       body:FunZoneBackdrop(child:SafeArea(child:Column(children:[
-        Padding(padding:const EdgeInsets.fromLTRB(12,8,12,10),child:Card(elevation:2,child:Padding(padding:const EdgeInsets.all(13),child:Column(children:[
+        Padding(padding:const EdgeInsets.fromLTRB(12,8,12,10),child:Card(elevation:3,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(20),side:BorderSide(color:scheme.outlineVariant)),child:Padding(padding:const EdgeInsets.all(15),child:Column(children:[
           Text(thinking?'ربات در حال فکر کردن است…':status,textAlign:TextAlign.center,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)),
           const SizedBox(height:4),
           Text(mode==_ChessMode.bot?'آفلاین با ربات · سطح '+['','آسان','متوسط','سخت'][level]:'آفلاین دونفره · یک دستگاه',style:TextStyle(color:scheme.onSurfaceVariant,fontSize:12)),
@@ -278,7 +278,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
           ],
         ])))),
         Expanded(child:Center(child:AspectRatio(aspectRatio:1,child:Padding(padding:const EdgeInsets.all(8),child:DecoratedBox(
-          decoration:BoxDecoration(borderRadius:BorderRadius.circular(16),boxShadow:[
+          decoration:BoxDecoration(borderRadius:BorderRadius.circular(20),border:Border.all(color:scheme.primary.withValues(alpha:.42),width:1.4),boxShadow:[
             BoxShadow(color:Colors.black.withValues(alpha:0.18),blurRadius:18,offset:const Offset(0,7)),
           ]),
           child:ClipRRect(borderRadius:BorderRadius.circular(16),child:GridView.builder(
