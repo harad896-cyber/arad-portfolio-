@@ -395,7 +395,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withValues(alpha: active ? .30 : .13), color.withValues(alpha: .055)],
+          colors: [
+            Color.lerp(LudoCustomization.bannerPalettes[LudoCustomization.current.value.banner][0], color, .34)!.withValues(alpha: active ? .88 : .58),
+            Color.lerp(LudoCustomization.bannerPalettes[LudoCustomization.current.value.banner][1], color, .18)!.withValues(alpha: active ? .62 : .34),
+          ],
           begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: color.withValues(alpha: active ? 1 : .35), width: active ? 2 : 1),
@@ -534,12 +537,12 @@ class _LudoBoardPainter extends CustomPainter {
     final outer = RRect.fromRectAndRadius(boardRect.deflate(unit * .12), Radius.circular(unit * .72));
     canvas.drawRRect(outer.shift(Offset(0, unit * .13)), Paint()
       ..color = const Color(0x99000000)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13));
-    final boardColors = LudoCustomization.boardPalettes[styleIndex.clamp(0, LudoCustomization.boardPalettes.length - 1)];
+    final boardColors = LudoCustomization.boardPalettes[styleIndex.clamp(0, LudoCustomization.boardPalettes.length - 1).toInt()];
     canvas.drawRRect(outer, Paint()..shader = LinearGradient(
       begin: Alignment.topLeft, end: Alignment.bottomRight,
       colors: [Color.lerp(boardColors[0], boardColors[1], .28)!, boardColors[1], boardColors[0]],
     ).createShader(boardRect));
-    canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = LudoCustomization.frameColors[styleIndex.clamp(0, LudoCustomization.frameColors.length - 1)]);
+    canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = LudoCustomization.frameColors[styleIndex.clamp(0, LudoCustomization.frameColors.length - 1).toInt()]);
     final inner = RRect.fromRectAndRadius(boardRect.deflate(unit * .38), Radius.circular(unit * .48));
     canvas.drawRRect(inner, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .018..color = const Color(0x66F7DFA9));
 
