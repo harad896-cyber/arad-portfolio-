@@ -43,6 +43,18 @@ void main() {
       expect(result.captured, isFalse);
     });
 
+    test('a two-token blockade cannot be crossed', () {
+      final positions = [
+        [3, -1, -1, -1],
+        [44, 44, -1, -1],
+      ];
+      expect(LudoRules.legalTokensInGame(positions, 0, 2), isEmpty);
+      expect(
+        () => LudoRules.move(positions: positions, player: 0, token: 0, dice: 2),
+        throwsStateError,
+      );
+    });
+
     test('wins only after all four tokens reach home', () {
       final result = LudoRules.move(
         positions: [
