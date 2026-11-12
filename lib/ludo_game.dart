@@ -105,6 +105,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
   bool _againstBot = false, _started = false, _botBusy = false;
+  int _botGeneration = 0;
   int? _dice, _winner;
   String _message = 'بازی را آغاز کن.';
   List<List<int>> _positions = [];
@@ -118,7 +119,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _againstBot = bot;
       _positions = List.generate(players, (_) => List.filled(4, -1));
       _turn = 0; _dice = null; _winner = null; _sixStreak = 0;
-      _botBusy = false; _started = true;
+      _botBusy = false; _botGeneration++; _started = true;
       _message = 'نوبت ${_names[_turn]} است؛ تاس بینداز.';
     });
   }
@@ -191,8 +192,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
   void _scheduleBot() {
     if (!_botTurn || _winner != null || _botBusy || !mounted) return;
     _botBusy = true;
+    final generation = _botGeneration;
     Future<void>.delayed(const Duration(milliseconds: 650), () {
-      if (!mounted || !_botTurn || _winner != null) { _botBusy = false; return; }
+      if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) { _botBusy = false; return; }
       _botBusy = false;
       _roll(fromBot: true);
       if (!mounted || !_botTurn || _winner != null || _dice == null) return;
@@ -215,7 +217,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   void _reset() {
     setState(() {
       _started = false; _positions = []; _dice = null; _winner = null;
-      _turn = 0; _sixStreak = 0; _botBusy = false; _message = 'بازی را آغاز کن.';
+      _turn = 0; _sixStreak = 0; _botBusy = false; _botGeneration++; _message = 'بازی را آغاز کن.';
     });
   }
 
@@ -428,7 +430,7 @@ class _LudoBoardPainter extends CustomPainter {
         star.paint(canvas, p - Offset(star.width / 2, star.height / 2));
       }
     }
-    for (var player = 0; player < 4; player++) {
+    for (var player = 0; player < players; player++) {
       final angle = -math.pi / 2 + LudoRules.offsetFor(player, players) * 2 * math.pi / 52;
       for (var step = 1; step <= 6; step++) {
         final r = radius * (1 - step / 7);
