@@ -39,7 +39,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(game);
       await tester.pumpAndSettle();
-      if (title == 'چهار در یک خط') {
+      if (title == 'چهار در یک خط' || title == 'بازی دونفره') {
         await tester.tap(find.text('آفلاین دونفره'));
         await tester.pumpAndSettle();
       }
@@ -62,6 +62,54 @@ void main() {
       expect(cells, findsNWidgets(42));
       for (final column in [0, 0, 1, 1, 2, 2, 3]) {
         await tester.tap(cells.at(column));
+        await tester.pump();
+      }
+      expect(find.text('بازیکن X برنده شد!'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
+    testWidgets('Connect Four recognizes a vertical win', (tester) async {
+      await openGame(tester, 'چهار در یک خط');
+      final cells = find.descendant(
+        of: find.byType(GridView),
+        matching: find.byType(GestureDetector),
+      );
+      for (final column in [0, 1, 0, 1, 0, 1, 0]) {
+        await tester.tap(cells.at(column));
+        await tester.pump();
+      }
+      expect(find.text('بازیکن X برنده شد!'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
+    testWidgets('Connect Four rejects a move in a full column', (tester) async {
+      await openGame(tester, 'چهار در یک خط');
+      final cells = find.descendant(
+        of: find.byType(GridView),
+        matching: find.byType(GestureDetector),
+      );
+      for (var move = 0; move < 6; move++) {
+        await tester.tap(cells.at(0));
+        await tester.pump();
+      }
+      await tester.tap(cells.at(0));
+      await tester.pump();
+      expect(find.text('این ستون پُر است.'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
+    testWidgets('Tic Tac Toe detects a three-in-a-row win', (tester) async {
+      await openGame(tester, 'بازی دونفره');
+      final cells = find.descendant(
+        of: find.byType(GridView),
+        matching: find.byType(InkWell),
+      );
+      expect(cells, findsNWidgets(9));
+      for (final index in [0, 3, 1, 4, 2]) {
+        await tester.tap(cells.at(index));
         await tester.pump();
       }
       expect(find.text('بازیکن X برنده شد!'), findsOneWidget);
