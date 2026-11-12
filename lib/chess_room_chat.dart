@@ -249,7 +249,13 @@ class _ChessRoomChatPanelState extends State<ChessRoomChatPanel> {
             fileOptions: FileOptions(contentType: mime, upsert: false),
           );
       try {
-        await _send('voice', mediaPath: storagePath);
+        await _client.rpc('send_chess_room_message', params: {
+          'p_room_id': widget.roomId,
+          'p_kind': 'voice',
+          'p_body': null,
+          'p_media_path': storagePath,
+        });
+        await _loadMessages();
       } catch (_) {
         await _client.storage.from('chess-voice').remove([storagePath]);
         rethrow;
@@ -289,6 +295,9 @@ class _ChessRoomChatPanelState extends State<ChessRoomChatPanel> {
   }) async {
     final uid = _uid;
     if (uid == null) return;
+    final oldChat = _chatEnabled;
+    final oldQuick = _quickEnabled;
+    final oldVoice = _voiceEnabled;
     final nextChat = chat ?? _chatEnabled;
     final nextQuick = quick ?? _quickEnabled;
     final nextVoice = voice ?? _voiceEnabled;
@@ -309,9 +318,9 @@ class _ChessRoomChatPanelState extends State<ChessRoomChatPanel> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _chatEnabled = !nextChat;
-        _quickEnabled = !nextQuick;
-        _voiceEnabled = !nextVoice;
+        _chatEnabled = oldChat;
+        _quickEnabled = oldQuick;
+        _voiceEnabled = oldVoice;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ذخیرهٔ تنظیمات ناموفق بود: ${_friendlyError(e)}')),
@@ -600,6 +609,7 @@ class _ChessRoomChatPanelState extends State<ChessRoomChatPanel> {
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
+                      onChanged: (_) => setState(() {}),
                       onSubmitted: (_) => _send('text', body: _text.text.trim()),
                     ),
                   ),
