@@ -37,7 +37,7 @@ class _FunGamePageState extends State<FunGamePage> {
   @override void dispose(){roomSub?.cancel();super.dispose();}
 
   Future<void> choose(_PlayMode value) async {
-    if(value!=_PlayMode.online){
+    if(value!=_PlayMode.onlineHuman&&value!=_PlayMode.onlineBot){
       await leaveRoom();if(!mounted)return;
       setState((){mode=value;room=null;message=null;resetBoard();});return;
     }
