@@ -354,22 +354,34 @@ class _LudoGamePageState extends State<LudoGamePage> {
         builder: (context, look, _) {
           final backgroundIndex = look.background.clamp(0, LudoCustomization.backgroundPalettes.length - 1).toInt();
           final backgroundBytes = LudoCustomization.decodeImage(look.backgroundImageBase64);
-          return Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: LudoCustomization.backgroundPalettes[backgroundIndex],
+          // Keep the decorative layer separate from the interactive page.
+          // A stored/custom background must never replace or cover the game UI.
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: LudoCustomization.backgroundPalettes[backgroundIndex],
+                    ),
+                    image: backgroundBytes == null ? null : DecorationImage(
+                      image: MemoryImage(backgroundBytes),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withValues(alpha: .55),
+                        BlendMode.darken,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              image: backgroundBytes == null ? null : DecorationImage(
-                image: MemoryImage(backgroundBytes),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .55), BlendMode.darken),
+              Positioned.fill(
+                child: _started ? _gameBody() : _modePicker(),
               ),
-            ),
-            child: !_started ? _modePicker() : _gameBody(),
+            ],
           );
         },
       ),
