@@ -522,8 +522,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final count = _positions[player].where((value) => value == 57).length;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: player == 0
@@ -533,8 +534,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ]
               : [color.withValues(alpha: active ? .34 : .17), color.withValues(alpha: active ? .14 : .07)],
           begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: color.withValues(alpha: active ? 1 : .35), width: active ? 2 : 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: active ? 1 : .32), width: active ? 2.2 : 1),
         image: player == 0 && LudoCustomization.decodeImage(LudoCustomization.current.value.bannerImageBase64) != null
             ? DecorationImage(
                 image: MemoryImage(LudoCustomization.decodeImage(LudoCustomization.current.value.bannerImageBase64)!),
@@ -575,7 +576,17 @@ class _LudoGamePageState extends State<LudoGamePage> {
           const SizedBox(height: 3),
           Text(count.toString() + ' / 4 خانه', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           if (active && _botTurn) const Text('در حال بازی…', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-          if (canRoll) const Text('نوبت تو · تاس بزن', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+          if (active) ...[
+            const SizedBox(height: 5),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(color: color.withValues(alpha: .18), borderRadius: BorderRadius.circular(20)),
+              child: Text(_botTurn ? 'نوبت ربات' : canRoll ? 'نوبت تو · تاس بزن' : 'در حال بازی',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color))),
+          ],
+          const SizedBox(height: 5),
+          ClipRRect(borderRadius: BorderRadius.circular(8), child: LinearProgressIndicator(
+            minHeight: 4, value: count / 4, backgroundColor: color.withValues(alpha: .14),
+            valueColor: AlwaysStoppedAnimation<Color>(color))),
         ])),
         const SizedBox(width: 6),
         _LudoDieFace(value: _diceValues[player], color: color, active: active, enabled: canRoll),
@@ -607,7 +618,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final hitSize = diameter * 1.22;
     final color = _playerColor(player);
     return AnimatedPositioned(
-      duration: const Duration(milliseconds: 105), curve: Curves.easeInOutCubic,
+      duration: const Duration(milliseconds: 430), curve: Curves.easeInOutCubicEmphasized,
       left: point.dx - hitSize / 2, top: point.dy - hitSize / 2,
       width: hitSize, height: hitSize,
       child: Semantics(
@@ -618,7 +629,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           onTap: canMove ? () => _moveToken(token) : null,
           child: Center(child: AnimatedContainer(
             width: diameter, height: diameter,
-            duration: const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 260),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
