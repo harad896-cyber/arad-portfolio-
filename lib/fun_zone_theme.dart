@@ -1,8 +1,55 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum FunBackdrop { emerald, stadium, snow, aurora, sunset, midnight }
+
+class FunBackdropAccess {
+  final bool verified;
+  final int points;
+  final int level;
+
+  const FunBackdropAccess({required this.verified, required this.points, required this.level});
+
+  static const levelThresholds = <int>[0, 50, 120, 220, 350, 520];
+
+  static int levelFor(int points) {
+    var level = 1;
+    for (var i = 1; i < levelThresholds.length; i++) {
+      if (points >= levelThresholds[i]) level = i + 1;
+    }
+    return level;
+  }
+
+  static int requiredPoints(FunBackdrop backdrop) =>
+      levelThresholds[FunBackdrop.values.indexOf(backdrop)];
+
+  bool canUse(FunBackdrop backdrop) =>
+      verified || level >= FunBackdrop.values.indexOf(backdrop) + 1;
+
+  static Future<FunBackdropAccess> load() async {
+    final client = Supabase.instance.client;
+    final uid = client.auth.currentUser?.id;
+    if (uid == null) return const FunBackdropAccess(verified: false, points: 0, level: 1);
+
+    var verified = false;
+    var points = 0;
+    try {
+      final profile = await client.from('profiles').select('is_verified').eq('id', uid).maybeSingle();
+      verified = profile?['is_verified'] == true;
+    } catch (_) {
+      // A failed badge lookup must never grant verified-only access.
+    }
+    try {
+      final stats = await client.from('fun_game_stats').select('points').eq('user_id', uid).maybeSingle();
+      points = (stats?['points'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      // Until the score migration is deployed, non-verified users stay at level 1.
+    }
+    return FunBackdropAccess(verified: verified, points: points, level: levelFor(points));
+  }
+}
 
 class FunZoneLook {
   FunZoneLook._();
@@ -209,44 +256,73 @@ class FunZoneThemeButton extends StatelessWidget {
         backgroundColor: const Color(0xFF101C27),
         showDragHandle: true,
         builder: (sheetContext) => SafeArea(
-          child: ValueListenableBuilder<FunBackdrop>(
-            valueListenable: FunZoneLook.current,
-            builder: (context, selected, _) => Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 22),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'ظاهر بخش سرگرمی',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final look in FunBackdrop.values)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(13),
-                          gradient: LinearGradient(colors: FunZoneLook.colors(look)),
-                        ),
+          child: FutureBuilder<FunBackdropAccess>(
+            future: FunBackdropAccess.load(),
+            builder: (context, accessSnapshot) {
+              if (!accessSnapshot.hasData) {
+                return const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator()));
+              }
+              final access = accessSnapshot.data!;
+              return ValueListenableBuilder<FunBackdrop>(
+                valueListenable: FunZoneLook.current,
+                builder: (context, selected, _) => Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 22),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('ظاهر بخش سرگرمی', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 5),
+                      Text(
+                        access.verified ? 'تیک آبی فعال است؛ همهٔ پس‌زمینه‌ها برای شما باز است.' : 'سطح ${access.level} · ${access.points} امتیاز',
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
-                      title: Text(FunZoneLook.labels[look]!, style: const TextStyle(color: Colors.white)),
-                      trailing: selected == look
-                          ? const Icon(Icons.check_circle, color: Color(0xFF6CE0B3))
-                          : const Icon(Icons.circle_outlined, color: Colors.white54),
-                      onTap: () async {
-                        await FunZoneLook.select(look);
-                        if (sheetContext.mounted) Navigator.pop(sheetContext);
-                      },
-                    ),
-                ],
-              ),
-            ),
+                      if (!access.verified) ...[
+                        const SizedBox(height: 5),
+                        const Text('با جمع‌کردن امتیاز بازی‌ها، پس‌زمینه‌ها یکی‌یکی باز می‌شوند.',
+                          style: TextStyle(color: Colors.white60, fontSize: 11)),
+                      ],
+                      const SizedBox(height: 12),
+                      for (final look in FunBackdrop.values)
+                        Builder(builder: (context) {
+                          final unlocked = access.canUse(look);
+                          final required = FunBackdropAccess.requiredPoints(look);
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            enabled: unlocked,
+                            leading: Opacity(
+                              opacity: unlocked ? 1 : .42,
+                              child: Container(width: 42, height: 42,
+                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(13),
+                                  gradient: LinearGradient(colors: FunZoneLook.colors(look))),
+                              ),
+                            ),
+                            title: Text(FunZoneLook.labels[look]!,
+                              style: TextStyle(color: unlocked ? Colors.white : Colors.white54, fontWeight: FontWeight.w700)),
+                            subtitle: unlocked ? null : Text(
+                              'قفل · سطح ${FunBackdrop.values.indexOf(look) + 1}  •  ${required} امتیاز',
+                              style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                            trailing: selected == look && unlocked
+                                ? const Icon(Icons.check_circle, color: Color(0xFF6CE0B3))
+                                : unlocked
+                                    ? const Icon(Icons.circle_outlined, color: Colors.white54)
+                                    : const Icon(Icons.lock_rounded, color: Colors.white38),
+                            onTap: !unlocked
+                                ? () => ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('برای بازشدن این پس‌زمینه به ${required} امتیاز نیاز داری.')))
+                                : () async {
+                                    await FunZoneLook.select(look);
+                                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                                  },
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
-        ),
+        )
       ),
       backgroundColor: const Color(0xFFB9F4D8),
       foregroundColor: const Color(0xFF073D32),
