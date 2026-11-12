@@ -705,7 +705,7 @@ class _LudoBoardPainter extends CustomPainter {
           style: TextStyle(color: Colors.white.withValues(alpha: activeBase ? .94 : .42), fontSize: unit * .30, fontWeight: FontWeight.w900)),
         textDirection: TextDirection.rtl,
       )..layout();
-      label.paint(canvas, Offset(rect.center.dx - label.width / 2, player < 2 ? rect.bottom - unit * .52 : rect.top + unit * .18));
+      label.paint(canvas, Offset(rect.center.dx - label.width / 2, baseSlot < 2 ? rect.bottom - unit * .52 : rect.top + unit * .18));
     }
 
     final trackPath = Path();
