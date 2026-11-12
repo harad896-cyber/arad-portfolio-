@@ -6,6 +6,9 @@ on:
   push:
     branches: [feature/gapresan-fun-zone]
 
+permissions:
+  contents: write
+
 jobs:
   analyze-test-build:
     runs-on: ubuntu-latest
@@ -37,14 +40,39 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 7
-      - run: flutter build apk --release --split-per-abi
-      - name: Upload release APKs
-        uses: actions/upload-artifact@v4
+
+      # Build one universal APK: users install this file directly; no ZIP extraction or ABI choice.
+      - name: Build universal release APK
+        run: flutter build apk --release
+      - name: Verify APK archive and checksum
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          unzip -t "$APK"
+          sha256sum "$APK" | tee "$APK.sha256"
+          file "$APK"
+
+      # Publish a real GitHub Release only for pushes to the dedicated Project 2 test branch.
+      # Pull-request validation never publishes or modifies a release.
+      - name: Publish direct-install APK to GitHub Releases
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        uses: softprops/action-gh-release@v3
         with:
-          name: gapresan-release-apks
-          path: build/app/outputs/flutter-apk/app-*-release.apk
-          if-no-files-found: error
-          retention-days: 14
+          tag_name: gapresan-test-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: GapResan Android Test ${{ github.run_number }}
+          body: |
+            Project 2 / GapResan test build.
+            Install the attached app-release.apk directly on Android. Do not extract it.
+            Built from commit ${{ github.sha }} after Flutter analyze and tests.
+            This is a prerelease for testing, not a production release.
+          prerelease: true
+          make_latest: false
+          fail_on_unmatched_files: true
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha256
+
       # Build the Project 2 Flutter web app as a separate preview artifact.
       - run: flutter build web --release --base-href /
       - name: Upload web preview
