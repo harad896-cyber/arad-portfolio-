@@ -47,11 +47,11 @@ class _FunGamePageState extends State<FunGamePage> {
       final data=await client.rpc(value==_PlayMode.onlineBot?'start_fun_game_bot':'join_fun_game_queue',params:{'p_game_type':widget.gameType}).timeout(const Duration(seconds:12));
       final row=Map<String,dynamic>.from(data as Map);
       await roomSub?.cancel();if(!mounted)return;
-      setState(()=>{mode=value,room=row,busy=false});
+      setState(() { mode = value; room = row; busy = false; });
       roomSub=client.from('fun_game_rooms').stream(primaryKey:['id']).eq('id',row['id'].toString()).listen(
         (rows){if(mounted&&rows.isNotEmpty)setState(()=>room=Map<String,dynamic>.from(rows.first));},
         onError:(_){if(mounted)setState(()=>message='اتصال بازی قطع شد؛ اینترنت را بررسی کن.');});
-    }catch(_){if(mounted)setState(()=>{busy=false,message='حریف پیدا نشد یا اتصال برقرار نیست. دوباره تلاش کن.'});}
+    }catch(_){if(mounted)setState(() { busy = false; message = 'حریف پیدا نشد یا اتصال برقرار نیست. دوباره تلاش کن.'; });}
   }
   Future<void> leaveRoom() async{
     final old=room;await roomSub?.cancel();roomSub=null;
@@ -73,7 +73,7 @@ class _FunGamePageState extends State<FunGamePage> {
       setState(()=>busy=true);
       try{
         final data=await client.rpc('submit_fun_game_move',params:{'p_room_id':room!['id'],'p_expected_version':version,'p_move':connectFour?index%7:index}).timeout(const Duration(seconds:10));
-        if(mounted)setState(()=>{room=Map<String,dynamic>.from(data as Map),busy=false});
+        if(mounted)setState(() { room = Map<String,dynamic>.from(data as Map); busy = false; });
         if(mounted&&botRoom&&roomStatus=='active')await botTurnOnline();
       }catch(e){if(mounted)setState(()=>busy=false);final v=e.toString().toLowerCase();snack(v.contains('not_your_turn')?'هنوز نوبت تو نیست.':v.contains('stale_game_version')?'حرکت حریف رسید؛ صفحه به‌روز شد.':'حرکت ثبت نشد؛ دوباره تلاش کن.');}return;
     }
@@ -107,9 +107,9 @@ class _FunGamePageState extends State<FunGamePage> {
       final data=await client.rpc('submit_fun_game_move',params:{
         'p_room_id':room!['id'],'p_expected_version':version,'p_move':connectFour?move:move,
       }).timeout(const Duration(seconds:10));
-      if(mounted)setState(()=>{room=Map<String,dynamic>.from(data as Map),busy=false,thinking=false});
+      if(mounted)setState(() { room = Map<String,dynamic>.from(data as Map); busy = false; thinking = false; });
     }catch(_){
-      if(mounted)setState(()=>{busy=false,thinking=false});
+      if(mounted)setState(() { busy = false; thinking = false; });
       snack('حرکت ربات ثبت نشد؛ اتصال را بررسی کن.');
     }
   }
@@ -127,7 +127,7 @@ class _FunGamePageState extends State<FunGamePage> {
   }
   int? winningMove(String m){for(var i=0;i<9;i++){if(board[i]!='.')continue;final b=List<String>.from(board)..[i]=m;if(won(b,m))return i;}return null;}
   int minimax(List<String>b,bool bot,int depth){if(won(b,'O'))return 10-depth;if(won(b,'X'))return depth-10;if(b.every((v)=>v!='.'))return 0;var best=bot?-100:100;for(var i=0;i<9;i++){if(b[i]!='.')continue;final n=List<String>.from(b)..[i]=bot?'O':'X';final s=minimax(n,!bot,depth+1);best=bot?math.max(best,s):math.min(best,s);}return best;}
-  Future<void> newRound()async{if(online){await leaveRoom();if(mounted)setState(()=>{room=null,mode=null});return;}setState(resetBoard);}
+  Future<void> newRound()async{if(online){await leaveRoom();if(mounted)setState(() { room = null; mode = null; });return;}setState(resetBoard);}
   void snack(String t){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t)));}
 
   @override Widget build(BuildContext context){
@@ -170,7 +170,7 @@ class _FunGamePageState extends State<FunGamePage> {
   Widget waiting()=>Scaffold(appBar:AppBar(title:Text(widget.title),leading:IconButton(onPressed:newRound,icon:const Icon(Icons.arrow_back))),body:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[
     const CircularProgressIndicator(),const SizedBox(height:18),const Text('در حال پیدا کردن حریف آنلاین…',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),
     const SizedBox(height:8),const Text('با ورود بازیکن دیگر، بازی خودکار آغاز می‌شود.',textAlign:TextAlign.center),const SizedBox(height:20),
-    OutlinedButton.icon(onPressed:()async{await leaveRoom();if(mounted)setState(()=>{room=null,mode=_PlayMode.bot,resetBoard()});},icon:const Icon(Icons.smart_toy),label:const Text('منتظر نمان؛ با ربات بازی کن')),
+    OutlinedButton.icon(onPressed:()async{await leaveRoom();if(mounted)setState(() { room = null; mode = _PlayMode.bot; resetBoard(); });},icon:const Icon(Icons.smart_toy),label:const Text('منتظر نمان؛ با ربات بازی کن')),
     TextButton(onPressed:newRound,child:const Text('لغو جستجو')),
   ]))));
   Widget ticBoard(List<String>b,bool done,ColorScheme scheme)=>AspectRatio(aspectRatio:1,child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:9,
