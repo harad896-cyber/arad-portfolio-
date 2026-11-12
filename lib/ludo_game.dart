@@ -456,7 +456,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           child: SizedBox(
             height: 62,
             child: FilledButton.icon(
-              onPressed: _turn == 0 && _dice == null && !_moving && !_botBusy && !_botTurn
+              onPressed: _dice == null && !_moving && !_botBusy && !_botTurn && _winner == null
                   ? _roll : null,
               icon: const Icon(Icons.casino_rounded, size: 27),
               label: Text(_dice == null ? 'تاس بینداز' : 'عدد $_dice · مهره را انتخاب کن',
