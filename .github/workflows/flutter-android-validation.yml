@@ -1,4 +1,4 @@
-name: Flutter Android validation
+name: Flutter Android and Web validation
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
     branches: [feature/gapresan-fun-zone]
 
 jobs:
-  analyze-and-test:
+  analyze-test-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,8 +19,7 @@ jobs:
         with:
           channel: stable
       - run: flutter --version
-      # This repository currently contains Flutter sources but no committed Android
-      # runner. Generate the standard Android host project before building the APK.
+      # Generate the Android host only when this Flutter project does not contain it.
       - name: Generate Android platform files when missing
         run: |
           if [ ! -f android/app/build.gradle ] && [ ! -f android/app/build.gradle.kts ]; then
@@ -38,12 +37,20 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 7
-      # Produce smaller per-architecture release APKs for easier phone installation.
       - run: flutter build apk --release --split-per-abi
       - name: Upload release APKs
         uses: actions/upload-artifact@v4
         with:
           name: gapresan-release-apks
           path: build/app/outputs/flutter-apk/app-*-release.apk
+          if-no-files-found: error
+          retention-days: 14
+      # Build the Project 2 Flutter web app as a separate preview artifact.
+      - run: flutter build web --release --base-href /
+      - name: Upload web preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-web-preview
+          path: build/web/
           if-no-files-found: error
           retention-days: 14
