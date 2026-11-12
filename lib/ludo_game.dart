@@ -485,8 +485,9 @@ class _LudoBoardPainter extends CustomPainter {
   final List<List<int>> positions;
   final int? dice;
   final List<int> legalTokens;
+  final FunBackdrop look;
   const _LudoBoardPainter({required this.colors, required this.players, required this.positions,
-    required this.turn, required this.dice, required this.legalTokens});
+    required this.turn, required this.dice, required this.legalTokens, required this.look});
 
   Color _playerColor(int player) => colors[players == 2 && player == 1 ? 2 : player];
 
