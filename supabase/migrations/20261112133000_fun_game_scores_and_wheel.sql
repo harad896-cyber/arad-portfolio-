@@ -71,10 +71,14 @@ begin
     values (new.player_one_id), (new.player_two_id)
     on conflict (user_id) do nothing;
 
+  -- Lock both player rows in a stable order to avoid deadlocks when two matches finish together.
+  perform user_id from public.fun_game_stats
+    where user_id in (new.player_one_id, new.player_two_id)
+    order by user_id for update;
   select rating into v_delta_one
-    from public.fun_game_stats where user_id = new.player_one_id for update;
+    from public.fun_game_stats where user_id = new.player_one_id;
   select rating into v_delta_two
-    from public.fun_game_stats where user_id = new.player_two_id for update;
+    from public.fun_game_stats where user_id = new.player_two_id;
 
   v_score_one := case
     when new.winner_id = new.player_one_id then 1
