@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'fun_game_engine.dart';
+import 'chess_game.dart';
 
 /// GapResan entertainment hub. Board games use secured Supabase rooms for
 /// online matches; quizzes and other activities remain local-first.
@@ -18,6 +19,7 @@ class FunZonePage extends StatelessWidget {
     _FunItem('گردونه شانس', 'یک چرخش و یک جایزه مجازی', Icons.casino_rounded, _FunKind.wheel, Color(0xFFE6A23C)),
     _FunItem('استیکر و میم‌ساز', 'ساخت متن و استیکر ساده', Icons.emoji_emotions_rounded, _FunKind.stickers, Color(0xFFE76F9A)),
     _FunItem('چهار در یک خط', 'آفلاین و رقابت آنلاین', Icons.view_week_rounded, _FunKind.connectFour, Color(0xFF6574CD)),
+    _FunItem('شطرنج', 'قوانین کامل، ربات و دونفره آفلاین', Icons.grid_4x4_rounded, _FunKind.chess, Color(0xFF795548)),
     _FunItem('بازی حافظه', 'جفت شکل‌های پنهان را پیدا کن', Icons.grid_view_rounded, _FunKind.memory, Color(0xFF9B6B43)),
     _FunItem('بازی مار', 'رکورد خودت را بشکن', Icons.videogame_asset_rounded, _FunKind.snake, Color(0xFF42A66C)),
     _FunItem('آزمون شخصیت و فال', 'فقط برای سرگرمی', Icons.auto_awesome_rounded, _FunKind.personality, Color(0xFF9B68C8)),
@@ -84,6 +86,7 @@ class FunZonePage extends StatelessWidget {
       _FunKind.wheel => const _WheelPage(),
       _FunKind.stickers => const _StickerMemePage(),
       _FunKind.connectFour => const FunGamePage(gameType: 'connect_four', title: 'چهار در یک خط'),
+      _FunKind.chess => const ChessGamePage(),
       _FunKind.memory => const _MemoryGamePage(),
       _FunKind.snake => const _SnakePage(),
       _FunKind.personality => const _PersonalityPage(),
@@ -92,7 +95,7 @@ class FunZonePage extends StatelessWidget {
   }
 }
 
-enum _FunKind { duel, quiz, wheel, stickers, connectFour, memory, snake, personality }
+enum _FunKind { duel, quiz, wheel, stickers, connectFour, chess, memory, snake, personality }
 
 class _FunItem {
   final String title, subtitle;
