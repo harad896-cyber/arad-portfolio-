@@ -137,9 +137,12 @@ class _FunGameRoomChatPanelState extends State<FunGameRoomChatPanel> {
   Widget build(BuildContext context) {
     final uid = _uid;
     return Card(
-      margin: const EdgeInsets.only(top: 10),
+      margin: const EdgeInsets.only(top: 12),
+      elevation: 2,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22), side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .55))),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(13),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           const Row(children: [
             Icon(Icons.forum_rounded, size: 18),
@@ -150,7 +153,7 @@ class _FunGameRoomChatPanelState extends State<FunGameRoomChatPanel> {
           ]),
           const SizedBox(height: 8),
           SizedBox(
-            height: 170,
+            height: 210,
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _db.from('fun_game_room_messages').stream(primaryKey: ['id'])
                 .eq('room_id', widget.roomId).order('created_at', ascending: true).limit(80),
@@ -170,10 +173,13 @@ class _FunGameRoomChatPanelState extends State<FunGameRoomChatPanel> {
                       child: Container(
                         constraints: const BoxConstraints(maxWidth: 270),
                         margin: const EdgeInsets.symmetric(vertical: 3),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                         decoration: BoxDecoration(
                           color: mine ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(13),
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(17), topRight: const Radius.circular(17),
+                            bottomLeft: Radius.circular(mine ? 17 : 5), bottomRight: Radius.circular(mine ? 5 : 17)),
+                          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .28)),
                         ),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                           if (voice)
@@ -199,7 +205,12 @@ class _FunGameRoomChatPanelState extends State<FunGameRoomChatPanel> {
               controller: _text, minLines: 1, maxLines: 2,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendText(),
-              decoration: const InputDecoration(hintText: 'پیامت را بنویس…', isDense: true, border: OutlineInputBorder()),
+              decoration: InputDecoration(hintText: 'پیامت را بنویس…', isDense: true, filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .55),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5))),
             )),
             const SizedBox(width: 6),
             IconButton.filled(
