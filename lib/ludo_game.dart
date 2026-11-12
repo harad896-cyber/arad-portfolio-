@@ -348,18 +348,32 @@ class _LudoGamePageState extends State<LudoGamePage> {
         IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded)),
       ],
     ),
-    body: SafeArea(child: FunZoneBackdrop(child: Container(
-      decoration: BoxDecoration(gradient: LinearGradient(
-        begin: Alignment.topLeft, end: Alignment.bottomRight,
-        colors: LudoCustomization.backgroundPalettes[LudoCustomization.current.value.background.clamp(0, LudoCustomization.backgroundPalettes.length - 1)],
+    body: SafeArea(
+      child: ValueListenableBuilder<LudoLook>(
+        valueListenable: LudoCustomization.current,
+        builder: (context, look, _) {
+          final backgroundIndex = look.background.clamp(0, LudoCustomization.backgroundPalettes.length - 1).toInt();
+          final backgroundBytes = LudoCustomization.decodeImage(look.backgroundImageBase64);
+          return Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: LudoCustomization.backgroundPalettes[backgroundIndex],
+              ),
+              image: backgroundBytes == null ? null : DecorationImage(
+                image: MemoryImage(backgroundBytes),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .55), BlendMode.darken),
+              ),
+            ),
+            child: !_started ? _modePicker() : _gameBody(),
+          );
+        },
       ),
-      image: LudoCustomization.decodeImage(LudoCustomization.current.value.backgroundImageBase64) == null ? null : DecorationImage(
-        image: MemoryImage(LudoCustomization.decodeImage(LudoCustomization.current.value.backgroundImageBase64)!),
-        fit: BoxFit.cover,
-        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .55), BlendMode.darken),
-      )),
-      child: !_started ? _modePicker() : _gameBody(),
-    ))),
+    ),
   );
 
   Widget _modePicker() => ListView(
