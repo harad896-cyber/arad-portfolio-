@@ -6,19 +6,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LudoLook {
-  final int board, avatar, frame, banner, background, charm;
+  final int board, avatar, frame, banner, background, charm, diceSkin;
   final String? bannerImageBase64, backgroundImageBase64;
   const LudoLook({
     this.board = 0, this.avatar = 0, this.frame = 0, this.banner = 0,
-    this.background = 0, this.charm = 0,
+    this.background = 0, this.charm = 0, this.diceSkin = 0,
     this.bannerImageBase64, this.backgroundImageBase64,
   });
   LudoLook copyWith({
-    int? board, int? avatar, int? frame, int? banner, int? background, int? charm,
+    int? board, int? avatar, int? frame, int? banner, int? background, int? charm, int? diceSkin,
     String? bannerImageBase64, String? backgroundImageBase64,
   }) => LudoLook(
     board: board ?? this.board, avatar: avatar ?? this.avatar, frame: frame ?? this.frame,
-    banner: banner ?? this.banner, background: background ?? this.background, charm: charm ?? this.charm,
+    banner: banner ?? this.banner, background: background ?? this.background, charm: charm ?? this.charm, diceSkin: diceSkin ?? this.diceSkin,
     bannerImageBase64: bannerImageBase64 ?? this.bannerImageBase64,
     backgroundImageBase64: backgroundImageBase64 ?? this.backgroundImageBase64,
   );
@@ -38,6 +38,12 @@ class LudoCustomization {
   }
   static String _accountKey(String key) => 'ludo_${_accountScope}_$key';
   static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑', '🦅', '🐺'];
+  static const diceSkins = ['یاقوتی', 'زمردی', 'یخی', 'طلایی', 'بنفش', 'نئون'];
+  static const dicePalettes = <List<Color>>[
+    [Color(0xFF7F1D2D), Color(0xFFE34D55)], [Color(0xFF07583D), Color(0xFF35C98A)],
+    [Color(0xFF17628B), Color(0xFFB8F0FF)], [Color(0xFF8A5A13), Color(0xFFFFD477)],
+    [Color(0xFF492477), Color(0xFFB88CFF)], [Color(0xFF075B73), Color(0xFF49F0FF)],
+  ];
   static const frames = ['طلایی', 'یخی', 'زمردی', 'یاقوتی', 'نئونی', 'نقره‌ای', 'آتشین', 'کریستالی'];
   static const charms = ['⭐', '⚽', '💎', '🔥', '👑', '🧿', '🍀', '🎯', '⚡', '🏆'];
   static const banners = ['سلطنتی', 'ورزشگاه', 'شفق', 'اقیانوس', 'غروب', 'کهکشانی', 'زمردی', 'یخی'];
@@ -96,6 +102,7 @@ class LudoCustomization {
         banner: (p.getInt(_accountKey('profile_banner')) ?? 0).clamp(0, banners.length - 1).toInt(),
         background: (p.getInt(_accountKey('profile_background')) ?? 0).clamp(0, backgrounds.length - 1).toInt(),
         charm: (p.getInt(_accountKey('avatar_charm')) ?? 0).clamp(0, charms.length - 1).toInt(),
+        diceSkin: (p.getInt(_accountKey('dice_skin')) ?? 0).clamp(0, diceSkins.length - 1).toInt(),
         bannerImageBase64: p.getString(_accountKey('banner_image')),
         backgroundImageBase64: p.getString(_accountKey('background_image')),
       );
@@ -172,6 +179,7 @@ class LudoCustomization {
       'frame' => old.copyWith(frame: value),
       'banner' => old.copyWith(banner: value),
       'background' => old.copyWith(background: value),
+      'diceSkin' => old.copyWith(diceSkin: value),
       _ => old.copyWith(charm: value),
     };
     current.value = next;
