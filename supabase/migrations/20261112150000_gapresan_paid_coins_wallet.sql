@@ -1,8 +1,8 @@
 -- GapResan paid-only virtual coins: server-owned wallet and immutable transaction ledger.
 -- Payment credits are restricted to a trusted service_role backend after provider verification.
 create schema if not exists fun_internal;
-revoke all on schema fun_internal from public, anon, authenticated;
-grant usage on schema fun_internal to service_role;
+-- Preserve authenticated schema usage needed by the already-installed game score/wheel RPCs.
+grant usage on schema fun_internal to authenticated, service_role;
 
 create table if not exists public.gap_coin_wallets (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -49,7 +49,7 @@ create unique index if not exists gap_coin_transfer_idempotency_idx
   on public.gap_coin_transactions(from_user_id, request_key)
   where transaction_type = 'transfer';
 create unique index if not exists gap_coin_payment_reference_idx
-  on public.gap_coin_transactions(payment_provider, payment_reference)
+  on public.gap_coin_transactions(payment_provider, payment_reference, transaction_type)
   where transaction_type in ('purchase','refund');
 create index if not exists gap_coin_tx_sender_created_idx
   on public.gap_coin_transactions(from_user_id, created_at desc);
