@@ -55,7 +55,7 @@ class _FunGamePageState extends State<FunGamePage> {
   }
   Future<void> leaveRoom() async{
     final old=room;await roomSub?.cancel();roomSub=null;
-    if(old!=null&&old['status']=='waiting'){try{await client.rpc('cancel_fun_game_queue',params:{'p_room_id':old['id']});}catch(_){}}
+    if(old!=null&&(old['status']=='waiting'||(old['is_bot_game']==true&&old['status']=='active'))){try{await client.rpc('cancel_fun_game_queue',params:{'p_room_id':old['id']});}catch(_){}}
   }
   bool won(List<String>b,String m){
     if(!connectFour){const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];return lines.any((l)=>l.every((i)=>b[i]==m));}
