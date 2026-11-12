@@ -495,7 +495,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (peers.length < 2) return point;
     final slot = peers.indexOf((player, token));
     final angle = -math.pi / 2 + (2 * math.pi * slot / peers.length);
-    final radius = size * (peers.length == 2 ? .033 : .05);
+    // Spread stacked pieces enough that each token has its own tappable area.
+    final radius = size * (peers.length == 2 ? .065 : .078);
     return point + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
   }
 
@@ -503,7 +504,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final point = _tokenDisplayPoint(player, token, size);
     final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn && !_moving;
     final diameter = size * .052;
-    final hitSize = diameter * 1.18;
+    final hitSize = diameter * 1.22;
     final color = _playerColor(player);
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 105), curve: Curves.easeInOutCubic,
@@ -659,12 +660,19 @@ class _LudoBoardPainter extends CustomPainter {
       canvas.drawLine(Offset(unit * .4, i * unit), Offset(size.width - unit * .4, i * unit), texture);
     }
 
-    for (var player = 0; player < 4; player++) {
-      final base = LudoBoardGeometry.baseCenters[player];
+    for (var baseSlot = 0; baseSlot < 4; baseSlot++) {
+      // In a two-player match, the players occupy opposite red/yellow bases.
+      // Keep the board bases, yard positions, and token coordinates in sync.
+      final activePlayer = players == 2
+          ? (baseSlot == 0 ? 0 : baseSlot == 2 ? 1 : -1)
+          : baseSlot;
+      final base = LudoBoardGeometry.baseCenters[baseSlot];
       final rect = Rect.fromLTWH((base.$2 - 2.45) * unit, (base.$1 - 2.45) * unit, unit * 4.9, unit * 4.9);
       final shape = RRect.fromRectAndRadius(rect, Radius.circular(unit * .55));
-      final activeBase = player < players || (players == 2 && player == 2);
-      final color = activeBase ? colors[player] : Color.lerp(colors[player], const Color(0xFF102433), .62)!;
+      final activeBase = activePlayer >= 0;
+      final color = activeBase
+          ? _playerColor(activePlayer)
+          : Color.lerp(colors[baseSlot], const Color(0xFF102433), .62)!;
       canvas.drawRRect(shape.shift(Offset(0, unit * .10)), Paint()
         ..color = Colors.black.withValues(alpha: .30)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
       canvas.drawRRect(shape, Paint()..shader = LinearGradient(
@@ -681,7 +689,7 @@ class _LudoBoardPainter extends CustomPainter {
           ..color = Colors.white.withValues(alpha: .65));
       }
       final label = TextPainter(
-        text: TextSpan(text: ['قرمز','آبی','زرد','سبز'][player],
+        text: TextSpan(text: ['سرخ','آبی','زرد','سبز'][baseSlot],
           style: TextStyle(color: Colors.white.withValues(alpha: activeBase ? .94 : .42), fontSize: unit * .30, fontWeight: FontWeight.w900)),
         textDirection: TextDirection.rtl,
       )..layout();
