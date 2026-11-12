@@ -160,7 +160,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         if (!mounted || _dice != value || _winner != null) return;
         setState(() {
           _dice = null; _turn = (_turn + 1) % _playerCount;
-          _message = 'نوبت ${_names[_turn]} است؛ تاس بینداز.';
+          _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
         });
         _scheduleBot();
       });
@@ -178,7 +178,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     setState(() {
       _positions = result.positions; _dice = null;
       if (result.won) {
-        _winner = _turn; _message = 'بازیکن ${_names[_turn]} برنده شد!';
+        _winner = _turn; _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
       } else if (rolledSix || result.captured || result.finished) {
         _message = result.captured
             ? 'مهرهٔ حریف زده شد؛ نوبت اضافه داری!'
@@ -186,7 +186,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
             : '۶ آوردی؛ دوباره تاس بینداز.';
       } else {
         _sixStreak = 0; _turn = (_turn + 1) % _playerCount;
-        _message = 'نوبت ${_names[_turn]} است؛ تاس بینداز.';
+        _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
       }
     });
     _scheduleBot();
