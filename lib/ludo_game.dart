@@ -408,7 +408,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               width: diameter * .22, height: diameter * .12,
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: .72), borderRadius: BorderRadius.circular(10)))),
             Center(child: Text((token + 1).toString(),
-              style: TextStyle(color: player == 2 && _playerCount != 2 ? const Color(0xFF33250A) : Colors.white,
+              style: TextStyle(color: _colorIndex(player) == 2 ? const Color(0xFF33250A) : Colors.white,
                 fontSize: diameter * .34, fontWeight: FontWeight.w900, shadows: const [Shadow(color: Colors.black45, blurRadius: 2)]))),
           ]),
         ),
@@ -423,7 +423,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       return Offset((7.5 + offset.dx) / 15 * size, (7.5 + offset.dy) / 15 * size);
     }
     if (progress >= 51) {
-      final cell = LudoBoardGeometry.homeLanes[player][progress - 51];
+      final cell = LudoBoardGeometry.homeLanes[_baseIndex(player)][progress - 51];
       return LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size);
     }
     if (progress >= 0) {
@@ -569,7 +569,7 @@ class _LudoBoardPainter extends CustomPainter {
     _drawLegalRoutes(canvas, size, unit);
 
     final center = Offset(size.width / 2, size.height / 2);
-    final vault = Rect.fromCenter(center: center, width: unit * 2.45, height: unit * 2.45);
+    final vault = Rect.fromCenter(center: center, width: unit * 1.30, height: unit * 1.30);
     final vaultShape = RRect.fromRectAndRadius(vault, Radius.circular(unit * .55));
     canvas.drawRRect(vaultShape.shift(Offset(0, unit * .08)), Paint()..color = Colors.black.withValues(alpha: .35));
     canvas.drawRRect(vaultShape, Paint()..shader = const LinearGradient(
@@ -578,7 +578,7 @@ class _LudoBoardPainter extends CustomPainter {
     ).createShader(vault));
     canvas.drawRRect(vaultShape, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .08..color = const Color(0xFFFFF2CC));
     final brand = TextPainter(
-      text: const TextSpan(text: 'GR', style: TextStyle(color: Color(0xFF302311), fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1)),
+      text: const TextSpan(text: 'GR', style: TextStyle(color: Color(0xFF302311), fontSize: unit * .62, fontWeight: FontWeight.w900, letterSpacing: 1)),
       textDirection: TextDirection.ltr,
     )..layout();
     brand.paint(canvas, center - Offset(brand.width / 2, brand.height / 2));
@@ -591,15 +591,18 @@ class _LudoBoardPainter extends CustomPainter {
       final progress = positions[turn][token];
       final points = <Offset>[];
       if (progress == -1) {
+        final base = LudoBoardGeometry.baseCenters[players == 2 && turn == 1 ? 2 : turn];
+        const offsets = [(-.72,-.72),(.72,-.72),(-.72,.72),(.72,.72)];
+        final offset = offsets[token];
+        points.add(Offset((base.$2 + .5 + offset.$1) / 15 * size.width, (base.$1 + .5 + offset.$2) / 15 * size.width));
         final start = LudoRules.trackIndex(turn, 0, playerCount: players)!;
         final cell = LudoBoardGeometry.trackCells[start];
         points.add(LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size.width));
       } else {
         points.add(_pointForProgress(turn, progress, size.width));
-      }
-      for (var step = 1; step <= dice!; step++) {
-        final next = progress == -1 ? 0 : progress + step;
-        points.add(_pointForProgress(turn, next, size.width));
+        for (var step = 1; step <= dice!; step++) {
+          points.add(_pointForProgress(turn, progress + step, size.width));
+        }
       }
       if (points.length < 2) continue;
       final path = Path()..moveTo(points.first.dx, points.first.dy);
@@ -619,7 +622,7 @@ class _LudoBoardPainter extends CustomPainter {
   Offset _pointForProgress(int player, int progress, double size) {
     if (progress == 57) return Offset(size * .5, size * .5);
     if (progress >= 51) {
-      final cell = LudoBoardGeometry.homeLanes[player][progress - 51];
+      final cell = LudoBoardGeometry.homeLanes[players == 2 && player == 1 ? 2 : player][progress - 51];
       return LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size);
     }
     final index = LudoRules.trackIndex(player, progress, playerCount: players)!;
@@ -663,7 +666,7 @@ class _LudoDieFace extends StatelessWidget {
           if (active) BoxShadow(color: color.withValues(alpha: .35), blurRadius: 9),
         ],
       ),
-      child: value == null
+      child: Opacity(opacity: enabled ? 1 : active ? .88 : .72, child: value == null
         ? Icon(Icons.casino_rounded, color: color, size: 25)
         : Stack(children: [
             for (final spot in spots)
@@ -673,7 +676,7 @@ class _LudoDieFace extends StatelessWidget {
                   decoration: const BoxDecoration(shape: BoxShape.circle,
                     gradient: LinearGradient(colors: [Color(0xFF45515A), Color(0xFF101820)]))),
               ),
-          ]),
+          ])),
     );
   }
 }
