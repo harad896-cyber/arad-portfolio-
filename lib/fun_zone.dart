@@ -10,6 +10,7 @@ import 'chess_game.dart';
 import 'fun_zone_theme.dart';
 import 'fun_game_leaderboard.dart';
 import 'gap_coin_wallet.dart';
+import 'ludo_game.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// GapResan entertainment hub. Board games use secured Supabase rooms for
@@ -90,6 +91,7 @@ class FunZonePage extends StatelessWidget {
   void _open(BuildContext context, _FunKind kind) {
     final Widget page = switch (kind) {
       _FunKind.duel => const FunGamePage(gameType: 'tic_tac_toe', title: 'بازی دوز'),
+      _FunKind.ludo => const LudoGamePage(),
       _FunKind.quiz => const _QuizPage(),
       _FunKind.wheel => const _WheelPage(),
       _FunKind.leaderboard => const FunGameLeaderboardPage(),
@@ -105,7 +107,7 @@ class FunZonePage extends StatelessWidget {
   }
 }
 
-enum _FunKind { duel, quiz, wheel, leaderboard, wallet, stickers, connectFour, chess, memory, snake, personality }
+enum _FunKind { duel, ludo, quiz, wheel, leaderboard, wallet, stickers, connectFour, chess, memory, snake, personality }
 
 class _FunItem {
   final String title, subtitle;
