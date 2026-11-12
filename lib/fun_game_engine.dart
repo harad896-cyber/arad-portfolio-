@@ -30,7 +30,7 @@ class _FunGamePageState extends State<FunGamePage> {
   String get playerOne=>room?['player_one_id']?.toString()??'';
   String get myMark=>uid==playerOne?'X':'O';
   int get version=>(room?['version'] as num?)?.toInt()??0;
-  bool get ended=>online?roomStatus=='finished':winner!=null||draw;
+  bool get ended=>online?(roomStatus=='finished'||roomStatus=='cancelled'):winner!=null||draw;
 
   @override void initState(){super.initState();resetBoard();}
   void resetBoard(){board=List.filled(connectFour?42:9,connectFour?'0':'.');turn='X';winner=null;draw=false;thinking=false;}
@@ -133,7 +133,7 @@ class _FunGamePageState extends State<FunGamePage> {
   @override Widget build(BuildContext context){
     if(mode==null)return picker();if(online&&roomStatus=='waiting')return waiting();
     final b=online?room!['board'].toString().split(''):board;final done=ended;final scheme=Theme.of(context).colorScheme;
-    final statusText=online?(done?(botRoom?(room?['winner_mark']=='O'?'ربات برنده شد.':room?['winner_mark']=='X'?'آفرین! تو برنده شدی.':'بازی مساوی شد.'):(winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.')):botRoom?(version.isEven?'نوبت توست':'نوبت ربات'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
+    final statusText=online?(roomStatus=='cancelled'?'بازی لغو شد؛ حریف از اتاق خارج شد.':done?(botRoom?(room?['winner_mark']=='O'?'ربات برنده شد.':room?['winner_mark']=='X'?'آفرین! تو برنده شدی.':'بازی مساوی شد.'):(winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.')):botRoom?(version.isEven?'نوبت توست':'نوبت ربات'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
       :winner!=null?(mode==_PlayMode.bot?(winner=='X'?'آفرین! تو برنده شدی.':'ربات برنده شد.'):'بازیکن $winner برنده شد!'):draw?'بازی مساوی شد.':thinking?'ربات فکر می‌کند…':mode==_PlayMode.bot?(turn=='X'?'نوبت توست':'نوبت ربات'):'نوبت بازیکن $turn';
     return Scaffold(appBar:AppBar(title:Text(widget.title),actions:[IconButton(onPressed:newRound,icon:const Icon(Icons.tune_rounded),tooltip:'تغییر حالت')]),
       body:SafeArea(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
