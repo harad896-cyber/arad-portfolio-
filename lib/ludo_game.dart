@@ -603,12 +603,15 @@ class _LudoBoardPainter extends CustomPainter {
     final outer = RRect.fromRectAndRadius(boardRect.deflate(unit * .12), Radius.circular(unit * .72));
     canvas.drawRRect(outer.shift(Offset(0, unit * .13)), Paint()
       ..color = const Color(0x99000000)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13));
-    final boardColors = LudoCustomization.boardPalettes[styleIndex.clamp(0, LudoCustomization.boardPalettes.length - 1).toInt()];
+    final safeStyle = styleIndex.clamp(0, LudoCustomization.boardPalettes.length - 1).toInt();
+    final boardColors = LudoCustomization.boardPalettes[safeStyle];
+    final boardAccent = LudoCustomization.frameColors[safeStyle];
     canvas.drawRRect(outer, Paint()..shader = LinearGradient(
       begin: Alignment.topLeft, end: Alignment.bottomRight,
       colors: [Color.lerp(boardColors[0], boardColors[1], .28)!, boardColors[1], boardColors[0]],
     ).createShader(boardRect));
-    canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = LudoCustomization.frameColors[styleIndex.clamp(0, LudoCustomization.frameColors.length - 1).toInt()]);
+    canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = boardAccent);
+    canvas.drawRRect(outer.deflate(unit * .16), Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .025..color = boardAccent.withValues(alpha: .35));
     final inner = RRect.fromRectAndRadius(boardRect.deflate(unit * .38), Radius.circular(unit * .48));
     canvas.drawRRect(inner, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .018..color = const Color(0x66F7DFA9));
 
@@ -700,8 +703,15 @@ class _LudoBoardPainter extends CustomPainter {
       final center = LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size.width);
       final rect = Rect.fromCenter(center: center, width: unit * .79, height: unit * .79);
       final owner = List.generate(players, (p) => LudoRules.offsetFor(p, players)).indexOf(index);
-      final color = owner >= 0 ? _playerColor(owner) :
-        LudoRules.safeSquares.contains(index) ? const Color(0xFFFFD477) : const Color(0xFFF3EAD7);
+      final color = owner >= 0
+          ? _playerColor(owner)
+          : LudoRules.safeSquares.contains(index)
+              ? boardAccent
+              : Color.lerp(
+                  boardColors[1],
+                  const Color(0xFFF3EAD7),
+                  safeStyle == 0 ? .68 : .30,
+                )!;
       final tile = RRect.fromRectAndRadius(rect, Radius.circular(unit * .17));
       canvas.drawRRect(tile.shift(Offset(0, unit * .055)), Paint()..color = Colors.black.withValues(alpha: .32));
       canvas.drawRRect(tile, Paint()..shader = LinearGradient(
@@ -712,7 +722,7 @@ class _LudoBoardPainter extends CustomPainter {
       if (LudoRules.safeSquares.contains(index)) {
         final star = TextPainter(
           text: TextSpan(text: owner >= 0 ? '✦' : '★',
-            style: TextStyle(color: const Color(0xFF57421D), fontSize: unit * .40, fontWeight: FontWeight.w900)),
+            style: TextStyle(color: safeStyle == 0 ? const Color(0xFF57421D) : const Color(0xFF17202A), fontSize: unit * .40, fontWeight: FontWeight.w900)),
           textDirection: TextDirection.ltr,
         )..layout();
         star.paint(canvas, center - Offset(star.width / 2, star.height / 2));
@@ -740,11 +750,11 @@ class _LudoBoardPainter extends CustomPainter {
     final vault = Rect.fromCenter(center: center, width: unit * 1.30, height: unit * 1.30);
     final vaultShape = RRect.fromRectAndRadius(vault, Radius.circular(unit * .55));
     canvas.drawRRect(vaultShape.shift(Offset(0, unit * .08)), Paint()..color = Colors.black.withValues(alpha: .35));
-    canvas.drawRRect(vaultShape, Paint()..shader = const LinearGradient(
+    canvas.drawRRect(vaultShape, Paint()..shader = LinearGradient(
       begin: Alignment.topLeft, end: Alignment.bottomRight,
-      colors: [Color(0xFFFFE7A3), Color(0xFFC89A45), Color(0xFF8C642B)],
+      colors: [Color.lerp(boardAccent, Colors.white, .55)!, boardAccent, Color.lerp(boardAccent, Colors.black, .42)!],
     ).createShader(vault));
-    canvas.drawRRect(vaultShape, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .08..color = const Color(0xFFFFF2CC));
+    canvas.drawRRect(vaultShape, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .08..color = Colors.white.withValues(alpha: .9));
     final brand = TextPainter(
       text: TextSpan(text: 'GR', style: TextStyle(color: const Color(0xFF302311), fontSize: unit * .62, fontWeight: FontWeight.w900, letterSpacing: 1)),
       textDirection: TextDirection.ltr,
