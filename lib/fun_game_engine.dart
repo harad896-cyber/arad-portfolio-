@@ -27,7 +27,7 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
   Map<String,dynamic>? room;
   StreamSubscription<List<Map<String,dynamic>>>? roomSub;
   Timer? _reconnectTimer;
-  bool _reconnecting=false;
+  bool _reconnecting=false, _pollingRoom=false;
   bool get connectFour=>widget.gameType=='connect_four';
   String get uid=>client.auth.currentUser?.id??'';
   bool get online=>mode==_PlayMode.onlineHuman||mode==_PlayMode.onlineBot;
