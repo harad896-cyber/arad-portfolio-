@@ -11,7 +11,10 @@ class FunGamePage extends StatefulWidget {
   @override State<FunGamePage> createState() => _FunGamePageState();
 }
 class _FunGamePageState extends State<FunGamePage> {
-  final client=Supabase.instance.client, random=math.Random();
+  // Keep local/offline games independent from Supabase initialization.
+  // Resolve the client only when an online action actually needs it.
+  SupabaseClient get client => Supabase.instance.client;
+  final random=math.Random();
   _PlayMode? mode;
   int difficulty=2,xWins=0,oWins=0;
   List<String> board=[];
