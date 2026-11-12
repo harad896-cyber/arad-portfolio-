@@ -41,9 +41,9 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
   bool get ended=>online?(roomStatus=='finished'||roomStatus=='cancelled'):winner!=null||draw;
 
   @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);resetBoard();}
-  @override void didChangeAppLifecycleState(AppLifecycleState state){if(state==AppLifecycleState.resumed&&online&&roomStatus=='active')_scheduleRoomReconnect();}
+  @override void didChangeAppLifecycleState(AppLifecycleState state){if(state==AppLifecycleState.resumed&&online&&roomStatus=='active'){unawaited(_pollRoomState());_scheduleRoomReconnect();}}
   void resetBoard(){board=List.filled(connectFour?42:9,connectFour?'0':'.');turn='X';winner=null;draw=false;thinking=false;}
-  @override void dispose(){WidgetsBinding.instance.removeObserver(this);_reconnectTimer?.cancel();roomSub?.cancel();super.dispose();}
+  @override void dispose(){WidgetsBinding.instance.removeObserver(this);_reconnectTimer?.cancel();_roomPollTimer?.cancel();roomSub?.cancel();super.dispose();}
 
   Future<void> choose(_PlayMode value) async {
     if(value!=_PlayMode.onlineHuman&&value!=_PlayMode.onlineBot){
@@ -75,6 +75,34 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
         if(mounted){setState(()=>message='ارتباط قطع شد؛ تا ۵ ثانیه دیگر خودکار وصل می‌شویم.');_scheduleRoomReconnect();}
       },
     );
+  }
+  void _startRoomPolling(){
+    _roomPollTimer?.cancel();
+    _roomPollTimer=Timer.periodic(const Duration(seconds:5),(_){
+      if(online&&roomStatus=='active')unawaited(_pollRoomState());
+    });
+  }
+  Future<void> _pollRoomState()async{
+    final id=room?['id']?.toString();
+    if(!mounted||id==null||_reconnecting)return;
+    _reconnecting=true;
+    try{
+      final row=await client.from('fun_game_rooms').select().eq('id',id).maybeSingle().timeout(const Duration(seconds:5));
+      if(!mounted)return;
+      if(row!=null){
+        final latest=Map<String,dynamic>.from(row);
+        if((latest['version'] as num?)?.toInt()!=version||latest['status']!=roomStatus){
+          setState(()=>room=latest);
+        }
+      }
+      _reconnecting=false;
+    }catch(_){
+      _reconnecting=false;
+      if(mounted&&roomStatus=='active'){
+        setState(()=>message='اتصال ناپایدار است؛ بازی تا برگشت اینترنت حفظ می‌شود.');
+        _scheduleRoomReconnect();
+      }
+    }
   }
   void _scheduleRoomReconnect(){
     if(!mounted||!online||room==null||roomStatus!='active')return;
