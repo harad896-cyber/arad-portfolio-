@@ -27,6 +27,7 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
   Map<String,dynamic>? room;
   StreamSubscription<List<Map<String,dynamic>>>? roomSub;
   Timer? _reconnectTimer;
+  Timer? _roomPollTimer;
   bool _reconnecting=false, _pollingRoom=false;
   bool get connectFour=>widget.gameType=='connect_four';
   String get uid=>client.auth.currentUser?.id??'';
@@ -62,6 +63,7 @@ class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
   }
   void _watchRoom(String roomId){
     _reconnectTimer?.cancel();
+    _startRoomPolling();
     roomSub?.cancel();
     roomSub=client.from('fun_game_rooms').stream(primaryKey:['id']).eq('id',roomId).listen(
       (rows){
