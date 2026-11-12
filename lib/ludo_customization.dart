@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LudoLook {
   final int board, avatar, frame, banner, background, charm;
@@ -27,6 +28,8 @@ class LudoCustomization {
   LudoCustomization._();
   static final ValueNotifier<LudoLook> current = ValueNotifier(const LudoLook());
   static Future<void>? _loadFuture;
+  static String get _accountScope => Supabase.instance.client.auth.currentUser?.id ?? 'guest';
+  static String _accountKey(String key) => 'ludo_${_accountScope}_$key';
   static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑', '🦅', '🐺'];
   static const frames = ['طلایی', 'یخی', 'زمردی', 'یاقوتی', 'نئونی', 'نقره‌ای', 'آتشین', 'کریستالی'];
   static const charms = ['⭐', '⚽', '💎', '🔥', '👑', '🧿', '🍀', '🎯', '⚡', '🏆'];
@@ -75,14 +78,14 @@ class LudoCustomization {
     try {
       final p = await SharedPreferences.getInstance();
       current.value = LudoLook(
-        board: (p.getInt('ludo_board_skin') ?? 0).clamp(0, boardNames.length - 1).toInt(),
-        avatar: (p.getInt('ludo_avatar') ?? 0).clamp(0, avatars.length - 1).toInt(),
-        frame: (p.getInt('ludo_avatar_frame') ?? 0).clamp(0, frames.length - 1).toInt(),
-        banner: (p.getInt('ludo_profile_banner') ?? 0).clamp(0, banners.length - 1).toInt(),
-        background: (p.getInt('ludo_profile_background') ?? 0).clamp(0, backgrounds.length - 1).toInt(),
-        charm: (p.getInt('ludo_avatar_charm') ?? 0).clamp(0, charms.length - 1).toInt(),
-        bannerImageBase64: p.getString('ludo_banner_image'),
-        backgroundImageBase64: p.getString('ludo_background_image'),
+        board: (p.getInt(_accountKey('board_skin')) ?? 0).clamp(0, boardNames.length - 1).toInt(),
+        avatar: (p.getInt(_accountKey('avatar')) ?? 0).clamp(0, avatars.length - 1).toInt(),
+        frame: (p.getInt(_accountKey('avatar_frame')) ?? 0).clamp(0, frames.length - 1).toInt(),
+        banner: (p.getInt(_accountKey('profile_banner')) ?? 0).clamp(0, banners.length - 1).toInt(),
+        background: (p.getInt(_accountKey('profile_background')) ?? 0).clamp(0, backgrounds.length - 1).toInt(),
+        charm: (p.getInt(_accountKey('avatar_charm')) ?? 0).clamp(0, charms.length - 1).toInt(),
+        bannerImageBase64: p.getString(_accountKey('banner_image')),
+        backgroundImageBase64: p.getString(_accountKey('background_image')),
       );
     } catch (_) {}
   }
@@ -121,7 +124,7 @@ class LudoCustomization {
       // Avoid filling preferences with an unusually large original photo.
       if (encoded.length > 1900000) return false;
       final prefs = await SharedPreferences.getInstance();
-      final key = banner ? 'ludo_banner_image' : 'ludo_background_image';
+      final key = _accountKey(banner ? 'banner_image' : 'background_image');
       await prefs.setString(key, encoded);
       current.value = banner
           ? current.value.copyWith(bannerImageBase64: encoded)
@@ -131,7 +134,7 @@ class LudoCustomization {
   }
 
   static Future<void> clearProfileImage({required bool banner}) async {
-    final key = banner ? 'ludo_banner_image' : 'ludo_background_image';
+    final key = _accountKey(banner ? 'banner_image' : 'background_image');
     try { final prefs = await SharedPreferences.getInstance(); await prefs.remove(key); } catch (_) {}
     current.value = banner
         ? current.value.copyWith(bannerImageBase64: '')
@@ -141,12 +144,12 @@ class LudoCustomization {
   static Future<bool> shouldShowFirstGuide() async {
     try {
       final p = await SharedPreferences.getInstance();
-      return !(p.getBool('ludo_first_guide_seen') ?? false);
+      return !(p.getBool(_accountKey('first_guide_seen')) ?? false);
     } catch (_) { return true; }
   }
 
   static Future<void> markFirstGuideSeen() async {
-    try { final p = await SharedPreferences.getInstance(); await p.setBool('ludo_first_guide_seen', true); } catch (_) {}
+    try { final p = await SharedPreferences.getInstance(); await p.setBool(_accountKey('first_guide_seen'), true); } catch (_) {}
   }
 
   static Future<void> select(String key, int value) async {
@@ -162,7 +165,7 @@ class LudoCustomization {
     current.value = next;
     try {
       final p = await SharedPreferences.getInstance();
-      await p.setInt('ludo_$key', value);
+      await p.setInt(_accountKey(key), value);
     } catch (_) {}
   }
 }
