@@ -33,6 +33,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
   String? selected;
   Set<String> targets = {};
   bool thinking = false;
+  int _botGeneration = 0;
   String? notice;
   String? drawClaim;
 
@@ -63,6 +64,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
   chess.Piece? _pieceAt(int row, int col) => game.get(_square(row,col));
 
   void reset() {
+    _botGeneration++;
     game = chess.Chess();
     _positions..clear()..add(game.fen);
     _notation.clear();
@@ -121,6 +123,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
   }
 
   Future<void> promote(String from,String to) async {
+    final generation = _botGeneration;
     final role=await showModalBottomSheet<chess.PieceType>(
       context:context,
       showDragHandle:true,
@@ -140,7 +143,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
         ]),
       )),
     );
-    if (role!=null && mounted) {
+    if (role!=null && mounted && generation == _botGeneration && mode != null) {
       final move = _legalMoves(from).firstWhere(
         (candidate) => candidate.toAlgebraic == to && candidate.promotion == role,
       );
@@ -174,9 +177,10 @@ class _ChessGamePageState extends State<ChessGamePage> {
   }
 
   Future<void> bot() async {
+    final generation = _botGeneration;
     setState(()=>thinking=true);
     await Future<void>.delayed(const Duration(milliseconds:180));
-    if (!mounted || finished) return;
+    if (!mounted || generation != _botGeneration || mode != _ChessMode.bot || finished) return;
     final choices=_legalMoves();
     if (choices.isEmpty) { setState(()=>thinking=false); return; }
     var chosen=choices[_rng.nextInt(choices.length)];
@@ -206,7 +210,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
         }
       }
     }
-    if (!mounted) return;
+    if (!mounted || generation != _botGeneration || mode != _ChessMode.bot) return;
     final san=game.move_to_san(chosen);
     if (game.move(chosen)) {
       setState(() { _notation.add(san); _positions.add(game.fen); thinking=false; });
@@ -260,7 +264,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
       backgroundColor:Colors.transparent,
       floatingActionButton:const FunZoneThemeButton(),
       appBar:AppBar(title:const Text('شطرنج'),backgroundColor:Colors.transparent,actions:[
-        IconButton(tooltip:'تغییر حالت',onPressed:()=>setState(()=>mode=null),icon:const Icon(Icons.tune_rounded)),
+        IconButton(tooltip:'تغییر حالت',onPressed:()=>setState(() { _botGeneration++; mode=null; thinking=false; }),icon:const Icon(Icons.tune_rounded)),
         IconButton(tooltip:'شروع دوباره',onPressed:()=>setState(reset),icon:const Icon(Icons.refresh_rounded)),
       ]),
       body:FunZoneBackdrop(child:SafeArea(child:Column(children:[
@@ -306,7 +310,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
         Padding(padding:const EdgeInsets.symmetric(horizontal:8,vertical:4),child:Wrap(alignment:WrapAlignment.center,spacing:8,children:[
           OutlinedButton.icon(onPressed:game.history.isNotEmpty&&!thinking?undo:null,icon:const Icon(Icons.undo_rounded),label:const Text('برگشت')),
           OutlinedButton.icon(onPressed:canClaim?()=>setState(()=>drawClaim=repetitions>=3?'مساوی؛ طبق قانون تکرار سه‌باره.':'مساوی؛ طبق قانون ۵۰ حرکت.'):null,icon:const Icon(Icons.handshake_rounded),label:const Text('اعلام مساوی')),
-          TextButton.icon(onPressed:()=>setState(()=>mode=null),icon:const Icon(Icons.swap_horiz_rounded),label:const Text('تغییر حالت')),
+          TextButton.icon(onPressed:()=>setState(() { _botGeneration++; mode=null; thinking=false; }),icon:const Icon(Icons.swap_horiz_rounded),label:const Text('تغییر حالت')),
         ])),
         if (_notation.isNotEmpty) SizedBox(height:48,child:ListView(scrollDirection:Axis.horizontal,children:[
           for (var i=0;i<_notation.length;i++) Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:Chip(label:Text((i.isEven?(i~/2+1).toString()+'. ':'')+_notation[i]))),
