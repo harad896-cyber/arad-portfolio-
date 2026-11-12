@@ -131,7 +131,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   void _roll({bool fromBot = false}) {
-    if (!_started || _winner != null || _dice != null || (_botBusy && !fromBot)) return;
+    if (!_started || _winner != null || _dice != null || _moving || (_botBusy && !fromBot)) return;
     final value = _random.nextInt(6) + 1;
     _diceValues[_turn] = value;
     if (value == 6) {
@@ -397,7 +397,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn && !_moving;
     final diameter = size * .055;
     final color = _playerColor(player);
-    return Positioned(
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 105), curve: Curves.easeInOutCubic,
       left: point.dx - diameter / 2, top: point.dy - diameter / 2,
       width: diameter, height: diameter,
       child: GestureDetector(
