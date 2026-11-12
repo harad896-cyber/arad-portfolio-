@@ -28,6 +28,7 @@ class LudoCustomization {
   LudoCustomization._();
   static final ValueNotifier<LudoLook> current = ValueNotifier(const LudoLook());
   static Future<void>? _loadFuture;
+  static String? _loadedScope;
   static String get _accountScope => Supabase.instance.client.auth.currentUser?.id ?? 'guest';
   static String _accountKey(String key) => 'ludo_${_accountScope}_$key';
   static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑', '🦅', '🐺'];
@@ -72,7 +73,12 @@ class LudoCustomization {
     [Color(0xFF36191B), Color(0xFF8E3A2C)],
   ];
 
-  static Future<void> load() => _loadFuture ??= _loadSavedLook();
+  static Future<void> load() {
+    final scope = _accountScope;
+    if (_loadFuture != null && _loadedScope == scope) return _loadFuture!;
+    _loadedScope = scope;
+    return _loadFuture = _loadSavedLook();
+  }
 
   static Future<void> _loadSavedLook() async {
     try {
