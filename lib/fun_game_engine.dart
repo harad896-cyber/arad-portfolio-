@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum _PlayMode { bot, local, online }
+enum _PlayMode { bot, local, onlineHuman, onlineBot }
 
 class FunGamePage extends StatefulWidget {
   final String gameType, title;
@@ -22,7 +22,8 @@ class _FunGamePageState extends State<FunGamePage> {
   StreamSubscription<List<Map<String,dynamic>>>? roomSub;
   bool get connectFour=>widget.gameType=='connect_four';
   String get uid=>client.auth.currentUser?.id??'';
-  bool get online=>mode==_PlayMode.online;
+  bool get online=>mode==_PlayMode.onlineHuman||mode==_PlayMode.onlineBot;
+  bool get botRoom=>room?['is_bot_game']==true;
   String get roomStatus=>(room?['status']??'').toString();
   String get turnUser=>room?['turn_user_id']?.toString()??'';
   String get winnerUser=>room?['winner_id']?.toString()??'';
@@ -43,10 +44,10 @@ class _FunGamePageState extends State<FunGamePage> {
     if(uid.isEmpty){setState(()=>message='برای بازی آنلاین وارد حساب گپ‌رسان شو.');return;}
     setState(()=>busy=true);
     try{
-      final data=await client.rpc('join_fun_game_queue',params:{'p_game_type':widget.gameType}).timeout(const Duration(seconds:12));
+      final data=await client.rpc(value==_PlayMode.onlineBot?'start_fun_game_bot':'join_fun_game_queue',params:{'p_game_type':widget.gameType}).timeout(const Duration(seconds:12));
       final row=Map<String,dynamic>.from(data as Map);
       await roomSub?.cancel();if(!mounted)return;
-      setState(()=>{mode=_PlayMode.online,room=row,busy=false});
+      setState(()=>{mode=value,room=row,busy=false});
       roomSub=client.from('fun_game_rooms').stream(primaryKey:['id']).eq('id',row['id'].toString()).listen(
         (rows){if(mounted&&rows.isNotEmpty)setState(()=>room=Map<String,dynamic>.from(rows.first));},
         onError:(_){if(mounted)setState(()=>message='اتصال بازی قطع شد؛ اینترنت را بررسی کن.');});
@@ -73,6 +74,7 @@ class _FunGamePageState extends State<FunGamePage> {
       try{
         final data=await client.rpc('submit_fun_game_move',params:{'p_room_id':room!['id'],'p_expected_version':version,'p_move':connectFour?index%7:index}).timeout(const Duration(seconds:10));
         if(mounted)setState(()=>{room=Map<String,dynamic>.from(data as Map),busy=false});
+        if(mounted&&botRoom&&roomStatus=='active')await botTurnOnline();
       }catch(e){if(mounted)setState(()=>busy=false);final v=e.toString().toLowerCase();snack(v.contains('not_your_turn')?'هنوز نوبت تو نیست.':v.contains('stale_game_version')?'حرکت حریف رسید؛ صفحه به‌روز شد.':'حرکت ثبت نشد؛ دوباره تلاش کن.');}return;
     }
     if(connectFour){final c=index%7;if(landing(board,c)==null){snack('این ستون پُر است.');return;}setState(()=>board=drop(board,c,turn));}
@@ -90,6 +92,26 @@ class _FunGamePageState extends State<FunGamePage> {
       board=connectFour?drop(board,move,'O'):(List<String>.from(board)..[move]='O');thinking=false;
       if(won(board,'O')){winner='O';oWins++;}else if(board.every((v)=>connectFour?v!='0':v!='.'))draw=true;else turn='X';
     });
+  }
+  Future<void> botTurnOnline()async{
+    if(!mounted||!botRoom||roomStatus!='active')return;
+    setState(()=>thinking=true);
+    await Future<void>.delayed(const Duration(milliseconds:350));
+    if(!mounted||!botRoom||roomStatus!='active')return;
+    final raw=room!['board'].toString().split('');
+    board=raw.map((v)=>v=='1'?'X':v=='2'?'O':v).toList();
+    final move=botMove();
+    if(move==null){if(mounted)setState(()=>thinking=false);return;}
+    setState(()=>busy=true);
+    try{
+      final data=await client.rpc('submit_fun_game_move',params:{
+        'p_room_id':room!['id'],'p_expected_version':version,'p_move':connectFour?move:move,
+      }).timeout(const Duration(seconds:10));
+      if(mounted)setState(()=>{room=Map<String,dynamic>.from(data as Map),busy=false,thinking=false});
+    }catch(_){
+      if(mounted)setState(()=>{busy=false,thinking=false});
+      snack('حرکت ربات ثبت نشد؛ اتصال را بررسی کن.');
+    }
   }
   int? botMove(){
     if(connectFour){
@@ -111,14 +133,14 @@ class _FunGamePageState extends State<FunGamePage> {
   @override Widget build(BuildContext context){
     if(mode==null)return picker();if(online&&roomStatus=='waiting')return waiting();
     final b=online?room!['board'].toString().split(''):board;final done=ended;final scheme=Theme.of(context).colorScheme;
-    final statusText=online?(done?(winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
+    final statusText=online?(done?(room?['winner_mark']=='O'?'ربات برنده شد.':winnerUser.isEmpty?'بازی مساوی شد.':winnerUser==uid?'آفرین! تو برنده شدی.':'حریف برنده شد.'):botRoom?(version.isEven?'نوبت توست':'نوبت ربات'):turnUser==uid?'نوبت توست':'نوبت حریف است…')
       :winner!=null?(mode==_PlayMode.bot?(winner=='X'?'آفرین! تو برنده شدی.':'ربات برنده شد.'):'بازیکن $winner برنده شد!'):draw?'بازی مساوی شد.':thinking?'ربات فکر می‌کند…':mode==_PlayMode.bot?(turn=='X'?'نوبت توست':'نوبت ربات'):'نوبت بازیکن $turn';
     return Scaffold(appBar:AppBar(title:Text(widget.title),actions:[IconButton(onPressed:newRound,icon:const Icon(Icons.tune_rounded),tooltip:'تغییر حالت')]),
       body:SafeArea(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
         Card(child:Padding(padding:const EdgeInsets.all(14),child:Column(children:[
           Text(statusText,textAlign:TextAlign.center,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w900)),
           const SizedBox(height:5),
-          Text(online?'آنلاین · '+(myMark=='X'?'تو X هستی':'تو O هستی'):mode==_PlayMode.bot?'آفلاین · ربات هوشمند · سطح $difficulty':'آفلاین · دونفره روی یک دستگاه',style:TextStyle(color:scheme.onSurfaceVariant,fontSize:12)),
+          Text(online?(botRoom?'آنلاین · حریف ربات':'آنلاین · '+(myMark=='X'?'تو X هستی':'تو O هستی')):mode==_PlayMode.bot?'آفلاین · ربات هوشمند · سطح $difficulty':'آفلاین · دونفره روی یک دستگاه',style:TextStyle(color:scheme.onSurfaceVariant,fontSize:12)),
           if(online&&room!=null)Text('کد بازی: '+room!['id'].toString().substring(0,8),style:TextStyle(color:scheme.onSurfaceVariant,fontSize:11)),
         ]))),
         if(!online)Text('X: $xWins برد  •  O: $oWins برد',style:const TextStyle(fontWeight:FontWeight.w800)),
@@ -140,7 +162,8 @@ class _FunGamePageState extends State<FunGamePage> {
     ]))),
     Card(child:ListTile(leading:const Icon(Icons.people_alt_rounded),title:const Text('آفلاین دونفره'),subtitle:const Text('دو نفر روی همین گوشی، نوبتی'),onTap:busy?null:()=>choose(_PlayMode.local))),
     const Divider(height:30),
-    Card(child:ListTile(leading:const Icon(Icons.public_rounded),title:const Text('آنلاین با حریف تصادفی'),subtitle:const Text('از میان کاربران گپ‌رسان حریف پیدا کن'),onTap:busy?null:()=>choose(_PlayMode.online))),
+    Card(child:ListTile(leading:const Icon(Icons.smart_toy_outlined),title:const Text('آنلاین با ربات'),subtitle:const Text('بازی ثبت‌شده روی سرور؛ بدون انتظار برای حریف'),onTap:busy?null:()=>choose(_PlayMode.onlineBot))),
+    Card(child:ListTile(leading:const Icon(Icons.public_rounded),title:const Text('آنلاین با حریف تصادفی'),subtitle:const Text('از میان کاربران گپ‌رسان حریف پیدا کن'),onTap:busy?null:()=>choose(_PlayMode.onlineHuman))),
     if(busy)const Center(child:Padding(padding:EdgeInsets.all(16),child:CircularProgressIndicator())),
     if(message!=null)Padding(padding:const EdgeInsets.all(12),child:Text(message!,textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.error))),
   ]));
