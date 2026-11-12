@@ -645,96 +645,117 @@ class _SnakePageState extends State<_SnakePage> {
   ])));
 }
 
+typedef _ReadingPrompt = (String, List<String>, List<int>);
+typedef _SymbolCard = (String, String);
+
 class _PersonalityPage extends StatefulWidget {
   const _PersonalityPage();
-  @override
-  State<_PersonalityPage> createState() => _PersonalityPageState();
+  @override State<_PersonalityPage> createState() => _PersonalityPageState();
 }
 
 class _PersonalityPageState extends State<_PersonalityPage> {
-  final List<String> questions = const [
-    'در یک روز آزاد کدام را انتخاب می‌کنی؟',
-    'در جمع دوستان معمولاً…',
-    'وقتی با چالش روبه‌رو می‌شوی…',
+  static const prompts = <_ReadingPrompt>[
+    ('وقتی یک فرصت تازه پیش می‌آید، معمولاً چه می‌کنی؟',['بی‌درنگ امتحانش می‌کنم','اول همه چیز را می‌سنجم','با کسی مشورت می‌کنم'],[2,0,1]),
+    ('در یک روز آزاد کدام برنامه را بیشتر دوست داری؟',['طبیعت‌گردی و کشف جاهای تازه','کتاب، موسیقی یا آرامش','دیدار دوستان و خانواده'],[2,0,1]),
+    ('وقتی مشکلی پیش می‌آید، اولین واکنشت چیست؟',['یک راه تازه پیدا می‌کنم','آرام می‌شوم و مرحله‌به‌مرحله فکر می‌کنم','از یک دوست کمک می‌گیرم'],[2,1,0]),
+    ('کدام هدیه بیشتر خوشحالت می‌کند؟',['یک تجربهٔ غیرمنتظره','چیزی با معنا و ماندگار','یک یادگاری از دوست'],[2,1,0]),
+    ('در یک گروه معمولاً چه نقشی داری؟',['شروع‌کننده و پیش‌برنده','برنامه‌ریز و تحلیل‌گر','هماهنگ‌کننده و دلگرم‌کننده'],[2,1,0]),
+    ('اگر یک مهارت تازه یاد بگیری، کدام را انتخاب می‌کنی؟',['ماجراجویی یا ورزش تازه','هنر، دانش یا زبان','گفت‌وگو و شناخت آدم‌ها'],[2,1,0]),
+    ('کدام منظره بیشتر به دلت می‌نشیند؟',['قله‌های بلند و راه ناشناخته','کتابخانه و باران آرام','جمع دوستان کنار آتش'],[2,0,1]),
+    ('وقتی کسی از تو نظر می‌خواهد، چه می‌کنی؟',['صادقانه و مستقیم می‌گویم','اول خوب گوش می‌دهم','با مهربانی راه‌حل پیشنهاد می‌کنم'],[2,1,0]),
+    ('کدام جمله به تو نزدیک‌تر است؟',['از تجربه کردن نمی‌ترسم','در آرامش، جواب‌ها پیدا می‌شوند','با هم بودن راه را آسان می‌کند'],[2,0,1]),
+    ('اگر یک سفر کوتاه داشته باشی، کجا می‌روی؟',['جایی که تا حالا ندیده‌ام','جای آرام و خلوت','شهری پر از آدم و فرهنگ'],[2,0,1]),
+    ('در تصمیم‌های مهم بیشتر به چه تکیه می‌کنی؟',['جرأت و شهود','داده و فکر','احساس و رابطه‌ها'],[2,1,0]),
+    ('چه چیزی بیشتر به تو انگیزه می‌دهد؟',['رسیدن به یک هدف تازه','فهمیدن یک موضوع عمیق','اثر خوب گذاشتن بر دیگران'],[2,1,0]),
+    ('وقتی خسته می‌شوی، چه چیزی کمکت می‌کند؟',['حرکت و تغییر فضا','تنهایی و استراحت','صحبت با یک آدم نزدیک'],[2,0,1]),
+    ('کدام رنگ را امروز انتخاب می‌کنی؟',['سبز روشن','آبی آرام','طلایی گرم'],[2,0,1]),
+    ('اگر یک در بسته ببینی، چه برداشتی داری؟',['شاید راه تازه‌ای پشت آن باشد','باید دلیل بسته بودنش را بفهمم','شاید کسی کلیدش را داشته باشد'],[2,1,0]),
+    ('در دوستی چه چیزی برایت مهم‌تر است؟',['صداقت و هیجان مشترک','اعتماد و درک متقابل','مهربانی و همراهی'],[2,1,0]),
   ];
-  final List<List<String>> options = const [
-    ['ماجراجویی تازه', 'کتاب و آرامش', 'دیدار دوستان'],
-    ['سر صحبت را باز می‌کنم', 'بیشتر گوش می‌دهم', 'همه را می‌خندانم'],
-    ['سریع اقدام می‌کنم', 'اول خوب فکر می‌کنم', 'از دیگران کمک می‌گیرم'],
+
+  static const cards = <_SymbolCard>[
+    ('چراغ','نماد روشن‌شدن یک ایده است؛ امروز یک کار کوچک را که عقب انداخته‌ای آغاز کن.'),
+    ('پل','یادآور ارتباط است؛ شاید یک گفت‌وگوی صادقانه سوءتفاهمی را کمتر کند.'),
+    ('درخت','نماد رشد آرام است؛ برای چیزی که می‌سازی به خودت زمان بده.'),
+    ('ستاره','نشانهٔ امید و جهت است؛ هدفت را روشن و قدم بعدی را کوچک انتخاب کن.'),
+    ('کلید','نماد امکان تازه است؛ راه‌حل ممکن است در پرسیدن یک سؤال بهتر باشد.'),
+    ('رودخانه','یادآور انعطاف است؛ لازم نیست همه چیز دقیقاً طبق برنامه پیش برود.'),
+    ('کوه','نماد پشتکار است؛ یک مانع بزرگ را به چند قدم کوچک تقسیم کن.'),
+    ('پرنده','نشانهٔ آزادی انتخاب است؛ برای یک تصمیم، فضای بیشتری به خودت بده.'),
+    ('کتاب','نماد یادگیری است؛ امروز از یک تجربه یا آدم تازه چیزی یاد بگیر.'),
+    ('باران','یادآور تازه‌شدن است؛ کمی استراحت هم بخشی از پیشرفت است.'),
+    ('قطب‌نما','نماد جهت‌یابی است؛ ارزش مهم خودت را پیش از انتخاب به یاد بیاور.'),
+    ('بذر','نشانهٔ آغاز کوچک است؛ یک عادت خوب را با پنج دقیقه شروع کن.'),
   ];
-  final List<int> answers = [];
+
+  late List<_ReadingPrompt> session;
+  final answers = <int>[];
   int page = 0;
+  late _SymbolCard chosenCard;
 
-  String get result {
-    final total = answers.fold<int>(0, (sum, value) => sum + value);
-    if (total <= 2) return 'روحیه ماجراجو 🚀';
-    if (total <= 4) return 'ذهن آرام و تحلیل‌گر 🧠';
-    return 'همراه و اجتماعی 💚';
+  @override void initState(){super.initState();_restart();}
+  void _restart(){
+    session=List<_ReadingPrompt>.from(prompts)..shuffle(math.Random());
+    session=session.take(6).toList();
+    answers.clear();page=0;
+    chosenCard=cards[math.Random().nextInt(cards.length)];
+  }
+  int get total {
+    var sum=0;
+    for(var i=0;i<answers.length;i++){sum+=session[i].$3[answers[i]];}
+    return sum;
+  }
+  String get profile {
+    if(total<=4)return 'آرام و ژرف‌نگر';
+    if(total<=8)return 'همراه و پیونددهنده';
+    return 'جستجوگر و ماجراجو';
+  }
+  String get reading {
+    if(total<=4)return 'تو معمولاً پیش از حرکت، خوب نگاه می‌کنی. این دقت می‌تواند نقطهٔ قوتت باشد؛ فقط گاهی به خودت اجازه بده بدون کامل‌بودن همهٔ جواب‌ها هم شروع کنی.';
+    if(total<=8)return 'تو میان فکر و احساس تعادل می‌جویی و حضور آدم‌ها برایت معنا دارد. مرزهای خودت را هم به اندازهٔ توجه به دیگران جدی بگیر.';
+    return 'انرژی تجربه و کشف در انتخاب‌هایت پررنگ است. این جسارت ارزشمند است؛ اگر یک هدف را تا پایان دنبال کنی، نتیجه‌اش را بهتر می‌بینی.';
   }
 
-  void restart() {
-    setState(() {
-      answers.clear();
-      page = 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _GameScaffold(
-      title: 'آزمون شخصیت و فال',
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: page >= questions.length
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.auto_awesome, size: 60, color: Colors.amber),
-                    const SizedBox(height: 12),
-                    const Text('نتیجه سرگرمی تو', style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text(result, style: const TextStyle(fontSize: 19)),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'این آزمون علمی یا تشخیص شخصیت نیست؛ فقط برای تفریح است.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 14),
-                    FilledButton(onPressed: restart, child: const Text('دوباره انجام بده')),
-                  ],
-                ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('پرسش ${page + 1} از ${questions.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  LinearProgressIndicator(value: (page + 1) / questions.length),
-                  const SizedBox(height: 22),
-                  Text(questions[page], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 16),
-                  ...List.generate(
-                    options[page].length,
-                    (i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            answers.add(i);
-                            page++;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(options[page][i]),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
+  @override Widget build(BuildContext context){
+    final done=page>=session.length;
+    return _GameScaffold(title:'فال و گفت‌وگوی هوشمند',child:Padding(padding:const EdgeInsets.all(20),child:done
+      ?Center(child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+        const Icon(Icons.auto_awesome_rounded,size:62,color:Colors.amber),
+        const Text('خوانش سرگرمی تو',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
+        const SizedBox(height:8),
+        Text(profile,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800)),
+        const SizedBox(height:10),
+        Text(reading,textAlign:TextAlign.center,style:const TextStyle(height:1.6)),
+        const SizedBox(height:18),
+        Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
+          const Text('نماد امروز تو',style:TextStyle(fontWeight:FontWeight.w900)),
+          const SizedBox(height:6),
+          Text(chosenCard.$1,style:const TextStyle(fontSize:24,fontWeight:FontWeight.w900,color:Colors.amber)),
+          const SizedBox(height:6),
+          Text(chosenCard.$2,textAlign:TextAlign.center,style:const TextStyle(height:1.5)),
+        ]))),
+        const SizedBox(height:10),
+        const Text('این نتیجه از پاسخ‌های همین نشست ساخته شده و فقط برای سرگرمی و خوداندیشی است؛ پیشگویی یا ارزیابی علمی شخصیت نیست.',textAlign:TextAlign.center,style:TextStyle(fontSize:11)),
+        const SizedBox(height:14),
+        FilledButton.icon(onPressed:()=>setState(_restart),icon:const Icon(Icons.refresh),label:const Text('گفت‌وگوی تازه')),
+      ])))
+      :Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Text('پرسش ${page+1} از ${session.length}',style:const TextStyle(fontWeight:FontWeight.w900)),
+        const SizedBox(height:8),LinearProgressIndicator(value:(page+1)/session.length),
+        const SizedBox(height:26),
+        Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          const CircleAvatar(child:Icon(Icons.auto_awesome_rounded)),
+          const SizedBox(width:10),
+          Expanded(child:Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(18)),child:Text(session[page].$1,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w800)))),
+        ]),
+        const SizedBox(height:18),
+        ...List.generate(session[page].$2.length,(i)=>Padding(padding:const EdgeInsets.only(bottom:10),child:OutlinedButton(
+          onPressed:()=>setState(()=>{answers.add(i),page++}),
+          child:Padding(padding:const EdgeInsets.all(10),child:Align(alignment:Alignment.centerRight,child:Text(session[page].$2[i]))),
+        ))),
+        const Spacer(),
+        const Text('پاسخ درست یا غلطی وجود ندارد؛ همان چیزی را انتخاب کن که به حالت نزدیک‌تر است.',textAlign:TextAlign.center,style:TextStyle(fontSize:12)),
+      ]),
+    ));
   }
 }
