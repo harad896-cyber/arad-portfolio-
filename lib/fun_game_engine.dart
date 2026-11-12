@@ -49,7 +49,7 @@ class _FunGamePageState extends State<FunGamePage> {
       await roomSub?.cancel();if(!mounted)return;
       setState(() { mode = value; room = row; busy = false; });
       roomSub=client.from('fun_game_rooms').stream(primaryKey:['id']).eq('id',row['id'].toString()).listen(
-        (rows){if(mounted&&rows.isNotEmpty)setState(()=>room=Map<String,dynamic>.from(rows.first));},
+        (rows){if(!mounted||rows.isEmpty)return;setState(()=>room=Map<String,dynamic>.from(rows.first));if(rows.first['is_bot_game']==true&&rows.first['status']=='active'&&((rows.first['version'] as num?)?.toInt()??0).isOdd&&!thinking&&!busy){unawaited(botTurnOnline());}},
         onError:(_){if(mounted)setState(()=>message='اتصال بازی قطع شد؛ اینترنت را بررسی کن.');});
     }catch(_){if(mounted)setState(() { busy = false; message = 'حریف پیدا نشد یا اتصال برقرار نیست. دوباره تلاش کن.'; });}
   }
@@ -69,7 +69,7 @@ class _FunGamePageState extends State<FunGamePage> {
   Future<void> play(int index) async{
     if(busy||thinking||ended)return;
     if(online){
-      if(roomStatus!='active'||turnUser!=uid)return;
+      if(roomStatus!='active'||turnUser!=uid||(botRoom&&version.isOdd))return;
       setState(()=>busy=true);
       try{
         final data=await client.rpc('submit_fun_game_move',params:{'p_room_id':room!['id'],'p_expected_version':version,'p_move':connectFour?index%7:index}).timeout(const Duration(seconds:10));
@@ -94,7 +94,7 @@ class _FunGamePageState extends State<FunGamePage> {
     });
   }
   Future<void> botTurnOnline()async{
-    if(!mounted||!botRoom||roomStatus!='active')return;
+    if(!mounted||!botRoom||roomStatus!='active'||version.isEven||thinking||busy)return;
     setState(()=>thinking=true);
     await Future<void>.delayed(const Duration(milliseconds:350));
     if(!mounted||!botRoom||roomStatus!='active')return;
@@ -211,8 +211,8 @@ class _FunGamePageState extends State<FunGamePage> {
   ]))));
   Widget ticBoard(List<String>b,bool done,ColorScheme scheme)=>AspectRatio(aspectRatio:1,child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:9,
     gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:3,crossAxisSpacing:8,mainAxisSpacing:8),
-    itemBuilder:(_,i){final m=b.length>i&&b[i]!='.'?b[i]:'';final can=!busy&&!thinking&&!done&&(!online||(roomStatus=='active'&&turnUser==uid));return Material(color:scheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(18),child:InkWell(borderRadius:BorderRadius.circular(18),onTap:can?()=>play(i):null,child:Center(child:Text(m,style:TextStyle(fontSize:52,fontWeight:FontWeight.w900,color:m=='X'?Colors.teal:Colors.deepOrange)))));}));
+    itemBuilder:(_,i){final m=b.length>i&&b[i]!='.'?b[i]:'';final can=!busy&&!thinking&&!done&&(!online||(roomStatus=='active'&&turnUser==uid&&(!botRoom||version.isEven)));return Material(color:scheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(18),child:InkWell(borderRadius:BorderRadius.circular(18),onTap:can?()=>play(i):null,child:Center(child:Text(m,style:TextStyle(fontSize:52,fontWeight:FontWeight.w900,color:m=='X'?Colors.teal:Colors.deepOrange)))));}));
   Widget connectBoard(List<String>b,bool done,ColorScheme scheme)=>AspectRatio(aspectRatio:7/6,child:Container(padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:const Color(0xFF2459A6),borderRadius:BorderRadius.circular(18)),child:GridView.builder(physics:const NeverScrollableScrollPhysics(),itemCount:42,
     gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:7,crossAxisSpacing:5,mainAxisSpacing:5),
-    itemBuilder:(_,i){final v=b.length>i?b[i]:'0';final m=online?(v=='1'?'X':v=='2'?'O':''):v=='0'?'':v;final can=!busy&&!thinking&&!done&&(!online||(roomStatus=='active'&&turnUser==uid));return GestureDetector(onTap:can?()=>play(i):null,child:DecoratedBox(decoration:BoxDecoration(shape:BoxShape.circle,color:m=='X'?const Color(0xFFE64B4B):m=='O'?const Color(0xFFFFD447):const Color(0xFFEAF1FA))));})));
+    itemBuilder:(_,i){final v=b.length>i?b[i]:'0';final m=online?(v=='1'?'X':v=='2'?'O':''):v=='0'?'':v;final can=!busy&&!thinking&&!done&&(!online||(roomStatus=='active'&&turnUser==uid&&(!botRoom||version.isEven)));return GestureDetector(onTap:can?()=>play(i):null,child:DecoratedBox(decoration:BoxDecoration(shape:BoxShape.circle,color:m=='X'?const Color(0xFFE64B4B):m=='O'?const Color(0xFFFFD447):const Color(0xFFEAF1FA))));})));
 }
