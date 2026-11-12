@@ -39,7 +39,7 @@ void main() {
     });
 
     test('recognizes checkmate from a legal scholar mate sequence', () {
-      var position = Chess.initial;
+      Position position = Chess.initial;
       for (final san in ['e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']) {
         final move = position.parseSan(san);
         expect(move, isNotNull, reason: 'Move $san must be legal');
@@ -50,7 +50,7 @@ void main() {
     });
 
     test('supports en passant and promotion through legal move generation', () {
-      var position = Chess.fromSetup(Setup.parseFen(
+      Position position = Chess.fromSetup(Setup.parseFen(
         '4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1',
       ));
       final ep = NormalMove(
