@@ -173,7 +173,7 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
         const Padding(padding:EdgeInsets.only(bottom:7),child:Text('🪙 سکه',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w800))),
       ]),
       const SizedBox(height:4),
-      const Text('اعتبار اختصاصی حساب گپ‌رسان',style:TextStyle(color:Color(0xFFFFF2CB),fontSize:12)),
+      const Text('۱۵۰۰ سکه هدیهٔ یک‌باره برای هر حساب · قابل انتقال به دوستان',style:TextStyle(color:Color(0xFFFFF2CB),fontSize:12)),
     ]));
 
   Widget _action(IconData icon,String label,VoidCallback? action)=>SizedBox(height:54,
@@ -188,10 +188,10 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
     final otherId=(outgoing?tx['to_user_id']:tx['from_user_id'])?.toString();
     final other=otherId==null?null:profiles[otherId];
     final otherName=other?['display_name']??other?['username']??'کاربر';
-    final title=type=='purchase'?'خرید سکه':type=='transfer'?
+    final title=type=='signup_bonus'?'هدیهٔ خوش‌آمدگویی':type=='purchase'?'خرید سکه':type=='transfer'?
       (outgoing?'ارسال به ':'دریافت از ')+otherName.toString():
       type=='refund'?'بازپرداخت':type=='game_spend'?'خرید در بازی':'تراکنش';
-    final incoming=type=='purchase'||!outgoing;
+    final incoming=type=='signup_bonus'||type=='purchase'||!outgoing;
     final date=DateTime.tryParse(tx['created_at']?.toString()??'')?.toLocal();
     final dateText=date==null?'':date.year.toString()+'/'+date.month.toString().padLeft(2,'0')+'/'+
       date.day.toString().padLeft(2,'0')+'  '+date.hour.toString().padLeft(2,'0')+':'+date.minute.toString().padLeft(2,'0');
