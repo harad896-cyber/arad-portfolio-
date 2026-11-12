@@ -749,7 +749,7 @@ class _PersonalityPageState extends State<_PersonalityPage> {
         ]),
         const SizedBox(height:18),
         ...List.generate(session[page].$2.length,(i)=>Padding(padding:const EdgeInsets.only(bottom:10),child:OutlinedButton(
-          onPressed:()=>setState(()=>{answers.add(i),page++}),
+          onPressed: () { setState(() { answers.add(i); page++; }); },
           child:Padding(padding:const EdgeInsets.all(10),child:Align(alignment:Alignment.centerRight,child:Text(session[page].$2[i]))),
         ))),
         const Spacer(),
