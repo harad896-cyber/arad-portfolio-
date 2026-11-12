@@ -320,7 +320,15 @@ class FunZoneThemeButton extends StatelessWidget {
                                 ? () => ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('برای بازشدن این پس‌زمینه به ${required} امتیاز نیاز داری.')))
                                 : () async {
-                                    await FunZoneLook.select(look);
+                                    final selectedOk = await FunZoneLook.select(look);
+                                    if (!selectedOk) {
+                                      if (sheetContext.mounted) {
+                                        ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                          const SnackBar(content: Text('این پس‌زمینه هنوز برای سطح حساب شما باز نشده است.')),
+                                        );
+                                      }
+                                      return;
+                                    }
                                     if (sheetContext.mounted) Navigator.pop(sheetContext);
                                   },
                           );
