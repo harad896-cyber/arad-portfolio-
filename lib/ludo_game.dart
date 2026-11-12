@@ -437,45 +437,67 @@ class _LudoGamePageState extends State<LudoGamePage> {
     );
   }
 
-  Widget _buildToken(int player, int token, double size) {
+  Offset _tokenDisplayPoint(int player, int token, double size) {
     final point = _tokenPoint(player, token, _positions[player][token], size);
+    final peers = <(int, int)>[];
+    for (var p = 0; p < _playerCount; p++) {
+      for (var t = 0; t < 4; t++) {
+        final other = _tokenPoint(p, t, _positions[p][t], size);
+        if ((other - point).distance < .01) peers.add((p, t));
+      }
+    }
+    if (peers.length < 2) return point;
+    final slot = peers.indexOf((player, token));
+    final angle = -math.pi / 2 + (2 * math.pi * slot / peers.length);
+    final radius = size * (peers.length == 2 ? .033 : .038);
+    return point + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
+  }
+
+  Widget _buildToken(int player, int token, double size) {
+    final point = _tokenDisplayPoint(player, token, size);
     final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn && !_moving;
-    final diameter = size * .055;
+    final diameter = size * .052;
+    final hitSize = diameter * 1.28;
     final color = _playerColor(player);
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 105), curve: Curves.easeInOutCubic,
-      left: point.dx - diameter / 2, top: point.dy - diameter / 2,
-      width: diameter, height: diameter,
-      child: GestureDetector(
-        onTap: canMove ? () => _moveToken(token) : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              center: const Alignment(-.38, -.42), radius: .95,
-              colors: [Color.lerp(color, Colors.white, .68)!, color, Color.lerp(color, Colors.black, .36)!],
-              stops: const [0, .52, 1],
+      left: point.dx - hitSize / 2, top: point.dy - hitSize / 2,
+      width: hitSize, height: hitSize,
+      child: Semantics(
+        button: canMove,
+        label: 'مهره ${token + 1} بازیکن ${_playerName(player)}${canMove ? '، قابل حرکت' : ''}',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: canMove ? () => _moveToken(token) : null,
+          child: Center(child: AnimatedContainer(
+            width: diameter, height: diameter,
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                center: const Alignment(-.38, -.42), radius: .95,
+                colors: [Color.lerp(color, Colors.white, .68)!, color, Color.lerp(color, Colors.black, .36)!],
+                stops: const [0, .52, 1],
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: canMove ? 1 : .88), width: canMove ? 2.4 : 1.2),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: .38), blurRadius: 5, offset: const Offset(0, 3)),
+                if (canMove) BoxShadow(color: color.withValues(alpha: .85), blurRadius: 13, spreadRadius: 1),
+              ],
             ),
-            border: Border.all(color: Colors.white.withValues(alpha: canMove ? 1 : .88), width: canMove ? 2.4 : 1.2),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: .38), blurRadius: 5, offset: const Offset(0, 3)),
-              if (canMove) BoxShadow(color: color.withValues(alpha: .85), blurRadius: 13, spreadRadius: 1),
-            ],
-          ),
-          child: Stack(children: [
-            Align(alignment: const Alignment(-.35, -.55), child: Container(
-              width: diameter * .22, height: diameter * .12,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .72), borderRadius: BorderRadius.circular(10)))),
-            Center(child: Text((token + 1).toString(),
-              style: TextStyle(color: _colorIndex(player) == 2 ? const Color(0xFF33250A) : Colors.white,
-                fontSize: diameter * .34, fontWeight: FontWeight.w900, shadows: const [Shadow(color: Colors.black45, blurRadius: 2)]))),
-          ]),
+            child: Stack(children: [
+              Align(alignment: const Alignment(-.35, -.55), child: Container(
+                width: diameter * .22, height: diameter * .12,
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .72), borderRadius: BorderRadius.circular(10)))),
+              Center(child: Text((token + 1).toString(),
+                style: TextStyle(color: _colorIndex(player) == 2 ? const Color(0xFF33250A) : Colors.white,
+                  fontSize: diameter * .34, fontWeight: FontWeight.w900, shadows: const [Shadow(color: Colors.black45, blurRadius: 2)]))),
+            ]),
+          )),
         ),
       ),
     );
   }
-
   Offset _tokenPoint(int player, int token, int progress, double size) {
     if (progress == 57) {
       const homeOffsets = [Offset(-.30, -.30), Offset(.30, -.30), Offset(-.30, .30), Offset(.30, .30)];
