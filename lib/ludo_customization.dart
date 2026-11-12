@@ -213,7 +213,7 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
       'background' => LudoCustomization.backgrounds,
       _ => LudoCustomization.charms,
     };
-    return SafeArea(child: Padding(
+    return SafeArea(child: SingleChildScrollView(child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('ظاهر اختصاصی لودو', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
@@ -283,6 +283,6 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
             ]),
           )),
       ]),
-    ));
+    )));
   }
 }
