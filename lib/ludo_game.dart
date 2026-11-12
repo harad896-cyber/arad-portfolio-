@@ -510,7 +510,8 @@ class _LudoBoardPainter extends CustomPainter {
       final base = LudoBoardGeometry.baseCenters[player];
       final rect = Rect.fromLTWH((base.$2 - 2.45) * unit, (base.$1 - 2.45) * unit, unit * 4.9, unit * 4.9);
       final shape = RRect.fromRectAndRadius(rect, Radius.circular(unit * .55));
-      final color = colors[player];
+      final activeBase = player < players || (players == 2 && player == 2);
+      final color = activeBase ? colors[player] : Color.lerp(colors[player], const Color(0xFF102433), .62)!;
       canvas.drawRRect(shape.shift(Offset(0, unit * .10)), Paint()
         ..color = Colors.black.withValues(alpha: .30)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
       canvas.drawRRect(shape, Paint()..shader = LinearGradient(
@@ -528,7 +529,7 @@ class _LudoBoardPainter extends CustomPainter {
       }
       final label = TextPainter(
         text: TextSpan(text: ['قرمز','آبی','زرد','سبز'][player],
-          style: TextStyle(color: Colors.white.withValues(alpha: .94), fontSize: unit * .30, fontWeight: FontWeight.w900)),
+          style: TextStyle(color: Colors.white.withValues(alpha: activeBase ? .94 : .42), fontSize: unit * .30, fontWeight: FontWeight.w900)),
         textDirection: TextDirection.rtl,
       )..layout();
       label.paint(canvas, Offset(rect.center.dx - label.width / 2, player < 2 ? rect.bottom - unit * .52 : rect.top + unit * .18));
@@ -571,7 +572,8 @@ class _LudoBoardPainter extends CustomPainter {
     }
 
     for (var player = 0; player < 4; player++) {
-      final color = colors[player];
+      final activeLane = player < players || (players == 2 && player == 2);
+      final color = activeLane ? colors[player] : colors[player].withValues(alpha: .22);
       for (final cell in LudoBoardGeometry.homeLanes[player]) {
         final center = LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size.width);
         final rect = Rect.fromCenter(center: center, width: unit * .77, height: unit * .77);
