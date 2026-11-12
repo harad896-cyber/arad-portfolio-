@@ -29,7 +29,13 @@ class LudoCustomization {
   static final ValueNotifier<LudoLook> current = ValueNotifier(const LudoLook());
   static Future<void>? _loadFuture;
   static String? _loadedScope;
-  static String get _accountScope => Supabase.instance.client.auth.currentUser?.id ?? 'guest';
+  static String get _accountScope {
+    try {
+      return Supabase.instance.client.auth.currentUser?.id ?? 'guest';
+    } catch (_) {
+      return 'guest';
+    }
+  }
   static String _accountKey(String key) => 'ludo_${_accountScope}_$key';
   static const avatars = ['🙂', '😎', '🦁', '🐼', '🐯', '🦊', '🐉', '👑', '🦅', '🐺'];
   static const frames = ['طلایی', 'یخی', 'زمردی', 'یاقوتی', 'نئونی', 'نقره‌ای', 'آتشین', 'کریستالی'];
