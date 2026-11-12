@@ -7,9 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'fun_game_engine.dart';
 
-/// Local-first entertainment hub for GapResan.
-/// Multiplayer, shared scores and cloud persistence are intentionally not implied:
-/// those require dedicated Supabase tables, policies and realtime flows.
+/// GapResan entertainment hub. Board games use secured Supabase rooms for
+/// online matches; quizzes and other activities remain local-first.
 class FunZonePage extends StatelessWidget {
   const FunZonePage({super.key});
 
