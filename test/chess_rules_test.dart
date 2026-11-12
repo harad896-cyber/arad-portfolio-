@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/chess_engine/chess.dart' as chess;
+import 'package:arad_messenger/chess_engine/chess.dart' as chess;
 
 void main() {
   group('GapResan cross-platform chess rules', () {
