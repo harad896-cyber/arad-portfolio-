@@ -107,6 +107,7 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
       if (!mounted) return;
       final v=e.toString().toLowerCase();
       final msg=v.contains('insufficient_coins')?'موجودی سکه کافی نیست.':
+        v.contains('transfer_limit_exceeded')?'به سقف مجاز انتقال روزانه رسیده‌ای.':
         v.contains('recipient_not_found')||v.contains('no rows')?'این نام کاربری پیدا نشد.':
         v.contains('invalid_recipient')?'نمی‌توانی به حساب خودت سکه بفرستی.':
         v.contains('transfer_gap_coins')||v.contains('schema cache')?'انتقال هنوز روی سرور فعال نشده است.':
