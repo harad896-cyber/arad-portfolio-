@@ -91,6 +91,14 @@ void main() {
       expect(tester.getSize(start).height, greaterThan(0));
       expect(tester.getTopLeft(heading).dy, greaterThanOrEqualTo(0));
       expect(tester.getBottomRight(heading).dy, lessThan(832));
+      // Verify the controls are actually painted and tappable, not merely
+      // present in the widget tree (the reported Android failure was blank).
+      expect(find.text('شروع بازی').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('شروع بازی'));
+      await tester.pumpAndSettle();
+      expect(find.text('تاس بریز'), findsOneWidget);
+      expect(find.text('قانون'), findsOneWidget);
+      expect(find.text('تاس بریز').hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
