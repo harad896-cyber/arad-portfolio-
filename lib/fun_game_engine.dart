@@ -119,11 +119,47 @@ class _FunGamePageState extends State<FunGamePage> {
       if(difficulty==1)return cols[random.nextInt(cols.length)];
       for(final c in cols){if(won(drop(board,c,'O'),'O'))return c;}
       for(final c in cols){if(won(drop(board,c,'X'),'X'))return c;}
-      if(difficulty==3&&cols.contains(3))return 3;cols.sort((a,b)=>(a-3).abs().compareTo((b-3).abs()));return cols.first;
+      if(difficulty==3){
+        var bestScore=-1000000;int? bestColumn;
+        for(final c in cols){
+          final score=connectFourMinimax(drop(board,c,'O'),3,false,-1000000,1000000);
+          if(score>bestScore){bestScore=score;bestColumn=c;}
+        }
+        return bestColumn;
+      }
+      if(cols.contains(3))return 3;
+      cols.sort((a,b)=>(a-3).abs().compareTo((b-3).abs()));return cols.first;
     }
     if(difficulty==3){var best=-999;int? chosen;for(var i=0;i<9;i++){if(board[i]!='.')continue;final b=List<String>.from(board)..[i]='O';final s=minimax(b,false,0);if(s>best){best=s;chosen=i;}}return chosen;}
     if(difficulty>=2){final a=winningMove('O');if(a!=null)return a;final b=winningMove('X');if(b!=null)return b;if(board[4]=='.')return 4;final corners=[0,2,6,8].where((i)=>board[i]=='.').toList();if(corners.isNotEmpty)return corners[random.nextInt(corners.length)];}
     final free=List.generate(9,(i)=>i).where((i)=>board[i]=='.').toList();return free.isEmpty?null:free[random.nextInt(free.length)];
+  }
+  int evaluateConnectFour(List<String> b){
+    var score=0;
+    for(var r=0;r<6;r++){if(b[r*7+3]=='O')score+=4;if(b[r*7+3]=='X')score-=4;}
+    const dirs=[(0,1),(1,0),(1,1),(1,-1)];
+    for(var r=0;r<6;r++){for(var col=0;col<7;col++){for(final d in dirs){
+      final endR=r+3*d.$1,endC=col+3*d.$2;
+      if(endR<0||endR>=6||endC<0||endC>=7)continue;
+      var o=0,x=0;
+      for(var k=0;k<4;k++){final v=b[(r+k*d.$1)*7+col+k*d.$2];if(v=='O')o++;if(v=='X')x++;}
+      if(x==0){score+=o==1?2:o==2?12:o==3?90:0;}
+      if(o==0){score-=x==1?3:x==2?16:x==3?110:0;}
+    }}}return score;
+  }
+  int connectFourMinimax(List<String>b,int depth,bool maximizing,int alpha,int beta){
+    if(won(b,'O'))return 100000+depth;
+    if(won(b,'X'))return -100000-depth;
+    final cols=List.generate(7,(i)=>i).where((c)=>landing(b,c)!=null).toList();
+    if(depth==0||cols.isEmpty)return evaluateConnectFour(b);
+    if(maximizing){
+      var best=-1000000;
+      for(final c in cols){best=math.max(best,connectFourMinimax(drop(b,c,'O'),depth-1,false,alpha,beta));alpha=math.max(alpha,best);if(beta<=alpha)break;}
+      return best;
+    }
+    var best=1000000;
+    for(final c in cols){best=math.min(best,connectFourMinimax(drop(b,c,'X'),depth-1,true,alpha,beta));beta=math.min(beta,best);if(beta<=alpha)break;}
+    return best;
   }
   int? winningMove(String m){for(var i=0;i<9;i++){if(board[i]!='.')continue;final b=List<String>.from(board)..[i]=m;if(won(b,m))return i;}return null;}
   int minimax(List<String>b,bool bot,int depth){if(won(b,'O'))return 10-depth;if(won(b,'X'))return depth-10;if(b.every((v)=>v!='.'))return 0;var best=bot?-100:100;for(var i=0;i<9;i++){if(b[i]!='.')continue;final n=List<String>.from(b)..[i]=bot?'O':'X';final s=minimax(n,!bot,depth+1);best=bot?math.max(best,s):math.min(best,s);}return best;}
