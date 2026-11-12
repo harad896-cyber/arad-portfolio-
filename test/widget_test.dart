@@ -63,6 +63,16 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     });
 
+    testWidgets('Ludo opens from Fun Zone and shows its mode picker', (tester) async {
+      await openGame(tester, 'لودو');
+      expect(find.text('لودوی گپ‌رسان'), findsOneWidget);
+      expect(find.text('شروع بازی'), findsOneWidget);
+      expect(find.text('بازی با ربات'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
     testWidgets('Memory game opens with cards and move counter', (tester) async {
       await openGame(tester, 'بازی حافظه');
       expect(find.textContaining('حرکت‌ها:'), findsOneWidget);
