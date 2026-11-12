@@ -20,6 +20,7 @@ class FunZonePage extends StatelessWidget {
 
   static const _items = <_FunItem>[
     _FunItem('بازی دونفره', 'ربات، دونفره یا آنلاین', Icons.grid_3x3_rounded, _FunKind.duel, Color(0xFF16A085)),
+    _FunItem('لودو', '۲ تا ۴ نفره و بازی با ربات', Icons.casino_rounded, _FunKind.ludo, Color(0xFFF0B83B)),
     _FunItem('مسابقه و معما', 'سؤال‌های کوتاه و امتیاز', Icons.quiz_rounded, _FunKind.quiz, Color(0xFF4776E6)),
     _FunItem('گردونه شانس', 'امتیاز روزانه و جایزه', Icons.casino_rounded, _FunKind.wheel, Color(0xFFE6A23C)),
     _FunItem('جدول امتیازها', 'رتبه و آمار بازیکنان', Icons.leaderboard_rounded, _FunKind.leaderboard, Color(0xFFD0A33D)),
