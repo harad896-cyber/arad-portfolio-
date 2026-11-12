@@ -39,27 +39,27 @@ void main() {
     });
 
     test('recognizes checkmate from a legal scholar mate sequence', () {
-      Position position = Chess.initial;
+      final positions = <Position>[Chess.initial];
       for (final san in ['e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']) {
-        final move = position.parseSan(san);
+        final move = positions.last.parseSan(san);
         expect(move, isNotNull, reason: 'Move $san must be legal');
-        position = position.play(move!);
+        positions.add(positions.last.play(move!));
       }
-      expect(position.isCheckmate, isTrue);
-      expect(position.outcome?.winner, Side.white);
+      expect(positions.last.isCheckmate, isTrue);
+      expect(positions.last.outcome?.winner, Side.white);
     });
 
     test('supports en passant and promotion through legal move generation', () {
-      Position position = Chess.fromSetup(Setup.parseFen(
+      final positions = <Position>[Chess.fromSetup(Setup.parseFen(
         '4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1',
-      ));
+      ))];
       final ep = NormalMove(
         from: Square.fromName('e5'),
         to: Square.fromName('d6'),
       );
-      expect(position.isLegal(ep), isTrue);
-      position = position.play(ep);
-      expect(position.board.pieceAt(Square.fromName('d5')), isNull);
+      expect(positions.last.isLegal(ep), isTrue);
+      positions.add(positions.last.play(ep));
+      expect(positions.last.board.pieceAt(Square.fromName('d5')), isNull);
 
       final promotionPosition = Chess.fromSetup(Setup.parseFen(
         '4k3/P7/8/8/8/8/8/4K3 w - - 0 1',
