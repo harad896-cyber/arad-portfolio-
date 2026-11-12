@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'fun_zone_theme.dart';
+import 'ludo_customization.dart';
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
 class LudoRules {
@@ -112,6 +113,23 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final List<int?> _diceValues = List<int?>.filled(4, null);
   String _message = 'بازی را آغاز کن.';
   List<List<int>> _positions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    LudoCustomization.current.addListener(_onLookChanged);
+    LudoCustomization.load();
+  }
+
+  void _onLookChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    LudoCustomization.current.removeListener(_onLookChanged);
+    super.dispose();
+  }
 
   bool get _botTurn => _againstBot && _turn == 1;
   int _colorIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
@@ -252,10 +270,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
     appBar: AppBar(
       title: const Text('لودو'), backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      actions: [IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded))],
+      actions: [const LudoCustomizationButton(), IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded))],
     ),
     floatingActionButton: const FunZoneThemeButton(),
-    body: SafeArea(child: FunZoneBackdrop(child: !_started ? _modePicker() : _gameBody())),
+    body: SafeArea(child: FunZoneBackdrop(child: Container(
+      decoration: BoxDecoration(gradient: LinearGradient(
+        begin: Alignment.topLeft, end: Alignment.bottomRight,
+        colors: LudoCustomization.backgroundPalettes[LudoCustomization.current.value.background],
+      )),
+      child: !_started ? _modePicker() : _gameBody(),
+    ))),
   );
 
   Widget _modePicker() => ListView(
@@ -325,6 +349,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 turn: _turn, dice: _moving ? null : _dice,
                 legalTokens: _moving ? const [] : _legal,
                 look: look,
+                styleIndex: LudoCustomization.current.value.board,
               ))),
               for (var player = 0; player < _playerCount; player++)
                 for (var token = 0; token < 4; token++) _buildToken(player, token, size),
@@ -377,6 +402,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
         boxShadow: active ? [BoxShadow(color: color.withValues(alpha: .22), blurRadius: 12)] : const [],
       ),
       child: Row(children: [
+        Stack(clipBehavior: Clip.none, children: [
+          Container(width: 43, height: 43,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .94),
+              border: Border.all(color: LudoCustomization.frameColors[LudoCustomization.current.value.frame], width: 3),
+              boxShadow: [BoxShadow(color: LudoCustomization.frameColors[LudoCustomization.current.value.frame].withValues(alpha: .38), blurRadius: 8)]),
+            child: Center(child: Text(LudoCustomization.avatars[LudoCustomization.current.value.avatar], style: const TextStyle(fontSize: 23))),
+          ),
+          Positioned(right: -4, bottom: -5, child: Text(LudoCustomization.charms[LudoCustomization.current.value.charm], style: const TextStyle(fontSize: 15))),
+        ]),
+        const SizedBox(width: 8),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
             maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -486,8 +521,9 @@ class _LudoBoardPainter extends CustomPainter {
   final int? dice;
   final List<int> legalTokens;
   final FunBackdrop look;
+  final int styleIndex;
   const _LudoBoardPainter({required this.colors, required this.players, required this.positions,
-    required this.turn, required this.dice, required this.legalTokens, required this.look});
+    required this.turn, required this.dice, required this.legalTokens, required this.look, required this.styleIndex});
 
   Color _playerColor(int player) => colors[players == 2 && player == 1 ? 2 : player];
 
@@ -498,14 +534,12 @@ class _LudoBoardPainter extends CustomPainter {
     final outer = RRect.fromRectAndRadius(boardRect.deflate(unit * .12), Radius.circular(unit * .72));
     canvas.drawRRect(outer.shift(Offset(0, unit * .13)), Paint()
       ..color = const Color(0x99000000)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13));
-    final boardColors = FunZoneLook.colors(look);
+    final boardColors = LudoCustomization.boardPalettes[styleIndex.clamp(0, LudoCustomization.boardPalettes.length - 1)];
     canvas.drawRRect(outer, Paint()..shader = LinearGradient(
       begin: Alignment.topLeft, end: Alignment.bottomRight,
-      colors: look == FunBackdrop.stadium
-          ? const [Color(0xFF247A49), Color(0xFF125334), Color(0xFF082E25)]
-          : [Color.lerp(boardColors[0], const Color(0xFF36566A), .42)!, boardColors[1], boardColors[0]],
+      colors: [Color.lerp(boardColors[0], boardColors[1], .28)!, boardColors[1], boardColors[0]],
     ).createShader(boardRect));
-    canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = const Color(0xFFD6B36B));
+    canvas.drawRRect(outer, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .09..color = LudoCustomization.frameColors[styleIndex.clamp(0, LudoCustomization.frameColors.length - 1)]);
     final inner = RRect.fromRectAndRadius(boardRect.deflate(unit * .38), Radius.circular(unit * .48));
     canvas.drawRRect(inner, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .018..color = const Color(0x66F7DFA9));
 
@@ -698,7 +732,7 @@ class _LudoBoardPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LudoBoardPainter oldDelegate) =>
       oldDelegate.players != players || oldDelegate.turn != turn || oldDelegate.dice != dice ||
-      oldDelegate.positions != positions || oldDelegate.legalTokens != legalTokens || oldDelegate.colors != colors || oldDelegate.look != look;
+      oldDelegate.positions != positions || oldDelegate.legalTokens != legalTokens || oldDelegate.colors != colors || oldDelegate.look != look || oldDelegate.styleIndex != styleIndex;
 }
 
 class _LudoDieFace extends StatelessWidget {
