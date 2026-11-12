@@ -594,7 +594,7 @@ class _LudoBoardPainter extends CustomPainter {
     ).createShader(vault));
     canvas.drawRRect(vaultShape, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .08..color = const Color(0xFFFFF2CC));
     final brand = TextPainter(
-      text: const TextSpan(text: 'GR', style: TextStyle(color: Color(0xFF302311), fontSize: unit * .62, fontWeight: FontWeight.w900, letterSpacing: 1)),
+      text: TextSpan(text: 'GR', style: TextStyle(color: const Color(0xFF302311), fontSize: unit * .62, fontWeight: FontWeight.w900, letterSpacing: 1)),
       textDirection: TextDirection.ltr,
     )..layout();
     brand.paint(canvas, center - Offset(brand.width / 2, brand.height / 2));
