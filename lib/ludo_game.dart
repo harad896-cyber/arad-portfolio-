@@ -527,8 +527,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
       Expanded(flex: 2, child: Container(
         constraints: const BoxConstraints(minHeight: 112),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF092B58), Color(0xFF0756A5), Color(0xFF071A38)]),
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [
+              LudoCustomization.dicePalettes[LudoCustomization.current.value.diceSkin][0],
+              LudoCustomization.dicePalettes[LudoCustomization.current.value.diceSkin][1],
+              LudoCustomization.dicePalettes[LudoCustomization.current.value.diceSkin][0],
+            ]),
           borderRadius: BorderRadius.circular(25),
           border: Border.all(color: const Color(0xFFFFD477), width: 2),
           boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 13, offset: Offset(0, 5))],
@@ -537,7 +541,19 @@ class _LudoGamePageState extends State<LudoGamePage> {
           borderRadius: BorderRadius.circular(23),
           onTap: _dice == null && !_moving && !_botBusy && !_botTurn && _winner == null ? _roll : null,
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.casino_rounded, color: Colors.white, size: 43),
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .16),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: .72), width: 1.5),
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withValues(alpha: .22),
+                  blurRadius: 9, offset: const Offset(0, 3),
+                )],
+              ),
+              child: const Icon(Icons.casino_rounded, color: Colors.white, size: 34),
+            ),
             const SizedBox(height: 3),
             Text(_dice == null ? 'تاس بریز' : 'عدد $_dice · مهره را انتخاب کن',
               textAlign: TextAlign.center,
