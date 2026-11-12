@@ -9,6 +9,8 @@ void main() {
     expect(LudoCustomization.backgrounds.length, LudoCustomization.backgroundPalettes.length);
     expect(LudoCustomization.avatars.length, 10);
     expect(LudoCustomization.charms.length, 10);
+    expect(LudoCustomization.diceSkins.length, LudoCustomization.dicePalettes.length);
+    expect(LudoCustomization.diceSkins.length, 6);
   });
 
   test('every board palette provides three usable colors', () {
