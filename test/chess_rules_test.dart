@@ -1,79 +1,64 @@
-import 'package:dartchess/dartchess.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../lib/chess_engine/chess.dart' as chess;
 
 void main() {
-  group('GapResan chess rules', () {
+  group('GapResan cross-platform chess rules', () {
     test('standard starting position has exactly 20 legal moves', () {
-      final position = Chess.initial;
-      final count = position.legalMoves.values.fold<int>(
-        0,
-        (sum, squares) => sum + squares.size,
-      );
-      expect(count, 20);
+      final game = chess.Chess();
+      expect(game.generate_moves().length, 20);
     });
 
     test('rejects an illegal pawn move and accepts e2-e4', () {
-      final position = Chess.initial;
-      expect(
-        position.isLegal(NormalMove(
-          from: Square.fromName('e2'),
-          to: Square.fromName('e5'),
-        )),
-        isFalse,
-      );
-      final next = position.play(NormalMove(
-        from: Square.fromName('e2'),
-        to: Square.fromName('e4'),
-      ));
-      expect(next.turn, Side.black);
-      expect(next.board.pieceAt(Square.fromName('e4'))?.role, Role.pawn);
+      final game = chess.Chess();
+      expect(game.move({'from': 'e2', 'to': 'e5'}), isFalse);
+      expect(game.move({'from': 'e2', 'to': 'e4'}), isTrue);
+      expect(game.turn, chess.Color.BLACK);
+      expect(game.get('e4')?.type, chess.PieceType.PAWN);
     });
 
     test('castling is legal only when the path is safe and clear', () {
-      final position = Chess.fromSetup(Setup.parseFen(
-        'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
-      ));
-      final destinations = makeLegalMoves(position)[Square.fromName('e1')]!;
-      expect(destinations, contains(Square.fromName('g1')));
-      expect(destinations, contains(Square.fromName('c1')));
+      final game = chess.Chess.fromFEN('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+      final destinations = game.generate_moves({'square': 'e1'}).map((m) => m.toAlgebraic).toSet();
+      expect(destinations, contains('g1'));
+      expect(destinations, contains('c1'));
+      final blocked = chess.Chess.fromFEN('r3k2r/8/8/8/8/8/8/R2BK2R w KQkq - 0 1');
+      expect(blocked.generate_moves({'square': 'e1'}).any((m) => m.toAlgebraic == 'g1'), isFalse);
     });
 
     test('recognizes checkmate from a legal scholar mate sequence', () {
-      final positions = <Position>[Chess.initial];
+      final game = chess.Chess();
       for (final san in ['e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']) {
-        final move = positions.last.parseSan(san);
-        expect(move, isNotNull, reason: 'Move $san must be legal');
-        positions.add(positions.last.play(move!));
+        expect(game.move(san), isTrue, reason: 'Move $san must be legal');
       }
-      expect(positions.last.isCheckmate, isTrue);
-      expect(positions.last.outcome?.winner, Side.white);
+      expect(game.in_checkmate, isTrue);
+      expect(game.turn, chess.Color.BLACK);
     });
 
     test('supports en passant and promotion through legal move generation', () {
-      final positions = <Position>[Chess.fromSetup(Setup.parseFen(
-        '4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1',
-      ))];
-      final ep = NormalMove(
-        from: Square.fromName('e5'),
-        to: Square.fromName('d6'),
-      );
-      expect(positions.last.isLegal(ep), isTrue);
-      positions.add(positions.last.play(ep));
-      expect(positions.last.board.pieceAt(Square.fromName('d5')), isNull);
+      final enPassant = chess.Chess.fromFEN('4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1');
+      expect(enPassant.move({'from': 'e5', 'to': 'd6'}), isTrue);
+      expect(enPassant.get('d5'), isNull);
+      expect(enPassant.get('d6')?.type, chess.PieceType.PAWN);
+      final promotion = chess.Chess.fromFEN('4k3/P7/8/8/8/8/8/4K3 w - - 0 1');
+      expect(promotion.move({'from': 'a7', 'to': 'a8', 'promotion': 'q'}), isTrue);
+      expect(promotion.get('a8')?.type, chess.PieceType.QUEEN);
+    });
 
-      final promotionPosition = Chess.fromSetup(Setup.parseFen(
-        '4k3/P7/8/8/8/8/8/4K3 w - - 0 1',
-      ));
-      final promotion = NormalMove(
-        from: Square.fromName('a7'),
-        to: Square.fromName('a8'),
-        promotion: Role.queen,
-      );
-      expect(promotionPosition.isLegal(promotion), isTrue);
-      expect(
-        promotionPosition.play(promotion).board.pieceAt(Square.fromName('a8'))?.role,
-        Role.queen,
-      );
+    test('undo restores the previous board and side to move', () {
+      final game = chess.Chess();
+      game.move('e4');
+      game.move('e5');
+      expect(game.turn, chess.Color.WHITE);
+      game.undo();
+      expect(game.turn, chess.Color.BLACK);
+      expect(game.get('e5'), isNull);
+    });
+
+    test('detects stalemate and insufficient material', () {
+      final stalemate = chess.Chess.fromFEN('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
+      expect(stalemate.in_stalemate, isTrue);
+      final insufficient = chess.Chess.fromFEN('8/8/8/8/8/8/4k3/6K1 w - - 0 1');
+      expect(insufficient.insufficient_material, isTrue);
     });
   });
 }
