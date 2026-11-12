@@ -277,13 +277,13 @@ class _QuizPageState extends State<_QuizPage> {
           TextButton(onPressed:()=>setState(()=>{category='همه',difficulty=0,_newRound()}),child:const Text('تغییر دسته و سطح')),
         ]))
         :Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-          SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:categories.map((c)=>Padding(padding:const EdgeInsets.only(left:6),child:ChoiceChip(label:Text(c),selected:category==c,onSelected:(_)=>setState(()=>{category=c,_newRound()}))).toList())),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: categories.map((c) { return Padding(padding: const EdgeInsets.only(left: 6), child: ChoiceChip(label: Text(c), selected: category == c, onSelected: (_) { setState(() { category = c; _newRound(); }); })); }).toList())),
           const SizedBox(height:8),
           Wrap(spacing:6,children:[
-            ChoiceChip(label:const Text('همهٔ سطح‌ها'),selected:difficulty==0,onSelected:(_)=>setState(()=>{difficulty=0,_newRound()})),
-            ChoiceChip(label:const Text('آسان'),selected:difficulty==1,onSelected:(_)=>setState(()=>{difficulty=1,_newRound()})),
-            ChoiceChip(label:const Text('متوسط'),selected:difficulty==2,onSelected:(_)=>setState(()=>{difficulty=2,_newRound()})),
-            ChoiceChip(label:const Text('سخت'),selected:difficulty==3,onSelected:(_)=>setState(()=>{difficulty=3,_newRound()})),
+            ChoiceChip(label:const Text('همهٔ سطح‌ها'),selected:difficulty==0,onSelected: (_) { setState(() { difficulty = 0; _newRound(); }); }),
+            ChoiceChip(label:const Text('آسان'),selected:difficulty==1,onSelected: (_) { setState(() { difficulty = 1; _newRound(); }); }),
+            ChoiceChip(label:const Text('متوسط'),selected:difficulty==2,onSelected: (_) { setState(() { difficulty = 2; _newRound(); }); }),
+            ChoiceChip(label:const Text('سخت'),selected:difficulty==3,onSelected: (_) { setState(() { difficulty = 3; _newRound(); }); }),
           ]),
           const SizedBox(height:12),
           Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[
