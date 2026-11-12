@@ -642,7 +642,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         const Spacer(),
         Row(children: [
           const Icon(Icons.star_rounded, color: Color(0xFFFFD34D), size: 17),
-          Text(player == 0 ? '1105' : '980', style: const TextStyle(color: Color(0xFFFFD34D), fontSize: 11, fontWeight: FontWeight.w900)),
+          Text('—', style: const TextStyle(color: Color(0xFFFFD34D), fontSize: 11, fontWeight: FontWeight.w900)),
           const Spacer(),
           const Icon(Icons.casino_rounded, color: Colors.white70, size: 14),
           Text(' $count/4', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
