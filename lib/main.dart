@@ -1694,10 +1694,22 @@ Future<void> main() async {
       ),
     ),
   );
+  // Restore saved appearance, language and accessibility before the first
+  // real application frame. This prevents the default theme/locale from
+  // flashing briefly on every launch. Preferences are local-only: if Android
+  // storage is slow, continue after two seconds and let the pending reads
+  // notify their controllers when they finish.
+  try {
+    await Future.wait<void>([
+      appTheme.load(),
+      aradLanguageController.load(),
+      appAccessibility.load(),
+    ]).timeout(const Duration(seconds: 2));
+  } catch (settingsError) {
+    debugPrint('گپ‌رسان local settings restore delayed: $settingsError');
+  }
+
   runApp(AradMessenger());
-  unawaited(appTheme.load().catchError((_) {}));
-  unawaited(aradLanguageController.load().catchError((_) {}));
-  unawaited(appAccessibility.load().catchError((_) {}));
 }
 
 class StartupLoadingApp extends StatelessWidget {
