@@ -183,6 +183,7 @@ class _FunGamePageState extends State<FunGamePage> {
         const SizedBox(height:10),
         Expanded(child:Center(child:connectFour?connectBoard(b,done,scheme):ticBoard(b,done,scheme))),
         if(online&&roomStatus=='active')Text(botRoom?(version.isEven?'حرکتت را انتخاب کن':'ربات در حال بازی است'):turnUser==uid?'حرکتت را انتخاب کن':'منتظر حرکت حریف باش'),
+        if(botRoom&&roomStatus=='active'&&version.isOdd&&!thinking&&!busy)TextButton.icon(onPressed:botTurnOnline,icon:const Icon(Icons.refresh_rounded),label:const Text('تلاش دوباره برای حرکت ربات')),
         if(done)FilledButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('بازی تازه'))
         else if(!online)OutlinedButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('شروع دوباره')),
         const SizedBox(height:8),Text(connectFour?'چهار مهره را افقی، عمودی یا مورب ردیف کن.':'سه مهره را در یک خط ردیف کن.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:scheme.onSurfaceVariant)),
