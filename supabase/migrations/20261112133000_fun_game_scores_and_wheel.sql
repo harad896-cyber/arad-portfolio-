@@ -1,7 +1,7 @@
 -- Persistent, server-authoritative game scores and daily wheel rewards.
-create schema if not exists private;
-revoke all on schema private from public, anon, authenticated;
-grant usage on schema private to authenticated;
+create schema if not exists fun_internal;
+revoke all on schema fun_internal from public, anon, authenticated;
+grant usage on schema fun_internal to authenticated;
 -- Competitive points are awarded only after a completed human-vs-human online match.
 create table if not exists public.fun_game_stats (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -46,7 +46,7 @@ create policy fun_game_results_participant_read on public.fun_game_results
   for select to authenticated
   using ((select auth.uid()) = player_one_id or (select auth.uid()) = player_two_id);
 
-create or replace function private.record_fun_game_result()
+create or replace function fun_internal.record_fun_game_result()
 returns trigger
 language plpgsql
 security definer
@@ -138,7 +138,7 @@ create trigger fun_game_result_after_finish
   after update of status on public.fun_game_rooms
   for each row
   when (old.status is distinct from new.status and new.status = 'finished')
-  execute function private.record_fun_game_result();
+  execute function fun_internal.record_fun_game_result();
 
 -- One authenticated wheel spin per account per server-calendar day.
 create table if not exists public.fun_wheel_spins (
@@ -157,7 +157,7 @@ drop policy if exists fun_wheel_spins_own_read on public.fun_wheel_spins;
 create policy fun_wheel_spins_own_read on public.fun_wheel_spins
   for select to authenticated using ((select auth.uid()) = user_id);
 
-create or replace function private.spin_fun_wheel()
+create or replace function fun_internal.spin_fun_wheel()
 returns table (reward_key text, points_awarded integer, total_points integer)
 language plpgsql
 security definer
@@ -205,16 +205,16 @@ begin
 end;
 $$;
 
-revoke all on function private.record_fun_game_result() from public, anon, authenticated;
-revoke all on function private.spin_fun_wheel() from public, anon;
-grant execute on function private.spin_fun_wheel() to authenticated;
+revoke all on function fun_internal.record_fun_game_result() from public, anon, authenticated;
+revoke all on function fun_internal.spin_fun_wheel() from public, anon;
+grant execute on function fun_internal.spin_fun_wheel() to authenticated;
 
 create or replace function public.spin_fun_wheel()
 returns table (reward_key text, points_awarded integer, total_points integer)
 language sql
 security invoker
 set search_path = ''
-as $ select * from private.spin_fun_wheel(); $;
+as $ select * from fun_internal.spin_fun_wheel(); $;
 revoke all on function public.spin_fun_wheel() from public, anon;
 grant execute on function public.spin_fun_wheel() to authenticated;
 
