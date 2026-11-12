@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'fun_game_engine.dart';
 import 'chess_game.dart';
+import 'fun_zone_theme.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// GapResan entertainment hub. Board games use secured Supabase rooms for
 /// online matches; quizzes and other activities remain local-first.
@@ -29,8 +31,10 @@ class FunZonePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('سرگرمی‌های گپ‌رسان'), centerTitle: false),
-      body: CustomScrollView(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(title: const Text('سرگرمی‌های گپ‌رسان'), centerTitle: false, backgroundColor: Colors.transparent, surfaceTintColor: Colors.transparent),
+      floatingActionButton: const FunZoneThemeButton(),
+      body: FunZoneBackdrop(child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
@@ -75,7 +79,7 @@ class FunZonePage extends StatelessWidget {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -136,7 +140,12 @@ class _GameScaffold extends StatelessWidget {
   final Widget child;
   const _GameScaffold({required this.title, required this.child});
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: Text(title)), body: SafeArea(child: child));
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(title: Text(title), backgroundColor: Colors.transparent, surfaceTintColor: Colors.transparent),
+    floatingActionButton: const FunZoneThemeButton(),
+    body: SafeArea(child: FunZoneBackdrop(child: child)),
+  );
 }
 
 class _TicTacToePage extends StatefulWidget {
@@ -322,48 +331,103 @@ class _QuizPageState extends State<_QuizPage> {
 
 class _WheelPage extends StatefulWidget { const _WheelPage(); @override State<_WheelPage> createState() => _WheelPageState(); }
 class _WheelPageState extends State<_WheelPage> {
- static const prizes=['۱۰ امتیاز','ستاره طلایی','شانس دوباره','۲۰ امتیاز','خوش‌شانس','لبخند'];
- static const colors=[Color(0xFFE45B5B),Color(0xFFF39B38),Color(0xFFE8C547),Color(0xFF45A978),Color(0xFF3989C9),Color(0xFF8C63C7)];
- String? result;bool spinning=false;double turns=0;final random=math.Random();
+ static const prizes=['۵ امتیاز','۱۰ امتیاز','۱۵ امتیاز','۲۵ امتیاز','۵۰ امتیاز'];
+ static const keys=['small','bright','gold','grand','jackpot'];
+ static const colors=[Color(0xFF1D8E71),Color(0xFF2879B8),Color(0xFF8D5BC6),Color(0xFFE49A32),Color(0xFFD8B34B)];
+ String? result,error;bool spinning=false,alreadySpun=false;double turns=0;int? awarded,totalPoints;
  Future<void> spin() async {
-  if(spinning)return;
-  final next=turns+5+random.nextDouble();
-  setState(() {spinning=true;result=null;turns=next;});
-  await Future.delayed(const Duration(milliseconds:3200));
-  if(!mounted)return;
-  final fraction=next-next.floor();
-  final pointerProgress=(1-fraction)%1;
-  final index=(pointerProgress*prizes.length).floor()%prizes.length;
-  setState(() {result=prizes[index];spinning=false;});
+  if(spinning||alreadySpun)return;
+  final user=Supabase.instance.client.auth.currentUser;
+  if(user==null){setState(()=>error='برای دریافت امتیاز، نخست وارد حساب گپ‌رسان شو.');return;}
+  setState(()=>{spinning=true,error=null,result=null});
+  try {
+   final raw=await Supabase.instance.client.rpc('spin_fun_wheel').timeout(const Duration(seconds:12));
+   final row=(raw as List).first as Map;
+   final reward=(row['reward_key']??'').toString();
+   final index=keys.indexOf(reward);
+   if(index<0)throw StateError('پاداش نامعتبر دریافت شد.');
+   final fraction=(1-(index+.5)/prizes.length)%1;
+   var next=turns.floor()+5+fraction;
+   if(next<=turns)next+=1;
+   if(!mounted)return;
+   setState(()=>turns=next);
+   await Future<void>.delayed(const Duration(milliseconds:3400));
+   if(!mounted)return;
+   setState((){
+    awarded=(row['points_awarded'] as num).toInt();
+    totalPoints=(row['total_points'] as num).toInt();
+    result='+'+awarded.toString()+' امتیاز';
+    alreadySpun=true;spinning=false;
+   });
+  } catch(e) {
+   if(!mounted)return;
+   final message=e.toString().toLowerCase();
+   setState((){
+    spinning=false;
+    if(message.contains('wheel_already_spun_today')){
+      alreadySpun=true;error='امروز یک‌بار از گردونه استفاده کرده‌ای.';
+    } else if(message.contains('authentication_required')){
+      error='برای دریافت امتیاز وارد حساب گپ‌رسان شو.';
+    } else {
+      error='گردونه فعلاً وصل نشد. اتصال را بررسی کن و دوباره تلاش کن.';
+    }
+   });
+  }
  }
- @override Widget build(BuildContext context)=>_GameScaffold(title:'گردونه شانس',child:Center(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[
-  Stack(alignment:Alignment.topCenter,children:[
-   Padding(padding:const EdgeInsets.only(top:16),child:AnimatedRotation(turns:turns,duration:const Duration(milliseconds:3200),curve:Curves.easeOutCubic,child:SizedBox(width:270,height:270,child:CustomPaint(painter:_PrizeWheelPainter(prizes:prizes,colors:colors))))),
-   const Icon(Icons.arrow_drop_down_rounded,size:48,color:Colors.deepOrange),
-  ]),
-  const SizedBox(height:20),
-  if(result!=null)Text('جایزه تو: '+result!,style:const TextStyle(fontSize:21,fontWeight:FontWeight.w900)),
-  const SizedBox(height:16),
-  FilledButton.icon(onPressed:spinning?null:spin,icon:const Icon(Icons.casino),label:Text(spinning?'در حال چرخش…':'چرخاندن گردونه')),
-  const SizedBox(height:10),
-  const Text('جایزه مطابق خانهٔ زیر نشانگر تعیین می‌شود؛ همه جایزه‌ها مجازی‌اند.',textAlign:TextAlign.center,style:TextStyle(fontSize:12)),
- ]))));
+ @override Widget build(BuildContext context)=>_GameScaffold(title:'گردونه شانس',child:ListView(
+  padding:const EdgeInsets.fromLTRB(18,18,18,30),
+  children:[
+   const Text('هر روز یک چرخش؛ امتیاز مستقیم به حساب تو اضافه می‌شود.',textAlign:TextAlign.center,style:TextStyle(color:Colors.white70,fontSize:13)),
+   const SizedBox(height:18),
+   Center(child:Stack(alignment:Alignment.topCenter,children:[
+    Padding(padding:const EdgeInsets.only(top:20),child:AnimatedRotation(
+     turns:turns,duration:const Duration(milliseconds:3400),curve:Curves.easeOutCubic,
+     child:SizedBox(width: math.min(310.0,MediaQuery.sizeOf(context).width-54),height:math.min(310.0,MediaQuery.sizeOf(context).width-54),
+      child:CustomPaint(painter:_PrizeWheelPainter(prizes:prizes,colors:colors))))),
+    Container(width:48,height:52,decoration:const BoxDecoration(shape:BoxShape.circle,gradient:LinearGradient(colors:[Color(0xFFFFF1B8),Color(0xFFB78327)]),boxShadow:[BoxShadow(color:Colors.black45,blurRadius:12,offset:Offset(0,4))]),
+      child:const Icon(Icons.keyboard_arrow_down_rounded,size:42,color:Color(0xFF4A2B08))),
+   ])),
+   const SizedBox(height:22),
+   if(result!=null)Container(padding:const EdgeInsets.all(16),decoration:BoxDecoration(borderRadius:BorderRadius.circular(20),gradient:const LinearGradient(colors:[Color(0xFFB98A2E),Color(0xFFF6D77B),Color(0xFF9B6A20)]),boxShadow:const [BoxShadow(color:Colors.black26,blurRadius:16,offset:Offset(0,6))]),child:Column(children:[
+    Text('تبریک! $result',style:const TextStyle(color:Color(0xFF38240B),fontSize:23,fontWeight:FontWeight.w900)),
+    if(totalPoints!=null)Text('مجموع امتیاز حساب: $totalPoints',style:const TextStyle(color:Color(0xFF38240B),fontWeight:FontWeight.w800)),
+   ])),
+   if(error!=null)Padding(padding:const EdgeInsets.only(top:10),child:Text(error!,textAlign:TextAlign.center,style:const TextStyle(color:Color(0xFFFFD0C9),fontWeight:FontWeight.w700))),
+   const SizedBox(height:18),
+   Center(child:FilledButton.icon(
+    onPressed:spinning||alreadySpun?null:spin,
+    icon:spinning?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.casino_rounded),
+    label:Text(spinning?'گردونه در حال چرخش…':alreadySpun?'چرخش امروز انجام شد':'چرخاندن گردونه'),
+    style:FilledButton.styleFrom(backgroundColor:const Color(0xFFF1C96A),foregroundColor:const Color(0xFF38240B),padding:const EdgeInsets.symmetric(horizontal:24,vertical:15)),
+   )),
+   const SizedBox(height:12),
+   const Text('نتیجه روی سرور تعیین می‌شود و امتیاز پس از ثبت، به حساب کاربری افزوده می‌شود.',textAlign:TextAlign.center,style:TextStyle(color:Colors.white60,fontSize:11,height:1.5)),
+  ],
+ ));
 }
 class _PrizeWheelPainter extends CustomPainter {
  final List<String> prizes;final List<Color> colors;
  const _PrizeWheelPainter({required this.prizes,required this.colors});
  @override void paint(Canvas canvas,Size size){
   final center=Offset(size.width/2,size.height/2),radius=math.min(size.width,size.height)/2,sweep=2*math.pi/prizes.length;
+  final outer=Paint()..shader=const LinearGradient(colors:[Color(0xFFFFF2C1),Color(0xFF9B6A20),Color(0xFFFFE7A0)]).createShader(Offset.zero&size);
+  canvas.drawCircle(center,radius,outer);
+  final innerRadius=radius-7;
   for(var i=0;i<prizes.length;i++){
    final start=-math.pi/2+i*sweep;
-   canvas.drawArc(Rect.fromCircle(center:center,radius:radius),start,sweep,true,Paint()..color=colors[i%colors.length]);
-   canvas.drawArc(Rect.fromCircle(center:center,radius:radius),start,sweep,true,Paint()..color=Colors.white..style=PaintingStyle.stroke..strokeWidth=2);
+   final rect=Rect.fromCircle(center:center,radius:innerRadius);
+   final fill=Paint()..shader=RadialGradient(colors:[Color.lerp(colors[i],Colors.white,.22)!,colors[i],Color.lerp(colors[i],Colors.black,.24)!]).createShader(rect);
+   canvas.drawArc(rect,start,sweep,true,fill);
+   canvas.drawArc(rect,start,sweep,true,Paint()..color=const Color(0x99FFF0C5)..style=PaintingStyle.stroke..strokeWidth=1.5);
    final angle=start+sweep/2,p=center+Offset(math.cos(angle),math.sin(angle))*radius*.64;
-   final label=TextPainter(text:TextSpan(text:prizes[i],style:const TextStyle(color:Colors.white,fontSize:12,fontWeight:FontWeight.w900)),textDirection:TextDirection.rtl,textAlign:TextAlign.center)..layout(maxWidth:radius*.62);
+   final label=TextPainter(text:TextSpan(text:prizes[i],style:const TextStyle(color:Colors.white,fontSize:13,fontWeight:FontWeight.w900,shadows:[Shadow(color:Colors.black87,blurRadius:5,offset:Offset(1,2))])),textDirection:TextDirection.rtl,textAlign:TextAlign.center)..layout(maxWidth:radius*.65);
    canvas.save();canvas.translate(p.dx,p.dy);canvas.rotate(angle+math.pi/2);label.paint(canvas,Offset(-label.width/2,-label.height/2));canvas.restore();
+   final pin=center+Offset(math.cos(start),math.sin(start))*(radius-13);
+   canvas.drawCircle(pin,3.2,Paint()..color=const Color(0xFFFFF0B9));
   }
-  canvas.drawCircle(center,radius*.13,Paint()..color=Colors.white);
-  canvas.drawCircle(center,radius*.08,Paint()..color=const Color(0xFF087F68));
+  canvas.drawCircle(center,radius*.19,Paint()..shader=const RadialGradient(colors:[Color(0xFFFFF6D4),Color(0xFFD8A93E),Color(0xFF6F4616)]).createShader(Rect.fromCircle(center:center,radius:radius*.19)));
+  canvas.drawCircle(center,radius*.105,Paint()..shader=const RadialGradient(colors:[Color(0xFF285D4E),Color(0xFF092A24)]).createShader(Rect.fromCircle(center:center,radius:radius*.105)));
+  canvas.drawCircle(center,radius*.19,Paint()..color=Colors.white.withValues(alpha:.35)..style=PaintingStyle.stroke..strokeWidth=1.5);
  }
  @override bool shouldRepaint(covariant _PrizeWheelPainter old)=>old.prizes!=prizes||old.colors!=colors;
 }
