@@ -73,6 +73,29 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     });
 
+    testWidgets('Ludo mode picker is laid out on a phone-sized screen', (tester) async {
+      tester.view.physicalSize = const Size(384, 832);
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      final tile = find.text('لودو');
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      final heading = find.text('لودوی گپ‌رسان');
+      final start = find.text('شروع بازی');
+      expect(heading, findsOneWidget);
+      expect(start, findsOneWidget);
+      expect(find.byIcon(Icons.casino_rounded), findsOneWidget);
+      expect(tester.getSize(heading).height, greaterThan(0));
+      expect(tester.getSize(start).height, greaterThan(0));
+      expect(tester.getTopLeft(heading).dy, greaterThanOrEqualTo(0));
+      expect(tester.getBottomRight(heading).dy, lessThan(832));
+      expect(tester.takeException(), isNull);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
     testWidgets('Memory game opens with cards and move counter', (tester) async {
       await openGame(tester, 'بازی حافظه');
       expect(find.textContaining('حرکت‌ها:'), findsOneWidget);
