@@ -493,7 +493,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (peers.length < 2) return point;
     final slot = peers.indexOf((player, token));
     final angle = -math.pi / 2 + (2 * math.pi * slot / peers.length);
-    final radius = size * (peers.length == 2 ? .033 : .038);
+    final radius = size * (peers.length == 2 ? .033 : .05);
     return point + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
   }
 
@@ -501,7 +501,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final point = _tokenDisplayPoint(player, token, size);
     final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn && !_moving;
     final diameter = size * .052;
-    final hitSize = diameter * 1.28;
+    final hitSize = diameter * 1.18;
     final color = _playerColor(player);
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 105), curve: Curves.easeInOutCubic,
