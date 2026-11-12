@@ -289,6 +289,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
       decoration: BoxDecoration(gradient: LinearGradient(
         begin: Alignment.topLeft, end: Alignment.bottomRight,
         colors: LudoCustomization.backgroundPalettes[LudoCustomization.current.value.background],
+      ),
+      image: LudoCustomization.decodeImage(LudoCustomization.current.value.backgroundImageBase64) == null ? null : DecorationImage(
+        image: MemoryImage(LudoCustomization.decodeImage(LudoCustomization.current.value.backgroundImageBase64)!),
+        fit: BoxFit.cover,
+        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .55), BlendMode.darken),
       )),
       child: !_started ? _modePicker() : _gameBody(),
     ))),
@@ -435,6 +440,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
           begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: color.withValues(alpha: active ? 1 : .35), width: active ? 2 : 1),
+        image: player == 0 && LudoCustomization.decodeImage(LudoCustomization.current.value.bannerImageBase64) != null
+            ? DecorationImage(
+                image: MemoryImage(LudoCustomization.decodeImage(LudoCustomization.current.value.bannerImageBase64)!),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .48), BlendMode.darken),
+              )
+            : null,
         boxShadow: active ? [BoxShadow(color: color.withValues(alpha: .22), blurRadius: 12)] : const [],
       ),
       child: Row(children: [
