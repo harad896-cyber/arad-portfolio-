@@ -15,7 +15,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
     'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙',
     'k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟',
   };
-  static const _values = {
+  static final _values = {
     chess.PieceType.PAWN:100,
     chess.PieceType.KNIGHT:320,
     chess.PieceType.BISHOP:330,
@@ -298,7 +298,7 @@ class _ChessGamePageState extends State<ChessGamePage> {
                   child:Stack(alignment:Alignment.center,children:[
                     if (target && piece==null) Container(width:13,height:13,decoration:const BoxDecoration(color:Color(0xAA245B36),shape:BoxShape.circle)),
                     if (target && piece!=null) Positioned.fill(child:DecoratedBox(decoration:BoxDecoration(border:Border.all(color:const Color(0xCC245B36),width:3)))),
-                    if (symbol!=null) FittedBox(child:Padding(padding:const EdgeInsets.all(2),child:Text(symbol,style:TextStyle(fontSize:38,color:piece.color==chess.Color.WHITE?const Color(0xFFFFFEF7):const Color(0xFF171717),shadows:const [Shadow(color:Colors.black54,blurRadius:2)])))),
+                    if (symbol!=null) FittedBox(child:Padding(padding:const EdgeInsets.all(2),child:Text(symbol,style:TextStyle(fontSize:38,color:piece!.color==chess.Color.WHITE?const Color(0xFFFFFEF7):const Color(0xFF171717),shadows:const [Shadow(color:Colors.black54,blurRadius:2)])))),
                     if (col==0) Positioned(left:3,top:1,child:Text((8-row).toString(),style:TextStyle(fontSize:8,fontWeight:FontWeight.w800,color:light?const Color(0xFF73563F):Colors.white70))),
                     if (row==7) Positioned(right:3,bottom:0,child:Text('abcdefgh'[col],style:TextStyle(fontSize:8,fontWeight:FontWeight.w800,color:light?const Color(0xFF73563F):Colors.white70))),
                   ]),
