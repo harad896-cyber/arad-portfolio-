@@ -3,6 +3,12 @@ import 'package:arad_messenger/ludo_game.dart';
 
 void main() {
   group('LudoRules', () {
+    test('two-player games use opposite start squares', () {
+      expect(LudoRules.trackIndex(0, 0, playerCount: 2), 0);
+      expect(LudoRules.trackIndex(1, 0, playerCount: 2), 26);
+      expect(LudoRules.trackIndex(1, 0, playerCount: 4), 13);
+    });
+
     test('a token leaves the yard only with a six', () {
       expect(LudoRules.legalTokens([-1, -1, -1, -1], 5), isEmpty);
       expect(LudoRules.legalTokens([-1, -1, -1, -1], 6), [0, 1, 2, 3]);
