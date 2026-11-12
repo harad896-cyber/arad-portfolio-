@@ -111,6 +111,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
   List<List<int>> _positions = [];
 
   bool get _botTurn => _againstBot && _turn == 1;
+  int _colorIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
+  Color _playerColor(int player) => _colors[_colorIndex(player)];
+  String _playerName(int player) => _names[_colorIndex(player)];
   List<int> get _legal => _dice == null ? const [] : LudoRules.legalTokensInGame(_positions, _turn, _dice!);
 
   void _start({required int players, required bool bot}) {
@@ -120,7 +123,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _positions = List.generate(players, (_) => List.filled(4, -1));
       _turn = 0; _dice = null; _winner = null; _sixStreak = 0;
       _botBusy = false; _botGeneration++; _started = true;
-      _message = 'نوبت ${_names[_turn]} است؛ تاس بینداز.';
+      _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
     });
   }
 
@@ -132,7 +135,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       if (_sixStreak >= 3) {
         setState(() {
           _dice = null; _sixStreak = 0; _turn = (_turn + 1) % _playerCount;
-          _message = 'سه بار پشت سرهم ۶ آمد؛ نوبت ${_names[_turn]} شد.';
+          _message = 'سه بار پشت سرهم ۶ آمد؛ نوبت ${_playerName(_turn)} شد.';
         });
         _scheduleBot();
         return;
@@ -324,7 +327,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _playerChip(int player) {
-    final color = _colors[player], active = _turn == player && _winner == null;
+    final color = _playerColor(player), active = _turn == player && _winner == null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -334,7 +337,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.circle_rounded, color: color, size: 14),
         const SizedBox(width: 5),
-        Text(_againstBot && player == 1 ? 'ربات' : _names[player],
+        Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
         const SizedBox(width: 6),
         Text('${_positions[player].where((p) => p == 57).length}/4',
@@ -355,11 +358,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: _colors[player], shape: BoxShape.circle,
+            color: _playerColor(player), shape: BoxShape.circle,
             border: Border.all(color: Colors.white.withValues(alpha: canMove ? 1 : .85), width: canMove ? 3 : 1.5),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 2)),
-              if (canMove) BoxShadow(color: _colors[player].withValues(alpha: .7), blurRadius: 12),
+              if (canMove) BoxShadow(color: _playerColor(player).withValues(alpha: .7), blurRadius: 12),
             ]),
           child: Center(child: Text('${token + 1}',
             style: TextStyle(color: player == 2 ? Colors.black : Colors.white,
@@ -384,8 +387,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
     const bases = [Offset(.235, .235), Offset(.765, .235), Offset(.765, .765), Offset(.235, .765)];
     const offsets = [Offset(-.055, -.055), Offset(.055, -.055), Offset(-.055, .055), Offset(.055, .055)];
-    return Offset(bases[player].dx * size + offsets[token].dx * size,
-      bases[player].dy * size + offsets[token].dy * size);
+    final baseIndex = _colorIndex(player);
+    return Offset(bases[baseIndex].dx * size + offsets[token].dx * size,
+      bases[baseIndex].dy * size + offsets[token].dy * size);
   }
 }
 
@@ -419,7 +423,8 @@ class _LudoBoardPainter extends CustomPainter {
       final angle = -math.pi / 2 + index * 2 * math.pi / 52;
       final p = center + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
       final owner = List.generate(players, (p) => LudoRules.offsetFor(p, players)).indexOf(index);
-      final fill = owner >= 0 ? colors[owner] :
+      final ownerColor = owner >= 0 && players == 2 && owner == 1 ? 2 : owner;
+      final fill = owner >= 0 ? colors[ownerColor] :
         LudoRules.safeSquares.contains(index) ? const Color(0xFFFFD66B) : const Color(0xFFEAF0F0);
       canvas.drawCircle(p, cellRadius, Paint()..color = fill);
       canvas.drawCircle(p, cellRadius, outline);
@@ -435,7 +440,8 @@ class _LudoBoardPainter extends CustomPainter {
       for (var step = 1; step <= 6; step++) {
         final r = radius * (1 - step / 7);
         final p = center + Offset(math.cos(angle) * r, math.sin(angle) * r);
-        canvas.drawCircle(p, cellRadius, Paint()..color = colors[player].withValues(alpha: .9));
+        final colorIndex = players == 2 && player == 1 ? 2 : player;
+        canvas.drawCircle(p, cellRadius, Paint()..color = colors[colorIndex].withValues(alpha: .9));
         canvas.drawCircle(p, cellRadius, outline);
       }
     }
