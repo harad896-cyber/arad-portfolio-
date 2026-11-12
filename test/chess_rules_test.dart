@@ -21,7 +21,7 @@ void main() {
       final destinations = game.generate_moves({'square': 'e1'}).map((m) => m.toAlgebraic).toSet();
       expect(destinations, contains('g1'));
       expect(destinations, contains('c1'));
-      final blocked = chess.Chess.fromFEN('r3k2r/8/8/8/8/8/8/R2BK2R w KQkq - 0 1');
+      final blocked = chess.Chess.fromFEN('r3k2r/8/8/8/8/8/8/R3KB1R w KQkq - 0 1');
       expect(blocked.generate_moves({'square': 'e1'}).any((m) => m.toAlgebraic == 'g1'), isFalse);
     });
 
