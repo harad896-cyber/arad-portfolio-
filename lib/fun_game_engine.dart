@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'fun_zone_theme.dart';
+import 'fun_game_room_chat.dart';
 
 enum _PlayMode { bot, local, onlineHuman, onlineBot }
 
@@ -11,7 +12,7 @@ class FunGamePage extends StatefulWidget {
   const FunGamePage({super.key, required this.gameType, required this.title});
   @override State<FunGamePage> createState() => _FunGamePageState();
 }
-class _FunGamePageState extends State<FunGamePage> {
+class _FunGamePageState extends State<FunGamePage> with WidgetsBindingObserver {
   // Keep local/offline games independent from Supabase initialization.
   // Resolve the client only when an online action actually needs it.
   SupabaseClient get client => Supabase.instance.client;
@@ -24,6 +25,8 @@ class _FunGamePageState extends State<FunGamePage> {
   bool draw=false,thinking=false,busy=false;
   Map<String,dynamic>? room;
   StreamSubscription<List<Map<String,dynamic>>>? roomSub;
+  Timer? _reconnectTimer;
+  bool _reconnecting=false;
   bool get connectFour=>widget.gameType=='connect_four';
   String get uid=>client.auth.currentUser?.id??'';
   bool get online=>mode==_PlayMode.onlineHuman||mode==_PlayMode.onlineBot;
@@ -36,9 +39,10 @@ class _FunGamePageState extends State<FunGamePage> {
   int get version=>(room?['version'] as num?)?.toInt()??0;
   bool get ended=>online?(roomStatus=='finished'||roomStatus=='cancelled'):winner!=null||draw;
 
-  @override void initState(){super.initState();resetBoard();}
+  @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);resetBoard();}
+  @override void didChangeAppLifecycleState(AppLifecycleState state){if(state==AppLifecycleState.resumed&&online&&roomStatus=='active')_scheduleRoomReconnect();}
   void resetBoard(){board=List.filled(connectFour?42:9,connectFour?'0':'.');turn='X';winner=null;draw=false;thinking=false;}
-  @override void dispose(){roomSub?.cancel();super.dispose();}
+  @override void dispose(){WidgetsBinding.instance.removeObserver(this);_reconnectTimer?.cancel();roomSub?.cancel();super.dispose();}
 
   Future<void> choose(_PlayMode value) async {
     if(value!=_PlayMode.onlineHuman&&value!=_PlayMode.onlineBot){
@@ -52,11 +56,58 @@ class _FunGamePageState extends State<FunGamePage> {
       final row=Map<String,dynamic>.from(data as Map);
       await roomSub?.cancel();if(!mounted)return;
       setState(() { mode = value; room = row; busy = false; });
-      roomSub=client.from('fun_game_rooms').stream(primaryKey:['id']).eq('id',row['id'].toString()).listen(
-        (rows){if(!mounted||rows.isEmpty)return;setState(()=>room=Map<String,dynamic>.from(rows.first));if(rows.first['is_bot_game']==true&&rows.first['status']=='active'&&((rows.first['version'] as num?)?.toInt()??0).isOdd&&!thinking&&!busy){unawaited(botTurnOnline());}},
-        onError:(_){if(mounted)setState(()=>message='اتصال بازی قطع شد؛ اینترنت را بررسی کن.');});
+      _watchRoom(row['id'].toString());
     }catch(_){if(mounted)setState(() { busy = false; message = 'حریف پیدا نشد یا اتصال برقرار نیست. دوباره تلاش کن.'; });}
   }
+  void _watchRoom(String roomId){
+    _reconnectTimer?.cancel();
+    roomSub?.cancel();
+    roomSub=client.from('fun_game_rooms').stream(primaryKey:['id']).eq('id',roomId).listen(
+      (rows){
+        if(!mounted||rows.isEmpty)return;
+        _reconnectTimer?.cancel();
+        if(_reconnecting)setState(()=>_reconnecting=false);
+        setState(()=>room=Map<String,dynamic>.from(rows.first));
+        if(rows.first['is_bot_game']==true&&rows.first['status']=='active'&&((rows.first['version'] as num?)?.toInt()??0).isOdd&&!thinking&&!busy){unawaited(botTurnOnline());}
+      },
+      onError:(_){
+        if(mounted){setState(()=>message='ارتباط قطع شد؛ تا ۵ ثانیه دیگر خودکار وصل می‌شویم.');_scheduleRoomReconnect();}
+      },
+    );
+  }
+  void _scheduleRoomReconnect(){
+    if(!mounted||!online||room==null||roomStatus!='active')return;
+    _reconnectTimer?.cancel();
+    _reconnectTimer=Timer(const Duration(seconds:5),()=>unawaited(_restoreRoom()));
+  }
+  Future<void> _restoreRoom()async{
+    final id=room?['id']?.toString();
+    if(!mounted||id==null||_reconnecting)return;
+    _reconnecting=true;
+    try{
+      final row=await client.from('fun_game_rooms').select().eq('id',id).maybeSingle().timeout(const Duration(seconds:8));
+      if(!mounted)return;
+      if(row==null){setState(()=>message='اتاق بازی دیگر پیدا نشد.');_reconnecting=false;return;}
+      setState(()=>room=Map<String,dynamic>.from(row));
+      _reconnecting=false;
+      if(roomStatus=='active')_watchRoom(id);
+    }catch(_){
+      _reconnecting=false;
+      if(mounted){setState(()=>message='اتصال هنوز برقرار نیست؛ ۵ ثانیه دیگر دوباره تلاش می‌کنیم.');_scheduleRoomReconnect();}
+    }
+  }
+  void _openRoomChat(){
+    final id=room?['id']?.toString();
+    if(id==null)return;
+    showModalBottomSheet<void>(
+      context:context,isScrollControlled:true,showDragHandle:true,
+      builder:(context)=>SafeArea(child:Padding(
+        padding:EdgeInsets.fromLTRB(12,4,12,MediaQuery.of(context).viewInsets.bottom+12),
+        child:FunGameRoomChatPanel(roomId:id),
+      )),
+    );
+  }
+
   Future<void> leaveRoom() async{
     final old=room;await roomSub?.cancel();roomSub=null;
     if(old!=null&&(old['status']=='waiting'||old['status']=='active')){try{await client.rpc('cancel_fun_game_queue',params:{'p_room_id':old['id']});}catch(_){}}
@@ -190,7 +241,7 @@ class _FunGamePageState extends State<FunGamePage> {
         if(!online)Text('X: $xWins برد  •  O: $oWins برد',style:const TextStyle(fontWeight:FontWeight.w800)),
         const SizedBox(height:10),
         Expanded(child:Center(child:connectFour?connectBoard(b,done,scheme):ticBoard(b,done,scheme))),
-        if(online&&roomStatus=='active')Text(botRoom?(version.isEven?'حرکتت را انتخاب کن':'ربات در حال بازی است'):turnUser==uid?'حرکتت را انتخاب کن':'منتظر حرکت حریف باش'),
+        if(online&&roomStatus=='active')Text(botRoom?(version.isEven?'حرکتت را انتخاب کن':'ربات در حال بازی است'):turnUser==uid?'حرکتت را انتخاب کن':'منتظر حرکت حریف باش'),\n        if(online&&!botRoom&&roomStatus=='active')OutlinedButton.icon(onPressed:_openRoomChat,icon:const Icon(Icons.mic_rounded),label:const Text('چت و پیام صوتی بازی')),\n        if(_reconnecting)const Text('در حال اتصال دوباره به مسابقه…',style:TextStyle(fontSize:11,color:Colors.orange)),
         if(botRoom&&roomStatus=='active'&&version.isOdd&&!thinking&&!busy)TextButton.icon(onPressed:botTurnOnline,icon:const Icon(Icons.refresh_rounded),label:const Text('تلاش دوباره برای حرکت ربات')),
         if(done)FilledButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('بازی تازه'))
         else if(!online)OutlinedButton.icon(onPressed:newRound,icon:const Icon(Icons.refresh),label:const Text('شروع دوباره')),
