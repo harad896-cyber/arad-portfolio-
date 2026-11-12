@@ -185,7 +185,16 @@ class LudoCustomization {
     current.value = next;
     try {
       final p = await SharedPreferences.getInstance();
-      await p.setInt(_accountKey(key), value);
+      final storageKey = switch (key) {
+        'board' => 'board_skin',
+        'avatar' => 'avatar',
+        'frame' => 'avatar_frame',
+        'banner' => 'profile_banner',
+        'background' => 'profile_background',
+        'diceSkin' => 'dice_skin',
+        _ => 'avatar_charm',
+      };
+      await p.setInt(_accountKey(storageKey), value);
     } catch (_) {}
   }
 }
