@@ -214,7 +214,7 @@ returns table (reward_key text, points_awarded integer, total_points integer)
 language sql
 security invoker
 set search_path = ''
-as $ select * from fun_internal.spin_fun_wheel(); $;
+as $function$ select * from fun_internal.spin_fun_wheel(); $function$;
 revoke all on function public.spin_fun_wheel() from public, anon;
 grant execute on function public.spin_fun_wheel() to authenticated;
 
