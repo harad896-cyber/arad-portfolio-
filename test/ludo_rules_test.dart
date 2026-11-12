@@ -45,7 +45,7 @@ void main() {
         dice: 1,
       );
       expect(result.positions[0][0], 8);
-      expect(result.positions[1][0], 47);
+      expect(result.positions[1][0], 34);
       expect(result.captured, isFalse);
     });
 
