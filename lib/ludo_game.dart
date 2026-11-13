@@ -798,7 +798,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       duration: const Duration(milliseconds: 220),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: active ? .30 : .14),
+        color: color.withOpacity(active ? .30 : .14),
         borderRadius: BorderRadius.circular(13),
         border: Border.all(color: color.withValues(alpha: active ? 1 : .42), width: active ? 1.8 : 1),
         boxShadow: active ? [BoxShadow(color: color.withValues(alpha: .20), blurRadius: 7)] : const [],
