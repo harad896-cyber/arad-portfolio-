@@ -13,21 +13,21 @@ class FunGameVoiceCallButton extends StatelessWidget {
   Widget build(BuildContext context) => OutlinedButton.icon(
     onPressed: () => showModalBottomSheet<void>(
       context: context, isScrollControlled: true, showDragHandle: true,
-      builder: (_) => _FunGameVoiceCallSheet(roomId: roomId, isCaller: isCaller),
+      builder: (_) => FunGameVoiceCallSheet(roomId: roomId, isCaller: isCaller),
     ),
     icon: const Icon(Icons.headset_mic_rounded),
     label: const Text('مکالمهٔ صوتی زنده'),
   );
 }
 
-class _FunGameVoiceCallSheet extends StatefulWidget {
+class FunGameVoiceCallSheet extends StatefulWidget {
   final String roomId;
   final bool isCaller;
-  const _FunGameVoiceCallSheet({required this.roomId, required this.isCaller});
-  @override State<_FunGameVoiceCallSheet> createState() => _FunGameVoiceCallSheetState();
+  const FunGameVoiceCallSheet({super.key, required this.roomId, required this.isCaller});
+  @override State<FunGameVoiceCallSheet> createState() => FunGameVoiceCallSheetState();
 }
 
-class _FunGameVoiceCallSheetState extends State<_FunGameVoiceCallSheet> {
+class FunGameVoiceCallSheetState extends State<FunGameVoiceCallSheet> {
   final _db = Supabase.instance.client;
   RTCPeerConnection? _peer;
   MediaStream? _local;
