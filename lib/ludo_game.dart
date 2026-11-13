@@ -469,8 +469,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     builder: (context, constraints) {
       // Reserve a real outer gutter for all four dice docks. No control is
       // allowed to overlap the 15x15 board or cover a token/track square.
-      final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - 84));
-      final frameSize = boardSize + 84;
+      final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - 104));
+      final frameSize = boardSize + 104;
       return ListView(
         padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
         children: [
@@ -504,7 +504,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               height: frameSize,
               child: Stack(clipBehavior: Clip.none, children: [
                 Positioned(
-                  left: 42, top: 42, width: boardSize, height: boardSize,
+                  left: 52, top: 52, width: boardSize, height: boardSize,
                   child: ValueListenableBuilder<FunBackdrop>(
                     valueListenable: FunZoneLook.current,
                     builder: (context, look, _) => ClipRRect(
@@ -530,10 +530,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   ),
                 ),
                 if (_playerCount >= 2)
-                  Positioned(left: frameSize / 2 - 21, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
+                  Positioned(left: frameSize / 2 - 19, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
                 if (_playerCount >= 3)
                   Positioned(right: 0, top: frameSize / 2 - 25, child: _edgeDiceControl(1, compact: true)),
-                Positioned(left: frameSize / 2 - 21, bottom: 0, child: _edgeDiceControl(0, compact: true)),
+                Positioned(left: frameSize / 2 - 19, bottom: 0, child: _edgeDiceControl(0, compact: true)),
                 if (_playerCount >= 4)
                   Positioned(left: 0, top: frameSize / 2 - 25, child: _edgeDiceControl(3, compact: true)),
               ]),
