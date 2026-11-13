@@ -61,6 +61,26 @@ void main() {
       );
     });
 
+    test('leaving the yard checks only the entry square, not six squares ahead', () {
+      // In a two-player game, opponent progress 27 maps to track square 1.
+      // That blockade is after player zero's entry square and must not prevent
+      // the token from entering directly onto square 0.
+      final positions = [
+        [-1, -1, -1, -1],
+        [27, 27, -1, -1],
+      ];
+      expect(LudoRules.legalTokensInGame(positions, 0, 6), contains(0));
+    });
+
+    test('a blockade on the entry square prevents leaving the yard', () {
+      // Opponent progress 26 maps to player zero's start square in a 2-player game.
+      final positions = [
+        [-1, -1, -1, -1],
+        [26, 26, -1, -1],
+      ];
+      expect(LudoRules.legalTokensInGame(positions, 0, 6), isEmpty);
+    });
+
     test('wins only after all four tokens reach home', () {
       final result = LudoRules.move(
         positions: [
