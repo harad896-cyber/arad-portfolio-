@@ -12,6 +12,7 @@ permissions:
 jobs:
   analyze-test-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -22,12 +23,22 @@ jobs:
         with:
           channel: stable
       - run: flutter --version
-      # Generate the Android host only when this Flutter project does not contain it.
+
+      # This repository currently generates its Android host on CI. Keep the
+      # same TEST signing certificate across builds so Android can update an
+      # installed GapResan test build instead of rejecting it as a signature mismatch.
+      # This key is intentionally test-only; never use it for Play Store releases.
       - name: Generate Android platform files when missing
         run: |
           if [ ! -f android/app/build.gradle ] && [ ! -f android/app/build.gradle.kts ]; then
             flutter create --platforms=android --org com.gapresan .
           fi
+      - name: Install persistent GapResan test signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          base64 --decode .github/keys/gapresan-test-debug.keystore.b64 > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
       - run: flutter pub get
       - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart lib/ludo_customization.dart test/widget_test.dart test/ludo_customization_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
@@ -41,19 +52,50 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      # Build one universal APK: users install this file directly; no ZIP extraction or ABI choice.
+      # Build one universal APK. The same test key is reused on every CI run.
       - name: Build universal release APK
         run: flutter build apk --release
-      - name: Verify APK archive and checksum
+      - name: Verify APK archive, package ID, and signing certificate
+        shell: bash
         run: |
+          set -euo pipefail
           APK="build/app/outputs/flutter-apk/app-release.apk"
           test -s "$APK"
           unzip -t "$APK"
+          BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/gapresan-apk-badging.txt
+          APP_ID="$(sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" /tmp/gapresan-apk-badging.txt | head -n1)"
+          test -n "$APP_ID"
+          echo "Verified application ID: $APP_ID"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/gapresan-apk-signature.txt
+          grep -qi "f676a6dd950c09ce54066fa7d06a4d83d51ae7d7891006d724e6b42f30d5263c" /tmp/gapresan-apk-signature.txt
           sha256sum "$APK" | tee "$APK.sha256"
           file "$APK"
 
-      # Publish a real GitHub Release only for pushes to the dedicated Project 2 test branch.
-      # Pull-request validation never publishes or modifies a release.
+      # A real Android emulator install/launch catches package/signature/startup
+      # problems that static analysis and widget tests cannot detect.
+      - name: Install and launch APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          script: |
+            set -euo pipefail
+            APK="build/app/outputs/flutter-apk/app-release.apk"
+            BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+            APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n1)"
+            adb install -r "$APK"
+            adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
+            sleep 20
+            adb shell pidof "$APP_ID"
+            if adb logcat -d -t 5000 | grep -E "FATAL EXCEPTION|Fatal signal"; then
+              echo "Fatal Android crash detected during startup"
+              exit 1
+            fi
+
+      # Publish only after analyzer, tests, archive/signature verification,
+      # and a real emulator install/launch have all passed.
       - name: Publish direct-install APK to GitHub Releases
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
         uses: softprops/action-gh-release@v3
@@ -64,8 +106,8 @@ jobs:
           body: |
             Project 2 / GapResan test build.
             Install the attached app-release.apk directly on Android. Do not extract it.
-            Built from commit ${{ github.sha }} after Flutter analyze and tests.
-            This is a prerelease for testing, not a production release.
+            Built from commit ${{ github.sha }} after Flutter analyze, tests, APK signature verification, and Android emulator launch test.
+            This is a test build, not a production Play Store release.
           prerelease: true
           make_latest: false
           fail_on_unmatched_files: true
@@ -73,7 +115,6 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/flutter-apk/app-release.apk.sha256
 
-      # Build the Project 2 Flutter web app as a separate preview artifact.
       - run: flutter build web --release --base-href /
       - name: Upload web preview
         uses: actions/upload-artifact@v4
