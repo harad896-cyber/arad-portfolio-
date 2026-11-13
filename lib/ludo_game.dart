@@ -753,7 +753,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.casino_rounded, size: 12, color: canRoll ? Colors.white : Colors.white54),
                 const SizedBox(width: 3),
-                Text(_diceValues[player]?.toString() ?? (active ? 'تاس بریز' : 'تاس'),
+                Text(_diceValues[player]?.toString() ?? 'تاس',
                   style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
               ]),
             ),
