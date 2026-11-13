@@ -103,15 +103,18 @@ jobs:
           mkdir -p "$BUNDLE"
           cp "$APK" "$BUNDLE/GapResan.apk"
           cp "$APK.sha256" "$BUNDLE/GapResan.apk.sha256"
-          cat > "$BUNDLE/راهنمای-نصب.txt" <<'EOF'
+          cat > "$BUNDLE/INSTALL.txt" <<'EOF'
           نصب گپ‌رسان:
           1) فایل ZIP را دانلود و از حالت فشرده خارج کنید.
           2) وارد پوشه استخراج‌شده شوید.
           3) فایل GapResan.apk را باز کنید و Install را بزنید.
           4) اگر اندروید اجازه نصب خواست، برای برنامه مدیریت فایل گزینه Install unknown apps را فعال کنید.
           EOF
-          (cd "$BUNDLE" && zip -9 -r ../gapresan-install-bundle.zip .)
+          # APK files are already compressed. Store entries without recompression
+          # for maximum compatibility with Android/Samsung archive managers.
+          (cd "$BUNDLE" && zip -0 -X -r ../gapresan-install-bundle.zip .)
           unzip -t build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+          unzip -Z1 build/app/outputs/flutter-apk/gapresan-install-bundle.zip
           sha256sum build/app/outputs/flutter-apk/gapresan-install-bundle.zip
 
       # Publish only after analyzer, tests, archive/signature verification,
