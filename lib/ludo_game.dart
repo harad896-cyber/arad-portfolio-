@@ -4,6 +4,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'fun_zone_theme.dart';
 import 'ludo_customization.dart';
+import 'fun_game_room_chat.dart';
+import 'fun_game_voice_call.dart';
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
 class LudoRules {
@@ -115,7 +117,9 @@ class LudoMoveResult {
 }
 
 class LudoGamePage extends StatefulWidget {
-  const LudoGamePage({super.key});
+  final String? roomId;
+  final bool isCaller;
+  const LudoGamePage({super.key, this.roomId, this.isCaller = true});
   @override State<LudoGamePage> createState() => _LudoGamePageState();
 }
 
@@ -136,6 +140,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final List<int?> _diceValues = List<int?>.filled(4, null);
   String _message = 'بازی را آغاز کن.';
   List<List<int>> _positions = [];
+  final List<String> _localChatMessages = [];
 
   @override
   void initState() {
@@ -357,13 +362,21 @@ class _LudoGamePageState extends State<LudoGamePage> {
       title: const Text('لودو'), backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       actions: [
-        IconButton(
-          tooltip: _soundEnabled ? 'خاموش‌کردن صدا' : 'روشن‌کردن صدا',
-          onPressed: () => setState(() => _soundEnabled = !_soundEnabled),
-          icon: Icon(_soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded),
+        PopupMenuButton<String>(
+          tooltip: 'تنظیمات بازی',
+          onSelected: (value) {
+            if (value == 'sound') setState(() => _soundEnabled = !_soundEnabled);
+            if (value == 'look') LudoCustomizationButton.open(context);
+            if (value == 'rules') _showRules();
+            if (value == 'reset') _confirmExit();
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(value: 'sound', child: Text(_soundEnabled ? 'خاموش‌کردن صدا' : 'روشن‌کردن صدا')),
+            const PopupMenuItem(value: 'look', child: Text('شخصی‌سازی تخته')),
+            const PopupMenuItem(value: 'rules', child: Text('قوانین بازی')),
+            const PopupMenuItem(value: 'reset', child: Text('پایان بازی')),
+          ],
         ),
-        const LudoCustomizationButton(),
-        IconButton(onPressed: _reset, tooltip: 'بازی تازه', icon: const Icon(Icons.refresh_rounded)),
       ],
     ),
     body: SafeArea(
@@ -454,40 +467,33 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) => ListView(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 22),
+      padding: const EdgeInsets.fromLTRB(9, 6, 9, 14),
       children: [
         _playerRow([0, 1, 2, 3]),
-        const SizedBox(height: 10),
+        const SizedBox(height: 7),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF071A35), Color(0xFF123D70), Color(0xFF071A35)]),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFFFD477), width: 1.3),
-            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 12, offset: Offset(0, 4))],
+            color: const Color(0xFF071A35).withValues(alpha: .94),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .72)),
           ),
           child: Row(children: [
-            const Icon(Icons.auto_awesome, color: Color(0xFF56D7FF), size: 20),
+            const Icon(Icons.circle, color: Color(0xFF56D7FF), size: 8),
             const SizedBox(width: 8),
-            Expanded(child: Text(_message, textAlign: TextAlign.center,
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, height: 1.3))),
-            const SizedBox(width: 8),
-            InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: _showRules,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.emoji_events_rounded, color: Color(0xFFFFD477), size: 18),
-                  SizedBox(width: 4),
-                  Text('قانون', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-                ]),
-              ),
+            Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+            IconButton(
+              tooltip: 'قوانین بازی',
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+              padding: EdgeInsets.zero,
+              onPressed: _showRules,
+              icon: const Icon(Icons.info_outline_rounded, color: Color(0xFFFFD477), size: 18),
             ),
           ]),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         ValueListenableBuilder<FunBackdrop>(
           valueListenable: FunZoneLook.current,
           builder: (context, look, _) => Center(
@@ -500,9 +506,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   return Stack(children: [
                     Positioned.fill(child: Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(color: const Color(0xFFFFD477), width: 3),
-                        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 18, offset: Offset(0, 7))],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFFD477), width: 2),
+                        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: CustomPaint(painter: _LudoBoardPainter(
@@ -520,56 +526,147 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        _controlDock(),
-        if (_winner == null && _showFirstGuide)
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(color: const Color(0xFF0B2B43).withValues(alpha: .94),
-              borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .65))),
-            child: Row(children: [
-              const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFD477), size: 19),
-              const SizedBox(width: 8),
-              const Expanded(child: Text('تاس بینداز؛ سپس مهرهٔ روشن‌شده را انتخاب کن تا حرکت کند.',
-                style: TextStyle(color: Colors.white, fontSize: 11, height: 1.4))),
-              IconButton(visualDensity: VisualDensity.compact, tooltip: 'دیگر نمایش نده',
-                onPressed: _dismissFirstGuide, icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18)),
-            ]),
-          ),
+        const SizedBox(height: 8),
+        _communicationActions(),
+        if (_winner != null)
+          Padding(padding: const EdgeInsets.only(top: 7),
+            child: SizedBox(width: double.infinity, child: FilledButton.icon(
+              onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')))),
       ],
     ),
   );
 
-  // Compact 3-column x 2-row action dock: gives the Ludo board more room.
-  Widget _controlDock() => Column(children: [
-    Row(children: [
-      Expanded(child: _dockTile(icon: Icons.volume_up_rounded, title: 'صدا',
-        subtitle: _soundEnabled ? 'روشن' : 'خاموش',
-        onTap: () => setState(() => _soundEnabled = !_soundEnabled))),
-      const SizedBox(width: 7),
-      Expanded(child: _dockTile(icon: Icons.account_balance_wallet_rounded, title: 'سکه‌ها',
-        subtitle: 'کیف پول', onTap: _showWalletNotice)),
-      const SizedBox(width: 7),
-      Expanded(child: _dockTile(icon: Icons.chat_bubble_rounded, title: 'چت بازی',
-        subtitle: 'گفتگو', onTap: _showChatNotice)),
-    ]),
-    const SizedBox(height: 7),
-    Row(children: [
-      Expanded(child: _dockTile(icon: Icons.card_giftcard_rounded, title: 'هدایا',
-        subtitle: 'جایزه‌ها', onTap: _showGiftNotice)),
-      const SizedBox(width: 7),
-      Expanded(child: _dockTile(icon: Icons.palette_rounded, title: 'قالب‌ها',
-        subtitle: 'شخصی‌سازی', onTap: () => LudoCustomizationButton.open(context))),
-      const SizedBox(width: 7),
-      Expanded(child: _dockTile(icon: Icons.logout_rounded, title: 'خروج',
-        subtitle: 'پایان بازی', onTap: _confirmExit)),
-    ]),
-    if (_winner != null)
-      Padding(padding: const EdgeInsets.only(top: 8),
-        child: SizedBox(width: double.infinity, child: FilledButton.icon(
-          onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')))),
+  Widget _communicationActions() => Row(children: [
+    Expanded(child: OutlinedButton.icon(
+      key: const ValueKey('ludo-chat-action'),
+      onPressed: _openChat,
+      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 19),
+      label: const Text('پیام‌ها'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white, side: const BorderSide(color: Color(0xFF64C9E8)),
+        minimumSize: const Size.fromHeight(44), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    )),
+    const SizedBox(width: 9),
+    Expanded(child: FilledButton.icon(
+      key: const ValueKey('ludo-mic-action'),
+      onPressed: _openVoice,
+      icon: const Icon(Icons.mic_none_rounded, size: 19),
+      label: const Text('میکروفن'),
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF176B58), foregroundColor: Colors.white,
+        minimumSize: const Size.fromHeight(44), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    )),
   ]);
+
+  Future<void> _openChat() async {
+    final roomId = widget.roomId;
+    if (roomId != null && roomId.trim().isNotEmpty) {
+      await showModalBottomSheet<void>(
+        context: context, isScrollControlled: true, showDragHandle: true,
+        builder: (_) => SafeArea(child: SizedBox(height: 390, child: FunGameRoomChatPanel(roomId: roomId))),
+      );
+      return;
+    }
+    final controller = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context, isScrollControlled: true, showDragHandle: true,
+      backgroundColor: const Color(0xFF102235),
+      builder: (sheetContext) => StatefulBuilder(builder: (context, refreshSheet) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(14, 8, 14, 14 + MediaQuery.viewInsetsOf(context).bottom),
+          child: SizedBox(height: 330, child: Column(children: [
+            const Row(children: [
+              Icon(Icons.chat_rounded, color: Color(0xFF64C9E8)),
+              SizedBox(width: 8),
+              Text('پیام‌های بازی', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+              Spacer(),
+              Text('بازی محلی', style: TextStyle(color: Colors.white54, fontSize: 10)),
+            ]),
+            const SizedBox(height: 8),
+            Expanded(child: _localChatMessages.isEmpty
+              ? const Center(child: Text('هنوز پیامی نوشته نشده است.', style: TextStyle(color: Colors.white60)))
+              : ListView.builder(
+                  reverse: true,
+                  itemCount: _localChatMessages.length,
+                  itemBuilder: (_, index) => Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                      decoration: BoxDecoration(color: const Color(0xFF1B4965), borderRadius: BorderRadius.circular(13)),
+                      child: Text(_localChatMessages[_localChatMessages.length - 1 - index],
+                        style: const TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                )),
+            Wrap(spacing: 6, children: ['آفرین!','نوبت توست','حرکت خوب بود','صبر کن'].map((phrase) =>
+              ActionChip(label: Text(phrase), onPressed: () {
+                setState(() => _localChatMessages.add(phrase));
+                refreshSheet(() {});
+              })).toList()),
+            const SizedBox(height: 7),
+            Row(children: [
+              Expanded(child: TextField(
+                controller: controller, style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'پیام کوتاه بنویس…', hintStyle: const TextStyle(color: Colors.white54),
+                  filled: true, fillColor: const Color(0xFF071A35),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+                onSubmitted: (_) {
+                  final value = controller.text.trim();
+                  if (value.isEmpty) return;
+                  setState(() => _localChatMessages.add(value));
+                  controller.clear();
+                  refreshSheet(() {});
+                },
+              )),
+              IconButton(
+                tooltip: 'فرستادن پیام',
+                onPressed: () {
+                  final value = controller.text.trim();
+                  if (value.isEmpty) return;
+                  setState(() => _localChatMessages.add(value));
+                  controller.clear();
+                  refreshSheet(() {});
+                },
+                icon: const Icon(Icons.send_rounded, color: Color(0xFF64C9E8)),
+              ),
+            ]),
+          ])),
+        ),
+      )),
+    );
+    controller.dispose();
+  }
+
+  Future<void> _openVoice() async {
+    final roomId = widget.roomId;
+    if (roomId == null || roomId.trim().isEmpty) {
+      await showModalBottomSheet<void>(
+        context: context, showDragHandle: true,
+        builder: (context) => const SafeArea(child: Padding(
+          padding: EdgeInsets.fromLTRB(22, 12, 22, 28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.mic_off_rounded, size: 38),
+            SizedBox(height: 10),
+            Text('میکروفن زنده', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            SizedBox(height: 8),
+            Text('تماس صوتی فقط در مسابقهٔ آنلاین با اتاق و حریف متصل فعال می‌شود. این بازی فعلاً محلی یا با ربات است.',
+              textAlign: TextAlign.center),
+          ]),
+        )),
+      );
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context, isScrollControlled: true, showDragHandle: true,
+      builder: (_) => FunGameVoiceCallSheet(roomId: roomId, isCaller: widget.isCaller),
+    );
+  }
 
   void _confirmExit() {
     showDialog<void>(
@@ -618,35 +715,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
     actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('فهمیدم'))],
   ));
 
-  void _showWalletNotice() => ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('کیف پول و سکه‌ها از بخش صندوق سرگرمی مدیریت می‌شوند.')));
-
-  void _showGiftNotice() => ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('ارسال هدیه در مسابقه هنوز به اتاق آنلاین متصل نشده است.')));
-
-  void _showChatNotice() => ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('چت زنده برای مسابقهٔ آنلاین فعال می‌شود؛ این حالت فعلاً محلی است.')));
-
   Widget _playerRow(List<int> baseSlots) => LayoutBuilder(
     builder: (context, constraints) {
-      final availableWidth = constraints.maxWidth.isFinite
-          ? constraints.maxWidth
-          : math.max(1.0, MediaQuery.sizeOf(context).width - 48.0);
       const gap = 6.0;
-      // A two-column grid avoids forcing four full player cards into one
-      // narrow phone row; each player keeps their own visible die button.
-      final columns = _playerCount >= 3 ? 2 : 2;
-      final cardWidth = (availableWidth - gap) / columns;
+      final cardWidth = (constraints.maxWidth - gap) / 2;
       return SizedBox(
-        width: availableWidth,
+        width: constraints.maxWidth,
         child: Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          alignment: WrapAlignment.center,
+          spacing: gap, runSpacing: gap, alignment: WrapAlignment.center,
           children: List.generate(_playerCount, (index) => SizedBox(
-            width: cardWidth,
-            height: 136,
-            child: _playerPanel(index),
+            width: cardWidth, height: 66, child: _playerPanel(index),
           )),
         ),
       );
@@ -663,154 +741,61 @@ class _LudoGamePageState extends State<LudoGamePage> {
         ? LudoCustomization.avatars[look.avatar]
         : (_againstBot && player == 1 ? '🤖' : ['🙂', '😎', '🦊', '🐼'][_colorIndex(player)]);
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+      duration: const Duration(milliseconds: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: player == 0
-              ? [
-                  Color.lerp(LudoCustomization.bannerPalettes[look.banner][0], color, .32)!.withValues(alpha: .98),
-                  Color.lerp(LudoCustomization.bannerPalettes[look.banner][1], color, .18)!.withValues(alpha: .78),
-                ]
-              : [
-                  color.withValues(alpha: active ? .48 : .25),
-                  color.withValues(alpha: active ? .24 : .12),
-                ],
+        gradient: LinearGradient(colors: [
+          color.withValues(alpha: active ? .42 : .20),
+          color.withValues(alpha: active ? .22 : .10),
+        ]),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: color.withValues(alpha: active ? 1 : .42), width: active ? 1.8 : 1),
+        boxShadow: active ? [BoxShadow(color: color.withValues(alpha: .20), blurRadius: 7)] : const [],
+      ),
+      child: Row(children: [
+        Container(
+          width: 27, height: 27,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
+            border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2)),
+          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 15))),
         ),
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: color.withValues(alpha: active ? 1 : .45), width: active ? 2.2 : 1),
-        image: player == 0 && LudoCustomization.decodeImage(look.bannerImageBase64) != null
-            ? DecorationImage(
-                image: MemoryImage(LudoCustomization.decodeImage(look.bannerImageBase64)!),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .38), BlendMode.darken),
-              )
-            : null,
-        boxShadow: active
-            ? [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 12)]
-            : const [],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
-                color: player == 0 ? LudoCustomization.frameColors[look.frame] : color,
-                width: 3,
-              ),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: .3), blurRadius: 7)],
-            ),
-            child: Center(child: Text(avatar, style: const TextStyle(fontSize: 16))),
-          ),
-          const SizedBox(height: 3),
-          SizedBox(
-            width: double.infinity,
-            child: Text(
-              _againstBot && player == 1 ? 'ربات' : _playerName(player),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.casino_rounded, color: Colors.white70, size: 12),
-              Text(' $count/4', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800)),
-              if (active) ...[
-                const SizedBox(width: 3),
-                const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD477), size: 12),
-              ],
-            ],
-          ),
-          const SizedBox(height: 3),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: count / 4,
-              minHeight: 3,
-              backgroundColor: Colors.black26,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-            ),
-          ),
-          if (active)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                canRoll ? 'نوبت شما' : _botTurn ? 'نوبت ربات' : 'در حال بازی',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
-              ),
-            ),
-          const SizedBox(height: 2),
-          // Each player always sees a dedicated die on their own card.
-          // Turn rules remain enforced: only the active player can roll.
-          // Large full-width dice action on every player's own card.
-          // Turn ownership is enforced; inactive players see a disabled state.
-          Semantics(
-            button: true,
-            label: canRoll ? 'تاس بینداز برای ${_playerName(player)}' : 'تاس بازیکن ${_playerName(player)}',
-            enabled: canRoll,
-            child: SizedBox(
-              width: double.infinity,
-              height: 38,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: ValueKey('ludo-die-$player'),
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: canRoll ? () => _roll() : null,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: canRoll
-                            ? [color, color.withValues(alpha: .72)]
-                            : [Colors.black.withValues(alpha: .30), Colors.black.withValues(alpha: .16)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .55), width: canRoll ? 1.7 : 1),
-                      boxShadow: canRoll
-                          ? [BoxShadow(color: color.withValues(alpha: .42), blurRadius: 9, offset: const Offset(0, 2))]
-                          : const [],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.casino_rounded, size: 17, color: Colors.white),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            canRoll ? 'تاس بینداز' : (_diceValues[player]?.toString() ?? 'در انتظار نوبت'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+        const SizedBox(width: 6),
+        Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
+            maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+          Text('$count/4 مهره رسیده', maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white70, fontSize: 8)),
+          if (active) const Text('نوبت فعلی', style: TextStyle(color: Color(0xFFFFD477), fontSize: 8, fontWeight: FontWeight.w900)),
+        ])),
+        const SizedBox(width: 4),
+        Semantics(
+          button: true, enabled: canRoll,
+          label: canRoll ? 'تاس بینداز برای ${_playerName(player)}' : 'تاس بازیکن ${_playerName(player)}',
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: ValueKey('ludo-die-$player'),
+              borderRadius: BorderRadius.circular(10),
+              onTap: canRoll ? _roll : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 42, height: 42,
+                decoration: BoxDecoration(
+                  color: canRoll ? color : Colors.black.withValues(alpha: .24),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .5)),
                 ),
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.casino_rounded, color: Colors.white, size: 16),
+                  Text(canRoll ? 'تاس' : (_diceValues[player]?.toString() ?? '—'),
+                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+                ]),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 
