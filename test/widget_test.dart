@@ -104,6 +104,33 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     });
 
+    testWidgets('Ludo player cards render for two, three and four players on a phone', (tester) async {
+      tester.view.physicalSize = const Size(384, 832);
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      await tester.tap(find.text('لودو'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شروع بازی'));
+      await tester.pumpAndSettle();
+      expect(find.text('تاس بریز'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byTooltip('بازی تازه'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('۴ نفر'));
+      await tester.tap(find.text('شروع بازی'));
+      await tester.pumpAndSettle();
+      expect(find.text('تاس بریز'), findsOneWidget);
+      expect(find.text('سرخ'), findsOneWidget);
+      expect(find.text('آبی'), findsOneWidget);
+      expect(find.text('زرد'), findsOneWidget);
+      expect(find.text('سبز'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
     testWidgets('Memory game opens with cards and move counter', (tester) async {
       await openGame(tester, 'بازی حافظه');
       expect(find.textContaining('حرکت‌ها:'), findsOneWidget);
