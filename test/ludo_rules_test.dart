@@ -6,7 +6,7 @@ void main() {
     test('two-player games use opposite start squares', () {
       expect(LudoRules.trackIndex(0, 0, playerCount: 2), 0);
       expect(LudoRules.trackIndex(1, 0, playerCount: 2), 26);
-      expect(LudoRules.trackIndex(1, 0, playerCount: 4), 13);
+      expect(LudoRules.trackIndex(1, 0, playerCount: 4), 39);
     });
 
     test('a token leaves the yard only with a six', () {
@@ -119,6 +119,17 @@ void main() {
       ];
       expect(LudoRules.legalTokensInGame(positions, 2, 1), contains(0));
     });
+
+    test('four player start squares align with their matching colored home lanes', () {
+      expect(LudoRules.startOffsets, [0, 39, 26, 13]);
+      for (var player = 0; player < 4; player++) {
+        final start = LudoBoardGeometry.trackCells[LudoRules.trackIndex(player, 0)!];
+        final lane = LudoBoardGeometry.homeLanes[player].first;
+        final distance = (start.$1 - lane.$1).abs() + (start.$2 - lane.$2).abs();
+        expect(distance, 1, reason: 'player $player start must touch its home lane');
+      }
+    });
+
     test('premium board geometry has 52 unique track cells and four separate home lanes', () {
       expect(LudoBoardGeometry.trackCells.length, 52);
       expect(LudoBoardGeometry.trackCells.toSet().length, 52);
@@ -128,7 +139,11 @@ void main() {
         expect(lane.toSet().length, 6);
       }
       expect(LudoRules.trackIndex(1, 0, playerCount: 2), 26);
-      expect(LudoBoardGeometry.trackCells[24], (2, 14));
+      expect(LudoBoardGeometry.trackCells[0], (13, 6)); // red / bottom
+      expect(LudoBoardGeometry.trackCells[13], (6, 1)); // green / left
+      expect(LudoBoardGeometry.trackCells[26], (1, 8)); // yellow / top
+      expect(LudoBoardGeometry.trackCells[39], (8, 13)); // blue / right
+      expect(LudoBoardGeometry.trackCells[24], (0, 7));
     });
   });
 }
