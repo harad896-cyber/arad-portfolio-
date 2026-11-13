@@ -112,7 +112,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
-      expect(find.text('تاس بینداز'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-1')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
@@ -132,7 +132,7 @@ void main() {
       await tester.tap(find.text('۴ نفر'));
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
-      expect(find.text('تاس بینداز'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       expect(find.text('سرخ'), findsOneWidget);
       expect(find.text('آبی'), findsOneWidget);
       expect(find.text('زرد'), findsOneWidget);
@@ -167,7 +167,7 @@ void main() {
       expect(find.text('پیام‌های بازی'), findsOneWidget);
       await tester.tap(find.text('آفرین!'));
       await tester.pumpAndSettle();
-      expect(find.text('آفرین!'), findsOneWidget);
+      expect(find.text('آفرین!'), findsNWidgets(2));
       await tester.pageBack();
       await tester.pumpAndSettle();
 
