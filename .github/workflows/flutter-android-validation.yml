@@ -43,15 +43,6 @@ jobs:
       - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart lib/ludo_customization.dart test/widget_test.dart test/ludo_customization_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test
-      - run: flutter build apk --debug
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: gapresan-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
-          retention-days: 7
-
       # Build one universal APK. The same test key is reused on every CI run.
       - name: Build universal release APK
         # Give every test release a strictly increasing Android versionCode so
@@ -81,6 +72,8 @@ jobs:
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/gapresan-apk-signature.txt
           grep -qi "f676a6dd950c09ce54066fa7d06a4d83d51ae7d7891006d724e6b42f30d5263c" /tmp/gapresan-apk-signature.txt
           sha256sum "$APK" | tee "$APK.sha256"
+          cp "$APK" build/app/outputs/flutter-apk/GapResan.apk
+          cp "$APK.sha256" build/app/outputs/flutter-apk/GapResan.apk.sha256
           file "$APK"
 
       # A real Android emulator install/launch catches package/signature/startup
@@ -128,13 +121,16 @@ jobs:
           name: GapResan Android Test ${{ github.run_number }}
           body: |
             Project 2 / GapResan test build.
-            Download gapresan-install-bundle.zip, extract it, then install GapResan.apk from the extracted folder.
+            Preferred: download GapResan.apk and install it directly (no ZIP extraction required).
+            Alternative: download gapresan-install-bundle.zip, extract it, then install GapResan.apk.
             Built from commit ${{ github.sha }} after Flutter analyze, tests, APK signature verification, and Android emulator launch test.
             This is a test build, not a production Play Store release.
           prerelease: true
           make_latest: false
           fail_on_unmatched_files: true
           files: |
+            build/app/outputs/flutter-apk/GapResan.apk
+            build/app/outputs/flutter-apk/GapResan.apk.sha256
             build/app/outputs/flutter-apk/gapresan-install-bundle.zip
 
       - run: flutter build web --release --base-href /
