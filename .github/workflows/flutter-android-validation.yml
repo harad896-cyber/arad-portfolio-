@@ -94,6 +94,26 @@ jobs:
           emulator-boot-timeout: 900
           script: bash .github/scripts/android-smoke-test.sh
 
+      - name: Package installable APK into ZIP archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          BUNDLE="build/app/outputs/flutter-apk/gapresan-install-bundle"
+          mkdir -p "$BUNDLE"
+          cp "$APK" "$BUNDLE/GapResan.apk"
+          cp "$APK.sha256" "$BUNDLE/GapResan.apk.sha256"
+          cat > "$BUNDLE/راهنمای-نصب.txt" <<'EOF'
+          نصب گپ‌رسان:
+          1) فایل ZIP را دانلود و از حالت فشرده خارج کنید.
+          2) وارد پوشه استخراج‌شده شوید.
+          3) فایل GapResan.apk را باز کنید و Install را بزنید.
+          4) اگر اندروید اجازه نصب خواست، برای برنامه مدیریت فایل گزینه Install unknown apps را فعال کنید.
+          EOF
+          (cd "$BUNDLE" && zip -9 -r ../gapresan-install-bundle.zip .)
+          unzip -t build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+          sha256sum build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+
       # Publish only after analyzer, tests, archive/signature verification,
       # and a real emulator install/launch have all passed.
       - name: Publish direct-install APK to GitHub Releases
@@ -105,15 +125,14 @@ jobs:
           name: GapResan Android Test ${{ github.run_number }}
           body: |
             Project 2 / GapResan test build.
-            Install the attached app-release.apk directly on Android. Do not extract it.
+            Download gapresan-install-bundle.zip, extract it, then install GapResan.apk from the extracted folder.
             Built from commit ${{ github.sha }} after Flutter analyze, tests, APK signature verification, and Android emulator launch test.
             This is a test build, not a production Play Store release.
           prerelease: true
           make_latest: false
           fail_on_unmatched_files: true
           files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-apk/app-release.apk.sha256
+            build/app/outputs/flutter-apk/gapresan-install-bundle.zip
 
       - run: flutter build web --release --base-href /
       - name: Upload web preview
