@@ -112,10 +112,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
-      expect(find.text('تاس بریز'), findsOneWidget);
+      expect(find.text('تاس بینداز'), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-1')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
+      // Verify the button rolls the die rather than merely existing.
+      await tester.tap(find.byKey(const ValueKey('ludo-die-0')));
+      await tester.pump();
+      expect(find.textContaining('آمد'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byTooltip('بازی تازه'));
