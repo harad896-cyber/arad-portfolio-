@@ -23,8 +23,26 @@ class LudoRules {
 
   static bool _pathIsClear(List<List<int>> positions, int player, int token, int dice) {
     final current = positions[player][token];
+
+    // A token leaving the yard enters directly onto its start square. It does
+    // not travel the remaining five pips, so only that entry square can block it.
+    if (current == -1) {
+      final entrySquare = trackIndex(player, 0, playerCount: positions.length);
+      if (entrySquare == null) return true;
+      for (var p = 0; p < positions.length; p++) {
+        var samePlayerOccupants = 0;
+        for (final pieceProgress in positions[p]) {
+          if (trackIndex(p, pieceProgress, playerCount: positions.length) == entrySquare) {
+            samePlayerOccupants++;
+          }
+        }
+        if (samePlayerOccupants >= 2) return false;
+      }
+      return true;
+    }
+
     for (var step = 1; step <= dice; step++) {
-      final progress = current == -1 ? 0 : current + step;
+      final progress = current + step;
       final square = trackIndex(player, progress, playerCount: positions.length);
       if (square == null) continue;
       for (var p = 0; p < positions.length; p++) {
