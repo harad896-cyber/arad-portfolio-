@@ -633,16 +633,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
     const SnackBar(content: Text('چت زنده برای مسابقهٔ آنلاین فعال می‌شود؛ این حالت فعلاً محلی است.')));
 
   Widget _playerRow(List<int> baseSlots) {
-    final playersByBase = <int, int>{
-      for (var player = 0; player < _playerCount; player++) _baseIndex(player): player,
-    };
+    // A horizontal ListView can give its children an unbounded cross-axis
+    // height in nested scroll layouts. Keep the player cards in a bounded row.
     return SizedBox(
       height: 118,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _playerCount,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) => SizedBox(width: 154, child: _playerPanel(index)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: List.generate(_playerCount, (index) => Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(left: index == 0 ? 0 : 4, right: index == _playerCount - 1 ? 0 : 4),
+            child: _playerPanel(index),
+          ),
+        )),
       ),
     );
   }
