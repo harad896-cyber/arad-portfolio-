@@ -24,7 +24,9 @@ if [[ -z "$BUILD_TOOLS" || ! -x "$BUILD_TOOLS/aapt" ]]; then
   exit 1
 fi
 
-APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/{print $2; exit}')"
+# Do not exit awk early: with pipefail enabled, that can SIGPIPE aapt and
+# make command substitution fail with status 141 before the emulator test.
+APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/ && !found { print $2; found=1 }')"
 if [[ -z "$APP_ID" ]]; then
   echo "Could not read Android application ID from APK" >&2
   exit 1
