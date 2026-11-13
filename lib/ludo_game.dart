@@ -467,10 +467,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      // Keep a dedicated outer rail for each player's die while giving the
-      // board more of the phone width. The 44px rail is large enough for the
-      // compact die controls and keeps them outside the playable 15x15 area.
-      final rail = 40.0;
+      // Reserve a true touch-safe rail around the board so dice never cover
+      // playable squares. The 46px rail also leaves a little breathing room
+      // around the 44x46 controls on narrow Android screens.
+      final rail = 46.0;
       final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return ListView(
@@ -532,12 +532,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   ),
                 ),
                 if (_playerCount >= 2)
-                  Positioned(left: frameSize / 2 - 19, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
+                  Positioned(left: frameSize / 2 - 22, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
                 if (_playerCount >= 3)
-                  Positioned(right: 0, top: frameSize / 2 - 21, child: _edgeDiceControl(1, compact: true)),
-                Positioned(left: frameSize / 2 - 19, bottom: 0, child: _edgeDiceControl(0, compact: true)),
+                  Positioned(right: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(1, compact: true)),
+                Positioned(left: frameSize / 2 - 22, bottom: 0, child: _edgeDiceControl(0, compact: true)),
                 if (_playerCount >= 4)
-                  Positioned(left: 0, top: frameSize / 2 - 21, child: _edgeDiceControl(3, compact: true)),
+                  Positioned(left: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(3, compact: true)),
               ]),
             ),
           ),
@@ -558,10 +558,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
-    final width = compact ? 38.0 : 48.0;
-    final height = compact ? 40.0 : 58.0;
-    return Tooltip(
-      message: shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue',
+    final width = compact ? 44.0 : 48.0;
+    final height = compact ? 46.0 : 58.0;
+    final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
+    return Semantics(
+      button: true,
+      enabled: canRoll,
+      label: accessibleLabel,
+      child: Tooltip(
+      message: accessibleLabel,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -588,15 +593,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: color, fontSize: compact ? 7.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 20 : 27),
+              _LudoDieFace(value: shownValue, size: compact ? 22 : 27),
               const SizedBox(height: 1),
               Text(shownValue?.toString() ?? 'تاس',
-                style: TextStyle(color: Colors.white, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: Colors.white, fontSize: compact ? 8 : 9, fontWeight: FontWeight.w900)),
             ]),
           ),
         ),
+      ),
       ),
     );
   }
