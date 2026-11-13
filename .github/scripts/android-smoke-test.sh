@@ -32,8 +32,11 @@ fi
 
 echo "Installing $APK (applicationId=$APP_ID)"
 adb install -r "$APK"
-adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
-sleep 20
+# Start the launcher activity directly. Monkey can abort when a background
+# emulator system service (such as com.android.phone) stalls under CI load.
+adb shell am start -W -a android.intent.action.MAIN \
+  -c android.intent.category.LAUNCHER -p "$APP_ID"
+sleep 12
 APP_PID="$(adb shell pidof "$APP_ID" | tr -d "\r")"
 if [[ -z "$APP_PID" ]]; then
   echo "GapResan process did not remain running after launch" >&2
