@@ -467,10 +467,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      // Keep dice controls OUTSIDE the 15x15 board, on its four outer edges.
-      // The move path remains fully inside the board and is never covered by a die.
-      final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - 54));
-      final frameSize = boardSize + 54;
+      // Reserve a real outer gutter for all four dice docks. No control is
+      // allowed to overlap the 15x15 board or cover a token/track square.
+      final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - 84));
+      final frameSize = boardSize + 84;
       return ListView(
         padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
         children: [
@@ -504,7 +504,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               height: frameSize,
               child: Stack(clipBehavior: Clip.none, children: [
                 Positioned(
-                  left: 27, top: 27, width: boardSize, height: boardSize,
+                  left: 42, top: 42, width: boardSize, height: boardSize,
                   child: ValueListenableBuilder<FunBackdrop>(
                     valueListenable: FunZoneLook.current,
                     builder: (context, look, _) => ClipRRect(
@@ -530,12 +530,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   ),
                 ),
                 if (_playerCount >= 2)
-                  Positioned(left: frameSize / 2 - 23, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2)),
+                  Positioned(left: frameSize / 2 - 21, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
                 if (_playerCount >= 3)
-                  Positioned(right: 0, top: frameSize / 2 - 29, child: _edgeDiceControl(1)),
-                Positioned(left: frameSize / 2 - 23, bottom: 0, child: _edgeDiceControl(0)),
+                  Positioned(right: 0, top: frameSize / 2 - 25, child: _edgeDiceControl(1, compact: true)),
+                Positioned(left: frameSize / 2 - 21, bottom: 0, child: _edgeDiceControl(0, compact: true)),
                 if (_playerCount >= 4)
-                  Positioned(left: 0, top: frameSize / 2 - 29, child: _edgeDiceControl(3)),
+                  Positioned(left: 0, top: frameSize / 2 - 25, child: _edgeDiceControl(3, compact: true)),
               ]),
             ),
           ),
@@ -550,39 +550,48 @@ class _LudoGamePageState extends State<LudoGamePage> {
     },
   );
 
-  Widget _edgeDiceControl(int player) {
+  Widget _edgeDiceControl(int player, {bool compact = false}) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
     final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
+    final width = compact ? 38.0 : 48.0;
+    final height = compact ? 50.0 : 58.0;
     return Tooltip(
-      message: 'تاس $label',
+      message: shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           key: ValueKey('ludo-die-$player'),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(13),
           onTap: canRoll ? _roll : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            width: 50, height: 58,
+            width: width, height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFF102235).withValues(alpha: .96),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: active
+                    ? [const Color(0xFF263D53), const Color(0xFF071626)]
+                    : [const Color(0xFF172A3C), const Color(0xFF081523)],
+              ),
               borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: active ? const Color(0xFFFFD477) : color.withValues(alpha: .78), width: active ? 2.2 : 1.3),
+              border: Border.all(color: active ? const Color(0xFFFFD477) : color.withValues(alpha: .78), width: active ? 2 : 1.2),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: .42), blurRadius: 7, offset: const Offset(0, 3)),
-                if (active) BoxShadow(color: color.withValues(alpha: .55), blurRadius: 11),
+                if (active) BoxShadow(color: color.withValues(alpha: .48), blurRadius: 10),
               ],
             ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: color, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 2),
-              Icon(Icons.casino_rounded, color: canRoll ? Colors.white : Colors.white70, size: 19),
+              _LudoDieFace(value: shownValue, size: compact ? 23 : 27),
+              const SizedBox(height: 1),
               Text(shownValue?.toString() ?? 'تاس',
-                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: Colors.white, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
             ]),
           ),
         ),
@@ -938,6 +947,48 @@ class _LudoGamePageState extends State<LudoGamePage> {
     return Offset((base.$2 + .5 + offset.dx) / 15 * size, (base.$1 + .5 + offset.dy) / 15 * size);
   }
 
+}
+
+class _LudoDieFace extends StatelessWidget {
+  final int? value;
+  final double size;
+  const _LudoDieFace({required this.value, required this.size});
+
+  static const _patterns = <int, List<int>>{
+    1: [4], 2: [0, 8], 3: [0, 4, 8],
+    4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8],
+    6: [0, 2, 3, 5, 6, 8],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final dots = _patterns[value] ?? const <int>[];
+    return Container(
+      width: size, height: size,
+      padding: EdgeInsets.all(size * .13),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F0E7),
+        borderRadius: BorderRadius.circular(size * .20),
+        border: Border.all(color: const Color(0xFFD7CDBB), width: .8),
+        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1))],
+      ),
+      child: GridView.count(
+        crossAxisCount: 3,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        mainAxisSpacing: size * .035,
+        crossAxisSpacing: size * .035,
+        children: List.generate(9, (index) => Center(
+          child: dots.contains(index)
+              ? Container(
+                  width: size * .16, height: size * .16,
+                  decoration: const BoxDecoration(color: Color(0xFF172638), shape: BoxShape.circle),
+                )
+              : const SizedBox.shrink(),
+        )),
+      ),
+    );
+  }
 }
 
 class LudoBoardGeometry {
