@@ -609,32 +609,36 @@ class _LudoGamePageState extends State<LudoGamePage> {
   void _showChatNotice() => ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('چت زنده برای مسابقهٔ آنلاین فعال می‌شود؛ این حالت فعلاً محلی است.')));
 
-  Widget _playerRow(List<int> baseSlots) {
-    // ListView children can expose an unbounded maxWidth to LayoutBuilder in
-    // widget tests and some narrow Android viewports. Resolve the viewport
-    // width directly and give the row a finite width before laying out cards.
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final availableWidth = math.max(1.0, screenWidth - 24.0);
-    const gap = 6.0;
-    final cardWidth = math.max(
-      1.0,
-      (availableWidth - gap * (_playerCount - 1)) / _playerCount,
-    );
-    return SizedBox(
-      width: availableWidth,
-      height: 118,
-      child: Row(
-        children: List.generate(_playerCount, (index) => Padding(
-          padding: EdgeInsets.only(right: index == _playerCount - 1 ? 0 : gap),
-          child: SizedBox(
-            width: cardWidth,
-            height: 118,
-            child: _playerPanel(index),
+  Widget _playerRow(List<int> baseSlots) => LayoutBuilder(
+    builder: (context, constraints) {
+      // Use the actual content width supplied by the parent ListView. MediaQuery
+      // includes outer padding and caused a right-side overflow on 4-player phones.
+      final availableWidth = constraints.maxWidth.isFinite
+          ? constraints.maxWidth
+          : math.max(1.0, MediaQuery.sizeOf(context).width - 48.0);
+      const gap = 4.0;
+      final cardWidth = math.max(
+        1.0,
+        (availableWidth - gap * (_playerCount - 1)) / _playerCount,
+      );
+      return Center(
+        child: SizedBox(
+          width: availableWidth,
+          height: 118,
+          child: Row(
+            children: List.generate(_playerCount, (index) => Padding(
+              padding: EdgeInsets.only(right: index == _playerCount - 1 ? 0 : gap),
+              child: SizedBox(
+                width: cardWidth,
+                height: 118,
+                child: _playerPanel(index),
+              ),
+            )),
           ),
-        )),
-      ),
-    );
-  }
+        ),
+      );
+    },
+  );
 
   Widget _playerPanel(int player) {
     final color = _playerColor(player);
@@ -750,8 +754,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
               onTap: canRoll ? _roll : null,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                constraints: const BoxConstraints(minWidth: 58, minHeight: 27),
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                constraints: const BoxConstraints(minWidth: 42, minHeight: 25),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: canRoll
@@ -765,8 +769,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
                       : const [],
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.casino_rounded, size: 15, color: canRoll ? Colors.white : Colors.white70),
-                  const SizedBox(width: 4),
+                  Icon(Icons.casino_rounded, size: 13, color: canRoll ? Colors.white : Colors.white70),
+                  const SizedBox(width: 2),
                   Text(
                     _diceValues[player]?.toString() ?? (canRoll ? 'تاس بریز' : 'تاس'),
                     maxLines: 1,
