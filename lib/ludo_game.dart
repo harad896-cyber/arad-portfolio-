@@ -1086,10 +1086,12 @@ class _LudoBoardPainter extends CustomPainter {
     // Four classic colored finish triangles meet in the center.
     final centerPoint = Offset(unit * 7.5, unit * 7.5);
     final triangleSpecs = <(Color, Offset, Offset)>[
+      // Finish wedges face the matching player's approach lane:
+      // green-left, yellow-top, red-bottom, blue-right.
       (colors[3], Offset(unit * 6, unit * 6), Offset(unit * 6, unit * 9)),
       (colors[2], Offset(unit * 6, unit * 6), Offset(unit * 9, unit * 6)),
-      (colors[1], Offset(unit * 6, unit * 9), Offset(unit * 9, unit * 9)),
-      (colors[0], Offset(unit * 9, unit * 6), Offset(unit * 9, unit * 9)),
+      (colors[0], Offset(unit * 6, unit * 9), Offset(unit * 9, unit * 9)),
+      (colors[1], Offset(unit * 9, unit * 6), Offset(unit * 9, unit * 9)),
     ];
     for (final spec in triangleSpecs) {
       final trianglePath = Path()
