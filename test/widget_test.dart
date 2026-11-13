@@ -96,9 +96,9 @@ void main() {
       expect(find.text('شروع بازی').hitTestable(), findsOneWidget);
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
-      expect(find.text('تاس بینداز'), findsOneWidget);
-      expect(find.text('قانون'), findsOneWidget);
-      expect(find.text('تاس بینداز').hitTestable(), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
+      expect(find.byTooltip('قوانین بازی'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -122,7 +122,12 @@ void main() {
       expect(find.textContaining('آمد'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byTooltip('بازی تازه'));
+      await tester.tap(find.byTooltip('تنظیمات بازی'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('پایان بازی'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('خروج'));
+      await tester.pumpAndSettle();
       await tester.pumpAndSettle();
       await tester.tap(find.text('۴ نفر'));
       await tester.tap(find.text('شروع بازی'));
@@ -138,6 +143,39 @@ void main() {
       expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
 
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    });
+
+    testWidgets('Ludo keeps only compact message and microphone actions below the board', (tester) async {
+      tester.view.physicalSize = const Size(384, 832);
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
+      await tester.tap(find.text('لودو'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شروع بازی'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('ludo-chat-action')).hitTestable(), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-mic-action')).hitTestable(), findsOneWidget);
+      expect(find.text('سکه‌ها'), findsNothing);
+      expect(find.text('هدایا'), findsNothing);
+      expect(find.text('قالب‌ها'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('ludo-chat-action')));
+      await tester.pumpAndSettle();
+      expect(find.text('پیام‌های بازی'), findsOneWidget);
+      await tester.tap(find.text('آفرین!'));
+      await tester.pumpAndSettle();
+      expect(find.text('آفرین!'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('ludo-mic-action')));
+      await tester.pumpAndSettle();
+      expect(find.text('میکروفن زنده'), findsOneWidget);
+      expect(find.textContaining('فقط در مسابقهٔ آنلاین'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
     });
