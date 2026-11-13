@@ -138,8 +138,14 @@ void main() {
       expect(find.text('زرد'), findsOneWidget);
       expect(find.text('سبز'), findsOneWidget);
       for (var player = 0; player < 4; player++) {
-        expect(find.byKey(ValueKey('ludo-die-$player')), findsOneWidget);
+        final die = find.byKey(ValueKey('ludo-die-$player'));
+        expect(die, findsOneWidget);
+        // Dice stay on the outside rails and keep a phone-friendly touch area.
+        expect(tester.getSize(die).width, greaterThanOrEqualTo(44));
+        expect(tester.getSize(die).height, greaterThanOrEqualTo(46));
+        expect(die.hitTestable(), findsOneWidget);
       }
+      expect(find.bySemanticsLabel('تاس سرخ'), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
 
