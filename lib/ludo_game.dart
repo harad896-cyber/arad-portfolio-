@@ -532,10 +532,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 if (_playerCount >= 2)
                   Positioned(left: frameSize / 2 - 23, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2)),
                 if (_playerCount >= 3)
-                  Positioned(right: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(1)),
+                  Positioned(right: 0, top: frameSize / 2 - 29, child: _edgeDiceControl(1)),
                 Positioned(left: frameSize / 2 - 23, bottom: 0, child: _edgeDiceControl(0)),
                 if (_playerCount >= 4)
-                  Positioned(left: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(3)),
+                  Positioned(left: 0, top: frameSize / 2 - 29, child: _edgeDiceControl(3)),
               ]),
             ),
           ),
@@ -564,22 +564,25 @@ class _LudoGamePageState extends State<LudoGamePage> {
           key: ValueKey('ludo-die-$player'),
           borderRadius: BorderRadius.circular(15),
           onTap: canRoll ? _roll : null,
-          child: AnimatedContainer(
+          AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            width: 46, height: 46,
+            width: 50, height: 58,
             decoration: BoxDecoration(
-              color: canRoll ? color : const Color(0xFF102235),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: active ? const Color(0xFFFFD477) : color.withValues(alpha: .78), width: active ? 2.5 : 1.5),
+              color: const Color(0xFF102235).withValues(alpha: .96),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: active ? const Color(0xFFFFD477) : color.withValues(alpha: .78), width: active ? 2.2 : 1.3),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: .42), blurRadius: 7, offset: const Offset(0, 3)),
                 if (active) BoxShadow(color: color.withValues(alpha: .55), blurRadius: 11),
               ],
             ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.casino_rounded, color: Colors.white, size: 19),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 2),
+              Icon(Icons.casino_rounded, color: canRoll ? Colors.white : Colors.white70, size: 19),
               Text(shownValue?.toString() ?? 'تاس',
-                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
             ]),
           ),
         ),
