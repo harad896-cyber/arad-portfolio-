@@ -564,7 +564,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           key: ValueKey('ludo-die-$player'),
           borderRadius: BorderRadius.circular(15),
           onTap: canRoll ? _roll : null,
-          AnimatedContainer(
+          child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: 50, height: 58,
             decoration: BoxDecoration(
@@ -797,16 +797,14 @@ class _LudoGamePageState extends State<LudoGamePage> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-      decoration: ShapeDecoration(
+      decoration: BoxDecoration(
         color: color.withValues(alpha: active ? .30 : .14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(13),
-          side: BorderSide(
-            color: color.withValues(alpha: active ? 1 : .42),
-            width: active ? 1.8 : 1,
-          ),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: color.withValues(alpha: active ? 1 : .42),
+          width: active ? 1.8 : 1,
         ),
-        shadows: active
+        boxShadow: active
             ? [BoxShadow(color: color.withValues(alpha: .20), blurRadius: 7)]
             : const [],
       ),
