@@ -34,13 +34,16 @@ echo "Installing $APK (applicationId=$APP_ID)"
 adb install -r "$APK"
 adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
 sleep 20
-if ! adb shell pidof "$APP_ID"; then
+APP_PID="$(adb shell pidof "$APP_ID" | tr -d "\r")"
+if [[ -z "$APP_PID" ]]; then
   echo "GapResan process did not remain running after launch" >&2
   exit 1
 fi
 
-if adb logcat -d -t 5000 | grep -E "FATAL EXCEPTION|Fatal signal"; then
-  echo "Fatal Android crash detected during startup" >&2
+# Inspect only the app process. The emulator can emit unrelated system-service
+# crashes (for example Bluetooth) which must not fail the GapResan smoke test.
+if adb logcat -d --pid="$APP_PID" | grep -E "FATAL EXCEPTION|Fatal signal"; then
+  echo "Fatal crash detected in GapResan process (pid=$APP_PID)" >&2
   exit 1
 fi
 
