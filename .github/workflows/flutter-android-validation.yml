@@ -61,8 +61,17 @@ jobs:
           set -euo pipefail
           APK="build/app/outputs/flutter-apk/app-release.apk"
           test -s "$APK"
-          unzip -t "$APK"
           BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          # Re-sign the release output explicitly; Gradle's default debug config
+          # may use a different keystore on the runner.
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$HOME/.android/debug.keystore" \
+            --ks-key-alias androiddebugkey \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out "$APK.signed" "$APK"
+          mv "$APK.signed" "$APK"
+          unzip -t "$APK"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/gapresan-apk-badging.txt
           APP_ID="$(sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" /tmp/gapresan-apk-badging.txt | head -n1)"
           test -n "$APP_ID"
