@@ -113,6 +113,9 @@ void main() {
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
       expect(find.text('تاس بریز'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byTooltip('بازی تازه'));
@@ -125,6 +128,10 @@ void main() {
       expect(find.text('آبی'), findsOneWidget);
       expect(find.text('زرد'), findsOneWidget);
       expect(find.text('سبز'), findsOneWidget);
+      for (var player = 0; player < 4; player++) {
+        expect(find.byKey(ValueKey('ludo-die-$player')), findsOneWidget);
+      }
+      expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       addTearDown(tester.view.resetPhysicalSize);
