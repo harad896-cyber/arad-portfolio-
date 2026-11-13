@@ -576,7 +576,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: width, height: height,
-            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft, end: Alignment.bottomRight,
@@ -593,12 +593,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: color, fontSize: compact ? 7.5 : 9, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 22 : 27),
+              _LudoDieFace(value: shownValue, size: compact ? 19 : 27),
               const SizedBox(height: 1),
               Text(shownValue?.toString() ?? 'تاس',
-                style: TextStyle(color: Colors.white, fontSize: compact ? 8 : 9, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: Colors.white, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
             ]),
           ),
         ),
