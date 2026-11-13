@@ -523,59 +523,72 @@ class _LudoGamePageState extends State<LudoGamePage> {
     ),
   );
 
+  // Compact 3-column x 2-row action dock: gives the Ludo board more room.
   Widget _controlDock() => Column(children: [
     Row(children: [
-      Expanded(child: _dockTile(
-        icon: Icons.account_balance_wallet_rounded, title: 'سکه‌ها',
-        subtitle: 'کیف پول', onTap: _showWalletNotice,
-      )),
-      const SizedBox(width: 9),
-      Expanded(child: _dockTile(
-        icon: Icons.volume_up_rounded, title: 'صدا',
+      Expanded(child: _dockTile(icon: Icons.volume_up_rounded, title: 'صدا',
         subtitle: _soundEnabled ? 'روشن' : 'خاموش',
-        onTap: () => setState(() => _soundEnabled = !_soundEnabled),
-      )),
-    ]),
-    const SizedBox(height: 9),
-    Row(children: [
-      Expanded(child: _dockTile(icon: Icons.card_giftcard_rounded, title: 'هدایا',
-        subtitle: 'جایزه‌ها', onTap: _showGiftNotice)),
-      const SizedBox(width: 8),
+        onTap: () => setState(() => _soundEnabled = !_soundEnabled))),
+      const SizedBox(width: 7),
+      Expanded(child: _dockTile(icon: Icons.account_balance_wallet_rounded, title: 'سکه‌ها',
+        subtitle: 'کیف پول', onTap: _showWalletNotice)),
+      const SizedBox(width: 7),
       Expanded(child: _dockTile(icon: Icons.chat_bubble_rounded, title: 'چت بازی',
         subtitle: 'گفتگو', onTap: _showChatNotice)),
     ]),
-    const SizedBox(height: 8),
+    const SizedBox(height: 7),
     Row(children: [
+      Expanded(child: _dockTile(icon: Icons.card_giftcard_rounded, title: 'هدایا',
+        subtitle: 'جایزه‌ها', onTap: _showGiftNotice)),
+      const SizedBox(width: 7),
       Expanded(child: _dockTile(icon: Icons.palette_rounded, title: 'قالب‌ها',
         subtitle: 'شخصی‌سازی', onTap: () => LudoCustomizationButton.open(context))),
-      const SizedBox(width: 8),
-      Expanded(child: _dockTile(icon: Icons.logout_rounded, title: 'بیرون رفتن',
-        subtitle: 'پایان بازی', onTap: _reset)),
+      const SizedBox(width: 7),
+      Expanded(child: _dockTile(icon: Icons.logout_rounded, title: 'خروج',
+        subtitle: 'پایان بازی', onTap: _confirmExit)),
     ]),
     if (_winner != null)
-      Padding(padding: const EdgeInsets.only(top: 10),
-        child: FilledButton.icon(onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره'))),
+      Padding(padding: const EdgeInsets.only(top: 8),
+        child: SizedBox(width: double.infinity, child: FilledButton.icon(
+          onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')))),
   ]);
+
+  void _confirmExit() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('خروج از بازی؟'),
+        content: const Text('اگر خارج شوی، بازی فعلی پایان می‌یابد.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('ادامه بازی')),
+          FilledButton(onPressed: () { Navigator.pop(dialogContext); _reset(); },
+            child: const Text('خروج')),
+        ],
+      ),
+    );
+  }
 
   Widget _dockTile({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) =>
     Material(
       color: const Color(0xFF081A32).withValues(alpha: .94),
-      borderRadius: BorderRadius.circular(17),
+      borderRadius: BorderRadius.circular(13),
       child: InkWell(
-        onTap: onTap, borderRadius: BorderRadius.circular(17),
+        onTap: onTap, borderRadius: BorderRadius.circular(13),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 68),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(17),
-            border: Border.all(color: const Color(0xFFD5A94D), width: 1.1),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 7, offset: Offset(0, 3))]),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, color: const Color(0xFFFFD477), size: 23),
-            const SizedBox(height: 3),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
-            Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white60, fontSize: 8)),
+          constraints: const BoxConstraints(minHeight: 54),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: const Color(0xFFD5A94D), width: 1),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2))]),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, color: const Color(0xFFFFD477), size: 18),
+            const SizedBox(width: 4),
+            Flexible(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+              Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white60, fontSize: 7)),
+            ])),
           ]),
         ),
       ),
