@@ -145,7 +145,7 @@ void main() {
         expect(tester.getSize(die).height, greaterThanOrEqualTo(46));
         expect(die.hitTestable(), findsOneWidget);
       }
-      expect(find.bySemanticsLabel('تاس سرخ'), findsOneWidget);
+      expect(find.byTooltip('تاس سرخ'), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
 
