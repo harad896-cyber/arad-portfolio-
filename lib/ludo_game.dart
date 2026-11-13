@@ -470,7 +470,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       // Keep a dedicated outer rail for each player's die while giving the
       // board more of the phone width. The 44px rail is large enough for the
       // compact die controls and keeps them outside the playable 15x15 area.
-      final rail = constraints.maxWidth < 340 ? 40.0 : 44.0;
+      final rail = 40.0;
       final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return ListView(
@@ -532,10 +532,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   ),
                 ),
                 if (_playerCount >= 2)
-                  Positioned(left: frameSize / 2 - 20, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
+                  Positioned(left: frameSize / 2 - 19, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
                 if (_playerCount >= 3)
                   Positioned(right: 0, top: frameSize / 2 - 21, child: _edgeDiceControl(1, compact: true)),
-                Positioned(left: frameSize / 2 - 20, bottom: 0, child: _edgeDiceControl(0, compact: true)),
+                Positioned(left: frameSize / 2 - 19, bottom: 0, child: _edgeDiceControl(0, compact: true)),
                 if (_playerCount >= 4)
                   Positioned(left: 0, top: frameSize / 2 - 21, child: _edgeDiceControl(3, compact: true)),
               ]),
@@ -558,8 +558,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
-    final width = compact ? 40.0 : 48.0;
-    final height = compact ? 42.0 : 58.0;
+    final width = compact ? 38.0 : 48.0;
+    final height = compact ? 40.0 : 58.0;
     return Tooltip(
       message: shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue',
       child: Material(
@@ -590,7 +590,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 21 : 27),
+              _LudoDieFace(value: shownValue, size: compact ? 20 : 27),
               const SizedBox(height: 1),
               Text(shownValue?.toString() ?? 'تاس',
                 style: TextStyle(color: Colors.white, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
