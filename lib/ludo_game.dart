@@ -543,7 +543,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const SizedBox(width: 8),
       Expanded(child: _dockTile(icon: Icons.chat_bubble_rounded, title: 'چت بازی',
         subtitle: 'گفتگو', onTap: _showChatNotice)),
-      const SizedBox(width: 8),
+    ]),
+    const SizedBox(height: 8),
+    Row(children: [
       Expanded(child: _dockTile(icon: Icons.palette_rounded, title: 'قالب‌ها',
         subtitle: 'شخصی‌سازی', onTap: () => LudoCustomizationButton.open(context))),
       const SizedBox(width: 8),
