@@ -451,9 +451,19 @@ class _LudoGamePageState extends State<LudoGamePage> {
           child: Row(children: [
             const Icon(Icons.auto_awesome, color: Color(0xFF56D7FF), size: 20),
             const SizedBox(width: 8),
-            Expanded(child: Text(_message, textAlign: TextAlign.center,
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, height: 1.3))),
+            Expanded(child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_message, textAlign: TextAlign.center,
+                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, height: 1.3)),
+                if (_winner == null)
+                  Text(_dice == null ? 'تاس بریز' : 'مهرهٔ روشن‌شده را انتخاب کن',
+                    key: const ValueKey('ludo-turn-action'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFFFFD477), fontSize: 10, fontWeight: FontWeight.w900)),
+              ],
+            )),
             const SizedBox(width: 8),
             InkWell(
               borderRadius: BorderRadius.circular(18),
