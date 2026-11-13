@@ -96,9 +96,9 @@ void main() {
       expect(find.text('شروع بازی').hitTestable(), findsOneWidget);
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
-      expect(find.text('تاس بریز'), findsOneWidget);
+      expect(find.text('تاس بینداز'), findsOneWidget);
       expect(find.text('قانون'), findsOneWidget);
-      expect(find.text('تاس بریز').hitTestable(), findsOneWidget);
+      expect(find.text('تاس بینداز').hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -127,7 +127,7 @@ void main() {
       await tester.tap(find.text('۴ نفر'));
       await tester.tap(find.text('شروع بازی'));
       await tester.pumpAndSettle();
-      expect(find.text('تاس بریز'), findsOneWidget);
+      expect(find.text('تاس بینداز'), findsOneWidget);
       expect(find.text('سرخ'), findsOneWidget);
       expect(find.text('آبی'), findsOneWidget);
       expect(find.text('زرد'), findsOneWidget);
