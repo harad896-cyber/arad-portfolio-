@@ -611,30 +611,25 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _playerRow(List<int> baseSlots) => LayoutBuilder(
     builder: (context, constraints) {
-      // Use the actual content width supplied by the parent ListView. MediaQuery
-      // includes outer padding and caused a right-side overflow on 4-player phones.
       final availableWidth = constraints.maxWidth.isFinite
           ? constraints.maxWidth
           : math.max(1.0, MediaQuery.sizeOf(context).width - 48.0);
-      const gap = 4.0;
-      final cardWidth = math.max(
-        1.0,
-        (availableWidth - gap * (_playerCount - 1)) / _playerCount,
-      );
-      return Center(
-        child: SizedBox(
-          width: availableWidth,
-          height: 118,
-          child: Row(
-            children: List.generate(_playerCount, (index) => Padding(
-              padding: EdgeInsets.only(right: index == _playerCount - 1 ? 0 : gap),
-              child: SizedBox(
-                width: cardWidth,
-                height: 118,
-                child: _playerPanel(index),
-              ),
-            )),
-          ),
+      const gap = 6.0;
+      // A two-column grid avoids forcing four full player cards into one
+      // narrow phone row; each player keeps their own visible die button.
+      final columns = _playerCount >= 3 ? 2 : 2;
+      final cardWidth = (availableWidth - gap) / columns;
+      return SizedBox(
+        width: availableWidth,
+        child: Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          alignment: WrapAlignment.center,
+          children: List.generate(_playerCount, (index) => SizedBox(
+            width: cardWidth,
+            height: 118,
+            child: _playerPanel(index),
+          )),
         ),
       );
     },
