@@ -738,25 +738,42 @@ class _LudoGamePageState extends State<LudoGamePage> {
               ),
             ),
           const SizedBox(height: 2),
-          // Every player has a separate die control on their own player card.
-          // Only the player whose turn it is can roll.
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: canRoll ? _roll : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: BoxDecoration(
-                color: canRoll ? color.withValues(alpha: .42) : Colors.black.withValues(alpha: .16),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withValues(alpha: canRoll ? .95 : .35)),
+          // Each player always sees a dedicated die on their own card.
+          // Turn rules remain enforced: only the active player can roll.
+          Semantics(
+            button: true,
+            label: 'تاس ${_playerName(player)}',
+            enabled: canRoll,
+            child: InkWell(
+              key: ValueKey('ludo-die-$player'),
+              borderRadius: BorderRadius.circular(10),
+              onTap: canRoll ? _roll : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                constraints: const BoxConstraints(minWidth: 58, minHeight: 27),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: canRoll
+                        ? [color.withValues(alpha: .95), color.withValues(alpha: .58)]
+                        : [Colors.black.withValues(alpha: .28), Colors.black.withValues(alpha: .12)],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .55), width: canRoll ? 1.5 : 1),
+                  boxShadow: canRoll
+                      ? [BoxShadow(color: color.withValues(alpha: .35), blurRadius: 7, offset: const Offset(0, 2))]
+                      : const [],
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.casino_rounded, size: 15, color: canRoll ? Colors.white : Colors.white70),
+                  const SizedBox(width: 4),
+                  Text(
+                    _diceValues[player]?.toString() ?? (canRoll ? 'بریز' : 'تاس'),
+                    maxLines: 1,
+                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                  ),
+                ]),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.casino_rounded, size: 11, color: canRoll ? Colors.white : Colors.white54),
-                const SizedBox(width: 2),
-                Flexible(child: Text(_diceValues[player]?.toString() ?? (active ? 'تاس بریز' : 'تاس'),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900))),
-              ]),
             ),
           ),
         ],
