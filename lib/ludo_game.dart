@@ -524,7 +524,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _controlDock() => Column(children: [
-    Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
       Expanded(child: _dockTile(
         icon: Icons.account_balance_wallet_rounded, title: 'سکه‌ها',
         subtitle: 'کیف پول', onTap: _showWalletNotice,
