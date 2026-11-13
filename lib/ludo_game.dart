@@ -686,7 +686,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           ),
           const SizedBox(height: 3),
           SizedBox(
-            width: double.infinity,
+            width: 104,
             child: Text(
               _againstBot && player == 1 ? 'ربات' : _playerName(player),
               textAlign: TextAlign.center,
@@ -743,7 +743,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.casino_rounded, size: 12, color: canRoll ? Colors.white : Colors.white54),
                 const SizedBox(width: 3),
-                Text(_diceValues[player]?.toString() ?? (canRoll ? 'تاس بریز' : 'تاس'),
+                Text(_diceValues[player]?.toString() ?? (active ? 'تاس بریز' : 'تاس'),
                   style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
               ]),
             ),
