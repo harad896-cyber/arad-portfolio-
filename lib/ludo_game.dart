@@ -7,7 +7,7 @@ import 'ludo_customization.dart';
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
 class LudoRules {
-  static const startOffsets = [0, 13, 26, 39];
+  static const startOffsets = [0, 39, 26, 13];
   static const safeSquares = {0, 8, 13, 21, 26, 34, 39, 47};
 
   static List<int> legalTokens(List<int> pieces, int dice) => [
@@ -900,11 +900,14 @@ class _LudoGamePageState extends State<LudoGamePage> {
 }
 
 class LudoBoardGeometry {
+  // Standard 15x15 Ludo cross-track: the route runs around the four
+  // 6x6 yards and the central 3x3 finish, not around the board's outer rim.
+  // Index 0 = red/bottom start; 13 = green/left; 26 = yellow/top; 39 = blue/right.
   static const trackCells = <(int, int)>[
-    (14,1),(14,2),(14,3),(14,4),(14,5),(14,6),(14,7),(14,8),(14,9),(14,10),(14,11),(14,12),(14,13),
-    (13,14),(12,14),(11,14),(10,14),(9,14),(8,14),(7,14),(6,14),(5,14),(4,14),(3,14),(2,14),(1,14),
-    (0,13),(0,12),(0,11),(0,10),(0,9),(0,8),(0,7),(0,6),(0,5),(0,4),(0,3),(0,2),(0,1),
-    (1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(8,0),(9,0),(10,0),(11,0),(12,0),(13,0),
+    (13,6),(12,6),(11,6),(10,6),(9,6),(8,5),(8,4),(8,3),(8,2),(8,1),(8,0),(7,0),(6,0),
+    (6,1),(6,2),(6,3),(6,4),(6,5),(5,6),(4,6),(3,6),(2,6),(1,6),(0,6),(0,7),(0,8),
+    (1,8),(2,8),(3,8),(4,8),(5,8),(6,9),(6,10),(6,11),(6,12),(6,13),(6,14),(7,14),(8,14),
+    (8,13),(8,12),(8,11),(8,10),(8,9),(9,8),(10,8),(11,8),(12,8),(13,8),(14,8),(14,7),(14,6),
   ];
   // Six straight, square home-lane cells for each classic Ludo arm.
   // Player order: red (bottom), blue (right), yellow (top), green (left).
