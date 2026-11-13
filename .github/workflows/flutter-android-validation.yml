@@ -90,8 +90,6 @@ jobs:
           arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 900
-          # The action executes script lines in separate shells. Keep stateful
-          # variables inside one checked-in script process instead.
           script: bash .github/scripts/android-smoke-test.sh
 
       # Publish only after analyzer, tests, archive/signature verification,
