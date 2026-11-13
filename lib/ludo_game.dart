@@ -597,27 +597,29 @@ class _LudoGamePageState extends State<LudoGamePage> {
     const SnackBar(content: Text('چت زنده برای مسابقهٔ آنلاین فعال می‌شود؛ این حالت فعلاً محلی است.')));
 
   Widget _playerRow(List<int> baseSlots) {
-    // Give every player card a concrete width and height. Avoid flex children
-    // inside the vertically scrolling game list: they can receive unbounded
-    // constraints on narrow Android layouts.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final gap = 8.0;
-        final cardWidth = (constraints.maxWidth - gap * (_playerCount - 1)) / _playerCount;
-        return SizedBox(
-          height: 118,
-          child: Row(
-            children: List.generate(_playerCount, (index) => Padding(
-              padding: EdgeInsets.only(right: index == _playerCount - 1 ? 0 : gap),
-              child: SizedBox(
-                width: cardWidth,
-                height: 118,
-                child: _playerPanel(index),
-              ),
-            )),
+    // ListView children can expose an unbounded maxWidth to LayoutBuilder in
+    // widget tests and some narrow Android viewports. Resolve the viewport
+    // width directly and give the row a finite width before laying out cards.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final availableWidth = math.max(1.0, screenWidth - 24.0);
+    const gap = 6.0;
+    final cardWidth = math.max(
+      1.0,
+      (availableWidth - gap * (_playerCount - 1)) / _playerCount,
+    );
+    return SizedBox(
+      width: availableWidth,
+      height: 118,
+      child: Row(
+        children: List.generate(_playerCount, (index) => Padding(
+          padding: EdgeInsets.only(right: index == _playerCount - 1 ? 0 : gap),
+          child: SizedBox(
+            width: cardWidth,
+            height: 118,
+            child: _playerPanel(index),
           ),
-        );
-      },
+        )),
+      ),
     );
   }
 
