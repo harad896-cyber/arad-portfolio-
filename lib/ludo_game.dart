@@ -466,75 +466,126 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _gameBody() => LayoutBuilder(
-    builder: (context, constraints) => ListView(
-      padding: const EdgeInsets.fromLTRB(9, 6, 9, 14),
-      children: [
-        _playerRow([0, 1, 2, 3]),
-        const SizedBox(height: 7),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF071A35).withValues(alpha: .94),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .72)),
-          ),
-          child: Row(children: [
-            const Icon(Icons.circle, color: Color(0xFF56D7FF), size: 8),
-            const SizedBox(width: 8),
-            Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
-            IconButton(
-              tooltip: 'قوانین بازی',
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints.tightFor(width: 30, height: 30),
-              padding: EdgeInsets.zero,
-              onPressed: _showRules,
-              icon: const Icon(Icons.info_outline_rounded, color: Color(0xFFFFD477), size: 18),
+    builder: (context, constraints) {
+      // Keep dice controls OUTSIDE the 15x15 board, on its four outer edges.
+      // The move path remains fully inside the board and is never covered by a die.
+      final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - 54));
+      final frameSize = boardSize + 54;
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF071A35).withValues(alpha: .94),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .72)),
             ),
-          ]),
-        ),
-        const SizedBox(height: 8),
-        ValueListenableBuilder<FunBackdrop>(
-          valueListenable: FunZoneLook.current,
-          builder: (context, look, _) => Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 560, maxHeight: constraints.maxWidth),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: LayoutBuilder(builder: (context, boardConstraints) {
-                  final size = math.min(boardConstraints.maxWidth, boardConstraints.maxHeight);
-                  return Stack(children: [
-                    Positioned.fill(child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFFFD477), width: 2),
-                        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: CustomPaint(painter: _LudoBoardPainter(
-                        colors: _colors, players: _playerCount, positions: _positions,
-                        turn: _turn, dice: _moving ? null : _dice,
-                        legalTokens: _moving ? const [] : _legal,
-                        look: look, styleIndex: LudoCustomization.current.value.board,
-                      )),
-                    )),
-                    for (var player = 0; player < _playerCount; player++)
-                      for (var token = 0; token < 4; token++) _buildToken(player, token, size),
-                  ]);
-                }),
+            child: Row(children: [
+              const Icon(Icons.circle, color: Color(0xFF56D7FF), size: 8),
+              const SizedBox(width: 8),
+              Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+              IconButton(
+                tooltip: 'قوانین بازی',
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+                padding: EdgeInsets.zero,
+                onPressed: _showRules,
+                icon: const Icon(Icons.info_outline_rounded, color: Color(0xFFFFD477), size: 18),
               ),
+            ]),
+          ),
+          const SizedBox(height: 5),
+          Center(
+            child: SizedBox(
+              width: frameSize,
+              height: frameSize,
+              child: Stack(clipBehavior: Clip.none, children: [
+                Positioned(
+                  left: 27, top: 27, width: boardSize, height: boardSize,
+                  child: ValueListenableBuilder<FunBackdrop>(
+                    valueListenable: FunZoneLook.current,
+                    builder: (context, look, _) => ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFFD477), width: 2),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
+                        ),
+                        child: Stack(children: [
+                          Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
+                            colors: _colors, players: _playerCount, positions: _positions,
+                            turn: _turn, dice: _moving ? null : _dice,
+                            legalTokens: _moving ? const [] : _legal,
+                            look: look, styleIndex: LudoCustomization.current.value.board,
+                          ))),
+                          for (var player = 0; player < _playerCount; player++)
+                            for (var token = 0; token < 4; token++) _buildToken(player, token, boardSize),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_playerCount >= 2)
+                  Positioned(left: frameSize / 2 - 23, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2)),
+                if (_playerCount >= 3)
+                  Positioned(right: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(1)),
+                Positioned(left: frameSize / 2 - 23, bottom: 0, child: _edgeDiceControl(0)),
+                if (_playerCount >= 4)
+                  Positioned(left: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(3)),
+              ]),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        _communicationActions(),
-        if (_winner != null)
-          Padding(padding: const EdgeInsets.only(top: 7),
-            child: SizedBox(width: double.infinity, child: FilledButton.icon(
-              onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')))),
-      ],
-    ),
+          const SizedBox(height: 5),
+          _communicationActions(),
+          if (_winner != null)
+            Padding(padding: const EdgeInsets.only(top: 7),
+              child: SizedBox(width: double.infinity, child: FilledButton.icon(
+                onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')))),
+        ],
+      );
+    },
   );
+
+  Widget _edgeDiceControl(int player) {
+    final color = _playerColor(player);
+    final active = _turn == player && _winner == null;
+    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
+    final shownValue = _diceValues[player];
+    final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
+    return Tooltip(
+      message: 'تاس $label',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: ValueKey('ludo-die-$player'),
+          borderRadius: BorderRadius.circular(15),
+          onTap: canRoll ? _roll : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 46, height: 46,
+            decoration: BoxDecoration(
+              color: canRoll ? color : const Color(0xFF102235),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: active ? const Color(0xFFFFD477) : color.withValues(alpha: .78), width: active ? 2.5 : 1.5),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: .42), blurRadius: 7, offset: const Offset(0, 3)),
+                if (active) BoxShadow(color: color.withValues(alpha: .55), blurRadius: 11),
+              ],
+            ),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.casino_rounded, color: Colors.white, size: 19),
+              Text(shownValue?.toString() ?? 'تاس',
+                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _communicationActions() => Row(children: [
     Expanded(child: OutlinedButton.icon(
