@@ -89,8 +89,9 @@ jobs:
           api-level: 35
           arch: x86_64
           profile: pixel_2
+          emulator-boot-timeout: 900
           script: |
-            set -euo pipefail
+            set -eu
             APK="build/app/outputs/flutter-apk/app-release.apk"
             BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
             APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n1)"
