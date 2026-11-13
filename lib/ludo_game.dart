@@ -413,7 +413,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
       Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
-        label: Text('$count نفر'), selected: _playerCount == count,
+        label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'), selected: _playerCount == count,
         onSelected: (_) => setState(() => _playerCount = count),
       )).toList()),
       const SizedBox(height: 18),
