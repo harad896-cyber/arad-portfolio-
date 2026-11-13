@@ -54,7 +54,9 @@ jobs:
 
       # Build one universal APK. The same test key is reused on every CI run.
       - name: Build universal release APK
-        run: flutter build apk --release
+        # Give every test release a strictly increasing Android versionCode so
+        # phones do not reject it as an attempted downgrade.
+        run: flutter build apk --release --build-number=${{ github.run_number }}
       - name: Verify APK archive, package ID, and signing certificate
         shell: bash
         run: |
