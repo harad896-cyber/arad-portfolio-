@@ -645,7 +645,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           alignment: WrapAlignment.center,
           children: List.generate(_playerCount, (index) => SizedBox(
             width: cardWidth,
-            height: 118,
+            height: 136,
             child: _playerPanel(index),
           )),
         ),
@@ -757,39 +757,55 @@ class _LudoGamePageState extends State<LudoGamePage> {
           const SizedBox(height: 2),
           // Each player always sees a dedicated die on their own card.
           // Turn rules remain enforced: only the active player can roll.
+          // Large full-width dice action on every player's own card.
+          // Turn ownership is enforced; inactive players see a disabled state.
           Semantics(
             button: true,
-            label: 'تاس ${_playerName(player)}',
+            label: canRoll ? 'تاس بینداز برای ${_playerName(player)}' : 'تاس بازیکن ${_playerName(player)}',
             enabled: canRoll,
-            child: InkWell(
-              key: ValueKey('ludo-die-$player'),
-              borderRadius: BorderRadius.circular(10),
-              onTap: canRoll ? _roll : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                constraints: const BoxConstraints(minWidth: 42, minHeight: 25),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: canRoll
-                        ? [color.withValues(alpha: .95), color.withValues(alpha: .58)]
-                        : [Colors.black.withValues(alpha: .28), Colors.black.withValues(alpha: .12)],
+            child: SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: ValueKey('ludo-die-$player'),
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: canRoll ? () => _roll() : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: canRoll
+                            ? [color, color.withValues(alpha: .72)]
+                            : [Colors.black.withValues(alpha: .30), Colors.black.withValues(alpha: .16)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .55), width: canRoll ? 1.7 : 1),
+                      boxShadow: canRoll
+                          ? [BoxShadow(color: color.withValues(alpha: .42), blurRadius: 9, offset: const Offset(0, 2))]
+                          : const [],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.casino_rounded, size: 17, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            canRoll ? 'تاس بینداز' : (_diceValues[player]?.toString() ?? 'در انتظار نوبت'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .55), width: canRoll ? 1.5 : 1),
-                  boxShadow: canRoll
-                      ? [BoxShadow(color: color.withValues(alpha: .35), blurRadius: 7, offset: const Offset(0, 2))]
-                      : const [],
                 ),
-                child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.casino_rounded, size: 13, color: canRoll ? Colors.white : Colors.white70),
-                  const SizedBox(width: 2),
-                  Text(
-                    _diceValues[player]?.toString() ?? (canRoll ? 'تاس بریز' : 'تاس'),
-                    maxLines: 1,
-                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
-                  ),
-                ]),
               ),
             ),
           ),
