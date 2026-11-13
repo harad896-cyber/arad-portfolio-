@@ -661,7 +661,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ? [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 12)]
             : const [],
       ),
-      child: Column(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -744,6 +747,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
