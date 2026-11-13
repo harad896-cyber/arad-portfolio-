@@ -378,7 +378,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
             // Keep the actual game widgets as direct children of the bounded
             // Scaffold body. A transparent Material + expand wrapper previously
             // made the page fragile on some Android route/theme combinations.
-            child: _started ? _gameBody() : _modePicker(),
+            child: Material(
+              color: Colors.transparent,
+              child: DefaultTextStyle(
+                style: const TextStyle(color: Colors.white),
+                child: _started ? _gameBody() : _modePicker(),
+              ),
+            ),
           );
         },
       ),
