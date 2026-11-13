@@ -917,7 +917,7 @@ class LudoBoardGeometry {
     [(1,7),(2,7),(3,7),(4,7),(5,7),(6,7)],
     [(7,1),(7,2),(7,3),(7,4),(7,5),(7,6)],
   ];
-  static const baseCenters = <(int, int)>[(11,3),(11,11),(3,11),(3,3)];
+  static const baseCenters = <(int, int)>[(12,3),(12,11),(2,11),(2,3)];
   static Offset cellCenter(int row, int column, double size) =>
       Offset((column + .5) / 15 * size, (row + .5) / 15 * size);
 }
@@ -1003,7 +1003,7 @@ class _LudoBoardPainter extends CustomPainter {
           ? (baseSlot == 0 ? 0 : baseSlot == 2 ? 1 : -1)
           : baseSlot;
       final base = LudoBoardGeometry.baseCenters[baseSlot];
-      final rect = Rect.fromLTWH((base.$2 - 2.45) * unit, (base.$1 - 2.45) * unit, unit * 4.9, unit * 4.9);
+      final rect = Rect.fromLTWH((base.$2 - 2.9) * unit, (base.$1 - 2.9) * unit, unit * 5.8, unit * 5.8);
       final shape = RRect.fromRectAndRadius(rect, Radius.circular(unit * .55));
       final activeBase = activePlayer >= 0;
       final color = activeBase
