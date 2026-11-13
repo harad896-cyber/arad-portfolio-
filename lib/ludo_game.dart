@@ -524,53 +524,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _controlDock() => Column(children: [
-    Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+    Row(children: [
       Expanded(child: _dockTile(
         icon: Icons.account_balance_wallet_rounded, title: 'سکه‌ها',
         subtitle: 'کیف پول', onTap: _showWalletNotice,
       )),
       const SizedBox(width: 9),
-      Expanded(flex: 2, child: Container(
-        constraints: const BoxConstraints(minHeight: 112),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [
-              LudoCustomization.dicePalettes[LudoCustomization.current.value.diceSkin][0],
-              LudoCustomization.dicePalettes[LudoCustomization.current.value.diceSkin][1],
-              LudoCustomization.dicePalettes[LudoCustomization.current.value.diceSkin][0],
-            ]),
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: const Color(0xFFFFD477), width: 2),
-          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 13, offset: Offset(0, 5))],
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(23),
-          onTap: _dice == null && !_moving && !_botBusy && !_botTurn && _winner == null ? _roll : null,
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .16),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: .72), width: 1.5),
-                boxShadow: [BoxShadow(
-                  color: Colors.black.withValues(alpha: .22),
-                  blurRadius: 9, offset: const Offset(0, 3),
-                )],
-              ),
-              child: const Icon(Icons.casino_rounded, color: Colors.white, size: 34),
-            ),
-            const SizedBox(height: 3),
-            Text(_dice == null ? 'تاس بریز' : 'عدد $_dice · مهره را انتخاب کن',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
-          ]),
-        ),
-      )),
-      const SizedBox(width: 9),
       Expanded(child: _dockTile(
-        icon: _soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-        title: 'صدا', subtitle: _soundEnabled ? 'روشن' : 'خاموش',
+        icon: Icons.volume_up_rounded, title: 'صدا',
+        subtitle: _soundEnabled ? 'روشن' : 'خاموش',
         onTap: () => setState(() => _soundEnabled = !_soundEnabled),
       )),
     ]),
@@ -758,6 +720,27 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
               ),
             ),
+          const SizedBox(height: 2),
+          // Every player has a separate die control on their own player card.
+          // Only the player whose turn it is can roll.
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: canRoll ? _roll : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: canRoll ? color.withValues(alpha: .42) : Colors.black.withValues(alpha: .16),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withValues(alpha: canRoll ? .95 : .35)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.casino_rounded, size: 12, color: canRoll ? Colors.white : Colors.white54),
+                const SizedBox(width: 3),
+                Text(_diceValues[player]?.toString() ?? 'تاس',
+                  style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+              ]),
+            ),
+          ),
         ],
       ),
     );
@@ -855,11 +838,13 @@ class LudoBoardGeometry {
     (0,13),(0,12),(0,11),(0,10),(0,9),(0,8),(0,7),(0,6),(0,5),(0,4),(0,3),(0,2),(0,1),
     (1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(8,0),(9,0),(10,0),(11,0),(12,0),(13,0),
   ];
+  // Six straight, square home-lane cells for each classic Ludo arm.
+  // Player order: red (bottom), blue (right), yellow (top), green (left).
   static const homeLanes = <List<(int, int)>>[
-    [(11,1),(10,2),(9,3),(8,4),(8,5),(8,6)],
-    [(13,13),(12,12),(11,11),(10,10),(9,9),(8,8)],
-    [(1,13),(2,12),(3,11),(4,10),(5,9),(6,8)],
-    [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6)],
+    [(13,7),(12,7),(11,7),(10,7),(9,7),(8,7)],
+    [(7,13),(7,12),(7,11),(7,10),(7,9),(7,8)],
+    [(1,7),(2,7),(3,7),(4,7),(5,7),(6,7)],
+    [(7,1),(7,2),(7,3),(7,4),(7,5),(7,6)],
   ];
   static const baseCenters = <(int, int)>[(11,3),(11,11),(3,11),(3,3)];
   static Offset cellCenter(int row, int column, double size) =>
@@ -976,22 +961,13 @@ class _LudoBoardPainter extends CustomPainter {
       label.paint(canvas, Offset(rect.center.dx - label.width / 2, baseSlot < 2 ? rect.bottom - unit * .52 : rect.top + unit * .18));
     }
 
-    final trackPath = Path();
-    for (var i = 0; i < LudoBoardGeometry.trackCells.length; i++) {
-      final cell = LudoBoardGeometry.trackCells[i];
-      final point = LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size.width);
-      if (i == 0) { trackPath.moveTo(point.dx, point.dy); } else { trackPath.lineTo(point.dx, point.dy); }
-    }
-    trackPath.close();
-    canvas.drawPath(trackPath, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .77
-      ..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..color = const Color(0xFF091B27));
-    canvas.drawPath(trackPath, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .67
-      ..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..color = const Color(0xFFDBCEA9));
+    // Draw 52 separate square track cells; avoid the rounded continuous
+    // ring that made the route look circular instead of like modern Ludo.
 
     for (var index = 0; index < 52; index++) {
       final cell = LudoBoardGeometry.trackCells[index];
       final center = LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size.width);
-      final rect = Rect.fromCenter(center: center, width: unit * .79, height: unit * .79);
+      final rect = Rect.fromCenter(center: center, width: unit * .91, height: unit * .91);
       final owner = List.generate(players, (p) => LudoRules.offsetFor(p, players)).indexOf(index);
       final color = owner >= 0
           ? _playerColor(owner)
@@ -1002,7 +978,7 @@ class _LudoBoardPainter extends CustomPainter {
                   const Color(0xFFF3EAD7),
                   safeStyle == 0 ? .68 : .30,
                 )!;
-      final tile = RRect.fromRectAndRadius(rect, Radius.circular(unit * .17));
+      final tile = RRect.fromRectAndRadius(rect, Radius.circular(unit * .055));
       canvas.drawRRect(tile.shift(Offset(0, unit * .055)), Paint()..color = Colors.black.withValues(alpha: .32));
       canvas.drawRRect(tile, Paint()..shader = LinearGradient(
         begin: Alignment.topLeft, end: Alignment.bottomRight,
@@ -1024,8 +1000,8 @@ class _LudoBoardPainter extends CustomPainter {
       final color = activeLane ? colors[player] : colors[player].withValues(alpha: .22);
       for (final cell in LudoBoardGeometry.homeLanes[player]) {
         final center = LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size.width);
-        final rect = Rect.fromCenter(center: center, width: unit * .77, height: unit * .77);
-        final tile = RRect.fromRectAndRadius(rect, Radius.circular(unit * .18));
+        final rect = Rect.fromCenter(center: center, width: unit * .91, height: unit * .91);
+        final tile = RRect.fromRectAndRadius(rect, Radius.circular(unit * .055));
         canvas.drawRRect(tile, Paint()..shader = LinearGradient(
           begin: Alignment.topLeft, end: Alignment.bottomRight,
           colors: [Color.lerp(color, Colors.white, .35)!, color, Color.lerp(color, Colors.black, .18)!],
@@ -1035,6 +1011,25 @@ class _LudoBoardPainter extends CustomPainter {
     }
 
     _drawLegalRoutes(canvas, size, unit);
+
+    // Four classic colored finish triangles meet in the center.
+    final centerPoint = Offset(unit * 7.5, unit * 7.5);
+    final triangleSpecs = <(Color, Offset, Offset)>[
+      (colors[3], Offset(unit * 6, unit * 6), Offset(unit * 6, unit * 9)),
+      (colors[2], Offset(unit * 6, unit * 6), Offset(unit * 9, unit * 6)),
+      (colors[1], Offset(unit * 6, unit * 9), Offset(unit * 9, unit * 9)),
+      (colors[0], Offset(unit * 9, unit * 6), Offset(unit * 9, unit * 9)),
+    ];
+    for (final spec in triangleSpecs) {
+      final trianglePath = Path()
+        ..moveTo(centerPoint.dx, centerPoint.dy)
+        ..lineTo(spec.$2.dx, spec.$2.dy)
+        ..lineTo(spec.$3.dx, spec.$3.dy)
+        ..close();
+      canvas.drawPath(trianglePath, Paint()..color = spec.$1);
+      canvas.drawPath(trianglePath, Paint()..style = PaintingStyle.stroke
+        ..strokeWidth = unit * .045..color = Colors.white.withValues(alpha: .88));
+    }
 
     final center = Offset(size.width / 2, size.height / 2);
     final vault = Rect.fromCenter(center: center, width: unit * 1.30, height: unit * 1.30);
