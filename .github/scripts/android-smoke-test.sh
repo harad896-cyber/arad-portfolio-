@@ -7,7 +7,7 @@ if [[ ! -s "$APK" ]]; then
   exit 1
 fi
 
-ADB_BIN="$(command -v adb)"
+ADB_BIN="$(command -v adb || true)"
 if [[ -z "$ADB_BIN" ]]; then
   echo "adb is not available in PATH" >&2
   exit 1
@@ -20,11 +20,11 @@ if [[ ! -d "$BUILD_TOOLS_ROOT" ]]; then
 fi
 BUILD_TOOLS="$(find "$BUILD_TOOLS_ROOT" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
 if [[ -z "$BUILD_TOOLS" || ! -x "$BUILD_TOOLS/aapt" ]]; then
-  echo "aapt not found under Android build-tools" >&2
+  echo "aapt not found under Android build-tools: $BUILD_TOOLS_ROOT" >&2
   exit 1
 fi
 
-APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n1)"
+APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/{print $2; exit}')"
 if [[ -z "$APP_ID" ]]; then
   echo "Could not read Android application ID from APK" >&2
   exit 1
