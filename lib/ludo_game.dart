@@ -451,19 +451,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
           child: Row(children: [
             const Icon(Icons.auto_awesome, color: Color(0xFF56D7FF), size: 20),
             const SizedBox(width: 8),
-            Expanded(child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_message, textAlign: TextAlign.center,
-                  maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, height: 1.3)),
-                if (_winner == null)
-                  Text(_dice == null ? 'تاس بریز' : 'مهرهٔ روشن‌شده را انتخاب کن',
-                    key: const ValueKey('ludo-turn-action'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFFFFD477), fontSize: 10, fontWeight: FontWeight.w900)),
-              ],
-            )),
+            Expanded(child: Text(_message, textAlign: TextAlign.center,
+              maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, height: 1.3))),
             const SizedBox(width: 8),
             InkWell(
               borderRadius: BorderRadius.circular(18),
@@ -673,16 +663,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ? [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 12)]
             : const [],
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.center,
-        child: Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
@@ -692,17 +679,17 @@ class _LudoGamePageState extends State<LudoGamePage> {
               ),
               boxShadow: [BoxShadow(color: color.withValues(alpha: .3), blurRadius: 7)],
             ),
-            child: Center(child: Text(avatar, style: const TextStyle(fontSize: 19))),
+            child: Center(child: Text(avatar, style: const TextStyle(fontSize: 16))),
           ),
           const SizedBox(height: 3),
           SizedBox(
-            width: 104,
+            width: 72,
             child: Text(
               _againstBot && player == 1 ? 'ربات' : _playerName(player),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900),
+              style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
             ),
           ),
           const SizedBox(height: 2),
@@ -710,7 +697,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.casino_rounded, color: Colors.white70, size: 12),
-              Text(' $count/4', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+              Text(' $count/4', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800)),
               if (active) ...[
                 const SizedBox(width: 3),
                 const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD477), size: 12),
@@ -722,7 +709,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: count / 4,
-              minHeight: 4,
+              minHeight: 3,
               backgroundColor: Colors.black26,
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
