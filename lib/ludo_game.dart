@@ -681,7 +681,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
             style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900))),
           if (active) const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD477), size: 18),
         ]),
-        const Spacer(),
+        const SizedBox(height: 7),
         Row(children: [
           const Icon(Icons.star_rounded, color: Color(0xFFFFD34D), size: 17),
           Text('—', style: const TextStyle(color: Color(0xFFFFD34D), fontSize: 11, fontWeight: FontWeight.w900)),
