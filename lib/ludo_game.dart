@@ -633,19 +633,27 @@ class _LudoGamePageState extends State<LudoGamePage> {
     const SnackBar(content: Text('چت زنده برای مسابقهٔ آنلاین فعال می‌شود؛ این حالت فعلاً محلی است.')));
 
   Widget _playerRow(List<int> baseSlots) {
-    // A horizontal ListView can give its children an unbounded cross-axis
-    // height in nested scroll layouts. Keep the player cards in a bounded row.
-    return SizedBox(
-      height: 118,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: List.generate(_playerCount, (index) => Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(left: index == 0 ? 0 : 4, right: index == _playerCount - 1 ? 0 : 4),
-            child: _playerPanel(index),
+    // Give every player card a concrete width and height. Avoid flex children
+    // inside the vertically scrolling game list: they can receive unbounded
+    // constraints on narrow Android layouts.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gap = 8.0;
+        final cardWidth = (constraints.maxWidth - gap * (_playerCount - 1)) / _playerCount;
+        return SizedBox(
+          height: 118,
+          child: Row(
+            children: List.generate(_playerCount, (index) => Padding(
+              padding: EdgeInsets.only(right: index == _playerCount - 1 ? 0 : gap),
+              child: SizedBox(
+                width: cardWidth,
+                height: 118,
+                child: _playerPanel(index),
+              ),
+            )),
           ),
-        )),
-      ),
+        );
+      },
     );
   }
 
@@ -655,57 +663,103 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final count = _positions[player].where((value) => value == 57).length;
     final look = LudoCustomization.current.value;
+    final avatar = player == 0
+        ? LudoCustomization.avatars[look.avatar]
+        : (_againstBot && player == 1 ? '🤖' : ['🙂', '😎', '🦊', '🐼'][_colorIndex(player)]);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
       decoration: BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: player == 0
-            ? [Color.lerp(LudoCustomization.bannerPalettes[look.banner][0], color, .32)!.withValues(alpha: .98),
-               Color.lerp(LudoCustomization.bannerPalettes[look.banner][1], color, .18)!.withValues(alpha: .78)]
-            : [color.withValues(alpha: active ? .48 : .25), color.withValues(alpha: active ? .24 : .12)]),
+              ? [
+                  Color.lerp(LudoCustomization.bannerPalettes[look.banner][0], color, .32)!.withValues(alpha: .98),
+                  Color.lerp(LudoCustomization.bannerPalettes[look.banner][1], color, .18)!.withValues(alpha: .78),
+                ]
+              : [
+                  color.withValues(alpha: active ? .48 : .25),
+                  color.withValues(alpha: active ? .24 : .12),
+                ],
+        ),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: color.withValues(alpha: active ? 1 : .45), width: active ? 2.2 : 1),
         image: player == 0 && LudoCustomization.decodeImage(look.bannerImageBase64) != null
-          ? DecorationImage(image: MemoryImage(LudoCustomization.decodeImage(look.bannerImageBase64)!),
-              fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .38), BlendMode.darken))
-          : null,
-        boxShadow: active ? [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 12)] : const [],
+            ? DecorationImage(
+                image: MemoryImage(LudoCustomization.decodeImage(look.bannerImageBase64)!),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .38), BlendMode.darken),
+              )
+            : null,
+        boxShadow: active
+            ? [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 12)]
+            : const [],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(width: 39, height: 39,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
-              border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 3),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: .3), blurRadius: 7)]),
-            child: Center(child: Text(player == 0 ? LudoCustomization.avatars[look.avatar]
-              : (_againstBot && player == 1 ? '🤖' : ['🙂','😎','🦊','🐼'][_colorIndex(player)]),
-              style: const TextStyle(fontSize: 22))),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                color: player == 0 ? LudoCustomization.frameColors[look.frame] : color,
+                width: 3,
+              ),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: .3), blurRadius: 7)],
+            ),
+            child: Center(child: Text(avatar, style: const TextStyle(fontSize: 19))),
           ),
-          const SizedBox(width: 6),
-          Expanded(child: Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
-            maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900))),
-          if (active) const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD477), size: 18),
-        ]),
-        const SizedBox(height: 7),
-        Row(children: [
-          const Icon(Icons.star_rounded, color: Color(0xFFFFD34D), size: 17),
-          Text('—', style: const TextStyle(color: Color(0xFFFFD34D), fontSize: 11, fontWeight: FontWeight.w900)),
-          const Spacer(),
-          const Icon(Icons.casino_rounded, color: Colors.white70, size: 14),
-          Text(' $count/4', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-        ]),
-        const SizedBox(height: 3),
-        Container(height: 4, decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(8)),
-          child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: count / 4,
-            child: Container(decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)))),
-        ),
-        if (active) Padding(padding: const EdgeInsets.only(top: 3),
-          child: Text(canRoll ? 'نوبت شما' : _botTurn ? 'نوبت ربات' : 'در حال بازی',
-            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900))),
-      ]),
+          const SizedBox(height: 3),
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              _againstBot && player == 1 ? 'ربات' : _playerName(player),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.casino_rounded, color: Colors.white70, size: 12),
+              Text(' $count/4', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+              if (active) ...[
+                const SizedBox(width: 3),
+                const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD477), size: 12),
+              ],
+            ],
+          ),
+          const SizedBox(height: 3),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: count / 4,
+              minHeight: 4,
+              backgroundColor: Colors.black26,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          if (active)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                canRoll ? 'نوبت شما' : _botTurn ? 'نوبت ربات' : 'در حال بازی',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
