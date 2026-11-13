@@ -683,7 +683,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           ),
           const SizedBox(height: 3),
           SizedBox(
-            width: 72,
+            width: double.infinity,
             child: Text(
               _againstBot && player == 1 ? 'ربات' : _playerName(player),
               textAlign: TextAlign.center,
@@ -731,17 +731,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
             borderRadius: BorderRadius.circular(20),
             onTap: canRoll ? _roll : null,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
                 color: canRoll ? color.withValues(alpha: .42) : Colors.black.withValues(alpha: .16),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: color.withValues(alpha: canRoll ? .95 : .35)),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.casino_rounded, size: 12, color: canRoll ? Colors.white : Colors.white54),
-                const SizedBox(width: 3),
-                Text(_diceValues[player]?.toString() ?? (active ? 'تاس بریز' : 'تاس'),
-                  style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+                Icon(Icons.casino_rounded, size: 11, color: canRoll ? Colors.white : Colors.white54),
+                const SizedBox(width: 2),
+                Flexible(child: Text(_diceValues[player]?.toString() ?? (active ? 'تاس بریز' : 'تاس'),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900))),
               ]),
             ),
           ),
