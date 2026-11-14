@@ -215,8 +215,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     _sfxQueue = _sfxQueue.then((_) async {
       if (!_soundEnabled || !mounted) return;
       try {
-        // Soft, warm effects: muted dice rattle, wooden token tap,
-        // gentle capture chime and a short celebratory three-note phrase.
+        // Arcade-style dice rattle, crisp token clicks, bright capture chime,
+        // and a layered victory fanfare tuned for phone speakers.
         const sampleRate = 44100;
         final duration = switch (kind) {
           'roll' => .62,
@@ -259,15 +259,19 @@ class _LudoGamePageState extends State<LudoGamePage> {
             final tapPhase = (t * 9.0) % 1.0;
             final tapEnvelope = math.exp(-tapPhase * 13) *
                 (t < .53 ? 1.0 : math.max(0, 1 - (t - .53) / .09));
-            final noise = (random.nextDouble() - .5) * .10;
-            final lowBody = math.sin(2 * math.pi * (178 + 24 * math.sin(t * 8)) * t) * .16;
-            sample = (noise + lowBody) * tapEnvelope;
-            sample += math.sin(2 * math.pi * 245 * t) *
-                math.exp(-math.pow((t - .55) / .055, 2) * 2) * .24;
+            final noise = (random.nextDouble() - .5) * .24;
+            final lowBody = math.sin(2 * math.pi * (205 + 42 * math.sin(t * 15)) * t) * .24;
+            final tick = math.sin(2 * math.pi * (920 + 180 * math.sin(t * 24)) * t) * .10;
+            sample = (noise + lowBody + tick) * tapEnvelope;
+            sample += math.sin(2 * math.pi * 330 * t) *
+                math.exp(-math.pow((t - .54) / .07, 2) * 2) * .32;
+            sample += math.sin(2 * math.pi * 660 * t) *
+                math.exp(-math.pow((t - .57) / .045, 2) * 2) * .12;
           } else if (kind == 'capture') {
             final env = math.exp(-p * 7);
-            sample = (math.sin(2 * math.pi * 392 * t) * .24 +
-                math.sin(2 * math.pi * 587 * t) * .10) * env;
+            sample = (math.sin(2 * math.pi * 523.25 * t) * .28 +
+                math.sin(2 * math.pi * 783.99 * t) * .16 +
+                math.sin(2 * math.pi * 1046.5 * t) * .07) * env;
           } else if (kind == 'win') {
             final notes = [392.0, 493.88, 587.33];
             final noteIndex = math.min(2, (t / .25).floor());
@@ -287,7 +291,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
           // Keep all effects comfortably quiet and avoid harsh clipping.
           final fadeIn = math.min(1.0, t * 90);
           final fadeOut = math.min(1.0, (duration - t) * 35);
-          final value = (sample * fadeIn * fadeOut * 5200)
+          final value = (sample * fadeIn * fadeOut * 8200)
               .round().clamp(-32768, 32767).toInt();
           pcm.setInt16(i * 2, value, Endian.little);
         }
