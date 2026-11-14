@@ -288,7 +288,17 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     );
   }
 
-  Map<String,dynamic>? _playerAtSeat(List<Map<String,dynamic>> players,int seat) {\n    for(final player in players){if((player['seat'] as num).toInt()==seat)return player;}\n    return null;\n  }\n\n  Widget _seatCard(Map<String,dynamic>? player,int seat) {
+  Map<String, dynamic>? _playerAtSeat(
+    List<Map<String, dynamic>> players,
+    int seat,
+  ) {
+    for (final player in players) {
+      if ((player['seat'] as num).toInt() == seat) return player;
+    }
+    return null;
+  }
+
+  Widget _seatCard(Map<String, dynamic>? player, int seat) {
     const colors=[Color(0xffe94b61),Color(0xff368be8),Color(0xffefb82f),Color(0xff21a886)];
     final name=player==null?'جای خالی':'بازیکن ${seat+1}';
     return Card(child:ListTile(
