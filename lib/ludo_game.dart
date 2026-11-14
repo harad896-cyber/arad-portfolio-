@@ -298,21 +298,33 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   void _chooseDie(int value, {bool fromBot = false}) {
-    if (_moving || _winner != null || !_pendingDice.contains(value) || (_botBusy && !fromBot)) return;
+    if (_moving || _winner != null || _dice != null ||
+        !_pendingDice.contains(value) || (_botBusy && !fromBot)) return;
     final options = LudoRules.legalTokensInGame(_positions, _turn, value);
     if (options.isEmpty) {
-      setState(() { _pendingDice.remove(value); _message = _pendingDice.join(' · '); });
-      if (_pendingDice.isEmpty && value != 6) _finishNoMove();
+      setState(() {
+        _pendingDice.remove(value);
+        _message = _pendingDice.isEmpty ? 'حرکت ممکن نیست' : _pendingDice.join(' · ');
+      });
+      if (_pendingDice.isEmpty) _finishNoMove();
       return;
     }
-    setState(() { _dice = value; _pendingDice.clear(); _message = '$value'; });
+    // Consume only the chosen die. The other rolled value remains available
+    // for a second, independent token move during this same turn.
+    setState(() {
+      _pendingDice.remove(value);
+      _dice = value;
+      _message = 'تاس $value انتخاب شد';
+    });
     if (options.length == 1) _moveToken(options.first, fromBot: fromBot);
   }
 
   void _finishNoMove() {
     if (!mounted || _winner != null) return;
     setState(() {
-      _dice = null; _pendingDice.clear(); _sixStreak = 0;
+      _dice = null;
+      _pendingDice.clear();
+      _sixStreak = 0;
       _turn = LudoRules.nextPlayer(_turn, _playerCount);
       _message = 'نوبت ${_playerName(_turn)}';
     });
@@ -341,19 +353,21 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!mounted || generation != _botGeneration) return;
     setState(() {
       _moving = false;
-      _positions = result.positions; _dice = null; _pendingDice.clear();
+      _positions = result.positions;
+      _dice = null;
       if (result.captured) _playSfx('capture');
       if (result.won) {
         _playSfx('win');
-        _winner = _turn; _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
-      } else if (rolledSix || result.captured || result.finished) {
-        _message = result.captured
-            ? 'مهرهٔ حریف زده شد؛ نوبت اضافه داری!'
-            : result.finished ? 'یک مهره به خانه رسید؛ دوباره تاس بینداز.'
-            : '۶ آوردی؛ دوباره تاس بینداز.';
+        _pendingDice.clear();
+        _winner = _turn;
+        _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
+      } else if (_pendingDice.isNotEmpty) {
+        // Keep the unspent die for another token; do not advance the turn.
+        _message = 'تاس باقی‌مانده: ${_pendingDice.join(' · ')}';
       } else {
-        _sixStreak = 0; _turn = LudoRules.nextPlayer(_turn, _playerCount);
-        _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
+        _sixStreak = 0;
+        _turn = LudoRules.nextPlayer(_turn, _playerCount);
+        _message = 'نوبت ${_playerName(_turn)}';
       }
     });
     _scheduleBot();
@@ -547,25 +561,47 @@ class _LudoGamePageState extends State<LudoGamePage> {
           ),
           if (_pendingDice.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center,
-                children: _pendingDice.map((value) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: InkWell(
-                    onTap: _botTurn || _botBusy ? null : () => _chooseDie(value),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: _playerColor(_turn).withValues(alpha: .22),
-                        border: Border.all(color: _playerColor(_turn), width: 2),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: _playerColor(_turn).withValues(alpha: .28), blurRadius: 12)],
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var index = 0; index < _pendingDice.length; index++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      child: InkWell(
+                        onTap: _botTurn || _botBusy || _dice != null
+                            ? null
+                            : () => _chooseDie(_pendingDice[index]),
+                        borderRadius: BorderRadius.circular(15),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                _playerColor(_turn).withValues(alpha: .95),
+                                _playerColor(_turn).withValues(alpha: .48),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.white.withValues(alpha: .9), width: 1.6),
+                            boxShadow: [
+                              BoxShadow(color: _playerColor(_turn).withValues(alpha: .42), blurRadius: 15, spreadRadius: 1),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${_pendingDice[index]}',
+                              style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Text('$value', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
                     ),
-                  ),
-                )).toList(),
+                ],
               ),
             ),
           const SizedBox(height: 5),
