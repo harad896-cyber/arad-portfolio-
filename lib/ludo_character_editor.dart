@@ -158,6 +158,14 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
   List<LudoCosmeticItem> get _visible => _catalog.where((item) =>
     item.category == _category && item.available).toList();
 
+  LudoCosmeticItem? _itemById(String? id) {
+    if (id == null) return null;
+    for (final item in _catalog) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
   void _choose(LudoCosmeticItem item) {
     setState(() {
       switch (item.category) {
@@ -220,12 +228,12 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
                     decoration:BoxDecoration(shape:BoxShape.circle,color:_hex(_draft.bodyColor),
                       border:Border.all(color:Colors.white.withValues(alpha:.8),width:4),
                       boxShadow:const [BoxShadow(color:Colors.black38,blurRadius:18,offset:Offset(0,9))]),
-                    child:Center(child:Text(_catalog.where((e)=>e.id==_draft.characterId).firstOrNull?.emoji ??
+                    child:Center(child:Text(_itemById(_draft.characterId)?.emoji ??
                       (_draft.characterId.startsWith('robot')?'🤖':_draft.characterId.startsWith('tiger')?'🐯':_draft.characterId.startsWith('astronaut')?'🧑‍🚀':'🦊'),
                       style:const TextStyle(fontSize:88))),
                   ),
                   if (_draft.hatId != null) Positioned(top:24,child:Text(
-                    _catalog.where((e)=>e.id==_draft.hatId).firstOrNull?.emoji ?? '👑',
+                    _itemById(_draft.hatId)?.emoji ?? '👑',
                     style:const TextStyle(fontSize:43))),
                   if (_draft.glassesId != null) const Positioned(top:99,child:Text('🕶️',style:TextStyle(fontSize:36))),
                   if (_draft.auraId != null) const Positioned(bottom:18,child:Text('✨',style:TextStyle(fontSize:26))),
