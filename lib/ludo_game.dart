@@ -383,7 +383,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _botBusy = false;
       _roll(fromBot: true);
       if (!mounted || !_botTurn || _winner != null) return;
-      if (_bonusRollAvailable) _roll(fromBot: true);
+      for (var extra = 0; extra < 2 && _bonusRollAvailable; extra++) {
+        _roll(fromBot: true);
+        if (!mounted || !_botTurn || _winner != null) return;
+      }
       if (!mounted || !_botTurn || _winner != null) return;
       final usableDice = _pendingDice.where((value) =>
         LudoRules.legalTokensInGame(_positions, _turn, value).isNotEmpty).toList();
