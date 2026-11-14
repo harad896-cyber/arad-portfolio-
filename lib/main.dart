@@ -12196,8 +12196,8 @@ class _ChatPageState extends State<ChatPage> {
          '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
 
     Widget content;
-    final ludoInviteMatch = RegExp(r'^\\[\\[GAPRESAN_LUDO_INVITE\\]\\]([0-9a-fA-F-]+)\\|(\\d{6})$').firstMatch(body);
-    final stickerMatch = RegExp(r'^\\[\\[ARAD_STICKER\\]\\](.*?)\\|(.*)$').firstMatch(body);
+    final ludoInviteMatch = RegExp(r'^\[\[GAPRESAN_LUDO_INVITE\]\]([0-9a-fA-F-]+)\|(\d{6})$').firstMatch(body);
+    final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
     if (ludoInviteMatch != null) {
       final token = ludoInviteMatch.group(1)!;
       final code = ludoInviteMatch.group(2)!;
