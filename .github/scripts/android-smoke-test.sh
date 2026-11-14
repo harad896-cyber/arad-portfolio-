@@ -36,8 +36,9 @@ echo "Installing $APK (applicationId=$APP_ID)"
 adb install -r "$APK"
 # Start the launcher activity directly. Monkey can abort when a background
 # emulator system service (such as com.android.phone) stalls under CI load.
-adb shell am start -W -a android.intent.action.MAIN \
-  -c android.intent.category.LAUNCHER -p "$APP_ID"
+# Launch the generated Flutter activity by its fully qualified component.
+# This avoids launcher-intent resolution differences across emulator images.
+adb shell am start -W -n "$APP_ID/com.gapresan.arad_messenger.MainActivity"
 sleep 12
 APP_PID="$(adb shell pidof "$APP_ID" | tr -d "\r")"
 if [[ -z "$APP_PID" ]]; then
