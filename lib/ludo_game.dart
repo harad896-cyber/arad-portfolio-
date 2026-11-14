@@ -493,136 +493,161 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const Text('لودوی گپ‌رسان', textAlign: TextAlign.center,
         style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
       const SizedBox(height: 8),
-      Text('مهره‌ها را با تاس حرکت بده، مهره‌های حریف را بزن و زودتر از همه به خانه برس.',
+      const Text('مهره‌ها را حرکت بده و زودتر از همه به خانه برس.',
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white70, height: 1.6)),
+        style: TextStyle(color: Colors.white70, height: 1.6)),
       const SizedBox(height: 20),
       OutlinedButton.icon(
         onPressed: () => LudoCustomizationButton.open(context),
         icon: const Icon(Icons.palette_rounded),
-        label: const Text('شخصی‌سازی ظاهر و تخته'),
+        label: const Text('شخصی‌سازی تخته'),
       ),
       const SizedBox(height: 22),
       const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
       Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
-        label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'), selected: _playerCount == count,
+        label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'),
+        selected: _playerCount == count,
         onSelected: (_) => setState(() => _playerCount = count),
       )).toList()),
       const SizedBox(height: 18),
       SwitchListTile(
-        contentPadding: EdgeInsets.zero, title: const Text('بازی با ربات'),
-        subtitle: const Text('یک بازیکن انسانی در برابر ربات بازی می‌کند.'),
+        contentPadding: EdgeInsets.zero,
+        title: const Text('بازی با ربات'),
         value: _againstBot,
-        onChanged: (value) => setState(() { _againstBot = value; if (value) _playerCount = 2; }),
+        onChanged: (value) => setState(() {
+          _againstBot = value;
+          if (value) _playerCount = 2;
+        }),
       ),
       const SizedBox(height: 18),
       FilledButton.icon(
         onPressed: () => _start(players: _againstBot ? 2 : _playerCount, bot: _againstBot),
-        icon: const Icon(Icons.play_arrow_rounded), label: const Text('شروع بازی')),
-      const SizedBox(height: 10),
-            child: Row(children: [
-              const Icon(Icons.circle, color: Color(0xFF56D7FF), size: 8),
-              const SizedBox(width: 8),
-              Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+        icon: const Icon(Icons.play_arrow_rounded),
+        label: const Text('شروع بازی'),
+      ),
+    ],
+  );
 
-            ]),
-          ),
-          const SizedBox(height: 5),
-          Center(
-            child: SizedBox(
-              width: frameSize,
-              height: frameSize,
-              child: Stack(clipBehavior: Clip.none, children: [
-                Positioned(
-                  left: rail, top: rail, width: boardSize, height: boardSize,
-                  child: ValueListenableBuilder<FunBackdrop>(
-                    valueListenable: FunZoneLook.current,
-                    builder: (context, look, _) => ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFFFD477), width: 2),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
+  Widget _gameBody() => LayoutBuilder(
+    builder: (context, constraints) {
+      final rail = 32.0;
+      final boardSize = math.max(220.0, math.min(560.0, constraints.maxWidth - rail * 2));
+      final frameSize = boardSize + rail * 2;
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF061D35),
+                border: Border.all(color: const Color(0xFFFFD477), width: 1.3),
+                borderRadius: BorderRadius.circular(17),
+              ),
+              child: Row(children: [
+                Icon(Icons.circle, color: _playerColor(_turn), size: 9),
+                const SizedBox(width: 9),
+                Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+              ]),
+            ),
+            const SizedBox(height: 5),
+            Center(
+              child: SizedBox(
+                width: frameSize,
+                height: frameSize,
+                child: Stack(clipBehavior: Clip.none, children: [
+                  Positioned(
+                    left: rail, top: rail, width: boardSize, height: boardSize,
+                    child: ValueListenableBuilder<FunBackdrop>(
+                      valueListenable: FunZoneLook.current,
+                      builder: (context, look, _) => ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFFFFD477), width: 2),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
+                          ),
+                          child: Stack(children: [
+                            Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
+                              colors: _colors, players: _playerCount, positions: _positions,
+                              turn: _turn, dice: _moving ? null : _dice,
+                              legalTokens: _moving ? const [] : _legal,
+                              look: look, styleIndex: LudoCustomization.current.value.board,
+                            ))),
+                            for (var player = 0; player < _playerCount; player++)
+                              for (var token = 0; token < 4; token++)
+                                _buildToken(player, token, boardSize),
+                          ]),
                         ),
-                        child: Stack(children: [
-                          Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
-                            colors: _colors, players: _playerCount, positions: _positions,
-                            turn: _turn, dice: _moving ? null : _dice,
-                            legalTokens: _moving ? const [] : _legal,
-                            look: look, styleIndex: LudoCustomization.current.value.board,
-                          ))),
-                          for (var player = 0; player < _playerCount; player++)
-                            for (var token = 0; token < 4; token++) _buildToken(player, token, boardSize),
-                        ]),
                       ),
                     ),
                   ),
-                ),
-                if (_playerCount >= 2)
-                  Positioned(right: 0, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
-                if (_playerCount >= 3)
-                  Positioned(right: 0, bottom: 0, child: _edgeDiceControl(1, compact: true)),
-                Positioned(left: 0, bottom: 0, child: _edgeDiceControl(0, compact: true)),
-                if (_playerCount >= 4)
-                  Positioned(left: 0, top: 0, child: _edgeDiceControl(3, compact: true)),
-              ]),
+                  if (_playerCount >= 2)
+                    Positioned(right: 0, top: 0,
+                      child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
+                  if (_playerCount >= 3)
+                    Positioned(right: 0, bottom: 0, child: _edgeDiceControl(1, compact: true)),
+                  Positioned(left: 0, bottom: 0, child: _edgeDiceControl(0, compact: true)),
+                  if (_playerCount >= 4)
+                    Positioned(left: 0, top: 0, child: _edgeDiceControl(3, compact: true)),
+                ]),
+              ),
             ),
-          ),
-          if (_pendingDice.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (var index = 0; index < _pendingDice.length; index++)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 7),
-                      child: InkWell(
-                        onTap: _botTurn || _botBusy || _dice != null || _bonusRollAvailable
-                            ? null
-                            : () => _chooseDie(_pendingDice[index]),
-                        borderRadius: BorderRadius.circular(15),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                _playerColor(_turn).withValues(alpha: .95),
-                                _playerColor(_turn).withValues(alpha: .48),
-                              ],
+            if (_pendingDice.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var index = 0; index < _pendingDice.length; index++)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 7),
+                        child: InkWell(
+                          onTap: _botTurn || _botBusy || _dice != null || _bonusRollAvailable
+                              ? null : () => _chooseDie(_pendingDice[index]),
+                          borderRadius: BorderRadius.circular(15),
+                          child: Container(
+                            width: 58, height: 58,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                colors: [
+                                  _playerColor(_turn).withValues(alpha: .95),
+                                  _playerColor(_turn).withValues(alpha: .48),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.white.withValues(alpha: .9), width: 1.6),
+                              boxShadow: [BoxShadow(
+                                color: _playerColor(_turn).withValues(alpha: .42),
+                                blurRadius: 15, spreadRadius: 1,
+                              )],
                             ),
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(color: Colors.white.withValues(alpha: .9), width: 1.6),
-                            boxShadow: [
-                              BoxShadow(color: _playerColor(_turn).withValues(alpha: .42), blurRadius: 15, spreadRadius: 1),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${_pendingDice[index]}',
-                              style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900),
-                            ),
+                            child: Center(child: Text('${_pendingDice[index]}',
+                              style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900))),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
+            const SizedBox(height: 5),
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(width: 210, child: _communicationActions()),
             ),
-          const SizedBox(height: 5),
-          _communicationActions(),
-          if (_winner != null)
-            Padding(padding: const EdgeInsets.only(top: 7),
-              child: SizedBox(width: double.infinity, child: FilledButton.icon(
-                onPressed: _reset, icon: const Icon(Icons.replay_rounded), label: const Text('بازی دوباره')))),
-        ],
+            if (_winner != null)
+              Padding(padding: const EdgeInsets.only(top: 7),
+                child: SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: _reset, icon: const Icon(Icons.replay_rounded),
+                  label: const Text('بازی دوباره')))),
+          ],
+        ),
       );
     },
   );
