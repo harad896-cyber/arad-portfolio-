@@ -326,7 +326,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       final animatedPositions = _positions.map((row) => List<int>.from(row)).toList();
       animatedPositions[movingPlayer][token] = progress;
       setState(() => _positions = animatedPositions);
-      await Future<void>.delayed(const Duration(milliseconds: 115));
+      await Future<void>.delayed(const Duration(milliseconds: 205));
     }
     if (!mounted || generation != _botGeneration) return;
     setState(() {
@@ -496,8 +496,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
       // Reserve a true touch-safe rail around the board so dice never cover
       // playable squares. The 46px rail also leaves a little breathing room
       // around the 44x46 controls on narrow Android screens.
-      final rail = 46.0;
-      final boardSize = math.max(190.0, math.min(560.0, constraints.maxWidth - rail * 2));
+      final rail = 34.0;
+      final boardSize = math.max(220.0, math.min(560.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return ListView(
         padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
@@ -558,12 +558,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   ),
                 ),
                 if (_playerCount >= 2)
-                  Positioned(left: frameSize / 2 - 22, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
+                  Positioned(right: 0, top: 0, child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
                 if (_playerCount >= 3)
-                  Positioned(right: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(1, compact: true)),
-                Positioned(left: frameSize / 2 - 22, bottom: 0, child: _edgeDiceControl(0, compact: true)),
+                  Positioned(right: 0, bottom: 0, child: _edgeDiceControl(1, compact: true)),
+                Positioned(left: 0, bottom: 0, child: _edgeDiceControl(0, compact: true)),
                 if (_playerCount >= 4)
-                  Positioned(left: 0, top: frameSize / 2 - 23, child: _edgeDiceControl(3, compact: true)),
+                  Positioned(left: 0, top: 0, child: _edgeDiceControl(3, compact: true)),
               ]),
             ),
           ),
@@ -641,7 +641,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       label: const Text('پیام‌ها'),
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white, side: const BorderSide(color: Color(0xFF64C9E8)),
-        minimumSize: const Size.fromHeight(44), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        minimumSize: const Size.fromHeight(36), padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     )),
     const SizedBox(width: 9),
@@ -652,7 +652,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       label: const Text('میکروفن'),
       style: FilledButton.styleFrom(
         backgroundColor: const Color(0xFF176B58), foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(44), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        minimumSize: const Size.fromHeight(36), padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     )),
   ]);
@@ -920,7 +920,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final hitSize = diameter * 1.22;
     final color = _playerColor(player);
     return AnimatedPositioned(
-      duration: const Duration(milliseconds: 430), curve: Curves.easeInOutCubicEmphasized,
+      duration: const Duration(milliseconds: 185), curve: Curves.easeInOutCubic,
       left: point.dx - hitSize / 2, top: point.dy - hitSize / 2,
       width: hitSize, height: hitSize,
       child: Semantics(
