@@ -14,40 +14,51 @@ if [[ -z "$ADB_BIN" ]]; then
 fi
 SDK_ROOT="$(cd "$(dirname "$ADB_BIN")/.." && pwd)"
 BUILD_TOOLS_ROOT="$SDK_ROOT/build-tools"
-if [[ ! -d "$BUILD_TOOLS_ROOT" ]]; then
-  echo "Android build-tools directory not found: $BUILD_TOOLS_ROOT" >&2
-  exit 1
-fi
 BUILD_TOOLS="$(find "$BUILD_TOOLS_ROOT" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
 if [[ -z "$BUILD_TOOLS" || ! -x "$BUILD_TOOLS/aapt" ]]; then
-  echo "aapt not found under Android build-tools: $BUILD_TOOLS_ROOT" >&2
+  echo "Android aapt not found under: $BUILD_TOOLS_ROOT" >&2
   exit 1
 fi
 
-# Do not exit awk early: with pipefail enabled, that can SIGPIPE aapt and
-# make command substitution fail with status 141 before the emulator test.
 APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/ && !found { print $2; found=1 }')"
 if [[ -z "$APP_ID" ]]; then
   echo "Could not read Android application ID from APK" >&2
   exit 1
 fi
 
+# adb occasionally returns Broken pipe immediately after the emulator boots.
+# Retry transient transport failures instead of publishing a package that
+# was never actually installed and launched.
+adb_retry() {
+  local attempt=1
+  local output
+  while (( attempt <= 5 )); do
+    if output="$(adb "$@" 2>&1)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    printf 'adb attempt %s/5 failed: %s\n' "$attempt" "$output" >&2
+    adb start-server >/dev/null 2>&1 || true
+    sleep $((attempt * 2))
+    ((attempt++))
+  done
+  return 1
+}
+
+adb_retry wait-for-device
+adb_retry get-state
 echo "Installing $APK (applicationId=$APP_ID)"
-adb install -r "$APK"
-# Start the launcher activity directly. Monkey can abort when a background
-# emulator system service (such as com.android.phone) stalls under CI load.
-# Launch the generated Flutter activity by its fully qualified component.
-# This avoids launcher-intent resolution differences across emulator images.
-adb shell am start -W -n "$APP_ID/com.gapresan.arad_messenger.MainActivity"
+adb_retry install -r "$APK"
+adb_retry shell am start -W -n "$APP_ID/com.gapresan.arad_messenger.MainActivity"
 sleep 12
-APP_PID="$(adb shell pidof "$APP_ID" | tr -d "\r")"
+APP_PID="$(adb shell pidof "$APP_ID" 2>/dev/null | tr -d '\r' || true)"
 if [[ -z "$APP_PID" ]]; then
+  adb logcat -d -t 500 > /tmp/gapresan-logcat.txt || true
+  tail -n 100 /tmp/gapresan-logcat.txt || true
   echo "GapResan process did not remain running after launch" >&2
   exit 1
 fi
 
-# Inspect only the app process. The emulator can emit unrelated system-service
-# crashes (for example Bluetooth) which must not fail the GapResan smoke test.
 if adb logcat -d --pid="$APP_PID" | grep -E "FATAL EXCEPTION|Fatal signal"; then
   echo "Fatal crash detected in GapResan process (pid=$APP_PID)" >&2
   exit 1
