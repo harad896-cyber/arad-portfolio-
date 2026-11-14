@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APK="${GITHUB_WORKSPACE:-$PWD}/build/app/outputs/flutter-apk/app-release.apk"
+APK="${APK_PATH:-${GITHUB_WORKSPACE:-$PWD}/build/app/outputs/flutter-apk/app-release.apk}"
 if [[ ! -s "$APK" ]]; then
   echo "Release APK is missing or empty: $APK" >&2
   exit 1
@@ -20,9 +20,11 @@ if [[ -z "$BUILD_TOOLS" || ! -x "$BUILD_TOOLS/aapt" ]]; then
   exit 1
 fi
 
-APP_ID="$("$BUILD_TOOLS/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/ && !found { print $2; found=1 }')"
-if [[ -z "$APP_ID" ]]; then
-  echo "Could not read Android application ID from APK" >&2
+BADGING="$("$BUILD_TOOLS/aapt" dump badging "$APK")"
+APP_ID="$(printf '%s\\n' "$BADGING" | awk -F"'" '/^package: name=/ && !found { print $2; found=1 }')"
+ACTIVITY="$(printf '%s\\n' "$BADGING" | sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p" | head -n1)"
+if [[ -z "$APP_ID" || -z "$ACTIVITY" ]]; then
+  echo "Could not read Android application ID or launch activity from APK" >&2
   exit 1
 fi
 
@@ -49,7 +51,7 @@ adb_retry wait-for-device
 adb_retry get-state
 echo "Installing $APK (applicationId=$APP_ID)"
 adb_retry install -r "$APK"
-adb_retry shell am start -W -n "$APP_ID/com.gapresan.arad_messenger.MainActivity"
+adb_retry shell am start -W -n "$APP_ID/$ACTIVITY"
 sleep 12
 APP_PID="$(adb shell pidof "$APP_ID" 2>/dev/null | tr -d '\r' || true)"
 if [[ -z "$APP_PID" ]]; then
