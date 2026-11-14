@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'fun_zone_theme.dart';
 import 'ludo_customization.dart';
+import 'ludo_character_editor.dart';
 import 'fun_game_room_chat.dart';
 import 'fun_game_voice_call.dart';
 import 'ludo_engine.dart' as engine;
@@ -176,6 +177,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final List<int> _pendingDice = [];
   final List<int?> _diceValues = List<int?>.filled(4, null);
   String _message = 'بازی را آغاز کن.';
+  LudoCharacterAppearance _myCharacter = const LudoCharacterAppearance();
   List<List<int>> _positions = [];
   final List<String> _localChatMessages = [];
 
@@ -184,6 +186,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
     super.initState();
     LudoCustomization.current.addListener(_onLookChanged);
     LudoCustomization.load().catchError((_) {});
+    LudoCosmeticRepository(Supabase.instance.client).loadAppearance().then((appearance) {
+      if (mounted) setState(() => _myCharacter = appearance);
+    }).catchError((_) {});
     _loadFirstGuide();
     _refreshDiamondBalance();
   }
@@ -1271,15 +1276,25 @@ class _LudoGamePageState extends State<LudoGamePage> {
               Align(alignment: const Alignment(-.35, -.55), child: Container(
                 width: diameter * .22, height: diameter * .12,
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: .72), borderRadius: BorderRadius.circular(10)))),
-              Center(child: Text((token + 1).toString(),
-                style: TextStyle(color: _colorIndex(player) == 2 ? const Color(0xFF33250A) : Colors.white,
-                  fontSize: diameter * .34, fontWeight: FontWeight.w900, shadows: const [Shadow(color: Colors.black45, blurRadius: 2)]))),
+              Center(child: Text(_tokenCharacterEmoji(player),
+                style: TextStyle(fontSize: diameter * .66,
+                  shadows: const [Shadow(color: Colors.black45, blurRadius: 2)]))),
             ]),
           )),
         ),
       ),
     );
   }
+  String _tokenCharacterEmoji(int player) {
+    if (player == 0) {
+      if (_myCharacter.characterId.startsWith('robot')) return '🤖';
+      if (_myCharacter.characterId.startsWith('tiger')) return '🐯';
+      if (_myCharacter.characterId.startsWith('astronaut')) return '🧑‍🚀';
+      return '🦊';
+    }
+    return const ['🦊','🐯','🤖','🧑‍🚀'][player % 4];
+  }
+
   Offset _tokenPoint(int player, int token, int progress, double size) {
     if (progress == 57) {
       const homeOffsets = [Offset(-.30, -.30), Offset(.30, -.30), Offset(-.30, .30), Offset(.30, .30)];
