@@ -99,10 +99,10 @@ jobs:
           unzip -t "$ZIP"
           mapfile -t ENTRIES < <(unzip -Z1 "$ZIP")
           test "${#ENTRIES[@]}" -eq 3
-          printf 'ZIP entry: <%s>\\n' "${ENTRIES[@]}"
-          printf '%s\\n' "${ENTRIES[@]}" | grep -Fxq "GapResan.apk"
-          printf '%s\\n' "${ENTRIES[@]}" | grep -Fxq "GapResan.apk.sha256"
-          printf '%s\\n' "${ENTRIES[@]}" | grep -Fxq "INSTALL.txt"
+          ENTRY_LIST=" ${ENTRIES[*]} "
+          [[ "$ENTRY_LIST" == *" GapResan.apk "* ]]
+          [[ "$ENTRY_LIST" == *" GapResan.apk.sha256 "* ]]
+          [[ "$ENTRY_LIST" == *" INSTALL.txt "* ]]
           sha256sum "$ZIP" | tee "$ZIP.sha256"
 
       # Validate the exact APK bytes a phone user receives after extracting
