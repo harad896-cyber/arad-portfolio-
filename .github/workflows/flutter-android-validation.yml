@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/gapresan-fun-zone]
+    branches: [feature/gapresan-fun-zone, feature/gapresan-fun-zone-polish]
 
 permissions:
   contents: write
