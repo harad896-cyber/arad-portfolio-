@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   analyze-test-build:
@@ -175,11 +177,17 @@ jobs:
             build/app/outputs/flutter-apk/GapResan.apk.sha256
             build/app/outputs/flutter-apk/gapresan-install-bundle.zip
 
-      - run: flutter build web --release --base-href /
-      - name: Upload web preview
-        uses: actions/upload-artifact@v4
+      - name: Configure GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        uses: actions/configure-pages@v5
+      - name: Build GapResan browser preview
+        run: flutter build web --release --base-href /arad-portfolio-/
+      - name: Upload web preview artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: gapresan-web-preview
           path: build/web/
-          if-no-files-found: error
-          retention-days: 14
+      - name: Publish GapResan browser preview
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        id: deployment
+        uses: actions/deploy-pages@v4
