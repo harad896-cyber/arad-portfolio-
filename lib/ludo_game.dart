@@ -553,6 +553,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
       title: const Text('لودو'), backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       actions: [
+        IconButton(
+          tooltip: 'ویرایش ظاهر منچ',
+          onPressed: () => LudoCustomizationButton.open(context),
+          icon: const Icon(Icons.tune_rounded),
+        ),
         PopupMenuButton<String>(
           tooltip: 'تنظیمات بازی',
           onSelected: (value) {
