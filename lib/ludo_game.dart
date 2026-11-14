@@ -495,44 +495,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
         onPressed: () => _start(players: _againstBot ? 2 : _playerCount, bot: _againstBot),
         icon: const Icon(Icons.play_arrow_rounded), label: const Text('شروع بازی')),
       const SizedBox(height: 10),
-      const Text(
-        'قوانین: برای بیرون‌آوردن مهره ۶ لازم است؛ خانه‌های امن از زدن محافظت می‌کنند؛ رسیدن به خانه با عدد دقیق انجام می‌شود؛ با آوردن ۶ یا زدن مهره، نوبت اضافه می‌گیری.',
-        textAlign: TextAlign.center, style: TextStyle(fontSize: 12, height: 1.6, color: Colors.white70)),
-    ],
-  );
-
-  Widget _gameBody() => LayoutBuilder(
-    builder: (context, constraints) {
-      // Reserve a true touch-safe rail around the board so dice never cover
-      // playable squares. The 46px rail also leaves a little breathing room
-      // around the 44x46 controls on narrow Android screens.
-      final rail = 34.0;
-      final boardSize = math.max(220.0, math.min(560.0, constraints.maxWidth - rail * 2));
-      final frameSize = boardSize + rail * 2;
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF071A35).withValues(alpha: .94),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFD477).withValues(alpha: .72)),
-            ),
             child: Row(children: [
               const Icon(Icons.circle, color: Color(0xFF56D7FF), size: 8),
               const SizedBox(width: 8),
               Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
-              IconButton(
-                tooltip: 'قوانین بازی',
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints.tightFor(width: 30, height: 30),
-                padding: EdgeInsets.zero,
-                onPressed: _showRules,
-                icon: const Icon(Icons.info_outline_rounded, color: Color(0xFFFFD477), size: 18),
-              ),
+
             ]),
           ),
           const SizedBox(height: 5),
