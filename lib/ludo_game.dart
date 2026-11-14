@@ -614,54 +614,136 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _modePicker() => ListView(
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
     children: [
-      const SizedBox(height: 12),
-      const Icon(Icons.casino_rounded, size: 68, color: Color(0xFFF0BD35)),
-      const SizedBox(height: 12),
-      const Text('لودوی گپ‌رسان', textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
-      const SizedBox(height: 8),
-      const Text('مهره‌ها را حرکت بده و زودتر از همه به خانه برس.',
+      Center(
+        child: Container(
+          width: 104, height: 104,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
+              colors: [Color(0xFFFFE7A0), Color(0xFFD59A32), Color(0xFF70451C)],
+            ),
+            border: Border.all(color: const Color(0xFFFFF0C4), width: 3),
+            boxShadow: const [BoxShadow(color: Color(0x66F0BD35), blurRadius: 24, spreadRadius: 2)],
+          ),
+          child: const Icon(Icons.casino_rounded, size: 58, color: Color(0xFF172638)),
+        ),
+      ),
+      const SizedBox(height: 14),
+      const Text('منچ گپ‌رسان', textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 29, fontWeight: FontWeight.w900, letterSpacing: .2)),
+      const SizedBox(height: 7),
+      const Text('یک بازی دوستانه؛ با مهره‌های رنگی، تختهٔ بزرگ و ظاهر دلخواهت.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.white70, height: 1.6)),
-      const SizedBox(height: 20),
+        style: TextStyle(color: Colors.white70, height: 1.65, fontSize: 13)),
+      const SizedBox(height: 18),
       OutlinedButton.icon(
         onPressed: () => LudoCustomizationButton.open(context),
-        icon: const Icon(Icons.palette_rounded),
-        label: const Text('شخصی‌سازی تخته'),
+        icon: const Icon(Icons.tune_rounded),
+        label: const Text('ویرایش ظاهر و قالب‌ها'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFFFD477),
+          side: const BorderSide(color: Color(0xFFD5A94D)),
+          minimumSize: const Size.fromHeight(48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        ),
       ),
       const SizedBox(height: 22),
-      const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
+      const Text('حالت بازی', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
-      Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
-        label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'),
-        selected: _playerCount == count,
-        onSelected: (_) => setState(() => _playerCount = count),
-      )).toList()),
-      const SizedBox(height: 18),
-      SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: const Text('بازی با ربات'),
-        value: _againstBot,
-        onChanged: (value) => setState(() {
-          _againstBot = value;
-          if (value) _playerCount = 2;
-        }),
+      _modeCard(
+        icon: Icons.people_alt_rounded, title: 'بازی آفلاین',
+        subtitle: '۲ تا ۴ نفر روی همین گوشی',
+        selected: !_againstBot,
+        onTap: () => setState(() => _againstBot = false),
       ),
-      const SizedBox(height: 18),
+      const SizedBox(height: 9),
+      _modeCard(
+        icon: Icons.smart_toy_rounded, title: 'بازی با ربات',
+        subtitle: 'رقابت دونفره با حریف هوشمند',
+        selected: _againstBot,
+        onTap: () => setState(() { _againstBot = true; _playerCount = 2; }),
+      ),
+      const SizedBox(height: 9),
+      _modeCard(
+        icon: Icons.public_rounded, title: 'بازی آنلاین',
+        subtitle: 'اتصال حریف و همگام‌سازی نوبت‌ها هنوز به سرور لودو وصل نشده است.',
+        selected: false, enabled: false,
+        onTap: () => _showOnlineUnavailable(),
+      ),
+      const SizedBox(height: 20),
+      if (!_againstBot) ...[
+        const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
+        const SizedBox(height: 9),
+        Wrap(spacing: 9, children: [2, 3, 4].map((count) => ChoiceChip(
+          label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'),
+          selected: _playerCount == count,
+          onSelected: (_) => setState(() => _playerCount = count),
+        )).toList()),
+        const SizedBox(height: 17),
+      ],
       FilledButton.icon(
         onPressed: () => _start(players: _againstBot ? 2 : _playerCount, bot: _againstBot),
         icon: const Icon(Icons.play_arrow_rounded),
         label: const Text('شروع بازی'),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
       ),
     ],
   );
 
+  Widget _modeCard({
+    required IconData icon, required String title, required String subtitle,
+    required bool selected, required VoidCallback onTap, bool enabled = true,
+  }) => Opacity(
+    opacity: enabled ? 1 : .58,
+    child: Material(
+      color: selected ? const Color(0xFF174A42) : const Color(0xFF10263A),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: enabled ? onTap : _showOnlineUnavailable,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: selected ? const Color(0xFF65D6AC) : Colors.white24, width: selected ? 1.8 : 1),
+          ),
+          child: Row(children: [
+            Icon(icon, color: selected ? const Color(0xFF8AF0C4) : const Color(0xFFFFD477), size: 29),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              const SizedBox(height: 3),
+              Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.45)),
+            ])),
+            if (selected) const Icon(Icons.check_circle_rounded, color: Color(0xFF8AF0C4)),
+            if (!enabled) const Icon(Icons.lock_outline_rounded, color: Colors.white54),
+          ]),
+        ),
+      ),
+    ),
+  );
+
+  void _showOnlineUnavailable() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('بازی آنلاین لودو'),
+        content: const Text('در نسخهٔ فعلی سرور فقط برای بازی‌های دیگر آماده است. برای جلوگیری از نمایش آنلاینِ غیرواقعی، لودوی آنلاین تا آماده‌شدن همگام‌سازی امن مهره‌ها و تاس غیرفعال است.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('متوجه شدم'))],
+      ),
+    );
+  }
+
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      final rail = 32.0;
-      final boardSize = math.max(220.0, math.min(560.0, constraints.maxWidth - rail * 2));
+      final rail = 24.0;
+      final boardSize = math.max(220.0, math.min(620.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
@@ -793,8 +875,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && (_pendingDice.isEmpty || _bonusRollAvailable) && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
-    final width = compact ? 44.0 : 48.0;
-    final height = compact ? 46.0 : 58.0;
+    final width = compact ? 50.0 : 54.0;
+    final height = compact ? 52.0 : 62.0;
     final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
     return Semantics(
       button: true,
@@ -830,7 +912,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 19 : 27),
+              _LudoDieFace(value: shownValue, size: compact ? 22 : 29),
               const SizedBox(height: 1),
               Text(shownValue?.toString() ?? 'تاس',
                 style: TextStyle(color: Colors.white, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
@@ -1125,7 +1207,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _buildToken(int player, int token, double size) {
     final point = _tokenDisplayPoint(player, token, size);
     final canMove = player == _turn && _dice != null && _legal.contains(token) && !_botTurn && !_moving;
-    final diameter = size * .052;
+    final diameter = size * .058;
     final hitSize = diameter * 1.22;
     final color = _playerColor(player);
     return AnimatedPositioned(
