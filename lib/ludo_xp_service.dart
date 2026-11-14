@@ -34,26 +34,8 @@ class LudoXpService {
     return (100 * _pow(level.toDouble(), 1.4)).ceil();
   }
 
-  static double _pow(double value, double exponent) {
-    // Dart's num.pow is supplied by dart:math in the runtime implementation.
-    return _mathPow(value, exponent);
-  }
-
-  static double _mathPow(double value, double exponent) {
-    return _powImpl(value, exponent);
-  }
-
-  static double _powImpl(double value, double exponent) {
-    return _numericPow(value, exponent);
-  }
-
-  static double _numericPow(double value, double exponent) {
-    return _powWithMath(value, exponent);
-  }
-
-  static double _powWithMath(double value, double exponent) {
-    return _math.pow(value, exponent);
-  }
+  static double _pow(double value, double exponent) =>
+      _math.pow(value, exponent).toDouble();
 
   static int calculateBaseXp({
     required int placement,
