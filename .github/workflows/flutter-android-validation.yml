@@ -135,7 +135,7 @@ jobs:
           profile: pixel_2
           emulator-boot-timeout: 900
           script: |
-            set -euo pipefail
+            set -eu
             unzip -p build/app/outputs/flutter-apk/gapresan-install-bundle.zip GapResan.apk > /tmp/GapResan.apk
             test -s /tmp/GapResan.apk
             APK_PATH=/tmp/GapResan.apk bash .github/scripts/android-smoke-test.sh
