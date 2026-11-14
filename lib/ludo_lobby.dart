@@ -236,11 +236,11 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
 
   Widget _buildLobby(Map<String,dynamic> room) {
     final id=room['id'].toString();
-    final playersStream=_db.from('ludo_room_players').stream(primaryKey:['room_id','user_id']).eq('room_id',id).order('seat');
+    final playersStream=_db.from('ludo_room_players').stream(primaryKey:['room_id','user_id']).eq('room_id',id);
     return StreamBuilder<List<Map<String,dynamic>>>(
       stream:playersStream,
       builder:(context,snapshot){
-        final players=snapshot.data??const <Map<String,dynamic>>[];
+        final players=(snapshot.data??const <Map<String,dynamic>>[]).toList()..sort((a,b)=>(a['seat'] as num).compareTo(b['seat'] as num));
         return ListView(padding:const EdgeInsets.all(18),children:[
           Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(
             borderRadius:BorderRadius.circular(22),color:Theme.of(context).colorScheme.surfaceContainerHighest,
