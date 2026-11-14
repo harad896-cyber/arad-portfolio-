@@ -73,6 +73,13 @@ void main() {
 
     Future<void> startLudo(WidgetTester tester) async {
       final start = find.text('شروع بازی');
+      // The mode picker is a lazy ListView. On a phone the start button is
+      // below the initial viewport, so scroll the actual list until it builds.
+      await tester.scrollUntilVisible(
+        start,
+        240,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.ensureVisible(start);
       await tester.pumpAndSettle();
       expect(start, findsOneWidget);
@@ -102,6 +109,12 @@ void main() {
       final heading = find.text('منچ گپ‌رسان');
       final start = find.text('شروع بازی');
       expect(heading, findsOneWidget);
+      // ListView children below the fold are created only after scrolling.
+      await tester.scrollUntilVisible(
+        start,
+        240,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(start, findsOneWidget);
       expect(find.byIcon(Icons.casino_rounded), findsOneWidget);
       expect(tester.getSize(heading).height, greaterThan(0));
