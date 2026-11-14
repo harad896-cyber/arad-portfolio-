@@ -208,51 +208,69 @@ class _LudoGamePageState extends State<LudoGamePage> {
     super.dispose();
   }
 
-  Future<void> _playSfx(String kind) async {
-    if (!_soundEnabled) return;
-    try {
-      final duration = kind == 'roll' ? .34 : kind == 'win' ? .62 : .16;
-      final sampleRate = 22050;
-      final count = (sampleRate * duration).round();
-      final bytes = BytesBuilder();
-      final header = ByteData(44);
-      void putText(int offset, String value) {
-        for (var i = 0; i < value.length; i++) {
-          header.setUint8(offset + i, value.codeUnitAt(i));
+  Future<void> _sfxQueue = Future<void>.value();
+
+  Future<void> _playSfx(String kind) {
+    if (!_soundEnabled || !mounted) return Future<void>.value();
+    // Serialize short effects: rapid taps must not race stop()/play() and
+    // silently cancel the previous sound on Android audio backends.
+    _sfxQueue = _sfxQueue.then((_) async {
+      if (!_soundEnabled || !mounted) return;
+      try {
+        final duration = kind == 'roll' ? .48 : kind == 'win' ? .9 : kind == 'capture' ? .28 : .2;
+        const sampleRate = 44100;
+        final count = (sampleRate * duration).round();
+        final bytes = BytesBuilder(copy: false);
+        final header = ByteData(44);
+        void putText(int offset, String value) {
+          for (var i = 0; i < value.length; i++) {
+            header.setUint8(offset + i, value.codeUnitAt(i));
+          }
         }
+        putText(0, 'RIFF');
+        header.setUint32(4, 36 + count * 2, Endian.little);
+        putText(8, 'WAVE');
+        putText(12, 'fmt ');
+        header.setUint32(16, 16, Endian.little);
+        header.setUint16(20, 1, Endian.little);
+        header.setUint16(22, 1, Endian.little);
+        header.setUint32(24, sampleRate, Endian.little);
+        header.setUint32(28, sampleRate * 2, Endian.little);
+        header.setUint16(32, 2, Endian.little);
+        header.setUint16(34, 16, Endian.little);
+        putText(36, 'data');
+        header.setUint32(40, count * 2, Endian.little);
+        bytes.add(header.buffer.asUint8List());
+        final pcm = ByteData(count * 2);
+        final baseFrequency = switch (kind) {
+          'roll' => 155.0,
+          'capture' => 210.0,
+          'win' => 440.0,
+          _ => 310.0,
+        };
+        for (var i = 0; i < count; i++) {
+          final t = i / sampleRate;
+          final progress = i / count;
+          final envelope = math.pow(1 - progress, kind == 'win' ? .8 : 2.1).toDouble();
+          final sweep = kind == 'roll' ? 1 + progress * 1.7 : 1.0;
+          final frequency = baseFrequency * sweep;
+          final fundamental = math.sin(2 * math.pi * frequency * t);
+          final harmonic = math.sin(2 * math.pi * frequency * 2 * t) * .16;
+          final tick = kind == 'roll' && (i % (sampleRate ~/ 13)) < 170
+              ? (_random.nextDouble() - .5) * .22 : 0.0;
+          final sample = ((fundamental + harmonic + tick) * envelope * 9000)
+              .round().clamp(-32768, 32767).toInt();
+          pcm.setInt16(i * 2, sample, Endian.little);
+        }
+        bytes.add(pcm.buffer.asUint8List());
+        await _sfxPlayer.play(BytesSource(bytes.takeBytes(), mimeType: 'audio/wav'));
+      } catch (_) {
+        // Audio failures must never block a turn or a token movement.
       }
-      putText(0, 'RIFF');
-      header.setUint32(4, 36 + count * 2, Endian.little);
-      putText(8, 'WAVE');
-      putText(12, 'fmt ');
-      header.setUint32(16, 16, Endian.little);
-      header.setUint16(20, 1, Endian.little);
-      header.setUint16(22, 1, Endian.little);
-      header.setUint32(24, sampleRate, Endian.little);
-      header.setUint32(28, sampleRate * 2, Endian.little);
-      header.setUint16(32, 2, Endian.little);
-      header.setUint16(34, 16, Endian.little);
-      putText(36, 'data');
-      header.setUint32(40, count * 2, Endian.little);
-      bytes.add(header.buffer.asUint8List());
-      final pcm = ByteData(count * 2);
-      for (var i = 0; i < count; i++) {
-        final t = i / sampleRate;
-        final envelope = math.pow(1 - i / count, kind == 'win' ? 1.2 : 2.8).toDouble();
-        final frequency = kind == 'roll' ? 145 + (i % 1700) / 8
-            : kind == 'capture' ? 185 : kind == 'win' ? 520 : 330;
-        final tone = math.sin(2 * math.pi * frequency * t);
-        final overtone = math.sin(2 * math.pi * frequency * 2.01 * t) * .22;
-        final noise = kind == 'roll' ? (_random.nextDouble() - .5) * .75 : 0.0;
-        final value = ((tone + overtone + noise) * envelope * 10500).round().clamp(-32768, 32767).toInt();
-        pcm.setInt16(i * 2, value, Endian.little);
-      }
-      bytes.add(pcm.buffer.asUint8List());
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(BytesSource(bytes.takeBytes()));
-    } catch (_) {
-      // Sound must never interrupt a game action on devices with audio restrictions.
-    }
+    }).catchError((_) {
+      // Keep the queue alive if an audio backend rejects one effect.
+    });
+    return _sfxQueue;
   }
 
   bool get _botTurn => _againstBot && _turn == 1;
