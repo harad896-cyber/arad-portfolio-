@@ -3,6 +3,17 @@ import 'package:arad_messenger/ludo_game.dart';
 
 void main() {
   group('LudoRules', () {
+    test('four-player turn order follows red, blue, yellow, green without skipping', () {
+      var turn = 0;
+      final order = <int>[];
+      for (var i = 0; i < 8; i++) {
+        order.add(turn);
+        turn = LudoRules.nextPlayer(turn, 4);
+      }
+      expect(order, [0, 1, 2, 3, 0, 1, 2, 3]);
+      expect(LudoRules.nextPlayer(1, 2), 0);
+    });
+
     test('two-player games use opposite start squares', () {
       expect(LudoRules.trackIndex(0, 0, playerCount: 2), 0);
       expect(LudoRules.trackIndex(1, 0, playerCount: 2), 26);
