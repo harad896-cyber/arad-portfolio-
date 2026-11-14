@@ -76,17 +76,6 @@ jobs:
           cp "$APK.sha256" build/app/outputs/flutter-apk/GapResan.apk.sha256
           file "$APK"
 
-      # A real Android emulator install/launch catches package/signature/startup
-      # problems that static analysis and widget tests cannot detect.
-      - name: Install and launch APK on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_2
-          emulator-boot-timeout: 900
-          script: bash .github/scripts/android-smoke-test.sh
-
       - name: Package installable APK into ZIP archive
         shell: bash
         run: |
@@ -106,9 +95,15 @@ jobs:
           # APK files are already compressed. Store entries without recompression
           # for maximum compatibility with Android/Samsung archive managers.
           (cd "$BUNDLE" && zip -0 -X -r ../gapresan-install-bundle.zip .)
-          unzip -t build/app/outputs/flutter-apk/gapresan-install-bundle.zip
-          unzip -Z1 build/app/outputs/flutter-apk/gapresan-install-bundle.zip
-          sha256sum build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+          ZIP="build/app/outputs/flutter-apk/gapresan-install-bundle.zip"
+          unzip -t "$ZIP"
+          ENTRIES="$(unzip -Z1 "$ZIP")"
+          printf '%s\\n' "$ENTRIES"
+          test "$(printf '%s\\n' "$ENTRIES" | wc -l)" -eq 3
+          printf '%s\\n' "$ENTRIES" | grep -Fxq "GapResan.apk"
+          printf '%s\\n' "$ENTRIES" | grep -Fxq "GapResan.apk.sha256"
+          printf '%s\\n' "$ENTRIES" | grep -Fxq "INSTALL.txt"
+          sha256sum "$ZIP" | tee "$ZIP.sha256"
 
       # Validate the exact APK bytes a phone user receives after extracting
       # the ZIP, not only the pre-packaged build output.
@@ -122,11 +117,28 @@ jobs:
           unzip -p "$ZIP" GapResan.apk > "$EXTRACTED"
           test -s "$EXTRACTED"
           cmp --silent "$APK" "$EXTRACTED"
+          EXPECTED_SHA="$(awk '{print $1}' build/app/outputs/flutter-apk/gapresan-install-bundle/GapResan.apk.sha256)"
+          ACTUAL_SHA="$(sha256sum "$EXTRACTED" | awk '{print $1}')"
+          test "$EXPECTED_SHA" = "$ACTUAL_SHA"
           BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$EXTRACTED"
           "$BUILD_TOOLS/aapt" dump badging "$EXTRACTED" | grep -E "^package:|^sdkVersion:|^targetSdkVersion:"
           sha256sum "$EXTRACTED"
           rm -f "$EXTRACTED"
+
+      # Install the exact APK bytes extracted from the ZIP users download.
+      - name: Install extracted ZIP APK and launch on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 900
+          script: |
+            set -euo pipefail
+            unzip -p build/app/outputs/flutter-apk/gapresan-install-bundle.zip GapResan.apk > /tmp/GapResan.apk
+            test -s /tmp/GapResan.apk
+            APK_PATH=/tmp/GapResan.apk bash .github/scripts/android-smoke-test.sh
 
       # Always expose the verified Android installer, including pull-request runs.
       - name: Upload installable Android APK and ZIP
