@@ -12,7 +12,7 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
   final client = Supabase.instance.client;
   bool loading = true, busy = false;
   String? error;
-  int balance = 0;
+  int balance = 0, diamondBalance = 0;
   List<Map<String, dynamic>> transactions = [];
   Map<String, Map<String, dynamic>> profiles = {};
 
@@ -27,6 +27,8 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
       final walletRows = rawWallet as List;
       if (walletRows.isEmpty) throw StateError('wallet_empty');
       final nextBalance = (walletRows.first['balance'] as num).toInt();
+      final rawDiamonds = await client.rpc('get_my_diamond_balance').timeout(const Duration(seconds: 15));
+      final nextDiamonds = (rawDiamonds as num?)?.toInt() ?? 0;
       final raw = await client.from('gap_coin_transactions')
         .select('id,transaction_type,from_user_id,to_user_id,amount,description,created_at')
         .or('from_user_id.eq.' + user.id + ',to_user_id.eq.' + user.id)
@@ -40,7 +42,7 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
           .map((e) => Map<String,dynamic>.from(e as Map)).toList();
       if (!mounted) return;
       setState(() {
-        balance = nextBalance; transactions = rows;
+        balance = nextBalance; diamondBalance = nextDiamonds; transactions = rows;
         profiles = {for (final p in profileRows) p['id'].toString():p};
         loading = false;
       });
@@ -167,13 +169,20 @@ class _GapCoinWalletPageState extends State<GapCoinWalletPage> {
       const Row(children:[Icon(Icons.account_balance_wallet_rounded,color:Color(0xFFFFF2CB)),
         SizedBox(width:8),Text('موجودی کیف پول',style:TextStyle(color:Color(0xFFFFF2CB),fontWeight:FontWeight.w800))]),
       const SizedBox(height:14),
-      Row(crossAxisAlignment:CrossAxisAlignment.end,children:[
-        Text(balance.toString(),style:const TextStyle(color:Colors.white,fontSize:38,fontWeight:FontWeight.w900)),
-        const SizedBox(width:8),
-        const Padding(padding:EdgeInsets.only(bottom:7),child:Text('🪙 سکه',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w800))),
+      Row(children:[
+        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(balance.toString(),style:const TextStyle(color:Colors.white,fontSize:34,fontWeight:FontWeight.w900)),
+          const Text('🪙 سکه',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w800)),
+        ])),
+        Container(width:1,height:54,color:Colors.white38),
+        const SizedBox(width:16),
+        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(diamondBalance.toString(),style:const TextStyle(color:Colors.white,fontSize:34,fontWeight:FontWeight.w900)),
+          const Text('💎 الماس',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w800)),
+        ])),
       ]),
-      const SizedBox(height:4),
-      const Text('۱۵۰۰ سکه هدیهٔ یک‌باره برای هر حساب · قابل انتقال به دوستان',style:TextStyle(color:Color(0xFFFFF2CB),fontSize:12)),
+      const SizedBox(height:8),
+      const Text('۱۵۰۰ سکه و ۱۰ الماس هدیهٔ خوش‌آمدگویی یک‌باره برای هر حساب',style:TextStyle(color:Color(0xFFFFF2CB),fontSize:12)),
     ]));
 
   Widget _action(IconData icon,String label,VoidCallback? action)=>SizedBox(height:54,
