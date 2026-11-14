@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'ludo_character_editor.dart';
 
 class LudoLook {
   final int board, avatar, frame, banner, background, charm, diceSkin;
@@ -329,7 +330,17 @@ class _LudoCustomizationSheetState extends State<_LudoCustomizationSheet> {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('ظاهر اختصاصی لودو', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
         const SizedBox(height: 6),
-        const Text('انتخاب‌ها روی همین دستگاه ذخیره می‌شوند.', style: TextStyle(color: Colors.white60, fontSize: 12)),
+        const Text('قالب تخته و ظاهر پروفایل بازی را تنظیم کن.', style: TextStyle(color: Colors.white60, fontSize: 12)),
+        const SizedBox(height: 10),
+        SizedBox(width: double.infinity, child: FilledButton.icon(
+          icon: const Icon(Icons.face_retouching_natural_rounded),
+          label: const Text('استودیوی کاراکتر و مهره‌ها'),
+          onPressed: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const LudoCharacterEditorPage(),
+            ));
+          },
+        )),
         const SizedBox(height: 12),
         Wrap(spacing: 7, runSpacing: 7, children: [
           for (final item in <(String,String)>[
