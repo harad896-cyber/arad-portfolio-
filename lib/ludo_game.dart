@@ -18,10 +18,24 @@ class LudoRules {
           (pieces[i] >= 0 && pieces[i] < 57 && pieces[i] + dice <= 57)) i,
   ];
 
-  static List<int> legalTokensInGame(List<List<int>> positions, int player, int dice) =>
-      legalTokens(positions[player], dice)
-          .where((token) => _pathIsClear(positions, player, token, dice))
-          .toList();
+  static bool _validPositions(List<List<int>> positions) =>
+      positions.length >= 2 &&
+      positions.length <= 4 &&
+      positions.every((row) =>
+          row.length == 4 && row.every((progress) => progress >= -1 && progress <= 57));
+
+  static List<int> legalTokensInGame(List<List<int>> positions, int player, int dice) {
+    if (!_validPositions(positions) ||
+        player < 0 ||
+        player >= positions.length ||
+        dice < 1 ||
+        dice > 6) {
+      return const [];
+    }
+    return legalTokens(positions[player], dice)
+        .where((token) => _pathIsClear(positions, player, token, dice))
+        .toList();
+  }
 
   static bool _pathIsClear(List<List<int>> positions, int player, int token, int dice) {
     final current = positions[player][token];
@@ -65,7 +79,14 @@ class LudoRules {
       playerCount == 2 && player == 1 ? 26 : startOffsets[player];
 
   static int? trackIndex(int player, int progress, {int playerCount = 4}) {
-    if (progress < 0 || progress > 50) return null;
+    if (playerCount < 2 ||
+        playerCount > 4 ||
+        player < 0 ||
+        player >= playerCount ||
+        progress < 0 ||
+        progress > 50) {
+      return null;
+    }
     return (offsetFor(player, playerCount) + progress) % 52;
   }
 
@@ -75,8 +96,13 @@ class LudoRules {
     required int token,
     required int dice,
   }) {
-    if (player < 0 || player >= positions.length || token < 0 || token >= 4 ||
-        dice < 1 || dice > 6 ||
+    if (!_validPositions(positions) ||
+        player < 0 ||
+        player >= positions.length ||
+        token < 0 ||
+        token >= 4 ||
+        dice < 1 ||
+        dice > 6 ||
         !legalTokensInGame(positions, player, dice).contains(token)) {
       throw StateError('Illegal Ludo move.');
     }
@@ -883,10 +909,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
     if (peers.length < 2) return point;
     final slot = peers.indexOf((player, token));
-    final angle = -math.pi / 2 + (2 * math.pi * slot / peers.length);
-    // Spread stacked pieces enough that each token has its own tappable area.
-    final radius = size * (peers.length == 2 ? .065 : .078);
-    return point + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
+    final offsets = LudoBoardGeometry.compactStackOffsets(peers.length, size);
+    return point + offsets[slot];
   }
 
   Widget _buildToken(int player, int token, double size) {
@@ -1018,6 +1042,34 @@ class LudoBoardGeometry {
     [(7,1),(7,2),(7,3),(7,4),(7,5),(7,6)],
   ];
   static const baseCenters = <(int, int)>[(12,3),(12,11),(2,11),(2,3)];
+  /// Compact, deterministic offsets for tokens sharing one square.
+  /// The cluster stays centered and every token remains inside the square.
+  static List<Offset> compactStackOffsets(int count, double size) {
+    if (count <= 1) return [Offset.zero];
+    if (count == 2) {
+      return [Offset(-.029 * size, 0), Offset(.029 * size, 0)];
+    }
+    if (count == 3) {
+      return [
+        Offset(-.030 * size, -.018 * size),
+        Offset(.030 * size, -.018 * size),
+        Offset(0, .036 * size),
+      ];
+    }
+    if (count == 4) {
+      return [
+        Offset(-.030 * size, -.030 * size),
+        Offset(.030 * size, -.030 * size),
+        Offset(-.030 * size, .030 * size),
+        Offset(.030 * size, .030 * size),
+      ];
+    }
+    return List<Offset>.generate(count, (index) {
+      final angle = -math.pi / 2 + (2 * math.pi * index / count);
+      return Offset(math.cos(angle) * .045 * size, math.sin(angle) * .045 * size);
+    });
+  }
+
   static Offset cellCenter(int row, int column, double size) =>
       Offset((column + .5) / 15 * size, (row + .5) / 15 * size);
 }
