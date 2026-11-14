@@ -5,8 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Social lobby entry point embedded in GapResan chat.
 class LudoLobbyPage extends StatefulWidget {
-  const LudoLobbyPage({super.key, this.conversationId});
+  const LudoLobbyPage({super.key, this.conversationId, this.initialInviteToken, this.initialRoomCode});
   final String? conversationId;
+  final String? initialInviteToken;
+  final String? initialRoomCode;
   @override
   State<LudoLobbyPage> createState() => _LudoLobbyPageState();
 }
@@ -24,7 +26,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   String? get _uid => _db.auth.currentUser?.id;
 
   @override
-  void dispose() { _code.dispose(); super.dispose(); }
+  void initState() { super.initState(); _code.text = widget.initialRoomCode ?? ''; }\n\n  void dispose() { _code.dispose(); super.dispose(); }
 
   Future<void> _createRoom() async {
     if (_busy) return;
@@ -65,6 +67,17 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       setState(() => _room = created);
     } catch (e) { if (mounted) setState(() => _error = _friendly(e)); }
     finally { if (mounted) setState(() => _busy = false); }
+  }
+
+  Future<void> _joinWithToken() async {
+    final token = widget.initialInviteToken;
+    if (token == null || token.isEmpty) return;
+    await _run(() async {
+      final row = await _db.rpc('join_ludo_room', params: {
+        'p_room_code': null, 'p_invite_token': token,
+      }).timeout(const Duration(seconds: 12));
+      if (mounted) setState(() => _room = Map<String, dynamic>.from(row as Map));
+    });
   }
 
   Future<void> _joinByCode() async {
@@ -206,6 +219,10 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       const SizedBox(height: 8),
       FilledButton.icon(onPressed:_busy?null:_createRoom,icon:_busy?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.add_circle_outline),label:const Text('ساخت اتاق و دعوت دوستان')),
       const Divider(height:32),
+      if (widget.initialInviteToken != null) ...[
+        FilledButton.icon(onPressed:_busy?null:_joinWithToken,icon:const Icon(Icons.login_rounded),label:const Text('پیوستن به اتاق دعوت‌شده')),
+        const SizedBox(height:12),
+      ],
       const Text('پیوستن با کد اتاق',style:TextStyle(fontWeight:FontWeight.w900)),
       const SizedBox(height:8),
       Row(children:[
