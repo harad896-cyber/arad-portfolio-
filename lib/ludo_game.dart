@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'fun_zone_theme.dart';
 import 'ludo_customization.dart';
 import 'fun_game_room_chat.dart';
@@ -166,7 +167,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   final AudioPlayer _sfxPlayer = AudioPlayer();
   bool _soundEnabled = true;
-  int _playerCount = 2, _turn = 0, _sixStreak = 0;
+  int _playerCount = 2, _turn = 0, _sixStreak = 0, _diamondBalance = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false, _bonusRollAvailable = false;
   bool _showFirstGuide = false;
   int _botGeneration = 0;
@@ -183,6 +184,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     LudoCustomization.current.addListener(_onLookChanged);
     LudoCustomization.load().catchError((_) {});
     _loadFirstGuide();
+    _refreshDiamondBalance();
   }
 
   Future<void> _loadFirstGuide() async {
@@ -280,12 +282,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (value == 6) {
       _sixStreak++;
       if (_sixStreak >= 3) {
-        setState(() {
-          _dice = null; _pendingDice.clear(); _sixStreak = 0; _bonusRollAvailable = false;
-          _turn = LudoRules.nextPlayer(_turn, _playerCount);
-          _message = 'نوبت ${_playerName(_turn)}';
-        });
-        _scheduleBot();
+        _handleThreeSixes(fromBot: fromBot);
         return;
       }
     } else { _sixStreak = 0; }
@@ -295,6 +292,87 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _bonusRollAvailable = value == 6;
       _message = '$value';
     });
+  }
+
+  Future<void> _refreshDiamondBalance() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+      final value = await Supabase.instance.client.rpc('get_my_diamond_balance')
+          .timeout(const Duration(seconds: 12));
+      if (mounted) setState(() => _diamondBalance = (value as num?)?.toInt() ?? 0);
+    } catch (_) {
+      // A missing wallet or unavailable server must never create free diamonds.
+      if (mounted) setState(() => _diamondBalance = 0);
+    }
+  }
+
+  Future<void> _handleThreeSixes({required bool fromBot}) async {
+    if (fromBot || !mounted) {
+      _burnThreeSixes();
+      return;
+    }
+    await _refreshDiamondBalance();
+    if (!mounted) return;
+    var paid = false;
+    if (_diamondBalance >= 2 && Supabase.instance.client.auth.currentUser != null) {
+      final choice = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('سه بار ۶ پشت‌سرهم'),
+          content: Text('برای یک پرتاب تازه، ۲ الماس مصرف کنی؟ موجودی: $_diamondBalance 💎'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('سوختن نوبت'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.diamond_outlined),
+              label: const Text('مصرف ۲ الماس'),
+            ),
+          ],
+        ),
+      );
+      if (choice == true) {
+        try {
+          final result = await Supabase.instance.client.rpc(
+            'spend_ludo_diamonds', params: {'p_amount': 2},
+          ).timeout(const Duration(seconds: 12));
+          paid = result == true;
+          await _refreshDiamondBalance();
+        } catch (_) {
+          paid = false;
+        }
+      }
+    }
+    if (!mounted) return;
+    if (paid) {
+      setState(() {
+        _dice = null;
+        _pendingDice.clear();
+        _sixStreak = 0;
+        _bonusRollAvailable = false;
+        _message = '۲ الماس مصرف شد؛ تاس تازه بینداز.';
+      });
+      _roll();
+    } else {
+      _burnThreeSixes();
+    }
+  }
+
+  void _burnThreeSixes() {
+    if (!mounted || _winner != null) return;
+    setState(() {
+      _dice = null;
+      _pendingDice.clear();
+      _sixStreak = 0;
+      _bonusRollAvailable = false;
+      _turn = LudoRules.nextPlayer(_turn, _playerCount);
+      _message = 'سه ۶ سوخت؛ نوبت ${_playerName(_turn)}';
+    });
+    _scheduleBot();
   }
 
   void _chooseDie(int value, {bool fromBot = false}) {
@@ -554,6 +632,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
               ]),
             ),
+            Align(alignment: Alignment.centerRight, child: Container(
+              margin: const EdgeInsets.only(top: 4, bottom: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(color: const Color(0xFF392D4B), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFB89BFF))),
+              child: Text('$_diamondBalance 💎', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+            )),
             const SizedBox(height: 5),
             Center(
               child: SizedBox(
