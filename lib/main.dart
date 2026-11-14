@@ -7425,6 +7425,16 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                 busy || friendRequestPending ? null : () => _sendFriendRequest(),
               )),
           ]),
+          if (!isSelf && isFriend && !isBlocked) ...[
+            SizedBox(height: 10),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(
+              onPressed: busy ? null : () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const LudoLobbyPage(),
+              )),
+              icon: Icon(Icons.casino_rounded),
+              label: Text('دعوت به بازی منچ'),
+            )),
+          ],
           SizedBox(height: 18),
           Card(child: Column(children: [
             if (bio.isNotEmpty) ListTile(
