@@ -308,7 +308,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   Future<void> _handleThreeSixes({required bool fromBot}) async {
-    if (fromBot || !mounted) {
+    if (!mounted) return;
+    setState(() { _moving = true; _dice = null; });
+    if (fromBot) {
       _burnThreeSixes();
       return;
     }
@@ -351,6 +353,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (paid) {
       setState(() {
         _dice = null;
+        _moving = false;
         _pendingDice.clear();
         _sixStreak = 0;
         _bonusRollAvailable = false;
@@ -366,6 +369,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!mounted || _winner != null) return;
     setState(() {
       _dice = null;
+      _moving = false;
       _pendingDice.clear();
       _sixStreak = 0;
       _bonusRollAvailable = false;
