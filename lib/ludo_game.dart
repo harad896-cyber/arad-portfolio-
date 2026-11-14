@@ -171,6 +171,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   bool _showFirstGuide = false;
   int _botGeneration = 0;
   int? _dice, _winner;
+  final List<int> _pendingDice = [];
   final List<int?> _diceValues = List<int?>.filled(4, null);
   String _message = 'بازی را آغاز کن.';
   List<List<int>> _positions = [];
@@ -264,7 +265,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _playerCount = players;
       _againstBot = bot;
       _positions = List.generate(players, (_) => List.filled(4, -1));
-      _turn = 0; _dice = null; _winner = null; _sixStreak = 0;
+      _turn = 0; _dice = null; _winner = null; _sixStreak = 0; _pendingDice.clear();
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
       _botBusy = false; _moving = false; _botGeneration++; _started = true;
       _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
@@ -272,49 +273,50 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   void _roll({bool fromBot = false}) {
-    if (!_started || _winner != null || _dice != null || _moving || (_botBusy && !fromBot)) return;
+    if (!_started || _winner != null || _dice != null || _moving ||
+        (_botBusy && !fromBot) || (_pendingDice.isNotEmpty && _pendingDice.last != 6)) return;
     _playSfx('roll');
     final value = _random.nextInt(6) + 1;
-    _diceValues[_turn] = value;
     if (value == 6) {
       _sixStreak++;
       if (_sixStreak >= 3) {
         setState(() {
-          _dice = null; _sixStreak = 0; _turn = LudoRules.nextPlayer(_turn, _playerCount);
-          _message = 'سه بار پشت سرهم ۶ آمد؛ نوبت ${_playerName(_turn)} شد.';
+          _dice = null; _pendingDice.clear(); _sixStreak = 0;
+          _turn = LudoRules.nextPlayer(_turn, _playerCount);
+          _message = 'نوبت ${_playerName(_turn)}';
         });
         _scheduleBot();
         return;
       }
-    } else {
-      _sixStreak = 0;
+    } else { _sixStreak = 0; }
+    setState(() { _diceValues[_turn] = value; _pendingDice.add(value); _message = '$value'; });
+    if (fromBot) {
+      final playable = _pendingDice.where((v) => LudoRules.legalTokensInGame(_positions, _turn, v).isNotEmpty).toList();
+      if (playable.isNotEmpty) _chooseDie(playable.last, fromBot: true);
+      else if (value != 6) _finishNoMove();
     }
+  }
+
+  void _chooseDie(int value, {bool fromBot = false}) {
+    if (_moving || _winner != null || !_pendingDice.contains(value) || (_botBusy && !fromBot)) return;
     final options = LudoRules.legalTokensInGame(_positions, _turn, value);
-    if (options.isEmpty && value == 6) {
-      setState(() { _dice = null; _message = '۶ آمد؛ مهره‌ای برای حرکت نداری، دوباره تاس بینداز.'; });
-      _scheduleBot();
+    if (options.isEmpty) {
+      setState(() { _pendingDice.remove(value); _message = _pendingDice.join(' · '); });
+      if (_pendingDice.isEmpty && value != 6) _finishNoMove();
       return;
     }
+    setState(() { _dice = value; _pendingDice.clear(); _message = '$value'; });
+    if (options.length == 1) _moveToken(options.first, fromBot: fromBot);
+  }
+
+  void _finishNoMove() {
+    if (!mounted || _winner != null) return;
     setState(() {
-      _dice = value;
-      _message = options.isEmpty
-          ? 'عدد $value آمد؛ حرکت قانونی نداری.'
-          : 'عدد $value آمد؛ مهرهٔ موردنظر را انتخاب کن.';
+      _dice = null; _pendingDice.clear(); _sixStreak = 0;
+      _turn = LudoRules.nextPlayer(_turn, _playerCount);
+      _message = 'نوبت ${_playerName(_turn)}';
     });
-    if (options.isEmpty) {
-      final generation = _botGeneration;
-      final player = _turn;
-      Future<void>.delayed(const Duration(milliseconds: 700), () {
-        if (!mounted || generation != _botGeneration || _turn != player || _dice != value || _winner != null) return;
-        setState(() {
-          _dice = null; _turn = (_turn + 1) % _playerCount;
-          _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
-        });
-        _scheduleBot();
-      });
-    } else if (_botTurn && !fromBot) {
-      _scheduleBot();
-    }
+    _scheduleBot();
   }
 
   Future<void> _moveToken(int token, {bool fromBot = false}) async {
@@ -339,7 +341,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!mounted || generation != _botGeneration) return;
     setState(() {
       _moving = false;
-      _positions = result.positions; _dice = null;
+      _positions = result.positions; _dice = null; _pendingDice.clear();
       if (result.captured) _playSfx('capture');
       if (result.won) {
         _playSfx('win');
@@ -350,7 +352,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
             : result.finished ? 'یک مهره به خانه رسید؛ دوباره تاس بینداز.'
             : '۶ آوردی؛ دوباره تاس بینداز.';
       } else {
-        _sixStreak = 0; _turn = (_turn + 1) % _playerCount;
+        _sixStreak = 0; _turn = LudoRules.nextPlayer(_turn, _playerCount);
         _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
       }
     });
@@ -384,7 +386,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   void _reset() {
     setState(() {
-      _started = false; _positions = []; _dice = null; _winner = null;
+      _started = false; _positions = []; _dice = null; _winner = null; _pendingDice.clear();
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
       _turn = 0; _sixStreak = 0; _botBusy = false; _botGeneration++; _message = 'بازی را آغاز کن.';
     });
@@ -575,6 +577,29 @@ class _LudoGamePageState extends State<LudoGamePage> {
               ]),
             ),
           ),
+          if (_pendingDice.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center,
+                children: _pendingDice.map((value) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: InkWell(
+                    onTap: _botTurn || _botBusy ? null : () => _chooseDie(value),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: _playerColor(_turn).withValues(alpha: .22),
+                        border: Border.all(color: _playerColor(_turn), width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: _playerColor(_turn).withValues(alpha: .28), blurRadius: 12)],
+                      ),
+                      child: Text('$value', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                )).toList(),
+              ),
+            ),
           const SizedBox(height: 5),
           _communicationActions(),
           if (_winner != null)
@@ -589,7 +614,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _edgeDiceControl(int player, {bool compact = false}) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
+    final canRoll = active && _dice == null && (_pendingDice.isEmpty || _pendingDice.last == 6) && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
     final width = compact ? 44.0 : 48.0;
