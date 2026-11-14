@@ -73,7 +73,7 @@ jobs:
           grep -qi "f676a6dd950c09ce54066fa7d06a4d83d51ae7d7891006d724e6b42f30d5263c" /tmp/gapresan-apk-signature.txt
           sha256sum "$APK" | tee "$APK.sha256"
           cp "$APK" build/app/outputs/flutter-apk/GapResan.apk
-          cp "$APK.sha256" build/app/outputs/flutter-apk/GapResan.apk.sha256
+          (cd build/app/outputs/flutter-apk && sha256sum GapResan.apk > GapResan.apk.sha256)
           file "$APK"
 
       - name: Package installable APK into ZIP archive
@@ -84,7 +84,7 @@ jobs:
           BUNDLE="build/app/outputs/flutter-apk/gapresan-install-bundle"
           mkdir -p "$BUNDLE"
           cp "$APK" "$BUNDLE/GapResan.apk"
-          cp "$APK.sha256" "$BUNDLE/GapResan.apk.sha256"
+          (cd "$BUNDLE" && sha256sum GapResan.apk > GapResan.apk.sha256)
           cat > "$BUNDLE/INSTALL.txt" <<'EOF'
           نصب گپ‌رسان:
           1) فایل ZIP را دانلود و از حالت فشرده خارج کنید.
