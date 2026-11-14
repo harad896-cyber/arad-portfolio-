@@ -212,13 +212,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Future<void> _playSfx(String kind) {
     if (!_soundEnabled || !mounted) return Future<void>.value();
-    // Serialize short effects: rapid taps must not race stop()/play() and
-    // silently cancel the previous sound on Android audio backends.
     _sfxQueue = _sfxQueue.then((_) async {
       if (!_soundEnabled || !mounted) return;
       try {
-        final duration = kind == 'roll' ? .48 : kind == 'win' ? .9 : kind == 'capture' ? .28 : .2;
+        // Soft, warm effects: muted dice rattle, wooden token tap,
+        // gentle capture chime and a short celebratory three-note phrase.
         const sampleRate = 44100;
+        final duration = switch (kind) {
+          'roll' => .62,
+          'capture' => .38,
+          'win' => 1.05,
+          _ => .16,
+        };
         final count = (sampleRate * duration).round();
         final bytes = BytesBuilder(copy: false);
         final header = ByteData(44);
@@ -241,34 +246,58 @@ class _LudoGamePageState extends State<LudoGamePage> {
         putText(36, 'data');
         header.setUint32(40, count * 2, Endian.little);
         bytes.add(header.buffer.asUint8List());
+
         final pcm = ByteData(count * 2);
-        final baseFrequency = switch (kind) {
-          'roll' => 155.0,
-          'capture' => 210.0,
-          'win' => 440.0,
-          _ => 310.0,
-        };
+        final random = math.Random(kind.hashCode ^ DateTime.now().microsecondsSinceEpoch);
         for (var i = 0; i < count; i++) {
           final t = i / sampleRate;
-          final progress = i / count;
-          final envelope = math.pow(1 - progress, kind == 'win' ? .8 : 2.1).toDouble();
-          final sweep = kind == 'roll' ? 1 + progress * 1.7 : 1.0;
-          final frequency = baseFrequency * sweep;
-          final fundamental = math.sin(2 * math.pi * frequency * t);
-          final harmonic = math.sin(2 * math.pi * frequency * 2 * t) * .16;
-          final tick = kind == 'roll' && (i % (sampleRate ~/ 13)) < 170
-              ? (_random.nextDouble() - .5) * .22 : 0.0;
-          final sample = ((fundamental + harmonic + tick) * envelope * 9000)
+          final p = i / count;
+          double sample = 0;
+
+          if (kind == 'roll') {
+            // A quiet, rounded rattle made of spaced soft taps and filtered noise.
+            final tapPhase = (t * 9.0) % 1.0;
+            final tapEnvelope = math.exp(-tapPhase * 13) *
+                (t < .53 ? 1.0 : math.max(0, 1 - (t - .53) / .09));
+            final noise = (random.nextDouble() - .5) * .10;
+            final lowBody = math.sin(2 * math.pi * (178 + 24 * math.sin(t * 8)) * t) * .16;
+            sample = (noise + lowBody) * tapEnvelope;
+            sample += math.sin(2 * math.pi * 245 * t) *
+                math.exp(-math.pow((t - .55) / .055, 2) * 2) * .24;
+          } else if (kind == 'capture') {
+            final env = math.exp(-p * 7);
+            sample = (math.sin(2 * math.pi * 392 * t) * .24 +
+                math.sin(2 * math.pi * 587 * t) * .10) * env;
+          } else if (kind == 'win') {
+            final notes = [392.0, 493.88, 587.33];
+            final noteIndex = math.min(2, (t / .25).floor());
+            final noteTime = t - noteIndex * .25;
+            final noteEnv = math.exp(-noteTime * 3.8) *
+                math.min(1.0, noteTime * 35);
+            final fundamental = math.sin(2 * math.pi * notes[noteIndex] * t);
+            final softHarmonic = math.sin(2 * math.pi * notes[noteIndex] * 2 * t) * .08;
+            sample = (fundamental + softHarmonic) * noteEnv * .30;
+          } else {
+            // A short, soft wooden/plastic tap for token movement.
+            final env = math.exp(-t * 24);
+            sample = (math.sin(2 * math.pi * 185 * t) * .34 +
+                math.sin(2 * math.pi * 370 * t) * .09) * env;
+          }
+
+          // Keep all effects comfortably quiet and avoid harsh clipping.
+          final fadeIn = math.min(1.0, t * 90);
+          final fadeOut = math.min(1.0, (duration - t) * 35);
+          final value = (sample * fadeIn * fadeOut * 5200)
               .round().clamp(-32768, 32767).toInt();
-          pcm.setInt16(i * 2, sample, Endian.little);
+          pcm.setInt16(i * 2, value, Endian.little);
         }
         bytes.add(pcm.buffer.asUint8List());
         await _sfxPlayer.play(BytesSource(bytes.takeBytes(), mimeType: 'audio/wav'));
       } catch (_) {
-        // Audio failures must never block a turn or a token movement.
+        // Audio must never interrupt gameplay on restricted Android devices.
       }
     }).catchError((_) {
-      // Keep the queue alive if an audio backend rejects one effect.
+      // A failed sound effect must not break subsequent effects.
     });
     return _sfxQueue;
   }
