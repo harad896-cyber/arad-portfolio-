@@ -1,5 +1,6 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
+import 'ludo_lobby.dart';
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -10817,6 +10818,7 @@ class _ChatPageState extends State<ChatPage> {
                 _attachmentItem(sheetContext, Icons.videocam_rounded, trUi('ویدئو'), () { Navigator.pop(sheetContext); sendVideo(); }),
                 _attachmentItem(sheetContext, Icons.music_note_rounded, trUi('موسیقی / صدا'), () { Navigator.pop(sheetContext); sendFile(); }),
                 _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
+                _attachmentItem(sheetContext, Icons.casino_rounded, 'بازی منچ', () { Navigator.pop(sheetContext); Navigator.push(context, MaterialPageRoute(builder: (_) => const LudoLobbyPage())); }),
               ]),
             ]),
           )),
