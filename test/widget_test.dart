@@ -78,7 +78,7 @@ void main() {
       await tester.scrollUntilVisible(
         start,
         240,
-        scrollable: find.byType(ListView).last,
+        scrollable: find.byType(Scrollable).last,
       );
       await tester.pumpAndSettle();
       expect(start, findsOneWidget);
@@ -112,7 +112,7 @@ void main() {
       await tester.scrollUntilVisible(
         start,
         240,
-        scrollable: find.byType(ListView).last,
+        scrollable: find.byType(Scrollable).last,
       );
       expect(start, findsOneWidget);
       expect(find.byIcon(Icons.casino_rounded), findsOneWidget);
