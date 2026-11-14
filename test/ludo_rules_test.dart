@@ -120,6 +120,58 @@ void main() {
       expect(LudoRules.legalTokensInGame(positions, 2, 1), contains(0));
     });
 
+    test('invalid player counts, indices, and dice values are rejected safely', () {
+      expect(LudoRules.trackIndex(3, 0, playerCount: 2), isNull);
+      expect(LudoRules.trackIndex(0, 0, playerCount: 1), isNull);
+      expect(
+        LudoRules.legalTokensInGame([[-1, -1, -1, -1]], 0, 6),
+        isEmpty,
+      );
+      expect(
+        LudoRules.legalTokensInGame(
+          [[-1, -1, -1], [-1, -1, -1]],
+          0,
+          6,
+        ),
+        isEmpty,
+      );
+      expect(
+        LudoRules.legalTokensInGame(
+          [[-1, -1, -1, -1], [-1, -1, -1, -1]],
+          0,
+          7,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('stacked tokens stay tightly grouped and centered', () {
+      for (final count in [2, 3, 4]) {
+        final offsets = LudoBoardGeometry.compactStackOffsets(count, 300);
+        expect(offsets, hasLength(count));
+        expect(
+          offsets.every((offset) => offset.distance <= 12),
+          isTrue,
+          reason: '$count tokens should stay within a compact 12px radius',
+        );
+        final averageX =
+            offsets.fold<double>(0, (sum, offset) => sum + offset.dx) / count;
+        final averageY =
+            offsets.fold<double>(0, (sum, offset) => sum + offset.dy) / count;
+        expect(averageX.abs(), lessThan(.001));
+        expect(averageY.abs(), lessThan(.001));
+        for (var i = 0; i < offsets.length; i++) {
+          for (var j = i + 1; j < offsets.length; j++) {
+            expect(
+              (offsets[i] - offsets[j]).distance,
+              greaterThanOrEqualTo(17),
+              reason: 'tokens should remain visually distinguishable',
+            );
+          }
+        }
+      }
+    });
+
     test('four player start squares align with their matching colored home lanes', () {
       expect(LudoRules.startOffsets, [0, 39, 26, 13]);
       for (var player = 0; player < 4; player++) {
