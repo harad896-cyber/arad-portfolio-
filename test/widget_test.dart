@@ -145,7 +145,8 @@ void main() {
       // Verify the button rolls the die rather than merely existing.
       await tester.tap(find.byKey(const ValueKey('ludo-die-0')));
       await tester.pump();
-      expect(find.textContaining(RegExp(r'[۱-۶1-6]')), findsWidgets);
+      // The die face is painted graphically; its rolled value is exposed to accessibility.
+      expect(find.bySemanticsLabel(RegExp(r'تاس.*[۱-۶1-6]')), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byTooltip('تنظیمات بازی'));
