@@ -43,16 +43,24 @@ alter table public.ludo_room_players enable row level security;
 alter table public.ludo_room_invites enable row level security;
 revoke all on public.ludo_rooms,public.ludo_room_players,public.ludo_room_invites from anon,authenticated;
 grant select on public.ludo_rooms,public.ludo_room_players,public.ludo_room_invites to authenticated;
+create or replace function public.is_ludo_room_member(p_room_id uuid)
+returns boolean language sql stable security definer set search_path=''
+as $$
+  select exists(select 1 from public.ludo_room_players p
+    where p.room_id=p_room_id and p.user_id=(select auth.uid()));
+$$;
+revoke all on function public.is_ludo_room_member(uuid) from public,anon;
+grant execute on function public.is_ludo_room_member(uuid) to authenticated;
 drop policy if exists ludo_rooms_visible_to_members_or_invitees on public.ludo_rooms;
 create policy ludo_rooms_visible_to_members_or_invitees on public.ludo_rooms for select to authenticated
 using (
-  exists(select 1 from public.ludo_room_players p where p.room_id=id and p.user_id=(select auth.uid()))
+  public.is_ludo_room_member(id)
   or exists(select 1 from public.ludo_room_invites i where i.room_id=id and i.invited_user_id=(select auth.uid()) and i.status='pending' and i.expires_at>now())
 );
 drop policy if exists ludo_room_players_visible_to_room on public.ludo_room_players;
 create policy ludo_room_players_visible_to_room on public.ludo_room_players for select to authenticated
 using (
-  exists(select 1 from public.ludo_room_players mine where mine.room_id=room_id and mine.user_id=(select auth.uid()))
+  public.is_ludo_room_member(room_id)
   or exists(select 1 from public.ludo_room_invites i where i.room_id=room_id and i.invited_user_id=(select auth.uid()) and i.status='pending' and i.expires_at>now())
 );
 drop policy if exists ludo_room_invites_visible_to_parties on public.ludo_room_invites;
