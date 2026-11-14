@@ -103,8 +103,8 @@ void main() {
     });
 
     test('a player is ranked only after all four pieces reach home and game continues', () {
-      var s = state2();
-      s['pieces'] = [[57,57,57,56],[-1,-1,-1,-1]];
+      var s = createLudoState([{'id':'r'},{'id':'y'},{'id':'b'},{'id':'g'}]);
+      s['pieces'] = [[57,57,57,56],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]];
       s = applyLudoRoll(s, 1);
       s = applyLudoMove(s, 3);
       expect(s['winners'], [0]);
