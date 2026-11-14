@@ -69,7 +69,8 @@ void main() {
       s['pieces'] = [[7,-1,-1,-1],[34,-1,-1,-1]];
       final moved = applyLudoMove(applyLudoRoll(s, 1), 0);
       expect((moved['pieces'] as List)[1][0], 34);
-      expect((moved['dice'] as Map)['captured'], isEmpty);
+      // A normal non-capture move clears the transient dice payload.
+      expect(moved['dice'], isNull);
     });
 
     test('a double-piece blockade cannot be crossed', () {
