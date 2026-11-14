@@ -42,7 +42,7 @@ jobs:
           chmod 600 "$HOME/.android/debug.keystore"
           keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
       - run: flutter pub get
-      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart lib/ludo_engine.dart lib/ludo_lobby.dart lib/ludo_customization.dart lib/ludo_character_editor.dart test/ludo_character_editor_test.dart test/widget_test.dart test/ludo_engine_test.dart test/ludo_customization_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
+      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart lib/ludo_engine.dart lib/ludo_lobby.dart lib/ludo_customization.dart lib/ludo_character_editor.dart lib/ludo_xp_service.dart test/ludo_character_editor_test.dart test/ludo_xp_service_test.dart test/widget_test.dart test/ludo_engine_test.dart test/ludo_customization_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test
       # Build one universal APK. The same test key is reused on every CI run.
