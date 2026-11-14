@@ -75,6 +75,14 @@ class LudoRules {
     return true;
   }
 
+  /// Advances turns in the fixed board order: red, blue, yellow, green.
+  static int nextPlayer(int current, int playerCount) {
+    if (playerCount < 2 || playerCount > 4 || current < 0 || current >= playerCount) {
+      throw ArgumentError('Invalid Ludo turn.');
+    }
+    return (current + 1) % playerCount;
+  }
+
   static int offsetFor(int player, int playerCount) =>
       playerCount == 2 && player == 1 ? 26 : startOffsets[player];
 
@@ -272,7 +280,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _sixStreak++;
       if (_sixStreak >= 3) {
         setState(() {
-          _dice = null; _sixStreak = 0; _turn = (_turn + 1) % _playerCount;
+          _dice = null; _sixStreak = 0; _turn = LudoRules.nextPlayer(_turn, _playerCount);
           _message = 'سه بار پشت سرهم ۶ آمد؛ نوبت ${_playerName(_turn)} شد.';
         });
         _scheduleBot();
