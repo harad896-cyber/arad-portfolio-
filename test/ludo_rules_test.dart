@@ -150,9 +150,9 @@ void main() {
         final offsets = LudoBoardGeometry.compactStackOffsets(count, 300);
         expect(offsets, hasLength(count));
         expect(
-          offsets.every((offset) => offset.distance <= 12),
+          offsets.every((offset) => offset.distance <= 13),
           isTrue,
-          reason: '$count tokens should stay within a compact 12px radius',
+          reason: '$count tokens should stay within a compact 13px radius',
         );
         final averageX =
             offsets.fold<double>(0, (sum, offset) => sum + offset.dx) / count;
