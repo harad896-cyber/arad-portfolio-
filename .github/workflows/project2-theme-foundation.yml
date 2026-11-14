@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: project2-theme-foundation-${{ github.ref }}
@@ -39,6 +41,12 @@ jobs:
         run: bash scripts/build_web.sh
       - name: Verify web build
         run: test -s build/web/index.html && test -s build/web/flutter_bootstrap.js
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web/
       - name: Build release APK
         run: flutter build apk --release --dart-define=APP_VERSION=theme-foundation
       - name: Verify APK
@@ -52,3 +60,6 @@ jobs:
             build/web/
           if-no-files-found: error
           retention-days: 14
+      - name: Publish browser preview
+        id: deployment
+        uses: actions/deploy-pages@v4
