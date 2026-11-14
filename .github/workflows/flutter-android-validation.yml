@@ -128,6 +128,18 @@ jobs:
           sha256sum "$EXTRACTED"
           rm -f "$EXTRACTED"
 
+      # Always expose the verified Android installer, including pull-request runs.
+      - name: Upload installable Android APK and ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-install
+          path: |
+            build/app/outputs/flutter-apk/GapResan.apk
+            build/app/outputs/flutter-apk/GapResan.apk.sha256
+            build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+          if-no-files-found: error
+          retention-days: 14
+
       # Publish only after analyzer, tests, archive/signature verification,
       # and a real emulator install/launch have all passed.
       - name: Publish direct-install APK to GitHub Releases
