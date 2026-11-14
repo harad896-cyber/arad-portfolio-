@@ -36,8 +36,33 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         'p_game_mode': _mode,
         'p_fill_with_bots': _fillBots,
       }).timeout(const Duration(seconds: 12));
+      final created = Map<String, dynamic>.from(row as Map);
+      if (widget.conversationId != null) {
+        try {
+          final members = await _db.from('conversation_members').select('user_id')
+            .eq('conversation_id', widget.conversationId!).neq('user_id', _uid ?? '');
+          final targets = List<Map<String,dynamic>>.from(members)
+            .map((m) => m['user_id'].toString()).toList();
+          if (targets.isNotEmpty) {
+            await _db.rpc('invite_ludo_players', params: {
+              'p_room_id': created['id'], 'p_user_ids': targets,
+            });
+          }
+          final card = '🎲 دعوت بازی منچ گپ‌رسان\\n'
+            'اتاق ${created['room_code']} آماده است.\\n'
+            'برای پیوستن، از دعوت‌های منچ در بخش سرگرمی استفاده کن.';
+          await _db.from('messages').insert({
+            'conversation_id': widget.conversationId,
+            'sender_id': _uid,
+            'body': card,
+            'message_type': 'text',
+          });
+        } catch (inviteError) {
+          debugPrint('Ludo chat invite card could not be posted: $inviteError');
+        }
+      }
       if (!mounted) return;
-      setState(() => _room = Map<String, dynamic>.from(row as Map));
+      setState(() => _room = created);
     } catch (e) { if (mounted) setState(() => _error = _friendly(e)); }
     finally { if (mounted) setState(() => _busy = false); }
   }
