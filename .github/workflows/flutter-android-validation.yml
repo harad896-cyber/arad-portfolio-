@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/gapresan-fun-zone]
+    branches: [feature/gapresan-fun-zone, feature/gapresan-ludo-compact-stacks]
 
 permissions:
   contents: write
@@ -131,7 +131,7 @@ jobs:
       # Publish only after analyzer, tests, archive/signature verification,
       # and a real emulator install/launch have all passed.
       - name: Publish direct-install APK to GitHub Releases
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        if: github.event_name == 'push' && contains(fromJSON('["refs/heads/feature/gapresan-fun-zone","refs/heads/feature/gapresan-ludo-compact-stacks"]'), github.ref)
         uses: softprops/action-gh-release@v3
         with:
           tag_name: gapresan-test-${{ github.run_number }}
