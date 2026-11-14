@@ -28,7 +28,7 @@ jobs:
           flutter-version: '3.47.2'
           channel: stable
           cache: true
-      
+
       # Keep the test APK signing certificate stable so its SHA-1 can be
       # registered once as the Android OAuth client in Google Cloud.
       - name: Restore stable test signing key
@@ -77,13 +77,25 @@ jobs:
             -alias androiddebugkey -storepass android -keypass android \
             | grep -E 'SHA1:|SHA256:'
 
-      - name: Build Web preview
-        run: flutter build web --release
+      # GitHub Pages serves this repository below /arad-portfolio-/.
+      # The root base-href makes Flutter request JS/assets from the wrong URL,
+      # which can leave the deployed app as a blank page.
+      - name: Build Web for GitHub Pages subpath
+        run: |
+          flutter build web --release --no-wasm-dry-run --base-href "/arad-portfolio-/"
 
-      - name: Verify build outputs
+      - name: Verify Android and Web release outputs
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
           test -s build/web/index.html
+          test -s build/web/flutter_bootstrap.js
+          test -s build/web/main.dart.js
+          if grep -q '\$FLUTTER_BASE_HREF' build/web/index.html; then
+            echo "Unexpanded Flutter base href found in web/index.html"
+            exit 1
+          fi
+          grep -Fq '<base href="/arad-portfolio-/">' build/web/index.html
+          test -d build/web/assets
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
