@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:arad_messenger/ludo_engine.dart';
@@ -65,7 +66,7 @@ void main() {
 
     test('safe squares prevent capture', () {
       var s = state2();
-      s['pieces'] = [[7,-1,-1,-1],[33,-1,-1,-1]];
+      s['pieces'] = [[7,-1,-1,-1],[34,-1,-1,-1]];
       final moved = applyLudoMove(applyLudoRoll(s, 1), 0);
       expect((moved['pieces'] as List)[1][0], 33);
       expect((moved['dice'] as Map)['captured'], isEmpty);
@@ -138,4 +139,4 @@ void main() {
 
 /// Minimal deterministic JSON serializer for equality checks without adding
 /// a package dependency to the Flutter project.
-String jsonEncodeState(Map<String, dynamic> state) => state.toString();
+String jsonEncodeState(Map<String, dynamic> state) => jsonEncode(state);
