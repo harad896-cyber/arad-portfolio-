@@ -122,9 +122,19 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   Future<void> _inviteContacts() async {
     final room = _room;
     if (room == null || _busy) return;
+    final contactRows = await _db.from('contacts')
+      .select('contact_id').eq('user_id', _uid ?? '');
+    final contactIds = List<Map<String, dynamic>>.from(contactRows)
+      .map((row) => row['contact_id'].toString()).toList();
+    if (contactIds.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('هنوز مخاطبی برای دعوت نداری.')),
+      );
+      return;
+    }
     final profiles = await _db.from('profiles')
       .select('id,display_name,username,avatar_url')
-      .neq('id', _uid ?? '')
+      .inFilter('id', contactIds)
       .order('display_name').limit(200);
     if (!mounted) return;
     final rows = List<Map<String, dynamic>>.from(profiles);
