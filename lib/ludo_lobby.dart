@@ -50,9 +50,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
               'p_room_id': created['id'], 'p_user_ids': targets,
             });
           }
-          final card = '🎲 دعوت بازی منچ گپ‌رسان\\n'
-            'اتاق ${created['room_code']} آماده است.\\n'
-            'برای پیوستن، از دعوت‌های منچ در بخش سرگرمی استفاده کن.';
+          final card = '[[GAPRESAN_LUDO_INVITE]]${created['invite_token']}|${created['room_code']}';
           await _db.from('messages').insert({
             'conversation_id': widget.conversationId,
             'sender_id': _uid,
