@@ -457,39 +457,92 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const Text('لودوی گپ‌رسان', textAlign: TextAlign.center,
         style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
       const SizedBox(height: 8),
-      Text('مهره‌ها را با تاس حرکت بده، مهره‌های حریف را بزن و زودتر از همه به خانه برس.',
+      const Text('مهره‌ها را با تاس حرکت بده، مهره‌های حریف را بزن و زودتر از همه به خانه برس.',
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white70, height: 1.6)),
-      const SizedBox(height: 20),
+        style: TextStyle(color: Colors.white70, height: 1.6)),
+      const SizedBox(height: 18),
       OutlinedButton.icon(
         onPressed: () => LudoCustomizationButton.open(context),
         icon: const Icon(Icons.palette_rounded),
         label: const Text('شخصی‌سازی ظاهر و تخته'),
       ),
       const SizedBox(height: 22),
+      _modeSectionTitle(Icons.wifi_rounded, 'بازی آنلاین'),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        onPressed: _showOnlineNotReady,
+        icon: const Icon(Icons.public_rounded),
+        label: const Text('ساخت اتاق یا پیوستن به حریف'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white,
+          side: const BorderSide(color: Color(0xFF64C9E8)),
+          minimumSize: const Size.fromHeight(48),
+        ),
+      ),
+      const Padding(
+        padding: EdgeInsets.only(top: 7),
+        child: Text(
+          'اتصال آنلاین لودو هنوز به سرور بازی وصل نشده است؛ برای جلوگیری از بازی ناپایدار، فعلاً این گزینه فعال نیست.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.5),
+        ),
+      ),
+      const SizedBox(height: 24),
+      _modeSectionTitle(Icons.phone_android_rounded, 'بازی آفلاین'),
+      const SizedBox(height: 8),
       const Text('تعداد بازیکنان', style: TextStyle(fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
       Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
-        label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'), selected: _playerCount == count,
+        label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'),
+        selected: _playerCount == count,
         onSelected: (_) => setState(() => _playerCount = count),
       )).toList()),
-      const SizedBox(height: 18),
+      const SizedBox(height: 12),
       SwitchListTile(
-        contentPadding: EdgeInsets.zero, title: const Text('بازی با ربات'),
+        contentPadding: EdgeInsets.zero,
+        title: const Text('بازی با ربات'),
         subtitle: const Text('یک بازیکن انسانی در برابر ربات بازی می‌کند.'),
         value: _againstBot,
         onChanged: (value) => setState(() { _againstBot = value; if (value) _playerCount = 2; }),
       ),
-      const SizedBox(height: 18),
+      const SizedBox(height: 12),
       FilledButton.icon(
         onPressed: () => _start(players: _againstBot ? 2 : _playerCount, bot: _againstBot),
-        icon: const Icon(Icons.play_arrow_rounded), label: const Text('شروع بازی')),
-      const SizedBox(height: 10),
+        icon: const Icon(Icons.play_arrow_rounded),
+        label: const Text('شروع بازی آفلاین'),
+      ),
+      const SizedBox(height: 14),
       const Text(
         'قوانین: برای بیرون‌آوردن مهره ۶ لازم است؛ خانه‌های امن از زدن محافظت می‌کنند؛ رسیدن به خانه با عدد دقیق انجام می‌شود؛ با آوردن ۶ یا زدن مهره، نوبت اضافه می‌گیری.',
-        textAlign: TextAlign.center, style: TextStyle(fontSize: 12, height: 1.6, color: Colors.white70)),
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 12, height: 1.6, color: Colors.white70),
+      ),
     ],
   );
+
+  Widget _modeSectionTitle(IconData icon, String title) => Row(children: [
+    Icon(icon, color: const Color(0xFFFFD477), size: 20),
+    const SizedBox(width: 8),
+    Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+  ]);
+
+  Future<void> _showOnlineNotReady() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('بازی آنلاین لودو'),
+        content: const Text(
+          'برای بازی آنلاین باید سرویس اتاق لودو و همگام‌سازی نوبت‌ها روی سرور فعال شود. این اتصال هنوز آماده نیست؛ فعلاً می‌توانی آفلاین با ۲ تا ۴ بازیکن یا ربات بازی کنی.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('متوجه شدم'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
