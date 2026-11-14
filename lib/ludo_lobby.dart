@@ -26,7 +26,17 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   String? get _uid => _db.auth.currentUser?.id;
 
   @override
-  void initState() { super.initState(); _code.text = widget.initialRoomCode ?? ''; }\n\n  void dispose() { _code.dispose(); super.dispose(); }
+  @override
+  void initState() {
+    super.initState();
+    _code.text = widget.initialRoomCode ?? '';
+  }
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
 
   Future<void> _createRoom() async {
     if (_busy) return;
