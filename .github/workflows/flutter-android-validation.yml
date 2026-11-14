@@ -110,6 +110,24 @@ jobs:
           unzip -Z1 build/app/outputs/flutter-apk/gapresan-install-bundle.zip
           sha256sum build/app/outputs/flutter-apk/gapresan-install-bundle.zip
 
+      # Validate the exact APK bytes a phone user receives after extracting
+      # the ZIP, not only the pre-packaged build output.
+      - name: Verify extracted install bundle APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="build/app/outputs/flutter-apk/gapresan-install-bundle.zip"
+          APK="build/app/outputs/flutter-apk/GapResan.apk"
+          EXTRACTED="$(mktemp --suffix=.apk)"
+          unzip -p "$ZIP" GapResan.apk > "$EXTRACTED"
+          test -s "$EXTRACTED"
+          cmp --silent "$APK" "$EXTRACTED"
+          BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$EXTRACTED"
+          "$BUILD_TOOLS/aapt" dump badging "$EXTRACTED" | grep -E "^package:|^sdkVersion:|^targetSdkVersion:"
+          sha256sum "$EXTRACTED"
+          rm -f "$EXTRACTED"
+
       # Publish only after analyzer, tests, archive/signature verification,
       # and a real emulator install/launch have all passed.
       - name: Publish direct-install APK to GitHub Releases
