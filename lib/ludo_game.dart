@@ -181,14 +181,27 @@ class _LudoGamePageState extends State<LudoGamePage> {
   List<List<int>> _positions = [];
   final List<String> _localChatMessages = [];
 
+  SupabaseClient? _tryGetSupabaseClient() {
+    // Widget tests and offline preview can open Ludo before Supabase.initialize.
+    // Treat an unavailable backend as an offline session, not a page crash.
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     LudoCustomization.current.addListener(_onLookChanged);
     LudoCustomization.load().catchError((_) {});
-    LudoCosmeticRepository(Supabase.instance.client).loadAppearance().then((appearance) {
-      if (mounted) setState(() => _myCharacter = appearance);
-    }).catchError((_) {});
+    final supabaseClient = _tryGetSupabaseClient();
+    if (supabaseClient != null) {
+      LudoCosmeticRepository(supabaseClient).loadAppearance().then((appearance) {
+        if (mounted) setState(() => _myCharacter = appearance);
+      }).catchError((_) {});
+    }
     _loadFirstGuide();
     _refreshDiamondBalance();
   }
