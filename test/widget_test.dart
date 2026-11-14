@@ -63,9 +63,26 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     });
 
+    Future<void> openLudo(WidgetTester tester) async {
+      final tile = find.text('لودو');
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(find.text('منچ گپ‌رسان'), findsOneWidget);
+    }
+
+    Future<void> startLudo(WidgetTester tester) async {
+      final start = find.text('شروع بازی');
+      await tester.ensureVisible(start);
+      await tester.pumpAndSettle();
+      expect(start, findsOneWidget);
+      await tester.tap(start);
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('Ludo opens from Fun Zone and shows its mode picker', (tester) async {
       await openGame(tester, 'لودو');
-      expect(find.text('لودوی گپ‌رسان'), findsOneWidget);
+      expect(find.text('منچ گپ‌رسان'), findsOneWidget);
       expect(find.text('شروع بازی'), findsOneWidget);
       expect(find.text('بازی با ربات'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -82,7 +99,7 @@ void main() {
       await tester.tap(tile);
       await tester.pumpAndSettle();
 
-      final heading = find.text('لودوی گپ‌رسان');
+      final heading = find.text('منچ گپ‌رسان');
       final start = find.text('شروع بازی');
       expect(heading, findsOneWidget);
       expect(start, findsOneWidget);
@@ -107,10 +124,8 @@ void main() {
       tester.view.physicalSize = const Size(384, 832);
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
-      await tester.tap(find.text('لودو'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('شروع بازی'));
-      await tester.pumpAndSettle();
+      await openLudo(tester);
+      await startLudo(tester);
       expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-die-1')), findsOneWidget);
@@ -129,8 +144,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pumpAndSettle();
       await tester.tap(find.text('۴ نفر'));
-      await tester.tap(find.text('شروع بازی'));
-      await tester.pumpAndSettle();
+      await startLudo(tester);
       expect(find.byKey(const ValueKey('ludo-die-0')), findsOneWidget);
       for (var player = 0; player < 4; player++) {
         final die = find.byKey(ValueKey('ludo-die-$player'));
@@ -152,10 +166,8 @@ void main() {
       tester.view.physicalSize = const Size(384, 832);
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(const MaterialApp(home: FunZonePage()));
-      await tester.tap(find.text('لودو'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('شروع بازی'));
-      await tester.pumpAndSettle();
+      await openLudo(tester);
+      await startLudo(tester);
 
       expect(find.byKey(const ValueKey('ludo-chat-action')).hitTestable(), findsOneWidget);
       expect(find.byKey(const ValueKey('ludo-mic-action')).hitTestable(), findsOneWidget);
