@@ -54,7 +54,7 @@ void main() {
 
     test('capture sends opponent back to yard and grants extra roll', () {
       var s = state2();
-      s['pieces'] = [[4,-1,-1,-1],[30,-1,-1,-1]];
+      s['pieces'] = [[4,-1,-1,-1],[31,-1,-1,-1]];
       // Yellow starts 26 squares after red: progress 30 maps to red square 4.
       final rolled = applyLudoRoll(s, 1);
       final moved = applyLudoMove(rolled, 0);
@@ -100,6 +100,16 @@ void main() {
       }
       expect(List.generate(52, (i) => i).toSet(), hasLength(52));
       expect(ludoSafeSquares.length, 8);
+    });
+
+    test('a player is ranked only after all four pieces reach home and game continues', () {
+      var s = state2();
+      s['pieces'] = [[57,57,57,56],[-1,-1,-1,-1]];
+      s = applyLudoRoll(s, 1);
+      s = applyLudoMove(s, 3);
+      expect(s['winners'], [0]);
+      expect(s['phase'], 'awaiting_roll');
+      expect(s['turn'], 1);
     });
 
     test('finishing order continues until all but the last player are ranked', () {
