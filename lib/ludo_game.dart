@@ -7,6 +7,7 @@ import 'fun_zone_theme.dart';
 import 'ludo_customization.dart';
 import 'fun_game_room_chat.dart';
 import 'fun_game_voice_call.dart';
+import 'ludo_engine.dart' as engine;
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
 class LudoRules {
@@ -311,7 +312,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
   int _baseIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   Color _playerColor(int player) => _colors[_colorIndex(player)];
   String _playerName(int player) => _names[_colorIndex(player)];
-  List<int> get _legal => _dice == null ? const [] : LudoRules.legalTokensInGame(_positions, _turn, _dice!);
+  engine.LudoState get _engineState => {
+    'players': List.generate(_playerCount, (i) => {'id': 'player-$i'}),
+    'pieces': _positions.map((row) => List<int>.from(row)).toList(),
+    'turn': _turn,
+    'dice': _dice == null ? null : {'value': _dice},
+    'phase': _dice == null ? 'awaiting_roll' : 'awaiting_move',
+    'sixStreak': _sixStreak.clamp(0, 2),
+    'winners': _winner == null ? <int>[] : <int>[_winner!],
+  };
+  List<int> get _legal => _dice == null
+      ? const []
+      : engine.getLegalMoves(_engineState, _dice!);
 
   void _start({required int players, required bool bot}) {
     setState(() {
@@ -470,8 +482,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final rolledValue = _dice!;
     final generation = _botGeneration;
     final before = _positions.map((row) => List<int>.from(row)).toList();
-    final result = LudoRules.move(positions: before, player: movingPlayer, token: token, dice: rolledValue);
-    final rolledSix = rolledValue == 6;
+    final engineState = <String, dynamic>{
+      'players': List.generate(_playerCount, (i) => {'id': 'player-$i'}),
+      'pieces': before,
+      'turn': movingPlayer,
+      'dice': {'value': rolledValue},
+      'phase': 'awaiting_move',
+      'sixStreak': _sixStreak.clamp(0, 2),
+      'winners': <int>[],
+    };
+    final nextState = engine.applyLudoMove(engineState, token);
+    final nextPositions = (nextState['pieces'] as List)
+        .map((row) => (row as List).map((value) => (value as num).toInt()).toList())
+        .toList();
+    final diceEvent = nextState['dice'] as Map?;
+    final captured = (diceEvent?['captured'] as List? ?? const []).isNotEmpty;
+    final won = (nextState['winners'] as List).contains(movingPlayer);
     setState(() => _moving = true);
     _playSfx('move');
     final current = before[movingPlayer][token];
@@ -486,10 +512,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!mounted || generation != _botGeneration) return;
     setState(() {
       _moving = false;
-      _positions = result.positions;
+      _positions = nextPositions;
       _dice = null;
-      if (result.captured) _playSfx('capture');
-      if (result.won) {
+      if (captured) _playSfx('capture');
+      if (won) {
         _playSfx('win');
         _pendingDice.clear();
         _bonusRollAvailable = false;
