@@ -68,7 +68,7 @@ void main() {
       var s = state2();
       s['pieces'] = [[7,-1,-1,-1],[34,-1,-1,-1]];
       final moved = applyLudoMove(applyLudoRoll(s, 1), 0);
-      expect((moved['pieces'] as List)[1][0], 33);
+      expect((moved['pieces'] as List)[1][0], 34);
       expect((moved['dice'] as Map)['captured'], isEmpty);
     });
 
