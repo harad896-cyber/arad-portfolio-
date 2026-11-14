@@ -12196,8 +12196,34 @@ class _ChatPageState extends State<ChatPage> {
          '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
 
     Widget content;
-    final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
-    if (stickerMatch != null) {
+    final ludoInviteMatch = RegExp(r'^\\[\\[GAPRESAN_LUDO_INVITE\\]\\]([0-9a-fA-F-]+)\\|(\\d{6})$').firstMatch(body);
+    final stickerMatch = RegExp(r'^\\[\\[ARAD_STICKER\\]\\](.*?)\\|(.*)$').firstMatch(body);
+    if (ludoInviteMatch != null) {
+      final token = ludoInviteMatch.group(1)!;
+      final code = ludoInviteMatch.group(2)!;
+      content = InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => LudoLobbyPage(initialInviteToken: token, initialRoomCode: code),
+        )),
+        child: Container(
+          width: 245, padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(colors: [Color(0xff083f49), Color(0xff54266e)]),
+            border: Border.all(color: const Color(0xffffd477).withValues(alpha:.8)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Row(children:[Icon(Icons.casino_rounded,color:Color(0xffffd477)),SizedBox(width:8),Text('دعوت بازی منچ',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w900))]),
+            const SizedBox(height:8),
+            Text('کد اتاق: $code',style:const TextStyle(color:Colors.white70)),
+            const SizedBox(height:10),
+            Container(width:double.infinity,padding:const EdgeInsets.symmetric(vertical:9),decoration:BoxDecoration(color:const Color(0xffffd477),borderRadius:BorderRadius.circular(12)),
+              child:const Text('بپیوند به بازی',textAlign:TextAlign.center,style:TextStyle(color:Color(0xff33210b),fontWeight:FontWeight.w900))),
+          ]),
+        ),
+      );
+    } else if (stickerMatch != null) {
       final art = stickerMatch.group(1) ?? '✨';
       final caption = stickerMatch.group(2) ?? '';
       content = Container(
