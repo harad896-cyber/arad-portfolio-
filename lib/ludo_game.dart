@@ -337,7 +337,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _diceValues[_turn] = value;
       _pendingDice.add(value);
       _bonusRollAvailable = value == 6;
-      _message = '$value';
+      _message = 'تاس ${value == 6 ? 'شش؛ یک پرتاب دیگر داری' : 'آماده شد'}';
     });
   }
 
@@ -747,7 +747,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      final rail = 24.0;
+      final rail = 12.0;
       final boardSize = math.max(220.0, math.min(620.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return SingleChildScrollView(
@@ -850,8 +850,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
                                 blurRadius: 15, spreadRadius: 1,
                               )],
                             ),
-                            child: Center(child: Text('${_pendingDice[index]}',
-                              style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900))),
+                            child: Center(child: _LudoDieFace(value: _pendingDice[index], size: 43)),
                           ),
                         ),
                       ),
@@ -861,7 +860,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
             const SizedBox(height: 5),
             Align(
               alignment: Alignment.centerRight,
-              child: SizedBox(width: 210, child: _communicationActions()),
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(color: const Color(0xCC07192A),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0x5574DDF5))),
+                child: _communicationActions(),
+              ),
             ),
             if (_winner != null)
               Padding(padding: const EdgeInsets.only(top: 7),
@@ -880,8 +885,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && (_pendingDice.isEmpty || _bonusRollAvailable) && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
-    final width = compact ? 50.0 : 54.0;
-    final height = compact ? 52.0 : 62.0;
+    final width = compact ? 48.0 : 62.0;
+    final height = compact ? 54.0 : 72.0;
     final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
     return Semantics(
       button: true,
@@ -917,10 +922,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 22 : 29),
-              const SizedBox(height: 1),
-              Text(shownValue?.toString() ?? 'تاس',
-                style: TextStyle(color: Colors.white, fontSize: compact ? 7 : 9, fontWeight: FontWeight.w900)),
+              _LudoDieFace(value: shownValue, size: compact ? 28 : 40),
             ]),
           ),
         ),
@@ -929,28 +931,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
     );
   }
 
-  Widget _communicationActions() => Row(children: [
-    Expanded(child: OutlinedButton.icon(
-      key: const ValueKey('ludo-chat-action'),
-      onPressed: _openChat,
-      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 19),
-      label: const Text('پیام‌ها'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white, side: const BorderSide(color: Color(0xFF64C9E8)),
-        minimumSize: const Size.fromHeight(36), padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    )),
-    const SizedBox(width: 9),
-    Expanded(child: FilledButton.icon(
-      key: const ValueKey('ludo-mic-action'),
-      onPressed: _openVoice,
-      icon: const Icon(Icons.mic_none_rounded, size: 19),
-      label: const Text('میکروفن'),
-      style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF176B58), foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(36), padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    )),
+  Widget _communicationActions() => Row(mainAxisSize: MainAxisSize.min, children: [
+    Tooltip(message: 'پیام‌های بازی', child: SizedBox(width: 42, height: 42,
+      child: OutlinedButton(
+        key: const ValueKey('ludo-chat-action'), onPressed: _openChat,
+        style: OutlinedButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: Colors.white,
+          side: const BorderSide(color: Color(0xFF64C9E8)), shape: const CircleBorder()),
+        child: const Icon(Icons.chat_bubble_outline_rounded, size: 19),
+      ))),
+    const SizedBox(width: 7),
+    Tooltip(message: 'میکروفن', child: SizedBox(width: 42, height: 42,
+      child: FilledButton(
+        key: const ValueKey('ludo-mic-action'), onPressed: _openVoice,
+        style: FilledButton.styleFrom(padding: EdgeInsets.zero, backgroundColor: const Color(0xFF087D68),
+          foregroundColor: Colors.white, shape: const CircleBorder()),
+        child: const Icon(Icons.mic_none_rounded, size: 20),
+      ))),
   ]);
 
   Future<void> _openChat() async {
