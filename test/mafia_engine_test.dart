@@ -49,6 +49,20 @@ void main() {
       expect(g.players['p4']!.alive, isTrue);
     });
 
+    test('mafia kill is a shared plurality ballot; a tie produces no attack', () {
+      final g = MafiaEngine.create(roster: roster, random: Random(1), now: DateTime.utc(2026));
+      _assign(g, {'p0': MafiaRole.mafia, 'p1': MafiaRole.mafia, 'p2': MafiaRole.doctor,
+        'p3': MafiaRole.detective, 'p4': MafiaRole.citizen, 'p5': MafiaRole.citizen,
+        'p6': MafiaRole.citizen, 'p7': MafiaRole.citizen});
+      MafiaEngine.beginNight(g, now: DateTime.utc(2026));
+      MafiaEngine.submitNightAction(g, const MafiaAction(actorId: 'p0', type: NightActionType.kill, targetId: 'p4'), now: DateTime.utc(2026));
+      MafiaEngine.submitNightAction(g, const MafiaAction(actorId: 'p1', type: NightActionType.kill, targetId: 'p5'), now: DateTime.utc(2026));
+      final result = MafiaEngine.resolveNight(g, now: DateTime.utc(2026));
+      expect(result.eliminatedIds, isEmpty);
+      expect(g.players['p4']!.alive, isTrue);
+      expect(g.players['p5']!.alive, isTrue);
+    });
+
     test('detective receives a private result only in private response', () {
       final g = MafiaEngine.create(roster: roster, random: Random(1), now: DateTime.utc(2026));
       _assign(g, {'p0': MafiaRole.mafia, 'p1': MafiaRole.mafia, 'p2': MafiaRole.doctor,
@@ -93,8 +107,9 @@ void main() {
       MafiaEngine.resolveNight(g, now: DateTime.utc(2026));
       MafiaEngine.beginDay(g, now: DateTime.utc(2026));
       MafiaEngine.openVoting(g, now: DateTime.utc(2026));
-      for (final p in g.alivePlayers) {
-        if (p.id != 'p4' && p.id != 'p5') MafiaEngine.submitVote(g, voterId: p.id, targetId: 'p4', now: DateTime.utc(2026));
+      final firstBallot = {'p0': 'p4', 'p1': 'p4', 'p2': 'p4', 'p3': 'p5', 'p6': 'p5', 'p7': 'p5'};
+      for (final e in firstBallot.entries) {
+        MafiaEngine.submitVote(g, voterId: e.key, targetId: e.value, now: DateTime.utc(2026));
       }
       MafiaEngine.closeVoting(g, now: DateTime.utc(2026));
       MafiaEngine.openFinalVote(g, now: DateTime.utc(2026));
