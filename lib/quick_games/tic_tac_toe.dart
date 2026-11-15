@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'game_sdk.dart';
 
 enum TicTacToeVariant {
@@ -47,7 +45,7 @@ class TicTacToeState {
   String get currentPlayerId => players[currentPlayer].id;
 }
 
-class TicTacToeGame implements GameModule<TicTacToeState, int> {
+class TicTacToeGame extends GameModule<TicTacToeState, int> {
   const TicTacToeGame();
 
   static const gameId = 'tic_tac_toe';
