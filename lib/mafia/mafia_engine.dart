@@ -143,7 +143,7 @@ class MafiaEngine {
   static List<MafiaRole> buildRoleSet(int count, MafiaConfig c) {
     if (count < 6 || count > 16) throw ArgumentError('Player count must be 6..16.');
     final roles = <MafiaRole>[];
-    final mafia = count <= 7 ? 2 : count <= 11 ? 3 : count <= 14 ? 4 : 5;
+    final mafia = count <= 8 ? 2 : count <= 11 ? 3 : count <= 14 ? 4 : 5;
     roles.addAll(List.filled(mafia, MafiaRole.mafia));
     roles.add(MafiaRole.doctor);
     roles.add(MafiaRole.detective);
