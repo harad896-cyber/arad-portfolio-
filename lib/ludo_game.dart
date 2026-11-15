@@ -9,6 +9,7 @@ import 'ludo_character_editor.dart';
 import 'fun_game_room_chat.dart';
 import 'fun_game_voice_call.dart';
 import 'ludo_engine.dart' as engine;
+import 'ludo_move_decision.dart' as move_decision;
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
 class LudoRules {
@@ -171,6 +172,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   bool _soundEnabled = true;
   int _playerCount = 2, _turn = 0, _sixStreak = 0, _diamondBalance = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false, _bonusRollAvailable = false;
+  bool _autoMoveSinglePiece = true;
   bool _showFirstGuide = false;
   int _botGeneration = 0;
   int? _dice, _winner;
@@ -464,7 +466,17 @@ class _LudoGamePageState extends State<LudoGamePage> {
   void _chooseDie(int value, {bool fromBot = false}) {
     if (_moving || _winner != null || _dice != null ||
         !_pendingDice.contains(value) || _bonusRollAvailable || (_botBusy && !fromBot)) return;
-    final options = LudoRules.legalTokensInGame(_positions, _turn, value);
+    final analysisState = <String, dynamic>{
+      ..._engineState,
+      'dice': {'value': value},
+      'phase': 'awaiting_move',
+    };
+    final analysis = move_decision.getLegalMoveAnalysis(analysisState, value);
+    if (!analysis.isValid) {
+      setState(() => _message = analysis.error ?? 'وضعیت حرکت معتبر نیست.');
+      return;
+    }
+    final options = analysis.legalMoves.map((move) => move.pieceIndex).toList();
     if (options.isEmpty) {
       setState(() {
         _pendingDice.remove(value);
@@ -486,8 +498,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final sameStartingProgress = options.every(
       (token) => _positions[_turn][token] == _positions[_turn][options.first],
     );
-    if (options.length == 1 || sameStartingProgress) {
-      _moveToken(options.first, fromBot: fromBot);
+    if ((options.length == 1 && _autoMoveSinglePiece) || sameStartingProgress) {
+      final generation = _botGeneration;
+      setState(() => _message = 'حرکت خودکار مهرهٔ ${options.first + 1} تا لحظه‌ای دیگر…');
+      Future<void>.delayed(const Duration(milliseconds: 400), () {
+        if (!mounted || generation != _botGeneration || _dice != value || _winner != null) return;
+        _moveToken(options.first, fromBot: fromBot);
+      });
+    } else {
+      setState(() => _message = 'یک مهره را برای حرکت انتخاب کن.');
     }
   }
 
@@ -619,12 +638,14 @@ class _LudoGamePageState extends State<LudoGamePage> {
           tooltip: 'تنظیمات بازی',
           onSelected: (value) {
             if (value == 'sound') setState(() => _soundEnabled = !_soundEnabled);
+            if (value == 'auto') setState(() => _autoMoveSinglePiece = !_autoMoveSinglePiece);
             if (value == 'look') LudoCustomizationButton.open(context);
             if (value == 'rules') _showRules();
             if (value == 'reset') _confirmExit();
           },
           itemBuilder: (_) => [
             PopupMenuItem(value: 'sound', child: Text(_soundEnabled ? 'خاموش‌کردن صدا' : 'روشن‌کردن صدا')),
+            PopupMenuItem(value: 'auto', child: Text(_autoMoveSinglePiece ? 'خاموش‌کردن حرکت خودکار' : 'روشن‌کردن حرکت خودکار')),
             const PopupMenuItem(value: 'look', child: Text('شخصی‌سازی تخته')),
             const PopupMenuItem(value: 'rules', child: Text('قوانین بازی')),
             const PopupMenuItem(value: 'reset', child: Text('پایان بازی')),
@@ -834,6 +855,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
               child: Text('$_diamondBalance 💎', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
             )),
             const SizedBox(height: 5),
+            _playerRow(const []),
+            const SizedBox(height: 7),
             Center(
               child: SizedBox(
                 width: frameSize,
