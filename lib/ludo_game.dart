@@ -1242,15 +1242,21 @@ class _LudoGamePageState extends State<LudoGamePage> {
       duration: const Duration(milliseconds: 220),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: active ? .30 : .14),
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: color.withValues(alpha: active ? 1 : .42),
-          width: active ? 1.8 : 1,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: active
+              ? [color.withValues(alpha: .38), const Color(0xEE0A1B2D)]
+              : [color.withValues(alpha: .19), const Color(0xDD0A1B2D)],
         ),
-        boxShadow: active
-            ? [BoxShadow(color: color.withValues(alpha: .20), blurRadius: 7)]
-            : const [],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: active ? 1 : .55),
+          width: active ? 2 : 1.1,
+        ),
+        boxShadow: [
+          const BoxShadow(color: Colors.black38, blurRadius: 8, offset: Offset(0, 3)),
+          if (active) BoxShadow(color: color.withValues(alpha: .30), blurRadius: 14, spreadRadius: 1),
+        ],
       ),
       child: Row(children: [
         Container(
