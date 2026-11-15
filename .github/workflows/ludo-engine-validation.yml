@@ -20,6 +20,8 @@ on:
       - '.github/workflows/ludo-engine-validation.yml'
   pull_request:
     paths:
+      - 'supabase/seed/ludo_items.json'
+      - 'supabase/tests/ludo_progression_contract.sql'
       - 'lib/ludo_engine.dart'
       - 'lib/ludo_xp_service.dart'
       - 'lib/ludo_lobby.dart'
