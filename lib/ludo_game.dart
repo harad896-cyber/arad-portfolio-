@@ -1000,8 +1000,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final canRoll = active && _dice == null && (_pendingDice.isEmpty || _bonusRollAvailable) && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
-    final width = compact ? 54.0 : 68.0;
-    final height = compact ? 60.0 : 78.0;
+    // Compact controls are square so rotating them for each seat never
+    // changes their layout footprint or clips inside the player card.
+    final width = compact ? 50.0 : 68.0;
+    final height = compact ? 50.0 : 78.0;
     final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
     return Semantics(
       button: true,
@@ -1027,16 +1029,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
                     : [const Color(0xFF172A3C), const Color(0xFF081523)],
               ),
               borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: active ? const Color(0xFFFFD477) : color.withValues(alpha: .78), width: active ? 2 : 1.2),
+              border: Border.all(color: active ? color : color.withValues(alpha: .78), width: active ? 2.5 : 1.2),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: .42), blurRadius: 7, offset: const Offset(0, 3)),
-                if (active) BoxShadow(color: color.withValues(alpha: .48), blurRadius: 10),
+                if (active) BoxShadow(color: color.withValues(alpha: .62), blurRadius: 13, spreadRadius: 1),
               ],
             ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 1),
+              if (!compact) Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
+              if (!compact) const SizedBox(height: 1),
               _LudoDieFace(value: shownValue, size: compact ? 34 : 46),
             ]),
           ),
@@ -1229,6 +1231,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
       return SizedBox(
         width: constraints.maxWidth,
         child: Wrap(
+          // The seat order is explicit: green/yellow across the top,
+          // red/blue across the bottom, independent of Persian RTL direction.
+          textDirection: TextDirection.ltr,
           spacing: gap, runSpacing: gap, alignment: WrapAlignment.center,
           children: visible.map((index) => SizedBox(
             width: cardWidth, height: 88, child: _playerPanel(index),
@@ -1239,12 +1244,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
   );
 
   Widget _orientedDiceControl(int player) {
-    // Seat directions follow the board: red bottom, blue right,
-    // yellow top, green left. Rotating the complete control makes its
-    // label and die face readable from that player's side.
-    return RotatedBox(
-      quarterTurns: _baseIndex(player),
-      child: _edgeDiceControl(player, compact: true),
+    // Seat directions follow the board: red faces down, blue faces right,
+    // yellow faces up, and green faces left. A square hit target keeps all
+    // four controls aligned while the complete dice control turns to its seat.
+    return SizedBox(
+      width: 50,
+      height: 50,
+      child: RotatedBox(
+        quarterTurns: _baseIndex(player),
+        child: _edgeDiceControl(player, compact: true),
+      ),
     );
   }
 
@@ -1276,24 +1285,25 @@ class _LudoGamePageState extends State<LudoGamePage> {
           if (active) BoxShadow(color: color.withValues(alpha: .30), blurRadius: 14, spreadRadius: 1),
         ],
       ),
-      child: Row(children: [
+      child: Row(textDirection: TextDirection.ltr, children: [
+        // Dice sits on the outside edge of each seat, facing that player.
         if (_baseIndex(player) == 0 || _baseIndex(player) == 3) ...[
           _orientedDiceControl(player),
           const SizedBox(width: 5),
         ],
         Container(
-          width: 39, height: 39,
+          width: 35, height: 35,
           decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
             border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2.5),
             boxShadow: [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 8)]),
-          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 22))),
+          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 20))),
         ),
         const SizedBox(width: 6),
-        Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
-            maxLines: 1, overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
-          Text('$count/4 مهره رسیده', maxLines: 1, overflow: TextOverflow.ellipsis,
+          Text('$count/4 مهره رسیده', textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white70, fontSize: 9)),
           const SizedBox(height: 4),
           ClipRRect(
