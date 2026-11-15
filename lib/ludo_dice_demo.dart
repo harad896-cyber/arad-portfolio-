@@ -281,7 +281,6 @@ class _IsometricDicePainter extends CustomPainter {
       ..lineTo(center.dx, center.dy + half + depth / 2)
       ..close();
 
-    final shadow = Paint()..color = const Color(0xFF000000).withValues(alpha: .2);
     canvas.drawShadow(top, Colors.black, 14, true);
     canvas.drawPath(left, Paint()..color = const Color(0xFFD7E2EC));
     canvas.drawPath(right, Paint()..color = const Color(0xFF9EADBA));
