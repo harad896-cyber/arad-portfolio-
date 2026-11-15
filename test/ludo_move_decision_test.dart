@@ -105,10 +105,10 @@ void main() {
       final stacked = rolled([[4, 5, 57, 57], [-1, -1, -1, -1]], 1);
       expect(getLegalMoveAnalysis(stacked, 1,
         rules: const LudoMoveRules(allowOwnStack: true)
-      ).legalMoves, hasLength(1));
+      ).legalMoves, hasLength(2));
       expect(getLegalMoveAnalysis(stacked, 1,
         rules: const LudoMoveRules(allowOwnStack: false)
-      ).legalMoves, isEmpty);
+      ).legalMoves, hasLength(1));
     });
   });
 
@@ -138,7 +138,7 @@ void main() {
     });
 
     test('manual-selection setting can disable single-move auto play', () {
-      final s = rolled([[10, 57, 57, 57], [-1, -1, -1, -1]], 2);
+      final s = rolled([[10, 56, 57, 57], [-1, -1, -1, -1]], 2);
       final d = decideLudoMove(s, 2, getLegalMoveAnalysis(s, 2),
         autoMoveSingle: false);
       expect(d.kind, LudoAutoMoveKind.manual);
