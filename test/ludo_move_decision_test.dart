@@ -179,7 +179,9 @@ void main() {
     test('zero legal moves passes the turn on a non-six', () {
       final state = pending(red: [-1, -1, -1, -1], dice: 3);
       final analysis = getLegalMoveAnalysis(state, 3);
-      expect(decideLudoMove(state, analysis).action, LudoAutoAction.passTurn);
+      final decision = decideLudoMove(state, analysis);
+      expect(decision.action, LudoAutoAction.passTurn);
+      expect(decision.delay, const Duration(seconds: 1));
     });
 
     test('zero legal moves on a six requests another roll', () {
@@ -187,8 +189,9 @@ void main() {
       final noMoves = const LudoMoveAnalysis(
         legalMoves: [], rejectedMoves: [],
       );
-      expect(decideLudoMove(state, noMoves).action,
-          LudoAutoAction.repeatRoll);
+      final decision = decideLudoMove(state, noMoves);
+      expect(decision.action, LudoAutoAction.repeatRoll);
+      expect(decision.delay, const Duration(seconds: 1));
     });
 
     test('one legal move is automatic by default', () {
@@ -197,6 +200,7 @@ void main() {
       final decision = decideLudoMove(state, analysis);
       expect(decision.action, LudoAutoAction.moveAutomatically);
       expect(decision.move!.pieceIndex, 0);
+      expect(decision.delay, const Duration(milliseconds: 400));
     });
 
     test('single-move auto can be disabled for manual selection', () {
