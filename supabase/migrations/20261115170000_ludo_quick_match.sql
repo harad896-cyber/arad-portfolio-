@@ -40,7 +40,7 @@ begin
   end if;
 
   select seat_no into v_seat
-  from generate_series(0,(v_room.max_players-1)::integer) as seat_no
+  from generate_series(0,(v_room.max_players-1)::integer) as seats(seat_no)
   where not exists (
     select 1 from public.ludo_room_players p
     where p.room_id=v_room.id and p.seat=seat_no
