@@ -307,20 +307,15 @@ LudoState applyLudoRoll(
     allowPassBlockades: allowPassBlockades,
   );
   if (legal.isEmpty) {
-    // A six still grants another roll even when no piece can move.
-    // Non-six no-move results pass to the next active player.
+    // Keep the roll pending so the server can return per-piece rejection
+    // reasons, show the one-second no-move message, then resolve the pass.
     next['dice'] = {
       'value': dice,
       'legalMoves': <int>[],
       'burned': false,
       'reason': 'no_legal_move',
-      'extraRoll': dice == 6,
     };
-    if (dice != 6) {
-      next['sixStreak'] = 0;
-      next['turn'] = _nextActivePlayer(next, player);
-    }
-    next['phase'] = 'awaiting_roll';
+    next['phase'] = 'awaiting_move';
     return next;
   }
 
@@ -330,6 +325,46 @@ LudoState applyLudoRoll(
     'burned': false,
   };
   next['phase'] = 'awaiting_move';
+  return next;
+}
+
+/// Resolves a pending roll that has no legal moves.
+///
+/// The server calls this after its no-move feedback delay. A six keeps the
+/// same player and consecutive-six streak; any other value passes the turn.
+LudoState applyLudoNoMoveDecision(
+  LudoState state, {
+  bool allowOwnStack = false,
+  bool allowPassBlockades = false,
+}) {
+  if (!isValidLudoState(state) ||
+      state['phase'] != 'awaiting_move' ||
+      state['dice'] is! Map ||
+      (state['dice'] as Map)['burned'] == true) {
+    throw StateError('Invalid no-move resolution.');
+  }
+  final dice = (state['dice'] as Map)['value'] as int;
+  final legal = getLegalMoves(
+    state,
+    dice,
+    allowOwnStack: allowOwnStack,
+    allowPassBlockades: allowPassBlockades,
+  );
+  if (legal.isNotEmpty) {
+    throw StateError('Cannot pass a turn while a legal move exists.');
+  }
+
+  final next = _copyState(state);
+  final player = next['turn'] as int;
+  final diceState = Map<String, dynamic>.from(next['dice'] as Map)
+    ..['resolvedNoMove'] = true
+    ..['extraRoll'] = dice == 6;
+  next['dice'] = diceState;
+  if (dice != 6) {
+    next['sixStreak'] = 0;
+    next['turn'] = _nextActivePlayer(next, player);
+  }
+  next['phase'] = 'awaiting_roll';
   return next;
 }
 
