@@ -102,10 +102,10 @@ void main() {
         rules: const LudoMoveRules(blockadesBlockMovement: false)
       ).legalMoves, hasLength(1));
 
-      final stacked = rolled([[4, 4, -1, -1], [-1, -1, -1, -1]], 1);
+      final stacked = rolled([[4, 5, 57, 57], [-1, -1, -1, -1]], 1);
       expect(getLegalMoveAnalysis(stacked, 1,
         rules: const LudoMoveRules(allowOwnStack: true)
-      ).legalMoves, hasLength(2));
+      ).legalMoves, hasLength(1));
       expect(getLegalMoveAnalysis(stacked, 1,
         rules: const LudoMoveRules(allowOwnStack: false)
       ).legalMoves, isEmpty);
@@ -130,7 +130,7 @@ void main() {
     });
 
     test('one legal move is automatic after 400ms by default', () {
-      final s = rolled([[10, 57, 57, 57], [-1, -1, -1, -1]], 2);
+      final s = rolled([[10, 56, 57, 57], [-1, -1, -1, -1]], 2);
       final d = decideLudoMove(s, 2, getLegalMoveAnalysis(s, 2));
       expect(d.kind, LudoAutoMoveKind.automatic);
       expect(d.delay, const Duration(milliseconds: 400));
