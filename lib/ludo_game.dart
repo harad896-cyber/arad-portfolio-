@@ -498,7 +498,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final sameStartingProgress = options.every(
       (token) => _positions[_turn][token] == _positions[_turn][options.first],
     );
-    if ((options.length == 1 && _autoMoveSinglePiece) || sameStartingProgress) {
+    if ((options.length == 1 && _autoMoveSinglePiece) || (options.length > 1 && sameStartingProgress)) {
       final generation = _botGeneration;
       setState(() => _message = 'حرکت خودکار مهرهٔ ${options.first + 1} تا لحظه‌ای دیگر…');
       Future<void>.delayed(const Duration(milliseconds: 400), () {
