@@ -88,3 +88,36 @@ test('phase deadlines are server-generated and event log is append-only',()=>{
  assert.equal(g.phaseDeadline,'2026-01-01T00:00:45.000Z');
  assert.equal(g.events.at(-1).type,'night_started');assert.equal('role' in g.events.at(-1),false);
 });
+
+test('10,000 deterministic bot games finish without a stuck phase',()=>{
+ for(let gameNo=0;gameNo<10000;gameNo++){
+  let seed=(gameNo+1)>>>0;
+  const next=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/0x100000000;};
+  const choose=items=>items[Math.floor(next()*items.length)];
+  const g=new MafiaEngine({roster,roles:[...fixedRoles],now:new Date('2026-01-01T00:00:00Z')});
+  let rounds=0;
+  while(g.phase!==Phase.FINISHED&&rounds<60){
+   if(g.phase===Phase.ROLE_DISTRIBUTION||g.phase===Phase.EXECUTION)g.beginNight();
+   if(g.phase===Phase.NIGHT){
+    for(const p of g.alivePlayers){
+     const others=g.alivePlayers.filter(x=>x.id!==p.id);
+     if(p.role===Role.MAFIA){const targets=others.filter(x=>!['mafia','mafiaBoss'].includes(x.role));if(targets.length)g.submitNightAction({actorId:p.id,type:Action.KILL,targetId:choose(targets).id});}
+     else if(p.role===Role.DOCTOR&&others.length)g.submitNightAction({actorId:p.id,type:Action.PROTECT,targetId:choose(others).id});
+     else if(p.role===Role.DETECTIVE&&others.length)g.submitNightAction({actorId:p.id,type:Action.INVESTIGATE,targetId:choose(others).id});
+    }
+    g.resolveNight();if(g.phase===Phase.FINISHED)break;
+    g.beginDay();
+   }
+   if(g.phase===Phase.DAY){
+    g.openVoting();
+    for(const p of g.alivePlayers){const targets=g.alivePlayers.filter(x=>x.id!==p.id);if(targets.length)g.submitVote(p.id,choose(targets).id);}
+    g.closeVoting();g.openFinalVote();
+    for(const p of g.alivePlayers){const targets=[...g.defenseCandidates].filter(id=>id!==p.id);if(targets.length)g.submitVote(p.id,choose(targets));}
+    g.resolveFinalVote();if(g.phase===Phase.FINISHED)break;
+    g.beginNight();
+   }
+   rounds++;
+  }
+  assert.equal(g.phase,Phase.FINISHED,`game ${gameNo} stalled after ${rounds} rounds`);
+ }
+});
