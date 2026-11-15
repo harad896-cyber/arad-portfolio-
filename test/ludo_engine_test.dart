@@ -252,6 +252,20 @@ void main() {
       expect((passed['dice'] as Map)['legalMoves'], isEmpty);
       expect((passed['dice'] as Map)['reason'], 'no_legal_move');
     });
+
+    test('a six with no legal move keeps the turn for another roll', () {
+      var state = state2();
+      state['pieces'] = [
+        [-1, -1, -1, -1],
+        [13, 13, -1, -1],
+      ];
+      final result = applyLudoRoll(state, 6);
+      expect(result['turn'], 0);
+      expect(result['phase'], 'awaiting_roll');
+      expect(result['sixStreak'], 1);
+      expect((result['dice'] as Map)['extraRoll'], isTrue);
+      expect((result['dice'] as Map)['reason'], 'no_legal_move');
+    });
   });
 
   group('Ludo engine: turn order and ranking', () {
