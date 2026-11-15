@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
@@ -175,6 +176,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false, _bonusRollAvailable = false;
   bool _autoMoveSinglePiece = true;
   bool _showFirstGuide = false;
+  Timer? _turnClock;
+  int _turnElapsedSeconds = 0;
   int _botGeneration = 0;
   int? _dice, _winner;
   final List<int> _pendingDice = [];
@@ -226,6 +229,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   @override
   void dispose() {
     LudoCustomization.current.removeListener(_onLookChanged);
+    _turnClock?.cancel();
     _sfxPlayer.dispose();
     super.dispose();
   }
@@ -350,6 +354,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
       ? const []
       : engine.getLegalMoves(_engineState, _dice!);
 
+  void _startTurnClock() {
+    _turnClock?.cancel();
+    _turnElapsedSeconds = 0;
+    if (!_started || _winner != null) return;
+    _turnClock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || !_started || _winner != null) return;
+      setState(() => _turnElapsedSeconds++);
+    });
+  }
+
+  String get _turnClockLabel {
+    final minutes = (_turnElapsedSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_turnElapsedSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
   void _start({required int players, required bool bot}) {
     setState(() {
       _playerCount = players;
@@ -360,6 +380,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _botBusy = false; _moving = false; _botGeneration++; _started = true;
       _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
     });
+    _startTurnClock();
   }
 
   void _roll({bool fromBot = false}) {
@@ -464,6 +485,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _turn = LudoRules.nextPlayer(_turn, _playerCount);
       _message = 'سه ۶ سوخت؛ نوبت ${_playerName(_turn)}';
     });
+    _startTurnClock();
     _scheduleBot();
   }
 
@@ -524,6 +546,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _turn = LudoRules.nextPlayer(_turn, _playerCount);
       _message = 'نوبت ${_playerName(_turn)}';
     });
+    _startTurnClock();
     _scheduleBot();
   }
 
@@ -581,6 +604,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         _message = 'نوبت ${_playerName(_turn)}';
       }
     });
+    if (_winner == null && _pendingDice.isEmpty) _startTurnClock();
     _scheduleBot();
   }
 
@@ -621,6 +645,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   void _reset() {
+    _turnClock?.cancel();
     setState(() {
       _started = false; _positions = []; _dice = null; _winner = null; _pendingDice.clear(); _bonusRollAvailable = false;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
@@ -830,8 +855,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      final rail = 12.0;
-      final boardSize = math.max(220.0, math.min(620.0, constraints.maxWidth - rail * 2));
+      final rail = 24.0;
+      final boardSize = math.max(210.0, math.min(620.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
@@ -848,9 +873,14 @@ class _LudoGamePageState extends State<LudoGamePage> {
               ),
               child: Row(children: [
                 Icon(Icons.circle, color: _playerColor(_turn), size: 9),
-                const SizedBox(width: 9),
+                const SizedBox(width: 8),
                 Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800))),
+                const SizedBox(width: 8),
+                const Icon(Icons.timer_outlined, color: Color(0xFFFFD477), size: 16),
+                const SizedBox(width: 4),
+                Text(_turnClockLabel, key: const ValueKey('ludo-turn-clock'),
+                  style: const TextStyle(color: Color(0xFFFFD477), fontSize: 12, fontWeight: FontWeight.w900, fontFeatures: [FontFeature.tabularFigures()])),
               ]),
             ),
             Align(alignment: Alignment.centerRight, child: Container(
@@ -894,6 +924,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
                       ),
                     ),
                   ),
+                  for (var player = 0; player < _playerCount; player++)
+                    _edgeDiceControlAt(player),
                 ]),
               ),
             ),
@@ -927,7 +959,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
                                 blurRadius: 15, spreadRadius: 1,
                               )],
                             ),
-                            child: Center(child: _LudoDieFace(value: _pendingDice[index], size: 43)),
+                            child: Center(child: _LudoDieFace(value: _pendingDice[index], size: 43, skinIndex: LudoCustomization.current.value.diceSkin)),
                           ),
                         ),
                       ),
@@ -999,12 +1031,23 @@ class _LudoGamePageState extends State<LudoGamePage> {
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 28 : 40),
+              _LudoDieFace(value: shownValue, size: compact ? 28 : 40, skinIndex: LudoCustomization.current.value.diceSkin),
             ]),
           ),
         ),
       ),
       ),
+    );
+  }
+
+  Widget _edgeDiceControlAt(int player) {
+    final slot = _playerCount == 2 && player == 1 ? 2 : player;
+    return Positioned(
+      left: slot == 0 || slot == 3 ? 0 : null,
+      right: slot == 1 || slot == 2 ? 0 : null,
+      top: slot == 2 || slot == 3 ? 0 : null,
+      bottom: slot == 0 || slot == 1 ? 0 : null,
+      child: _edgeDiceControl(player, compact: true),
     );
   }
 
@@ -1200,7 +1243,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _playerPanel(int player) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final count = _positions[player].where((value) => value == 57).length;
     final look = LudoCustomization.current.value;
     final avatar = player == 0
@@ -1236,33 +1278,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
             style: const TextStyle(color: Colors.white70, fontSize: 8)),
           if (active) const Text('نوبت فعلی', style: TextStyle(color: Color(0xFFFFD477), fontSize: 8, fontWeight: FontWeight.w900)),
         ])),
-        const SizedBox(width: 4),
-        Semantics(
-          button: true, enabled: canRoll,
-          label: canRoll ? 'تاس بینداز برای ${_playerName(player)}' : 'تاس بازیکن ${_playerName(player)}',
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: ValueKey('ludo-die-$player'),
-              borderRadius: BorderRadius.circular(10),
-              onTap: canRoll ? _roll : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 42, height: 42,
-                decoration: BoxDecoration(
-                  color: canRoll ? color : Colors.black.withValues(alpha: .24),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .5)),
-                ),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.casino_rounded, color: Colors.white, size: 16),
-                  Text(canRoll ? 'تاس' : (_diceValues[player]?.toString() ?? '—'),
-                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
-                ]),
-              ),
-            ),
-          ),
-        ),
       ]),
     );
   }
@@ -1363,7 +1378,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
 class _LudoDieFace extends StatelessWidget {
   final int? value;
   final double size;
-  const _LudoDieFace({required this.value, required this.size});
+  final int skinIndex;
+  const _LudoDieFace({required this.value, required this.size, this.skinIndex = 0});
 
   static const _patterns = <int, List<int>>{
     1: [4], 2: [0, 8], 3: [0, 4, 8],
@@ -1374,14 +1390,17 @@ class _LudoDieFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dots = _patterns[value] ?? const <int>[];
+    final palette = LudoCustomization.dicePalettes[
+      skinIndex.clamp(0, LudoCustomization.dicePalettes.length - 1).toInt()
+    ];
     return Container(
       width: size, height: size,
       padding: EdgeInsets.all(size * .13),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F0E7),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: palette),
         borderRadius: BorderRadius.circular(size * .20),
-        border: Border.all(color: const Color(0xFFD7CDBB), width: .8),
-        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1))],
+        border: Border.all(color: Colors.white.withValues(alpha: .9), width: .8),
+        boxShadow: [BoxShadow(color: palette.last.withValues(alpha: .35), blurRadius: size * .12, offset: const Offset(0, 1))],
       ),
       child: GridView.count(
         crossAxisCount: 3,
@@ -1393,7 +1412,7 @@ class _LudoDieFace extends StatelessWidget {
           child: dots.contains(index)
               ? Container(
                   width: size * .16, height: size * .16,
-                  decoration: const BoxDecoration(color: Color(0xFF172638), shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: Color(0xFFF8FBFF), shape: BoxShape.circle),
                 )
               : const SizedBox.shrink(),
         )),
