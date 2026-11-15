@@ -175,7 +175,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
   int _playerCount = 2, _turn = 0, _sixStreak = 0, _diamondBalance = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false, _bonusRollAvailable = false;
   bool _autoMoveSinglePiece = true;
-  bool _showFirstGuide = false;
   Timer? _turnClock;
   int _turnElapsedSeconds = 0;
   int _botGeneration = 0;
@@ -208,21 +207,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
         if (mounted) setState(() => _myCharacter = appearance);
       }).catchError((_) {});
     }
-    _loadFirstGuide();
     _refreshDiamondBalance();
   }
 
-  Future<void> _loadFirstGuide() async {
-    final show = await LudoCustomization.shouldShowFirstGuide();
-    if (mounted) setState(() => _showFirstGuide = show);
-  }
-
-  void _dismissFirstGuide() {
-    setState(() => _showFirstGuide = false);
-    LudoCustomization.markFirstGuideSeen();
-  }
-
-  void _onLookChanged() {
+unused guide methods  void _onLookChanged() {
     if (mounted) setState(() {});
   }
 
@@ -1220,32 +1208,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
       ),
     );
   }
-
-  Widget _dockTile({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) =>
-    Material(
-      color: const Color(0xFF081A32).withValues(alpha: .94),
-      borderRadius: BorderRadius.circular(13),
-      child: InkWell(
-        onTap: onTap, borderRadius: BorderRadius.circular(13),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 54),
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: const Color(0xFFD5A94D), width: 1),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2))]),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, color: const Color(0xFFFFD477), size: 18),
-            const SizedBox(width: 4),
-            Flexible(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
-              Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white60, fontSize: 7)),
-            ])),
-          ]),
-        ),
-      ),
-    );
 
   void _showRules() => showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
     title: const Text('قانون بازی لودو'),
