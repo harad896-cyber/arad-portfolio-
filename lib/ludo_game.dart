@@ -267,6 +267,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Future<void> _roll({bool fromBot = false}) async {
     if (!_started || _winner != null || _dice != null || _moving || _rolling || (_botBusy && !fromBot)) return;
     final generation = _botGeneration;
+    final rollingPlayer = _turn;
     _playSfx('roll');
     setState(() { _rolling = true; _rollingFace = 1; });
     // Animate the die before committing the final random result.
@@ -321,7 +322,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       final token = options.first;
       setState(() => _message = 'فقط یک حرکت ممکن است؛ مهره به‌صورت خودکار حرکت می‌کند.');
       await Future<void>.delayed(const Duration(milliseconds: 350));
-      if (mounted && generation == _botGeneration && _turn == player && _dice == value) {
+      if (mounted && generation == _botGeneration && _turn == rollingPlayer && _dice == value) {
         await _moveToken(token);
       }
     } else if (_botTurn && !fromBot) {
@@ -373,7 +374,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!_botTurn || _winner != null || _botBusy || !mounted) return;
     _botBusy = true;
     final generation = _botGeneration;
-    Future<void>.delayed(const Duration(milliseconds: 650), () {
+    Future<void>.delayed(const Duration(milliseconds: 650), () async {
       if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) { _botBusy = false; return; }
       _botBusy = false;
       await _roll(fromBot: true);
