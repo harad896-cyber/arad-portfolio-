@@ -73,7 +73,7 @@ void main() {
 
     test('captures an opponent on an unsafe shared square', () {
       final analysis = getLegalMoveAnalysis(
-        pending(red: [4, -1, -1, -1], yellow: [18, -1, -1, -1]),
+        pending(red: [4, -1, -1, -1], yellow: [31, -1, -1, -1]),
         1,
       );
       expect(analysis.legalMoves.single.captures, hasLength(1));
@@ -83,7 +83,7 @@ void main() {
 
     test('safe squares never produce capture targets', () {
       final analysis = getLegalMoveAnalysis(
-        pending(red: [7, -1, -1, -1], yellow: [21, -1, -1, -1]),
+        pending(red: [7, -1, -1, -1], yellow: [34, -1, -1, -1]),
         1,
       );
       expect(analysis.legalMoves.single.landsOnSafeSquare, isTrue);
@@ -92,7 +92,7 @@ void main() {
 
     test('friendly blockade blocks the path', () {
       final analysis = getLegalMoveAnalysis(
-        pending(red: [2, -1, -1, -1], yellow: [17, 17, -1, -1]),
+        pending(red: [2, -1, -1, -1], yellow: [30, 30, -1, -1]),
         3,
       );
       expect(analysis.legalMoves, isEmpty);
