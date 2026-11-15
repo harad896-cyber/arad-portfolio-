@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/gapresan-dice-prototype
+      - feature/gapresan-ludo-league-ui-20261115
+  workflow_dispatch:
   pull_request:
     branches:
       - main
