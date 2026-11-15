@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "cosmeticOnly": true,
+  "rarityGlow": {
+    "common": "#9AA4B2",
+    "rare": "#38BDF8",
+    "epic": "#A78BFA",
+    "legendary": "#F59E0B"
+  },
+  "characterStates": [
+    "idle",
+    "happy",
+    "captured",
+    "winner"
+  ],
+  "characters": [
+    {
+      "id": "fox_01",
+      "name": "روباه",
+      "category": "character",
+      "rarity": "common",
+      "emoji": "🦊",
+      "baseModel": "characters/fox/base.riv",
+      "unlockedBy": "starter",
+      "states": {
+        "idle": "characters/fox/idle.riv",
+        "happy": "characters/fox/happy.riv",
+        "captured": "characters/fox/captured.riv",
+        "winner": "characters/fox/winner.riv"
+      }
+    },
+    {
+      "id": "robot_01",
+      "name": "ربات",
+      "category": "character",
+      "rarity": "rare",
+      "emoji": "🤖",
+      "baseModel": "characters/robot/base.riv",
+      "unlockedBy": "level_or_reward:robot_01",
+      "states": {
+        "idle": "characters/robot/idle.riv",
+        "happy": "characters/robot/happy.riv",
+        "captured": "characters/robot/captured.riv",
+        "winner": "characters/robot/winner.riv"
+      }
+    },
+    {
+      "id": "tiger_01",
+      "name": "ببر",
+      "category": "character",
+      "rarity": "epic",
+      "emoji": "🐯",
+      "baseModel": "characters/tiger/base.riv",
+      "unlockedBy": "level_or_reward:tiger_01",
+      "states": {
+        "idle": "characters/tiger/idle.riv",
+        "happy": "characters/tiger/happy.riv",
+        "captured": "characters/tiger/captured.riv",
+        "winner": "characters/tiger/winner.riv"
+      }
+    },
+    {
+      "id": "astronaut_01",
+      "name": "فضانورد",
+      "category": "character",
+      "rarity": "legendary",
+      "emoji": "🧑‍🚀",
+      "baseModel": "characters/astronaut/base.riv",
+      "unlockedBy": "level_or_reward:astronaut_01",
+      "states": {
+        "idle": "characters/astronaut/idle.riv",
+        "happy": "characters/astronaut/happy.riv",
+        "captured": "characters/astronaut/captured.riv",
+        "winner": "characters/astronaut/winner.riv"
+      }
+    },
+    {
+      "id": "cat_01",
+      "name": "گربه",
+      "category": "character",
+      "rarity": "common",
+      "emoji": "🐱",
+      "baseModel": "characters/cat/base.riv",
+      "unlockedBy": "level_or_reward:cat_01",
+      "states": {
+        "idle": "characters/cat/idle.riv",
+        "happy": "characters/cat/happy.riv",
+        "captured": "characters/cat/captured.riv",
+        "winner": "characters/cat/winner.riv"
+      }
+    },
+    {
+      "id": "dragon_01",
+      "name": "اژدها",
+      "category": "character",
+      "rarity": "legendary",
+      "emoji": "🐉",
+      "baseModel": "characters/dragon/base.riv",
+      "unlockedBy": "level_or_reward:dragon_01",
+      "states": {
+        "idle": "characters/dragon/idle.riv",
+        "happy": "characters/dragon/happy.riv",
+        "captured": "characters/dragon/captured.riv",
+        "winner": "characters/dragon/winner.riv"
+      }
+    },
+    {
+      "id": "panda_01",
+      "name": "پاندا",
+      "category": "character",
+      "rarity": "rare",
+      "emoji": "🐼",
+      "baseModel": "characters/panda/base.riv",
+      "unlockedBy": "level_or_reward:panda_01",
+      "states": {
+        "idle": "characters/panda/idle.riv",
+        "happy": "characters/panda/happy.riv",
+        "captured": "characters/panda/captured.riv",
+        "winner": "characters/panda/winner.riv"
+      }
+    },
+    {
+      "id": "owl_01",
+      "name": "جغد",
+      "category": "character",
+      "rarity": "epic",
+      "emoji": "🦉",
+      "baseModel": "characters/owl/base.riv",
+      "unlockedBy": "level_or_reward:owl_01",
+      "states": {
+        "idle": "characters/owl/idle.riv",
+        "happy": "characters/owl/happy.riv",
+        "captured": "characters/owl/captured.riv",
+        "winner": "characters/owl/winner.riv"
+      }
+    }
+  ],
+  "cosmetics": [
+    {
+      "id": "face_happy",
+      "name": "چهره شاد",
+      "category": "face",
+      "rarity": "common",
+      "emoji": "😊",
+      "assetKey": "faces/happy"
+    },
+    {
+      "id": "face_cool",
+      "name": "چهره باحال",
+      "category": "face",
+      "rarity": "rare",
+      "emoji": "😎",
+      "assetKey": "faces/cool"
+    },
+    {
+      "id": "hat_crown",
+      "name": "تاج",
+      "category": "hat",
+      "rarity": "legendary",
+      "emoji": "👑",
+      "assetKey": "hats/crown"
+    },
+    {
+      "id": "hat_space",
+      "name": "کلاه فضایی",
+      "category": "hat",
+      "rarity": "epic",
+      "emoji": "🪖",
+      "assetKey": "hats/space"
+    },
+    {
+      "id": "glasses_neon",
+      "name": "عینک نئونی",
+      "category": "glasses",
+      "rarity": "rare",
+      "emoji": "🕶️",
+      "assetKey": "glasses/neon"
+    },
+    {
+      "id": "outfit_royal",
+      "name": "لباس شاهانه",
+      "category": "outfit",
+      "rarity": "epic",
+      "emoji": "🥋",
+      "assetKey": "outfits/royal"
+    },
+    {
+      "id": "aura_spark",
+      "name": "هاله جرقه‌ای",
+      "category": "aura",
+      "rarity": "legendary",
+      "emoji": "✨",
+      "assetKey": "auras/spark"
+    },
+    {
+      "id": "trail_comet",
+      "name": "رد ستاره دنباله‌دار",
+      "category": "piece_trail",
+      "rarity": "epic",
+      "emoji": "☄️",
+      "assetKey": "trails/comet"
+    },
+    {
+      "id": "dice_crystal",
+      "name": "تاس کریستالی",
+      "category": "dice_skin",
+      "rarity": "rare",
+      "emoji": "🎲",
+      "assetKey": "dice/crystal"
+    },
+    {
+      "id": "board_midnight",
+      "name": "صفحه نیمه‌شب",
+      "category": "board_theme",
+      "rarity": "epic",
+      "emoji": "🌌",
+      "assetKey": "boards/midnight"
+    },
+    {
+      "id": "frame_gold",
+      "name": "قاب طلایی",
+      "category": "frame",
+      "rarity": "legendary",
+      "emoji": "🏅",
+      "assetKey": "frames/gold"
+    },
+    {
+      "id": "win_fireworks",
+      "name": "آتش‌بازی پیروزی",
+      "category": "win_effect",
+      "rarity": "legendary",
+      "emoji": "🎆",
+      "assetKey": "effects/fireworks"
+    },
+    {
+      "id": "capture_pop",
+      "name": "افکت برخورد",
+      "category": "capture_effect",
+      "rarity": "rare",
+      "emoji": "💥",
+      "assetKey": "effects/pop"
+    }
+  ],
+  "rules": {
+    "levelCap": 100,
+    "xpRequired": "ceil(100 * level^1.4)",
+    "dailyXpCap": 500,
+    "friendBonusPercent": 20,
+    "botMatchMultiplier": 0.25,
+    "abandonedMatchXp": 0,
+    "clientMayGrantXp": false
+  }
+}
