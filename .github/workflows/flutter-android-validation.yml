@@ -163,7 +163,7 @@ jobs:
       # Publish only after analyzer, tests, archive/signature verification,
       # and a real emulator install/launch have all passed.
       - name: Publish direct-install APK to GitHub Releases
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/feature/gapresan-fun-zone' || github.ref == 'refs/heads/feature/gapresan-ludo-legal-moves')
         uses: softprops/action-gh-release@v3
         with:
           tag_name: gapresan-test-${{ github.run_number }}
