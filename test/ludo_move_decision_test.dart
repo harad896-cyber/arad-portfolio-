@@ -38,7 +38,7 @@ void main() {
     test('path and exact home entry are calculated correctly for all dice values', () {
       for (var dice = 1; dice <= 6; dice++) {
         final valid = getLegalMoveAnalysis(rolled([
-          [56, -1, -1, -1], [-1, -1, -1, -1]
+          [56, 57, 57, 57], [-1, 57, 57, 57]
         ], dice), dice);
         expect(valid.legalMoves.isNotEmpty, dice == 1);
         if (dice == 1) {
@@ -64,7 +64,7 @@ void main() {
 
         final homeLaneProgress = 51 + (6 - dice);
         final homeLane = getLegalMoveAnalysis(rolled([
-          [homeLaneProgress, -1, -1, -1], [-1, -1, -1, -1]
+          [homeLaneProgress, 57, 57, 57], [57, 57, 57, 57]
         ], dice), dice);
         expect(homeLane.legalMoves.single.to, 57);
         expect(homeLane.legalMoves.single.entersHome, isTrue);
@@ -90,7 +90,7 @@ void main() {
 
     test('a two-piece blockade rejects the move with a useful reason', () {
       final result = getLegalMoveAnalysis(rolled([
-        [3, -1, -1, -1], [31, 31, -1, -1]
+        [3, -1, -1, -1], [18, 18, 57, 57]
       ], 2), 2);
       expect(result.legalMoves, isEmpty);
       expect(result.rejections.single.reasonCode, 'blocked');
@@ -114,7 +114,7 @@ void main() {
 
   group('automatic move decision', () {
     test('zero moves waits one second and preserves extra-roll on six', () {
-      final s = rolled([[-1, -1, -1, -1], [-1, -1, -1, -1]], 6);
+      final s = rolled([[57, 57, 57, 57], [57, 57, 57, 57]], 6);
       final a = getLegalMoveAnalysis(s, 6);
       final d = decideLudoMove(s, 6, a);
       expect(d.kind, LudoAutoMoveKind.noMove);
