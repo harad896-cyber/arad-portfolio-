@@ -894,14 +894,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
                       ),
                     ),
                   ),
-                  if (_playerCount >= 2)
-                    Positioned(right: 0, top: 0,
-                      child: _edgeDiceControl(_playerCount == 2 ? 1 : 2, compact: true)),
-                  if (_playerCount >= 3)
-                    Positioned(right: 0, bottom: 0, child: _edgeDiceControl(1, compact: true)),
-                  Positioned(left: 0, bottom: 0, child: _edgeDiceControl(0, compact: true)),
-                  if (_playerCount >= 4)
-                    Positioned(left: 0, top: 0, child: _edgeDiceControl(3, compact: true)),
                 ]),
               ),
             ),
