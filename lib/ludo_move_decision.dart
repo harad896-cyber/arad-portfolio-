@@ -185,6 +185,14 @@ List<List<int>> _copyMovePieces(dynamic raw) => (raw as List)
     .map((row) => (row as List).map((v) => (v as num).toInt()).toList())
     .toList();
 
+/// Convenience API matching the server contract: returns only legal moves.
+/// Use [getLegalMoveAnalysis] when rejection explanations are also required.
+List<LudoLegalMove> getLegalMoves(
+  LudoState state,
+  int dice, {
+  LudoMoveRules rules = const LudoMoveRules(),
+}) => getLegalMoveAnalysis(state, dice, rules: rules).legalMoves;
+
 /// Groups equivalent moves (same source/destination/path). If a group has
 /// multiple identical choices, the server may pick its first stable member.
 LudoAutoMoveDecision decideLudoMove(
