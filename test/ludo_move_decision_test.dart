@@ -102,7 +102,7 @@ void main() {
 
     test('blockade pass option allows crossing but not landing on blockade', () {
       final state = pending(
-        red: [2, -1, -1, -1], yellow: [17, 17, -1, -1], dice: 3,
+        red: [2, -1, -1, -1], yellow: [30, 30, -1, -1], dice: 3,
       );
       final crossed = getLegalMoveAnalysis(
         state, 3,
@@ -111,11 +111,32 @@ void main() {
       expect(crossed.legalMoves, hasLength(1));
 
       final landsOnBlock = getLegalMoveAnalysis(
-        pending(red: [1, -1, -1, -1], yellow: [17, 17, -1, -1], dice: 3),
+        pending(red: [1, -1, -1, -1], yellow: [30, 30, -1, -1], dice: 3),
         3,
         rules: const LudoMoveRules(allowPassBlockades: true),
       );
       expect(landsOnBlock.legalMoves, isEmpty);
+    });
+
+    test('roll calculation uses the configured blockade passing rule', () {
+      final state = baseState()
+        ..['pieces'] = [
+          [2, -1, -1, -1],
+          [30, 30, -1, -1],
+        ];
+      final strict = applyLudoRoll(state, 3);
+      expect(strict['turn'], 1);
+      expect(strict['phase'], 'awaiting_roll');
+
+      final passing = applyLudoRoll(state, 3, allowPassBlockades: true);
+      expect(passing['turn'], 0);
+      expect(passing['phase'], 'awaiting_move');
+      expect(getLegalMoves(passing, 3, allowPassBlockades: true), [0]);
+      expect(() => applyLudoMove(passing, 0), throwsStateError);
+      final applied = applyLudoMove(
+        passing, 0, allowPassBlockades: true,
+      );
+      expect((applied['pieces'] as List)[0][0], 5);
     });
 
     test('own stack is configurable and authoritative move validation agrees', () {
