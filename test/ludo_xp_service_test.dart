@@ -85,6 +85,19 @@ void main() {
       expect(result.totalXp, 520);
     });
 
+    test('lifetime level progress survives a daily XP reset', () {
+      final result = LudoXpService.calculateProgress(
+        currentLevel: 1,
+        xpIntoLevel: 80,
+        totalXp: 80,
+        dailyXp: 0,
+        baseXp: 50,
+      );
+      expect(result.newLevel, 2);
+      expect(result.xpIntoLevel, 30);
+      expect(result.totalXp, 130);
+    });
+
     test('level-ups can unlock multiple level rewards', () {
       final result = LudoXpService.calculateProgress(
         currentLevel: 1, xpIntoLevel: 0, totalXp: 0, dailyXp: 0,
