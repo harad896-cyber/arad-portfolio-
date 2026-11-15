@@ -173,7 +173,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   bool _soundEnabled = true;
   int _playerCount = 2, _turn = 0, _sixStreak = 0, _diamondBalance = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false, _bonusRollAvailable = false;
-  bool _autoMoveSinglePiece = true;
+  bool _autoMoveSinglePiece = false;
   bool _showFirstGuide = false;
   int _botGeneration = 0;
   int? _dice, _winner;
@@ -496,14 +496,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _dice = value;
       _message = 'تاس $value انتخاب شد';
     });
-    // If every legal token is in the same starting state (for example, all
-    // tokens are still in the yard), the choice is equivalent: move one
-    // automatically instead of forcing an unnecessary tap.
-    final sameStartingProgress = bot_policy.haveEquivalentLudoMoves(
-      legalPieces: options,
-      pieceProgress: _positions[_turn],
-    );
-    if ((options.length == 1 && _autoMoveSinglePiece) || (options.length > 1 && sameStartingProgress)) {
+    // Human players always choose a token themselves by default.
+    // Bots keep their automatic decision flow; the optional setting only
+    // applies to a human turn with exactly one legal token.
+    if (fromBot || (options.length == 1 && _autoMoveSinglePiece)) {
       final generation = _botGeneration;
       setState(() => _message = 'حرکت خودکار مهرهٔ ${options.first + 1} تا لحظه‌ای دیگر…');
       Future<void>.delayed(const Duration(milliseconds: 400), () {
@@ -915,43 +911,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)),
               ),
             ),
-            if (_pendingDice.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var index = 0; index < _pendingDice.length; index++)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 7),
-                        child: InkWell(
-                          onTap: _botTurn || _botBusy || _dice != null || _bonusRollAvailable
-                              ? null : () => _chooseDie(_pendingDice[index]),
-                          borderRadius: BorderRadius.circular(15),
-                          child: Container(
-                            width: 58, height: 58,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft, end: Alignment.bottomRight,
-                                colors: [
-                                  _playerColor(_turn).withValues(alpha: .95),
-                                  _playerColor(_turn).withValues(alpha: .48),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.white.withValues(alpha: .9), width: 1.6),
-                              boxShadow: [BoxShadow(
-                                color: _playerColor(_turn).withValues(alpha: .42),
-                                blurRadius: 15, spreadRadius: 1,
-                              )],
-                            ),
-                            child: Center(child: _LudoDieFace(value: _pendingDice[index], size: 43)),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
             const SizedBox(height: 5),
             Align(
               alignment: Alignment.centerRight,
@@ -1001,7 +960,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _edgeDiceControl(int player, {bool compact = false}) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && (_pendingDice.isEmpty || _bonusRollAvailable) && !_botTurn && !_botBusy && !_moving;
+    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
+    final hasPendingChoice = _pendingDice.isNotEmpty && !_bonusRollAvailable;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
     // Compact controls are square so rotating them for each seat never
@@ -1020,7 +980,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         child: InkWell(
           key: ValueKey('ludo-die-$player'),
           borderRadius: BorderRadius.circular(13),
-          onTap: canRoll ? _roll : null,
+          onTap: canRoll ? () { if (hasPendingChoice) { _chooseDie(_pendingDice.first); } else { _roll(); } } : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: width, height: height,
