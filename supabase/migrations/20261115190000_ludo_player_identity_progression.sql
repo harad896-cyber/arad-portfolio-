@@ -208,8 +208,7 @@ create policy ludo_player_profile_update_own on public.ludo_player_profiles
   for update to authenticated using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 -- Explicit column grants prevent clients from changing XP, level, currency or daily caps.
-grant update(display_name_override, title_id, bio, country_code, badges_shown,
-  privacy_visibility, last_seen, updated_at)
+grant update(display_name_override, bio, country_code, privacy_visibility, updated_at)
   on public.ludo_player_profiles to authenticated;
 
 drop policy if exists ludo_loadout_read_own on public.ludo_player_loadouts;
