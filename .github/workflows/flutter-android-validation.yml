@@ -1,0 +1,193 @@
+name: Flutter Android and Web validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/gapresan-fun-zone]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  analyze-test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter --version
+
+      # This repository currently generates its Android host on CI. Keep the
+      # same TEST signing certificate across builds so Android can update an
+      # installed GapResan test build instead of rejecting it as a signature mismatch.
+      # This key is intentionally test-only; never use it for Play Store releases.
+      - name: Generate Android platform files when missing
+        run: |
+          if [ ! -f android/app/build.gradle ] && [ ! -f android/app/build.gradle.kts ]; then
+            flutter create --platforms=android --org com.gapresan .
+          fi
+      - name: Install persistent GapResan test signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          base64 --decode .github/keys/gapresan-test-debug.keystore.b64 > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
+      - run: flutter pub get
+      - run: dart format lib/main.dart lib/fun_zone.dart lib/fun_game_engine.dart lib/fun_game_room_chat.dart lib/fun_game_voice_call.dart lib/chess_game.dart lib/chess_engine/chess.dart lib/chess_room_chat.dart lib/fun_zone_theme.dart lib/fun_game_leaderboard.dart lib/gap_coin_wallet.dart lib/ludo_game.dart lib/ludo_customization.dart test/widget_test.dart test/ludo_customization_test.dart test/chess_rules_test.dart test/fun_zone_theme_test.dart test/ludo_rules_test.dart
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+      # Build one universal APK. The same test key is reused on every CI run.
+      - name: Build universal release APK
+        # Give every test release a strictly increasing Android versionCode so
+        # phones do not reject it as an attempted downgrade.
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+      - name: Verify APK archive, package ID, and signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          # Re-sign the release output explicitly; Gradle's default debug config
+          # may use a different keystore on the runner.
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$HOME/.android/debug.keystore" \
+            --ks-key-alias androiddebugkey \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out "$APK.signed" "$APK"
+          mv "$APK.signed" "$APK"
+          unzip -t "$APK"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/gapresan-apk-badging.txt
+          APP_ID="$(sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" /tmp/gapresan-apk-badging.txt | head -n1)"
+          test -n "$APP_ID"
+          echo "Verified application ID: $APP_ID"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/gapresan-apk-signature.txt
+          grep -qi "f676a6dd950c09ce54066fa7d06a4d83d51ae7d7891006d724e6b42f30d5263c" /tmp/gapresan-apk-signature.txt
+          sha256sum "$APK" | tee "$APK.sha256"
+          cp "$APK" build/app/outputs/flutter-apk/GapResan.apk
+          (cd build/app/outputs/flutter-apk && sha256sum GapResan.apk > GapResan.apk.sha256)
+          file "$APK"
+
+      - name: Package installable APK into ZIP archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          BUNDLE="build/app/outputs/flutter-apk/gapresan-install-bundle"
+          mkdir -p "$BUNDLE"
+          cp "$APK" "$BUNDLE/GapResan.apk"
+          (cd "$BUNDLE" && sha256sum GapResan.apk > GapResan.apk.sha256)
+          cat > "$BUNDLE/INSTALL.txt" <<'EOF'
+          نصب گپ‌رسان:
+          1) فایل ZIP را دانلود و از حالت فشرده خارج کنید.
+          2) وارد پوشه استخراج‌شده شوید.
+          3) فایل GapResan.apk را باز کنید و Install را بزنید.
+          4) اگر اندروید اجازه نصب خواست، برای برنامه مدیریت فایل گزینه Install unknown apps را فعال کنید.
+          EOF
+          # APK files are already compressed. Store entries without recompression
+          # for maximum compatibility with Android/Samsung archive managers.
+          (cd "$BUNDLE" && zip -0 -X -r ../gapresan-install-bundle.zip .)
+          ZIP="build/app/outputs/flutter-apk/gapresan-install-bundle.zip"
+          unzip -t "$ZIP"
+          mapfile -t ENTRIES < <(unzip -Z1 "$ZIP")
+          test "${#ENTRIES[@]}" -eq 3
+          ENTRY_LIST=" ${ENTRIES[*]} "
+          [[ "$ENTRY_LIST" == *" GapResan.apk "* ]]
+          [[ "$ENTRY_LIST" == *" GapResan.apk.sha256 "* ]]
+          [[ "$ENTRY_LIST" == *" INSTALL.txt "* ]]
+          sha256sum "$ZIP" | tee "$ZIP.sha256"
+
+      # Validate the exact APK bytes a phone user receives after extracting
+      # the ZIP, not only the pre-packaged build output.
+      - name: Verify extracted install bundle APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="build/app/outputs/flutter-apk/gapresan-install-bundle.zip"
+          APK="build/app/outputs/flutter-apk/GapResan.apk"
+          EXTRACTED="$(mktemp --suffix=.apk)"
+          unzip -p "$ZIP" GapResan.apk > "$EXTRACTED"
+          test -s "$EXTRACTED"
+          cmp --silent "$APK" "$EXTRACTED"
+          EXPECTED_SHA="$(awk '{print $1}' build/app/outputs/flutter-apk/gapresan-install-bundle/GapResan.apk.sha256)"
+          ACTUAL_SHA="$(sha256sum "$EXTRACTED" | awk '{print $1}')"
+          test "$EXPECTED_SHA" = "$ACTUAL_SHA"
+          BUILD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$EXTRACTED"
+          "$BUILD_TOOLS/aapt" dump badging "$EXTRACTED" | grep -E "^package:|^sdkVersion:|^targetSdkVersion:"
+          sha256sum "$EXTRACTED"
+          rm -f "$EXTRACTED"
+
+      # Install the exact APK bytes extracted from the ZIP users download.
+      - name: Install extracted ZIP APK and launch on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 900
+          script: |
+            set -eu
+            unzip -p build/app/outputs/flutter-apk/gapresan-install-bundle.zip GapResan.apk > /tmp/GapResan.apk
+            test -s /tmp/GapResan.apk
+            APK_PATH=/tmp/GapResan.apk bash .github/scripts/android-smoke-test.sh
+
+      # Always expose the verified Android installer, including pull-request runs.
+      - name: Upload installable Android APK and ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-install
+          path: |
+            build/app/outputs/flutter-apk/GapResan.apk
+            build/app/outputs/flutter-apk/GapResan.apk.sha256
+            build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      # Publish only after analyzer, tests, archive/signature verification,
+      # and a real emulator install/launch have all passed.
+      - name: Publish direct-install APK to GitHub Releases
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: gapresan-test-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: GapResan Android Test ${{ github.run_number }}
+          body: |
+            Project 2 / GapResan test build.
+            Preferred: download GapResan.apk and install it directly (no ZIP extraction required).
+            Alternative: download gapresan-install-bundle.zip, extract it, then install GapResan.apk.
+            Built from commit ${{ github.sha }} after Flutter analyze, tests, APK signature verification, and Android emulator launch test.
+            This is a test build, not a production Play Store release.
+          prerelease: true
+          make_latest: false
+          fail_on_unmatched_files: true
+          files: |
+            build/app/outputs/flutter-apk/GapResan.apk
+            build/app/outputs/flutter-apk/GapResan.apk.sha256
+            build/app/outputs/flutter-apk/gapresan-install-bundle.zip
+
+      - name: Configure GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        uses: actions/configure-pages@v5
+      - name: Build GapResan browser preview
+        run: flutter build web --release --base-href /arad-portfolio-/
+      - name: Upload web preview artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web/
+      - name: Publish GapResan browser preview
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gapresan-fun-zone'
+        id: deployment
+        uses: actions/deploy-pages@v4
