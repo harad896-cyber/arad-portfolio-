@@ -5,6 +5,7 @@ on:
     branches: [feature/gapresan-dice-prototype]
     paths:
       - 'lib/ludo_engine.dart'
+      - 'lib/ludo_lobby.dart'
       - 'test/ludo_engine_test.dart'
       - '.github/workflows/ludo-engine-validation.yml'
   pull_request:
@@ -30,8 +31,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Format engine and tests
-        run: dart format lib/ludo_engine.dart test/ludo_engine_test.dart
+        run: dart format lib/ludo_engine.dart lib/ludo_lobby.dart test/ludo_engine_test.dart
       - name: Analyze engine and tests
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/ludo_engine.dart test/ludo_engine_test.dart
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/ludo_engine.dart lib/ludo_lobby.dart test/ludo_engine_test.dart
       - name: Run Ludo engine unit and simulation tests
         run: flutter test test/ludo_engine_test.dart
