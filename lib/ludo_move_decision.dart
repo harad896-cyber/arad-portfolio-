@@ -253,6 +253,7 @@ LudoAutoDecision decideLudoMove(
       reason: dice == 6
           ? 'حرکتی ممکن نیست؛ به‌دلیل تاس ۶ نوبت پرتاب دوباره است.'
           : 'حرکتی ممکن نیست؛ نوبت به بازیکن بعدی می‌رسد.',
+      delay: const Duration(seconds: 1),
     );
   }
 
