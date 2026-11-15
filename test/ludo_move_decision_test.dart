@@ -73,7 +73,7 @@ void main() {
 
     test('captures an opponent on an unsafe shared square', () {
       final analysis = getLegalMoveAnalysis(
-        pending(red: [4, -1, -1, -1], yellow: [17, -1, -1, -1]),
+        pending(red: [4, -1, -1, -1], yellow: [18, -1, -1, -1]),
         1,
       );
       expect(analysis.legalMoves.single.captures, hasLength(1));
@@ -120,7 +120,7 @@ void main() {
 
     test('own stack is configurable, but a two-piece blockade remains closed', () {
       final stackState = pending(
-        red: [0, 4, -1, -1], dice: 1,
+        red: [4, 5, -1, -1], dice: 1,
       );
       final strict = getLegalMoveAnalysis(stackState, 1);
       expect(strict.legalMoves, isEmpty);
