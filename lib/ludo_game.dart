@@ -629,7 +629,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   @override Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF101722),
+    backgroundColor: const Color(0xFF031A16),
     appBar: AppBar(
       title: const Text('لودو'), backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -838,6 +838,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            _arenaRibbon(),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
@@ -873,9 +874,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
                         borderRadius: BorderRadius.circular(20),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFFFD477), width: 2),
+                            border: Border.all(color: const Color(0xFFD9FFF0), width: 2),
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4)),
+                              BoxShadow(color: Color(0x3300F5A0), blurRadius: 18, spreadRadius: 1),
+                            ],
                           ),
                           child: Stack(children: [
                             Positioned.fill(child: CustomPaint(painter: _LudoBoardPainter(
@@ -1262,9 +1266,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final active = _turn == player && _winner == null;
     final count = _positions[player].where((value) => value == 57).length;
     final look = LudoCustomization.current.value;
+    // Character identities match the four seats in the stadium reference.
     final avatar = player == 0
         ? LudoCustomization.avatars[look.avatar]
-        : (_againstBot && player == 1 ? '🤖' : ['🙂', '😎', '🦊', '🐼'][_colorIndex(player)]);
+        : const ['🦊', '🐬', '🐥', '🐸'][player];
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
@@ -1392,7 +1397,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       if (_myCharacter.characterId.startsWith('astronaut')) return '🧑‍🚀';
       return '🦊';
     }
-    return const ['🦊','🐯','🤖','🧑‍🚀'][player % 4];
+    return const ['🦊','🐬','🐥','🐸'][player % 4];
   }
 
   Offset _tokenPoint(int player, int token, int progress, double size) {
