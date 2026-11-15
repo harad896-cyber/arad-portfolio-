@@ -19,6 +19,7 @@ declare
   v_duplicate_grant boolean;
   v_daily integer;
   v_total bigint;
+  v_coins bigint;
   v_ledger_count integer;
   v_reward_count integer;
   v_milestone_level integer;
@@ -61,10 +62,10 @@ begin
   perform ludo_private.grant_ludo_match_xp(v_match_3,v_user);
   perform ludo_private.grant_ludo_match_xp(v_match_4,v_user);
 
-  select daily_xp,total_xp into v_daily,v_total
+  select daily_xp,total_xp,coins into v_daily,v_total,v_coins
     from public.ludo_player_profiles where user_id=v_user;
-  if v_daily <> 500 or v_total <> 500 then
-    raise exception 'daily_xp_cap_failed: daily %, total %',v_daily,v_total;
+  if v_daily <> 500 or v_total <> 500 or v_coins <> 50 then
+    raise exception 'daily_xp_or_reward_idempotency_failed: daily %, total %, coins %',v_daily,v_total,v_coins;
   end if;
 
   select count(*) into v_ledger_count from public.ludo_xp_ledger where user_id=v_user;
