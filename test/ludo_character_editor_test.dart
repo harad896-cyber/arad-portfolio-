@@ -33,6 +33,27 @@ void main() {
       expect(changed.auraId, isNull);
     });
 
+    test('face selection is preserved when appearance is copied', () {
+      const appearance = LudoCharacterAppearance(faceId: 'happy');
+      final changed = appearance.copyWith(faceId: 'wink');
+      expect(changed.faceId, 'wink');
+      expect(changed.characterId, appearance.characterId);
+      expect(changed.bodyColor, appearance.bodyColor);
+    });
+
+    test('cosmetic catalog rejects missing ids and unknown categories', () {
+      expect(
+        () => LudoCosmeticItem.fromJson({'category': 'character'}),
+        throwsFormatException,
+      );
+      expect(
+        () => LudoCosmeticItem.fromJson({
+          'id': 'broken', 'category': 'gameplay_power',
+        }),
+        throwsFormatException,
+      );
+    });
+
     test('unknown rarity safely falls back to common', () {
       final item = LudoCosmeticItem.fromJson({
         'id': 'test', 'name': 'Test', 'category': 'character',
