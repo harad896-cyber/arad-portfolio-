@@ -158,8 +158,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   final AudioPlayer _sfxPlayer = AudioPlayer();
   bool _soundEnabled = true;
-  int _playerCount = 2, _turn = 0, _sixStreak = 0;
-  bool _againstBot = false, _started = false, _botBusy = false, _moving = false;
+  int _playerCount = 4, _turn = 0, _sixStreak = 0;
+  bool _againstBot = true, _started = false, _botBusy = false, _moving = false, _rolling = false;
+  int _rollingFace = 1;
   bool _showFirstGuide = false;
   int _botGeneration = 0;
   int? _dice, _winner;
@@ -244,7 +245,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
   }
 
-  bool get _botTurn => _againstBot && _turn == 1;
+  bool get _botTurn => _againstBot && _turn != 0;
   int _colorIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   int _baseIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   Color _playerColor(int player) => _colors[_colorIndex(player)];
@@ -258,21 +259,31 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _positions = List.generate(players, (_) => List.filled(4, -1));
       _turn = 0; _dice = null; _winner = null; _sixStreak = 0;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
-      _botBusy = false; _moving = false; _botGeneration++; _started = true;
+      _botBusy = false; _moving = false; _rolling = false; _botGeneration++; _started = true;
       _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
     });
   }
 
-  void _roll({bool fromBot = false}) {
-    if (!_started || _winner != null || _dice != null || _moving || (_botBusy && !fromBot)) return;
+  Future<void> _roll({bool fromBot = false}) async {
+    if (!_started || _winner != null || _dice != null || _moving || _rolling || (_botBusy && !fromBot)) return;
+    final generation = _botGeneration;
+    final rollingPlayer = _turn;
     _playSfx('roll');
+    setState(() { _rolling = true; _rollingFace = 1; });
+    // Animate the die before committing the final random result.
+    for (var frame = 0; frame < 9; frame++) {
+      await Future<void>.delayed(const Duration(milliseconds: 75));
+      if (!mounted || generation != _botGeneration) return;
+      setState(() => _rollingFace = _random.nextInt(6) + 1);
+    }
+    if (!mounted || generation != _botGeneration) return;
     final value = _random.nextInt(6) + 1;
     _diceValues[_turn] = value;
     if (value == 6) {
       _sixStreak++;
       if (_sixStreak >= 3) {
         setState(() {
-          _dice = null; _sixStreak = 0; _turn = (_turn + 1) % _playerCount;
+          _rolling = false; _dice = null; _sixStreak = 0; _turn = (_turn + 1) % _playerCount;
           _message = 'سه بار پشت سرهم ۶ آمد؛ نوبت ${_playerName(_turn)} شد.';
         });
         _scheduleBot();
@@ -283,11 +294,14 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
     final options = LudoRules.legalTokensInGame(_positions, _turn, value);
     if (options.isEmpty && value == 6) {
-      setState(() { _dice = null; _message = '۶ آمد؛ مهره‌ای برای حرکت نداری، دوباره تاس بینداز.'; });
+      setState(() { _rolling = false; _dice = null; _message = '۶ آمد؛ مهره‌ای برای حرکت نداری، دوباره تاس بینداز.'; });
       _scheduleBot();
       return;
     }
+    final humanAutoMove = !_botTurn && options.isNotEmpty &&
+        options.map((token) => _positions[_turn][token]).toSet().length == 1;
     setState(() {
+      _rolling = false;
       _dice = value;
       _message = options.isEmpty
           ? 'عدد $value آمد؛ حرکت قانونی نداری.'
@@ -304,6 +318,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
         });
         _scheduleBot();
       });
+    } else if (humanAutoMove) {
+      final token = options.first;
+      setState(() => _message = 'فقط یک حرکت ممکن است؛ مهره به‌صورت خودکار حرکت می‌کند.');
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      if (mounted && generation == _botGeneration && _turn == rollingPlayer && _dice == value) {
+        await _moveToken(token);
+      }
     } else if (_botTurn && !fromBot) {
       _scheduleBot();
     }
@@ -353,10 +374,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!_botTurn || _winner != null || _botBusy || !mounted) return;
     _botBusy = true;
     final generation = _botGeneration;
-    Future<void>.delayed(const Duration(milliseconds: 650), () {
+    Future<void>.delayed(const Duration(milliseconds: 650), () async {
       if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) { _botBusy = false; return; }
       _botBusy = false;
-      _roll(fromBot: true);
+      await _roll(fromBot: true);
       if (!mounted || !_botTurn || _winner != null || _dice == null) return;
       final options = _legal;
       if (options.isEmpty) return;
@@ -376,7 +397,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   void _reset() {
     setState(() {
-      _started = false; _positions = []; _dice = null; _winner = null;
+      _started = false; _positions = []; _dice = null; _winner = null; _rolling = false;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
       _turn = 0; _sixStreak = 0; _botBusy = false; _botGeneration++; _message = 'بازی را آغاز کن.';
     });
@@ -495,19 +516,19 @@ class _LudoGamePageState extends State<LudoGamePage> {
       Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
         label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'),
         selected: _playerCount == count,
-        onSelected: (_) => setState(() => _playerCount = count),
+        onSelected: (_) => setState(() { _playerCount = count; _againstBot = false; }),
       )).toList()),
       const SizedBox(height: 12),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
-        title: const Text('بازی با ربات'),
-        subtitle: const Text('یک بازیکن انسانی در برابر ربات بازی می‌کند.'),
+        title: const Text('بازی با سه ربات'),
+        subtitle: const Text('تو با مهره‌های سرخ بازی می‌کنی و سه ربات به نوبت بازی می‌کنند.'),
         value: _againstBot,
-        onChanged: (value) => setState(() { _againstBot = value; if (value) _playerCount = 2; }),
+        onChanged: (value) => setState(() { _againstBot = value; if (value) _playerCount = 4; }),
       ),
       const SizedBox(height: 12),
       FilledButton.icon(
-        onPressed: () => _start(players: _againstBot ? 2 : _playerCount, bot: _againstBot),
+        onPressed: () => _start(players: _againstBot ? 4 : _playerCount, bot: _againstBot),
         icon: const Icon(Icons.play_arrow_rounded),
         label: const Text('شروع بازی آفلاین'),
       ),
@@ -579,6 +600,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ]),
           ),
           const SizedBox(height: 5),
+          _playerStatusStrip(),
+          const SizedBox(height: 5),
           Center(
             child: SizedBox(
               width: frameSize,
@@ -634,9 +657,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _edgeDiceControl(int player, {bool compact = false}) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
-    final shownValue = _diceValues[player];
-    final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
+    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving && !_rolling;
+    final shownValue = _rolling && active ? _rollingFace : _diceValues[player];
+    final label = _againstBot && player != 0 ? 'ربات ${player + 1}' : _playerName(player);
     final width = compact ? 44.0 : 48.0;
     final height = compact ? 46.0 : 58.0;
     final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
@@ -685,6 +708,47 @@ class _LudoGamePageState extends State<LudoGamePage> {
       ),
     );
   }
+
+  Widget _playerStatusStrip() => Row(
+    children: List.generate(_playerCount, (player) {
+      final color = _playerColor(player);
+      final active = _turn == player && _winner == null;
+      final finished = _positions[player].where((value) => value == 57).length;
+      final look = LudoCustomization.current.value;
+      final avatar = player == 0
+          ? LudoCustomization.avatars[look.avatar]
+          : (_againstBot ? '🤖' : ['🙂', '😎', '🦊', '🐼'][_colorIndex(player)]);
+      final name = _againstBot && player != 0
+          ? 'ربات'
+          : player == 0 ? 'تو' : _playerName(player);
+      return Expanded(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: active ? .28 : .12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withValues(alpha: active ? 1 : .42),
+              width: active ? 1.8 : 1,
+            ),
+            boxShadow: active
+                ? [BoxShadow(color: color.withValues(alpha: .22), blurRadius: 8)]
+                : const [],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(avatar, style: const TextStyle(fontSize: 17, height: 1.05)),
+            const SizedBox(height: 2),
+            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+            Text('$finished/۴',
+              style: const TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      );
+    }),
+  );
 
   Widget _communicationActions() => Row(children: [
     Expanded(child: OutlinedButton.icon(
@@ -884,7 +948,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _playerPanel(int player) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
+    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving && !_rolling;
     final count = _positions[player].where((value) => value == 57).length;
     final look = LudoCustomization.current.value;
     final avatar = player == 0
@@ -913,7 +977,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         ),
         const SizedBox(width: 6),
         Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
+          Text(_againstBot && player != 0 ? 'ربات ${player + 1}' : _playerName(player),
             maxLines: 1, overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
           Text('$count/4 مهره رسیده', maxLines: 1, overflow: TextOverflow.ellipsis,
