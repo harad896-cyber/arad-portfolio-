@@ -235,7 +235,7 @@ grant all on public.ludo_player_profiles, public.ludo_player_loadouts,
 grant usage, select on sequence public.ludo_xp_ledger_id_seq to service_role;
 
 -- XP thresholds: ceil(100 * level^1.4). Level 100 is the cap.
-create or replace function ludo_private.ludo_xp_required(p_level integer)
+create or replace function ludo_ludo_private.ludo_xp_required(p_level integer)
 returns integer
 language sql immutable strict
 set search_path = ''
@@ -244,7 +244,7 @@ as $$
     when p_level between 1 and 99 then ceil(100 * power(p_level::numeric, 1.4))::integer
     else null end;
 $$;
-revoke all on function ludo_private.ludo_xp_required(integer) from public, anon, authenticated;
+revoke all on function ludo_ludo_private.ludo_xp_required(integer) from public, anon, authenticated;
 
 -- This is an internal backend-only grant. The caller supplies only match/user IDs;
 -- all scoring facts are loaded from the server-written ludo_match_results row.
@@ -312,8 +312,8 @@ begin
   v_xp := v_xp + v_award;
 
   while v_level < 100 loop
-    if v_xp < ludo_private.ludo_xp_required(v_level) then exit; end if;
-    v_xp := v_xp - private.ludo_xp_required(v_level);
+    if v_xp < ludo_ludo_private.ludo_xp_required(v_level) then exit; end if;
+    v_xp := v_xp - ludo_private.ludo_xp_required(v_level);
     v_level := v_level + 1;
     v_unlocked := array_append(v_unlocked, v_level);
 
@@ -361,7 +361,7 @@ $$;
 
 revoke all on function ludo_private.grant_ludo_match_xp(uuid, uuid) from public, anon, authenticated;
 grant usage on schema ludo_private to service_role;
-grant execute on function private.grant_ludo_match_xp(uuid, uuid) to service_role;
+grant execute on function ludo_private.grant_ludo_match_xp(uuid, uuid) to service_role;
 
 -- Idempotent inventory grant primitive; duplicate delivery is a no-op.
 create or replace function ludo_private.grant_cosmetic_item(
