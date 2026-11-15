@@ -103,6 +103,8 @@ create table if not exists public.ludo_player_stats (
   user_id uuid primary key references auth.users(id) on delete cascade,
   games integer not null default 0 check (games >= 0),
   wins integer not null default 0 check (wins >= 0),
+  win_rate numeric(6,5) generated always as
+    (case when games = 0 then 0::numeric else wins::numeric / games end) stored,
   top3 integer not null default 0 check (top3 >= 0),
   captures integer not null default 0 check (captures >= 0),
   captured_by integer not null default 0 check (captured_by >= 0),
@@ -280,6 +282,12 @@ begin
 
   insert into public.ludo_player_profiles(user_id)
     values (p_user_id) on conflict (user_id) do nothing;
+  insert into public.ludo_inventory(user_id,item_id,source)
+    values (p_user_id,'fox_01','starter'),(p_user_id,'face_happy','starter')
+    on conflict (user_id,item_id) do nothing;
+  insert into public.ludo_player_loadouts(user_id,preset_slot,preset_name,character_id,face_id)
+    values (p_user_id,1,'اصلی','fox_01','face_happy')
+    on conflict (user_id,preset_slot) do nothing;
   select * into v_profile from public.ludo_player_profiles
     where user_id = p_user_id for update;
 
@@ -354,3 +362,34 @@ $$;
 revoke all on function ludo_private.grant_ludo_match_xp(uuid, uuid) from public, anon, authenticated;
 grant usage on schema ludo_private to service_role;
 grant execute on function private.grant_ludo_match_xp(uuid, uuid) to service_role;
+
+-- Idempotent inventory grant primitive; duplicate delivery is a no-op.
+create or replace function ludo_private.grant_cosmetic_item(
+  p_user_id uuid, p_item_id text, p_source text, p_source_ref text default null
+) returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_inserted integer;
+begin
+  if p_source not in ('game','purchase','gift','reward','starter') then
+    raise exception 'invalid_cosmetic_source' using errcode = '22023';
+  end if;
+  if not exists (
+    select 1 from public.ludo_cosmetic_catalog
+    where id = p_item_id and is_active = true
+  ) then
+    raise exception 'cosmetic_item_unavailable' using errcode = 'P0002';
+  end if;
+  insert into public.ludo_inventory(user_id,item_id,source,source_ref)
+    values (p_user_id,p_item_id,p_source,p_source_ref)
+    on conflict (user_id,item_id) do nothing;
+  get diagnostics v_inserted = row_count;
+  return v_inserted = 1;
+end;
+$$;
+revoke all on function ludo_private.grant_cosmetic_item(uuid,text,text,text)
+  from public, anon, authenticated;
+grant execute on function ludo_private.grant_cosmetic_item(uuid,text,text,text)
+  to service_role;
