@@ -10,6 +10,7 @@ import 'fun_game_room_chat.dart';
 import 'fun_game_voice_call.dart';
 import 'ludo_engine.dart' as engine;
 import 'ludo_move_decision.dart' as move_decision;
+import 'ludo_bot_policy.dart' as bot_policy;
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
 class LudoRules {
@@ -328,7 +329,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   // In bot mode the human always controls red (player 0); every other seat is automated.
-  bool get _botTurn => _againstBot && _turn != 0;
+  bool get _botTurn => bot_policy.isLudoAutomatedTurn(
+    enabled: _againstBot,
+    activePlayer: _turn,
+  );
   int _colorIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   int _baseIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   Color _playerColor(int player) => _colors[_colorIndex(player)];
@@ -495,8 +499,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
     // If every legal token is in the same starting state (for example, all
     // tokens are still in the yard), the choice is equivalent: move one
     // automatically instead of forcing an unnecessary tap.
-    final sameStartingProgress = options.every(
-      (token) => _positions[_turn][token] == _positions[_turn][options.first],
+    final sameStartingProgress = bot_policy.haveEquivalentLudoMoves(
+      legalPieces: options,
+      pieceProgress: _positions[_turn],
     );
     if ((options.length == 1 && _autoMoveSinglePiece) || (options.length > 1 && sameStartingProgress)) {
       final generation = _botGeneration;
