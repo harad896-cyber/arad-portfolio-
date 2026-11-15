@@ -324,7 +324,8 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
             _seatCard(_playerAtSeat(players,seat),seat),
           const SizedBox(height:14),
           Builder(builder: (context) {
-            final me = players.where((p) => p['user_id']?.toString() == _uid).firstOrNull;
+            final mine = players.where((p) => p['user_id']?.toString() == _uid).toList();
+            final me = mine.isEmpty ? null : mine.first;
             final ready = me?['is_ready'] == true;
             return OutlinedButton.icon(
               onPressed: _busy || me == null ? null : () => _setReady(!ready),
@@ -382,4 +383,4 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       },
     );
   }
-}}
+}
