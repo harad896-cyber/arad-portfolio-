@@ -91,6 +91,15 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     finally { if (mounted) setState(() => _busy = false); }
   }
 
+  Future<void> _quickMatch() async {
+    await _run(() async {
+      final row = await _db.rpc('quick_match_ludo_room', params: {
+        'p_game_mode': _mode,
+      }).timeout(const Duration(seconds: 12));
+      if (mounted) setState(() => _room = Map<String, dynamic>.from(row as Map));
+    });
+  }
+
   Future<void> _joinWithToken() async {
     final token = widget.initialInviteToken;
     if (token == null || token.isEmpty) return;
@@ -261,6 +270,12 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       SwitchListTile(value:_fillBots,onChanged:(v)=>setState(()=>_fillBots=v),title:const Text('پر کردن جای خالی با ربات'),subtitle:const Text('پس از شروع بازی؛ فعلاً فقط تنظیم لابی است.')),
       const SizedBox(height: 8),
       FilledButton.icon(onPressed:_busy?null:_createRoom,icon:_busy?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.add_circle_outline),label:const Text('ساخت اتاق و دعوت دوستان')),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        onPressed: _busy ? null : _quickMatch,
+        icon: const Icon(Icons.bolt_rounded),
+        label: const Text('بازی سریع با بازیکنان آنلاین'),
+      ),
       const Divider(height:32),
       if (widget.initialInviteToken != null) ...[
         FilledButton.icon(onPressed:_busy?null:_joinWithToken,icon:const Icon(Icons.login_rounded),label:const Text('پیوستن به اتاق دعوت‌شده')),
