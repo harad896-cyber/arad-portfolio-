@@ -81,3 +81,14 @@ jobs:
         run: flutter test test/ludo_character_editor_test.dart test/ludo_customization_test.dart
       - name: Run Ludo XP and level progression tests
         run: flutter test test/ludo_xp_service_test.dart
+      - name: Generate Android platform scaffolding
+        run: flutter create --platforms=android --org com.gapresan --project-name arad_messenger .
+      - name: Build Android debug APK
+        run: flutter build apk --debug --build-number=${{ github.run_number }}
+      - name: Upload Android test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
