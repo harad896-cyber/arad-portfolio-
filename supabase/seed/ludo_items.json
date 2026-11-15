@@ -37,7 +37,7 @@
       "rarity": "rare",
       "emoji": "🤖",
       "baseModel": "characters/robot/base.riv",
-      "unlockedBy": "level_or_reward:robot_01",
+      "unlockedBy": "level:5",
       "states": {
         "normal": "characters/robot/idle.riv",
         "happy": "characters/robot/happy.riv",
@@ -53,7 +53,7 @@
       "rarity": "epic",
       "emoji": "🐯",
       "baseModel": "characters/tiger/base.riv",
-      "unlockedBy": "level_or_reward:tiger_01",
+      "unlockedBy": "achievement:captures_25",
       "states": {
         "normal": "characters/tiger/idle.riv",
         "happy": "characters/tiger/happy.riv",
@@ -69,7 +69,7 @@
       "rarity": "legendary",
       "emoji": "🧑‍🚀",
       "baseModel": "characters/astronaut/base.riv",
-      "unlockedBy": "level_or_reward:astronaut_01",
+      "unlockedBy": "level:50",
       "states": {
         "normal": "characters/astronaut/idle.riv",
         "happy": "characters/astronaut/happy.riv",
@@ -85,7 +85,7 @@
       "rarity": "common",
       "emoji": "🐱",
       "baseModel": "characters/cat/base.riv",
-      "unlockedBy": "level_or_reward:cat_01",
+      "unlockedBy": "friends:10",
       "states": {
         "normal": "characters/cat/idle.riv",
         "happy": "characters/cat/happy.riv",
@@ -101,7 +101,7 @@
       "rarity": "legendary",
       "emoji": "🐉",
       "baseModel": "characters/dragon/base.riv",
-      "unlockedBy": "level_or_reward:dragon_01",
+      "unlockedBy": "level:75",
       "states": {
         "normal": "characters/dragon/idle.riv",
         "happy": "characters/dragon/happy.riv",
@@ -117,7 +117,7 @@
       "rarity": "rare",
       "emoji": "🐼",
       "baseModel": "characters/panda/base.riv",
-      "unlockedBy": "level_or_reward:panda_01",
+      "unlockedBy": "games:25",
       "states": {
         "normal": "characters/panda/idle.riv",
         "happy": "characters/panda/happy.riv",
@@ -133,7 +133,7 @@
       "rarity": "epic",
       "emoji": "🦉",
       "baseModel": "characters/owl/base.riv",
-      "unlockedBy": "level_or_reward:owl_01",
+      "unlockedBy": "achievement:wins_100",
       "states": {
         "normal": "characters/owl/idle.riv",
         "happy": "characters/owl/happy.riv",
@@ -257,5 +257,38 @@
     "botMatchMultiplier": 0.25,
     "abandonedMatchXp": 0,
     "clientMayGrantXp": false
+  },
+  "titles": [
+    {
+      "id": "title_rookie",
+      "name": "تازه‌کار",
+      "unlockedBy": "starter"
+    },
+    {
+      "id": "title_hunter",
+      "name": "شکارچی",
+      "unlockedBy": "achievement:captures_25"
+    },
+    {
+      "id": "title_master",
+      "name": "استاد منچ",
+      "unlockedBy": "level:20"
+    },
+    {
+      "id": "title_queen_six",
+      "name": "ملکه ۶",
+      "unlockedBy": "achievement:sixes_100"
+    }
+  ],
+  "levelRewards": {
+    "everyLevel": {
+      "kind": "level",
+      "coins": 25
+    },
+    "everyTenthLevel": {
+      "kind": "milestone",
+      "coins": 250,
+      "titlePattern": "title_level_{level}"
+    }
   }
 }
