@@ -29,7 +29,7 @@ void main() {
       expect(LudoXpService.calculateBaseXp(
         placement: 1, piecesHome: 0, captures: 0,
         botMatch: true, friendMatch: true,
-      ), 60);
+      ), 50);
     });
 
     test('abandoned or incomplete matches award no XP', () {
