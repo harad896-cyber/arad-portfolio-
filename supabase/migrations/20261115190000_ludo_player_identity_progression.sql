@@ -45,9 +45,16 @@ on conflict (id) do update set
   preview=excluded.preview, rarity=excluded.rarity, emoji=excluded.emoji,
   color_hex=excluded.color_hex, sort_order=excluded.sort_order, is_active=true;
 
-create table if not exists public.ludo_player_profiles (
+create table if not exists public.ludo_players (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name_override text check (display_name_override is null or char_length(display_name_override) between 1 and 32),
+  created_at timestamptz not null default now(),
+  last_seen timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.ludo_player_profiles (
+  user_id uuid primary key references public.ludo_players(user_id) on delete cascade,
   title_id text not null default 'title_rookie',
   bio text not null default '' check (char_length(bio) <= 160),
   country_code text check (country_code is null or country_code ~ '^[A-Z]{2}$'),
@@ -62,8 +69,6 @@ create table if not exists public.ludo_player_profiles (
   daily_xp_date date not null default (timezone('utc', now())::date),
   privacy_visibility text not null default 'everyone'
     check (privacy_visibility in ('everyone','contacts','nobody')),
-  created_at timestamptz not null default now(),
-  last_seen timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
@@ -136,6 +141,31 @@ create table if not exists public.ludo_player_achievements (
   primary key(user_id, achievement_id)
 );
 
+
+-- Identity is joined to the messenger account; avatar URLs are never copied into Ludo.
+create or replace view public.ludo_player_identity
+with (security_invoker = true)
+as
+select
+  player.user_id,
+  coalesce(player.display_name_override, nullif(messenger.display_name, ''),
+    nullif(messenger.username, ''), 'بازیکن') as display_name,
+  messenger.avatar_url,
+  player.created_at,
+  player.last_seen,
+  profile.level,
+  profile.total_xp,
+  profile.xp_into_level,
+  profile.title_id,
+  profile.bio,
+  profile.country_code,
+  profile.privacy_visibility
+from public.ludo_players player
+left join public.profiles messenger on messenger.id = player.user_id
+left join public.ludo_player_profiles profile on profile.user_id = player.user_id;
+revoke all on public.ludo_player_identity from anon, authenticated;
+grant select on public.ludo_player_identity to authenticated;
+
 -- Only trusted backend workers may write match facts or progression ledgers.
 create table if not exists public.ludo_match_results (
   match_id uuid not null,
@@ -180,6 +210,7 @@ create table if not exists public.ludo_player_level_rewards (
 );
 
 -- Publicly readable only to authenticated players when active; private player data stays owner-scoped.
+alter table public.ludo_players enable row level security;
 alter table public.ludo_player_profiles enable row level security;
 alter table public.ludo_player_loadouts enable row level security;
 alter table public.ludo_inventory enable row level security;
@@ -190,15 +221,24 @@ alter table public.ludo_match_results enable row level security;
 alter table public.ludo_xp_ledger enable row level security;
 alter table public.ludo_player_level_rewards enable row level security;
 
-revoke all on public.ludo_player_profiles, public.ludo_player_loadouts,
+revoke all on public.ludo_players, public.ludo_player_profiles, public.ludo_player_loadouts,
   public.ludo_inventory, public.ludo_player_stats, public.ludo_achievement_catalog,
   public.ludo_player_achievements, public.ludo_match_results, public.ludo_xp_ledger,
   public.ludo_player_level_rewards from anon, authenticated;
 
-grant select on public.ludo_player_profiles, public.ludo_player_loadouts,
+grant select on public.ludo_players, public.ludo_player_profiles, public.ludo_player_loadouts,
   public.ludo_inventory, public.ludo_player_stats, public.ludo_player_achievements
   to authenticated;
 grant select on public.ludo_achievement_catalog to authenticated;
+
+drop policy if exists ludo_player_read_own on public.ludo_players;
+create policy ludo_player_read_own on public.ludo_players
+  for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists ludo_player_update_own on public.ludo_players;
+create policy ludo_player_update_own on public.ludo_players
+  for update to authenticated using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+grant update(display_name_override, updated_at) on public.ludo_players to authenticated;
 
 drop policy if exists ludo_player_profile_read_own on public.ludo_player_profiles;
 create policy ludo_player_profile_read_own on public.ludo_player_profiles
@@ -208,7 +248,7 @@ create policy ludo_player_profile_update_own on public.ludo_player_profiles
   for update to authenticated using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 -- Explicit column grants prevent clients from changing XP, level, currency or daily caps.
-grant update(display_name_override, bio, country_code, privacy_visibility, updated_at)
+grant update(bio, country_code, privacy_visibility, updated_at)
   on public.ludo_player_profiles to authenticated;
 
 drop policy if exists ludo_loadout_read_own on public.ludo_player_loadouts;
@@ -227,7 +267,7 @@ drop policy if exists ludo_player_achievements_read_own on public.ludo_player_ac
 create policy ludo_player_achievements_read_own on public.ludo_player_achievements
   for select to authenticated using ((select auth.uid()) = user_id);
 
-grant all on public.ludo_player_profiles, public.ludo_player_loadouts,
+grant all on public.ludo_players, public.ludo_player_profiles, public.ludo_player_loadouts,
   public.ludo_inventory, public.ludo_player_stats, public.ludo_achievement_catalog,
   public.ludo_player_achievements, public.ludo_match_results, public.ludo_xp_ledger,
   public.ludo_player_level_rewards to service_role;
@@ -279,6 +319,8 @@ begin
     return jsonb_build_object('awardedXp', 0, 'reason', 'match_not_completed');
   end if;
 
+  insert into public.ludo_players(user_id)
+    values (p_user_id) on conflict (user_id) do nothing;
   insert into public.ludo_player_profiles(user_id)
     values (p_user_id) on conflict (user_id) do nothing;
   insert into public.ludo_inventory(user_id,item_id,source)
@@ -341,8 +383,9 @@ begin
         total_xp = v_total,
         daily_xp = v_daily + v_award,
         daily_xp_date = v_today,
-        last_seen = now(),
         updated_at = now()
+    where user_id = p_user_id;
+  update public.ludo_players set last_seen = now(), updated_at = now()
     where user_id = p_user_id;
 
   v_payload := jsonb_build_object(
