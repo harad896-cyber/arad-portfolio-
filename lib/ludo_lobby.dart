@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Social lobby entry point embedded in GapResan chat.
 class LudoLobbyPage extends StatefulWidget {
@@ -208,12 +209,31 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     });
   }
 
+  String _inviteLink(Map<String, dynamic> room) {
+    return Uri(
+      scheme: 'arad',
+      host: 'ludo',
+      queryParameters: {
+        'token': room['invite_token'].toString(),
+        'code': room['room_code'].toString(),
+      },
+    ).toString();
+  }
+
   Future<void> _copyInvite() async {
     final room = _room;
     if (room == null) return;
-    final code = room['room_code'].toString();
-    await Clipboard.setData(ClipboardData(text: 'دعوت منچ گپ‌رسان | کد اتاق: $code'));
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('کد دعوت کپی شد.')));
+    await Clipboard.setData(ClipboardData(text: _inviteLink(room)));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لینک دعوت منچ کپی شد.')));
+  }
+
+  Future<void> _shareInvite() async {
+    final room = _room;
+    if (room == null) return;
+    await Share.share(
+      'بیا در منچ گپ‌رسان بازی کنیم!\nکد اتاق: ${room['room_code']}\n${_inviteLink(room)}',
+      subject: 'دعوت به بازی منچ گپ‌رسان',
+    );
   }
 
   Future<void> _setReady(bool ready) async {
@@ -327,7 +347,8 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
               Text('مهلت دعوت: ۱۰ دقیقه از زمان ساخت اتاق'),
               const SizedBox(height:10),
               Wrap(spacing:8,children:[
-                OutlinedButton.icon(onPressed:_copyInvite,icon:const Icon(Icons.copy_rounded),label:const Text('کپی کد')),
+                OutlinedButton.icon(onPressed:_copyInvite,icon:const Icon(Icons.link_rounded),label:const Text('کپی لینک')),
+                OutlinedButton.icon(onPressed:_shareInvite,icon:const Icon(Icons.share_rounded),label:const Text('اشتراک‌گذاری')),
                 FilledButton.icon(onPressed:_busy?null:_inviteContacts,icon:const Icon(Icons.person_add_alt_1_rounded),label:const Text('دعوت مخاطبان')),
               ]),
             ]),
