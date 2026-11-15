@@ -196,7 +196,7 @@ create table if not exists public.ludo_xp_ledger (
   created_at timestamptz not null default now(),
   unique(match_id, user_id),
   foreign key(match_id, user_id)
-    references public.ludo_match_results(match_id, user_id) on delete restrict
+    references public.ludo_match_results(match_id, user_id) on delete cascade
 );
 create index if not exists ludo_xp_ledger_user_date_idx
   on public.ludo_xp_ledger(user_id, daily_date desc);
@@ -420,7 +420,10 @@ set search_path = ''
 as $$
 declare v_inserted integer;
 begin
-  if p_source not in ('game','purchase','gift','reward','starter') then
+  if p_user_id is null or p_item_id is null then
+    raise exception 'invalid_inventory_grant_target' using errcode = '22023';
+  end if;
+  if p_source is null or p_source not in ('game','purchase','gift','reward','starter') then
     raise exception 'invalid_cosmetic_source' using errcode = '22023';
   end if;
   if not exists (
