@@ -1,8 +1,8 @@
 -- Player identity and server-authoritative Ludo progression.
 -- Apply only after reviewing this migration in the target Supabase project.
 
-create schema if not exists private;
-revoke all on schema private from public, anon, authenticated;
+create schema if not exists ludo_private;
+revoke all on schema ludo_private from public, anon, authenticated;
 
 -- Extend the existing catalog for the complete cosmetic loadout.
 alter table public.ludo_cosmetic_catalog
@@ -230,9 +230,10 @@ grant all on public.ludo_player_profiles, public.ludo_player_loadouts,
   public.ludo_inventory, public.ludo_player_stats, public.ludo_achievement_catalog,
   public.ludo_player_achievements, public.ludo_match_results, public.ludo_xp_ledger,
   public.ludo_player_level_rewards to service_role;
+grant usage, select on sequence public.ludo_xp_ledger_id_seq to service_role;
 
 -- XP thresholds: ceil(100 * level^1.4). Level 100 is the cap.
-create or replace function private.ludo_xp_required(p_level integer)
+create or replace function ludo_private.ludo_xp_required(p_level integer)
 returns integer
 language sql immutable strict
 set search_path = ''
@@ -241,11 +242,11 @@ as $$
     when p_level between 1 and 99 then ceil(100 * power(p_level::numeric, 1.4))::integer
     else null end;
 $$;
-revoke all on function private.ludo_xp_required(integer) from public, anon, authenticated;
+revoke all on function ludo_private.ludo_xp_required(integer) from public, anon, authenticated;
 
 -- This is an internal backend-only grant. The caller supplies only match/user IDs;
 -- all scoring facts are loaded from the server-written ludo_match_results row.
-create or replace function private.grant_ludo_match_xp(p_match_id uuid, p_user_id uuid)
+create or replace function ludo_private.grant_ludo_match_xp(p_match_id uuid, p_user_id uuid)
 returns jsonb
 language plpgsql
 security definer
@@ -298,12 +299,12 @@ begin
   v_award := least(v_base, greatest(0, 500 - v_daily));
   v_level := v_profile.level;
   v_before := v_level;
-  v_xp := case when v_profile.daily_xp_date = v_today then v_profile.xp_into_level else 0 end;
+  v_xp := v_profile.xp_into_level; -- daily cap resets; lifetime level progress never does.
   v_total := v_profile.total_xp + v_award;
   v_xp := v_xp + v_award;
 
   while v_level < 100 loop
-    if v_xp < private.ludo_xp_required(v_level) then exit; end if;
+    if v_xp < ludo_private.ludo_xp_required(v_level) then exit; end if;
     v_xp := v_xp - private.ludo_xp_required(v_level);
     v_level := v_level + 1;
     v_unlocked := array_append(v_unlocked, v_level);
@@ -350,6 +351,6 @@ begin
 end;
 $$;
 
-revoke all on function private.grant_ludo_match_xp(uuid, uuid) from public, anon, authenticated;
-grant usage on schema private to service_role;
+revoke all on function ludo_private.grant_ludo_match_xp(uuid, uuid) from public, anon, authenticated;
+grant usage on schema ludo_private to service_role;
 grant execute on function private.grant_ludo_match_xp(uuid, uuid) to service_role;
