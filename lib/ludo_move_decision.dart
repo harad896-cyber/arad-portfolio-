@@ -213,15 +213,15 @@ LudoAutoMoveDecision decideLudoMove(
   final remaining = pieces[player].where((p) => p != ludoPieceHome).length;
   final forceAutomatic = fastGame || remaining == 1;
 
-  if (groups.length == 1) {
+  if (groups.length == 1 && moves.length > 1) {
     return LudoAutoMoveDecision(
       kind: LudoAutoMoveKind.automatic,
       delay: const Duration(milliseconds: 400),
       move: groups.values.first.first,
-      reason: groups.values.first.length > 1 ? 'equivalent_moves' : 'single_legal_move',
+      reason: 'equivalent_moves',
     );
   }
-  if (forceAutomatic || autoMoveSingle && moves.length == 1) {
+  if (forceAutomatic || (autoMoveSingle && moves.length == 1)) {
     return LudoAutoMoveDecision(
       kind: LudoAutoMoveKind.automatic,
       delay: const Duration(milliseconds: 400),
