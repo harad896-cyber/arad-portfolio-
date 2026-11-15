@@ -26,7 +26,6 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   String? get _uid => _db.auth.currentUser?.id;
 
   @override
-  @override
   void initState() {
     super.initState();
     _code.text = widget.initialRoomCode ?? '';
@@ -50,25 +49,39 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       }).timeout(const Duration(seconds: 12));
       final created = Map<String, dynamic>.from(row as Map);
       if (widget.conversationId != null) {
+        // Group conversations may contain more than the RPC's 20-recipient
+        // safety limit. Invite in bounded batches so one large group does not
+        // silently prevent the chat invite card from being posted.
         try {
           final members = await _db.from('conversation_members').select('user_id')
             .eq('conversation_id', widget.conversationId!).neq('user_id', _uid ?? '');
-          final targets = List<Map<String,dynamic>>.from(members)
+          final targets = List<Map<String, dynamic>>.from(members)
             .map((m) => m['user_id'].toString()).toList();
-          if (targets.isNotEmpty) {
+          for (var start = 0; start < targets.length; start += 20) {
+            final end = (start + 20 < targets.length) ? start + 20 : targets.length;
             await _db.rpc('invite_ludo_players', params: {
-              'p_room_id': created['id'], 'p_user_ids': targets,
-            });
+              'p_room_id': created['id'],
+              'p_user_ids': targets.sublist(start, end),
+            }).timeout(const Duration(seconds: 12));
           }
+        } catch (inviteError) {
+          debugPrint('Some Ludo group invitations could not be registered: $inviteError');
+          if (mounted) {
+            setState(() => _error = 'اتاق ساخته شد، اما ثبت همه دعوت‌های گروه کامل نشد.');
+          }
+        }
+        // Posting the card is independent from recipient registration. This
+        // keeps the invitation visible even if one invite batch fails.
+        try {
           final card = '[[GAPRESAN_LUDO_INVITE]]${created['invite_token']}|${created['room_code']}';
           await _db.from('messages').insert({
             'conversation_id': widget.conversationId,
             'sender_id': _uid,
             'body': card,
             'message_type': 'text',
-          });
-        } catch (inviteError) {
-          debugPrint('Ludo chat invite card could not be posted: $inviteError');
+          }).timeout(const Duration(seconds: 12));
+        } catch (cardError) {
+          debugPrint('Ludo chat invite card could not be posted: $cardError');
         }
       }
       if (!mounted) return;
