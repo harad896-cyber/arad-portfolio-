@@ -269,7 +269,12 @@ List<int> getLegalMoves(
 /// Applies a die value supplied by the trusted server.
 ///
 /// A third consecutive six burns the roll and passes the turn without moving.
-LudoState applyLudoRoll(LudoState state, int dice) {
+LudoState applyLudoRoll(
+  LudoState state,
+  int dice, {
+  bool allowOwnStack = false,
+  bool allowPassBlockades = false,
+}) {
   if (!isValidLudoState(state) ||
       state['phase'] != 'awaiting_roll' ||
       dice < 1 ||
@@ -296,7 +301,11 @@ LudoState applyLudoRoll(LudoState state, int dice) {
   }
 
   next['sixStreak'] = streak;
-  final legal = _calculateLegalMoves(next, dice);
+  final legal = _calculateLegalMoves(
+    next, dice,
+    allowOwnStack: allowOwnStack,
+    allowPassBlockades: allowPassBlockades,
+  );
   if (legal.isEmpty) {
     // A six still grants another roll even when no piece can move.
     // Non-six no-move results pass to the next active player.
