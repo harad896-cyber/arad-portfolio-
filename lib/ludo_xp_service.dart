@@ -43,12 +43,15 @@ class LudoXpService {
     required int captures,
     bool friendMatch = false,
     bool botMatch = false,
+    bool completed = true,
+    bool abandoned = false,
   }) {
     if (placement < 1 || placement > 4 ||
         piecesHome < 0 || piecesHome > 4 ||
         captures < 0 || captures > 16) {
       throw ArgumentError('Invalid Ludo match result.');
     }
+    if (!completed || abandoned) return 0;
     final placementXp = switch (placement) {
       1 => 150,
       2 => 80,
@@ -56,8 +59,12 @@ class LudoXpService {
       _ => 0,
     };
     var xp = 50 + piecesHome * 10 + captures * 15 + placementXp;
-    if (botMatch) xp = (xp * 0.25).floor();
-    if (friendMatch) xp = (xp * 1.20).floor();
+    // Bot games award reduced XP; the friend bonus is reserved for human matches.
+    if (botMatch) {
+      xp = (xp * 0.25).floor();
+    } else if (friendMatch) {
+      xp = (xp * 1.20).floor();
+    }
     return xp;
   }
 
@@ -72,9 +79,8 @@ class LudoXpService {
         xpIntoLevel < 0 || totalXp < 0 || dailyXp < 0 || baseXp < 0) {
       throw ArgumentError('Invalid progression state.');
     }
-    final awarded = baseXp < dailyCap - dailyXp
-        ? baseXp
-        : (dailyCap - dailyXp).clamp(0, dailyCap);
+    final remainingDailyXp = (dailyCap - dailyXp).clamp(0, dailyCap);
+    final awarded = baseXp.clamp(0, remainingDailyXp);
     var level = currentLevel;
     var xp = xpIntoLevel + awarded;
     final unlocked = <int>[];
