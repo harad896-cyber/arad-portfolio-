@@ -17,11 +17,20 @@ class LudoCosmeticItem {
   });
 
   factory LudoCosmeticItem.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    if (rawId is! String || rawId.trim().isEmpty) {
+      throw const FormatException('Cosmetic item requires a non-empty string id.');
+    }
+    const categories = {'character', 'hat', 'glasses', 'aura', 'face', 'board', 'dice', 'trail', 'effect', 'profile_frame'};
+    final category = (json['category'] ?? 'character').toString();
+    if (!categories.contains(category)) {
+      throw FormatException('Unsupported cosmetic category: $category');
+    }
     final rarityName = (json['rarity'] ?? 'common').toString();
     return LudoCosmeticItem(
-      id: json['id'].toString(),
-      name: (json['name'] ?? json['id']).toString(),
-      category: (json['category'] ?? 'character').toString(),
+      id: rawId.trim(),
+      name: (json['name'] ?? rawId).toString(),
+      category: category,
       assetKey: (json['asset_key'] ?? '').toString(),
       preview: (json['preview'] ?? '').toString(),
       rarity: LudoItemRarity.values.firstWhere(
@@ -170,6 +179,7 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
     setState(() {
       switch (item.category) {
         case 'character': _draft = _draft.copyWith(characterId:item.id, bodyColor:item.color ?? _draft.bodyColor); break;
+        case 'face': _draft = _draft.copyWith(faceId:item.id); break;
         case 'hat': _draft = _draft.copyWith(hatId:item.id); break;
         case 'glasses': _draft = _draft.copyWith(glassesId:item.id); break;
         case 'aura': _draft = _draft.copyWith(auraId:item.id); break;
@@ -179,6 +189,7 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
 
   bool _selected(LudoCosmeticItem item) => switch(item.category) {
     'character' => _draft.characterId == item.id,
+    'face' => _draft.faceId == item.id,
     'hat' => _draft.hatId == item.id,
     'glasses' => _draft.glassesId == item.id,
     'aura' => _draft.auraId == item.id,
@@ -237,6 +248,9 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
                     style:const TextStyle(fontSize:43))),
                   if (_draft.glassesId != null) const Positioned(top:99,child:Text('🕶️',style:TextStyle(fontSize:36))),
                   if (_draft.auraId != null) const Positioned(bottom:18,child:Text('✨',style:TextStyle(fontSize:26))),
+                  Positioned(bottom:0,right:0,child:Container(padding:const EdgeInsets.all(5),decoration:BoxDecoration(
+                    color:const Color(0xFF101722),shape:BoxShape.circle,border:Border.all(color:Colors.white24)),
+                    child:Text(switch(_draft.faceId){'cool'=>'😎','wink'=>'😉','surprised'=>'😮','sleepy'=>'😴',_=>'😊'},style:const TextStyle(fontSize:22)))),
                 ]),
               )),
             ),
@@ -245,11 +259,21 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
           const Center(child:Text('برای چرخاندن کاراکتر، انگشت را افقی بکش',style:TextStyle(color:Colors.white60,fontSize:12))),
           const SizedBox(height:18),
           Wrap(spacing:8,runSpacing:8,children:[
-            for(final entry in const [('character','شخصیت'),('hat','کلاه'),('glasses','عینک'),('aura','افکت')])
+            for(final entry in const [('character','شخصیت'),('face','حالت چهره'),('hat','کلاه'),('glasses','عینک'),('aura','افکت')])
               ChoiceChip(label:Text(entry.$2),selected:_category==entry.$1,
                 onSelected:(_)=>setState(()=>_category=entry.$1)),
           ]),
           const SizedBox(height:14),
+          if(_category=='face') ...[
+            const Text('حالت چهره',style:TextStyle(color:Colors.white,fontWeight:FontWeight.bold)),
+            const SizedBox(height:8),
+            Wrap(spacing:8,runSpacing:8,children:[
+              for(final face in const [('happy','😊','شاد'),('cool','😎','باحال'),('wink','😉','چشمک'),('surprised','😮','متعجب'),('sleepy','😴','خواب‌آلود')])
+                ChoiceChip(label:Text('${face.$2} ${face.$3}'),selected:_draft.faceId==face.$1,
+                  onSelected:(_)=>setState(()=>_draft=_draft.copyWith(faceId:face.$1))),
+            ]),
+            const SizedBox(height:14),
+          ],
           if(_category=='character') ...[
             const Text('رنگ کاراکتر',style:TextStyle(color:Colors.white,fontWeight:FontWeight.bold)),
             const SizedBox(height:8),
@@ -277,6 +301,11 @@ class _LudoCharacterEditorPageState extends State<LudoCharacterEditorPage> {
                     Text(_rarity(item.rarity),style:TextStyle(color:_rarityColor(item.rarity),fontSize:9)),
                   ]))),
           ]),
+          if(_category=='hat' && _draft.hatId!=null || _category=='glasses' && _draft.glassesId!=null || _category=='aura' && _draft.auraId!=null)
+            Align(alignment:AlignmentDirectional.centerStart,child:TextButton.icon(
+              onPressed:()=>setState(()=>_draft=_draft.copyWith(
+                clearHat:_category=='hat',clearGlasses:_category=='glasses',clearAura:_category=='aura')),
+              icon:const Icon(Icons.remove_circle_outline),label:const Text('برداشتن آیتم انتخاب‌شده'))),
           if(!_serverCatalog) const Padding(padding:EdgeInsets.only(top:12),
             child:Text('فهرست نمایشی داخلی؛ پس از فعال‌شدن کاتالوگ سرور، آیتم‌ها از راه دور به‌روزرسانی می‌شوند.',
               style:TextStyle(color:Colors.white38,fontSize:10))),
