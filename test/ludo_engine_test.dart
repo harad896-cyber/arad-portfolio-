@@ -212,7 +212,7 @@ void main() {
     test('exact roll is required to enter the center', () {
       var state = state2();
       state['pieces'] = [
-        [56, -1, -1, -1],
+        [56, 57, 57, 57],
         [-1, -1, -1, -1],
       ];
       final tooFar = applyLudoRoll(state, 2);
@@ -221,7 +221,7 @@ void main() {
 
       final exactState = state2()
         ..['pieces'] = [
-          [56, -1, -1, -1],
+          [56, 57, 57, 57],
           [-1, -1, -1, -1],
         ];
       expect(isValidLudoState(exactState), isTrue);
