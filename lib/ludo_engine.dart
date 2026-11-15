@@ -159,21 +159,33 @@ bool _isFinished(LudoState state) {
   return (state['winners'] as List).length >= count - 1;
 }
 
-int _occupiedOnSquare(List<List<int>> pieces, int square) {
+int _countOwnerOnSquare(
+  List<List<int>> pieces,
+  int owner,
+  int square, {
+  int? exceptPiece,
+}) {
   var count = 0;
-  for (var owner = 0; owner < pieces.length; owner++) {
-    for (final progress in pieces[owner]) {
-      if (ludoTrackIndex(owner, progress, playerCount: pieces.length) == square) {
-        count++;
-      }
+  for (var index = 0; index < pieces[owner].length; index++) {
+    if (index == exceptPiece) continue;
+    if (ludoTrackIndex(owner, pieces[owner][index],
+            playerCount: pieces.length) ==
+        square) {
+      count++;
     }
   }
   return count;
 }
 
-/// Two or more pieces on a shared square form a blockade.
-/// A single piece may be captured; a blockade cannot be crossed or landed on.
-bool _pathBlocked(List<List<int>> pieces, int player, int piece, int dice) {
+/// A pair of same-colour pieces forms a blockade. A blockade cannot be landed
+/// on; crossing it is controlled by the server-owned rule configuration.
+bool _pathBlocked(
+  List<List<int>> pieces,
+  int player,
+  int piece,
+  int dice, {
+  required bool allowPassBlockades,
+}) {
   final current = pieces[player][piece];
   final firstStep = current == -1 ? 0 : current + 1;
   final lastStep = current == -1 ? 0 : current + dice;
@@ -181,12 +193,26 @@ bool _pathBlocked(List<List<int>> pieces, int player, int piece, int dice) {
   for (var progress = firstStep; progress <= lastStep; progress++) {
     if (progress > ludoPieceHome) break;
     final square = ludoTrackIndex(player, progress, playerCount: pieces.length);
-    if (square != null && _occupiedOnSquare(pieces, square) >= 2) return true;
+    if (square == null) continue;
+    for (var owner = 0; owner < pieces.length; owner++) {
+      final count = _countOwnerOnSquare(
+        pieces, owner, square,
+        exceptPiece: owner == player ? piece : null,
+      );
+      if (count >= 2 && (progress == lastStep || !allowPassBlockades)) {
+        return true;
+      }
+    }
   }
   return false;
 }
 
-List<int> _calculateLegalMoves(LudoState state, int dice) {
+List<int> _calculateLegalMoves(
+  LudoState state,
+  int dice, {
+  required bool allowOwnStack,
+  required bool allowPassBlockades,
+}) {
   final player = state['turn'] as int;
   final pieces = _copyPieces(state['pieces']);
   final legal = <int>[];
@@ -196,21 +222,48 @@ List<int> _calculateLegalMoves(LudoState state, int dice) {
     if (current == ludoPieceHome) continue;
     if (current == -1 && dice != 6) continue;
     if (current >= 0 && current + dice > ludoPieceHome) continue;
-    if (_pathBlocked(pieces, player, index, dice)) continue;
+    if (_pathBlocked(
+      pieces, player, index, dice,
+      allowPassBlockades: allowPassBlockades,
+    )) {
+      continue;
+    }
+    final destination = current == -1 ? 0 : current + dice;
+    final square = ludoTrackIndex(player, destination,
+        playerCount: pieces.length);
+    if (square != null &&
+        !allowOwnStack &&
+        _countOwnerOnSquare(
+              pieces, player, square, exceptPiece: index,
+            ) >
+            0) {
+      continue;
+    }
     legal.add(index);
   }
   return legal;
 }
 
 /// Returns legal piece indexes for the active player; never trusts UI selection.
-List<int> getLegalMoves(LudoState state, int dice) {
+/// Rule flags must come from trusted server-side game configuration.
+List<int> getLegalMoves(
+  LudoState state,
+  int dice, {
+  bool allowOwnStack = false,
+  bool allowPassBlockades = false,
+}) {
   if (!isValidLudoState(state) ||
       state['phase'] != 'awaiting_move' ||
       dice < 1 ||
-      dice > 6) {
+      dice > 6 ||
+      (state['dice'] as Map?)?['value'] != dice) {
     return const [];
   }
-  return _calculateLegalMoves(state, dice);
+  return _calculateLegalMoves(
+    state, dice,
+    allowOwnStack: allowOwnStack,
+    allowPassBlockades: allowPassBlockades,
+  );
 }
 
 /// Applies a die value supplied by the trusted server.
@@ -272,7 +325,12 @@ LudoState applyLudoRoll(LudoState state, int dice) {
 }
 
 /// Moves one legal piece. Illegal/stale client requests throw without mutation.
-LudoState applyLudoMove(LudoState state, int pieceIndex) {
+LudoState applyLudoMove(
+  LudoState state,
+  int pieceIndex, {
+  bool allowOwnStack = false,
+  bool allowPassBlockades = false,
+}) {
   if (!isValidLudoState(state) ||
       state['phase'] != 'awaiting_move' ||
       pieceIndex < 0 ||
@@ -281,7 +339,11 @@ LudoState applyLudoMove(LudoState state, int pieceIndex) {
   }
 
   final dice = (state['dice'] as Map)['value'] as int;
-  final legal = getLegalMoves(state, dice);
+  final legal = getLegalMoves(
+    state, dice,
+    allowOwnStack: allowOwnStack,
+    allowPassBlockades: allowPassBlockades,
+  );
   if (!legal.contains(pieceIndex)) throw StateError('Illegal Ludo move.');
 
   final next = _copyState(state);
@@ -352,11 +414,20 @@ LudoState applyLudoMove(LudoState state, int pieceIndex) {
 }
 
 /// Server-visible legal moves for the current pending roll.
-List<int> currentLegalMoves(LudoState state) {
+List<int> currentLegalMoves(
+  LudoState state, {
+  bool allowOwnStack = false,
+  bool allowPassBlockades = false,
+}) {
   if (!isValidLudoState(state) ||
       state['phase'] != 'awaiting_move' ||
       state['dice'] is! Map) {
     return const [];
   }
-  return getLegalMoves(state, (state['dice'] as Map)['value'] as int);
+  return getLegalMoves(
+    state,
+    (state['dice'] as Map)['value'] as int,
+    allowOwnStack: allowOwnStack,
+    allowPassBlockades: allowPassBlockades,
+  );
 }
