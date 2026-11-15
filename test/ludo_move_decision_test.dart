@@ -22,6 +22,34 @@ void main() {
   }
 
   group('Detailed legal move analysis', () {
+    test('yard, shared route and final lane are checked for every die value', () {
+      for (var dice = 1; dice <= 6; dice++) {
+        final yard = getLegalMoveAnalysis(
+          pending(red: [-1, -1, -1, -1], dice: dice), dice,
+        );
+        expect(
+          yard.legalMoves.length,
+          dice == 6 ? 4 : 0,
+          reason: 'yard with die $dice',
+        );
+
+        final shared = getLegalMoveAnalysis(
+          pending(red: [10, 57, 57, 57], dice: dice), dice,
+        );
+        expect(shared.legalMoves.map((move) => move.pieceIndex), [0],
+            reason: 'shared route with die $dice');
+
+        final finalLane = getLegalMoveAnalysis(
+          pending(red: [52, 57, 57, 57], dice: dice), dice,
+        );
+        expect(
+          finalLane.legalMoves.map((move) => move.pieceIndex),
+          dice <= 5 ? [0] : isEmpty,
+          reason: 'final lane with die $dice',
+        );
+      }
+    });
+
     test('yard pieces require a six and report a reason for every rejected piece', () {
       final analysis = getLegalMoveAnalysis(
         pending(red: [-1, -1, -1, -1], dice: 3), 3,
