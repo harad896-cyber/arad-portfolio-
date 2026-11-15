@@ -136,13 +136,14 @@ void main() {
 
       state = applyLudoRoll(state, 6);
       expect(state['sixStreak'], 2);
-      state = applyLudoMove(state, 1);
+      expect(getLegalMoves(state, 6), [0]);
+      state = applyLudoMove(state, 0);
       final third = applyLudoRoll(state, 6);
 
       expect(third['turn'], 1);
       expect(third['sixStreak'], 0);
       expect((third['dice'] as Map)['burned'], isTrue);
-      expect((third['pieces'] as List)[0], [0, 0, -1, -1]);
+      expect((third['pieces'] as List)[0], [6, -1, -1, -1]);
     });
 
     test('a non-six resets the six streak even when that move captures', () {
@@ -165,7 +166,7 @@ void main() {
       var state = applyLudoRoll(state2(), 6);
       state = applyLudoMove(state, 0);
       state = applyLudoRoll(state, 6);
-      state = applyLudoMove(state, 1);
+      state = applyLudoMove(state, 0);
       final before = jsonEncode(state['pieces']);
       final burned = applyLudoRoll(state, 6);
       expect(jsonEncode(burned['pieces']), before);
@@ -209,8 +210,11 @@ void main() {
         [31, 31, -1, -1],
       ];
       final rolled = applyLudoRoll(state, 2);
-      expect(rolled['turn'], 1);
+      expect(rolled['turn'], 0);
+      expect(rolled['phase'], 'awaiting_move');
       expect((rolled['dice'] as Map)['reason'], 'no_legal_move');
+      expect(getLegalMoves(rolled, 2), isEmpty);
+      expect(applyLudoNoMoveDecision(rolled)['turn'], 1);
     });
 
     test('exact roll is required to enter the center', () {
@@ -220,8 +224,10 @@ void main() {
         [-1, -1, -1, -1],
       ];
       final tooFar = applyLudoRoll(state, 2);
-      expect(tooFar['turn'], 1);
+      expect(tooFar['turn'], 0);
+      expect(tooFar['phase'], 'awaiting_move');
       expect((tooFar['pieces'] as List)[0][0], 56);
+      expect(applyLudoNoMoveDecision(tooFar)['turn'], 1);
 
       final exactState = state2()
         ..['pieces'] = [
