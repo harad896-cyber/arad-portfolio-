@@ -118,20 +118,24 @@ void main() {
       expect(landsOnBlock.legalMoves, isEmpty);
     });
 
-    test('own stack is configurable, but a two-piece blockade remains closed', () {
-      final stackState = pending(
-        red: [4, 5, -1, -1], dice: 1,
-      );
+    test('own stack is configurable and authoritative move validation agrees', () {
+      final stackState = pending(red: [4, 5, 57, 57], dice: 1);
       final strict = getLegalMoveAnalysis(stackState, 1);
-      expect(strict.legalMoves.every((move) => move.pieceIndex != 0), isTrue);
+      expect(strict.legalMoves.map((move) => move.pieceIndex), [1]);
       expect(strict.rejectedMoves.firstWhere((move) => move.pieceIndex == 0).code,
           LudoMoveRejectCode.ownPieceAtDestination);
+      expect(getLegalMoves(stackState, 1), [1]);
+      expect(() => applyLudoMove(stackState, 0), throwsStateError);
 
       final stacking = getLegalMoveAnalysis(
         stackState, 1,
         rules: const LudoMoveRules(allowOwnStack: true),
       );
-      expect(stacking.legalMoves.any((move) => move.pieceIndex == 0), isTrue);
+      expect(stacking.legalMoves.map((move) => move.pieceIndex), [0, 1]);
+      expect(getLegalMoves(stackState, 1, allowOwnStack: true), [0, 1]);
+      final applied = applyLudoMove(stackState, 0, allowOwnStack: true);
+      expect((applied['pieces'] as List)[0][0], 5);
+      expect((applied['pieces'] as List)[0][1], 5);
     });
 
     test('rejects a stale or mismatched dice value', () {
