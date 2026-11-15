@@ -83,7 +83,7 @@ void main() {
 
     test('overshooting the center is rejected with an exact-finish reason', () {
       final analysis = getLegalMoveAnalysis(
-        pending(red: [56, 57, 57, 57]), 2,
+        pending(red: [56, 57, 57, 57], dice: 2), 2,
       );
       expect(analysis.legalMoves, isEmpty);
       expect(analysis.rejectedMoves.first.code,
@@ -120,7 +120,7 @@ void main() {
 
     test('friendly blockade blocks the path', () {
       final analysis = getLegalMoveAnalysis(
-        pending(red: [2, -1, -1, -1], yellow: [30, 30, -1, -1]),
+        pending(red: [2, -1, -1, -1], yellow: [30, 30, -1, -1], dice: 3),
         3,
       );
       expect(analysis.legalMoves, isEmpty);
@@ -153,8 +153,12 @@ void main() {
           [30, 30, -1, -1],
         ];
       final strict = applyLudoRoll(state, 3);
-      expect(strict['turn'], 1);
-      expect(strict['phase'], 'awaiting_roll');
+      expect(strict['turn'], 0);
+      expect(strict['phase'], 'awaiting_move');
+      expect(getLegalMoves(strict, 3), isEmpty);
+      final passed = applyLudoNoMoveDecision(strict);
+      expect(passed['turn'], 1);
+      expect(passed['phase'], 'awaiting_roll');
 
       final passing = applyLudoRoll(state, 3, allowPassBlockades: true);
       expect(passing['turn'], 0);
