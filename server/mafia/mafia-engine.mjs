@@ -28,8 +28,8 @@ export function buildRoleSet(count, options={}) {
   if(count>=11 && options.veteran!==false) roles.push(Role.VETERAN);
   if(count>=12 && options.mayor!==false) roles.push(Role.MAYOR);
   if(count>=13 && options.interrogator!==false) roles.push(Role.INTERROGATOR);
-  if(count>=14 && options.madman!==false) roles.push(Role.MADMAN);
-  if(count>=15 && options.joker!==false) roles.push(Role.JOKER);
+  if(count>=14 && options.madman===true) roles.push(Role.MADMAN);
+  if(count>=15 && options.joker===true) roles.push(Role.JOKER);
   for(const [role,n] of Object.entries(options.customRoles??{})) {
     assert(Object.values(Role).includes(role) && Number.isInteger(n) && n>=0,'Invalid custom role count.');
     roles.push(...Array(n).fill(role));
@@ -94,7 +94,7 @@ export class MafiaEngine {
     }
     if(type===Action.SHOOT) assert(!this.usedSniperShots.has(actorId),'Sniper shot already used.');
     this.actions.set(actorId,{actorId,type,targetId});
-    this._event('night_action_submitted',now,{actorId,action:type});
+    this._event('night_action_submitted',now,{actorId,action:type,targetId});
   }
   resolveNight(now=new Date()){
     this._require([Phase.NIGHT]);
@@ -118,7 +118,7 @@ export class MafiaEngine {
       if(alerts.has(targetId)) eliminated.add(attackerId);
     }
     for(const p of this.alivePlayers){
-      const a=this.actions.get(p.id);if(!a) continue;
+      const a=this.actions.get(p.id);if(!a || eliminated.has(p.id)) continue;
       if(a.type===Action.INVESTIGATE) privateResults[p.id]=teamOf(this.players.get(a.targetId).role)==='mafia'?'مافیا':'غیرمافیا';
       if(a.type===Action.INTERROGATE) privateResults[p.id]=teamOf(this.players.get(a.targetId).role);
     }
@@ -133,7 +133,7 @@ export class MafiaEngine {
     const target=this.players.get(targetId);
     assert(target?.alive&&voterId!==targetId,'Invalid vote target.');
     if(this.phase===Phase.FINAL_VOTE) assert(this.defenseCandidates.has(targetId),'Final vote target must be a defense candidate.');
-    this.votes.set(voterId,targetId);this._event('vote_submitted',now,{voterId});
+    this.votes.set(voterId,targetId);this._event('vote_submitted',now,{voterId,targetId});
   }
   closeVoting(now=new Date()){
     this._require([Phase.VOTING]);const counts=this._voteCounts();
