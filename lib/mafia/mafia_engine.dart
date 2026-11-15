@@ -224,14 +224,23 @@ class MafiaEngine {
     _require(g, {MafiaPhase.night});
     final privateResults = <String, String>{};
     final attacks = <String, String>{}; // target -> attacker
+    final mafiaKillVotes = <String, List<String>>{};
     for (final p in g.alivePlayers) {
       final action = g.actions[p.id] ?? MafiaAction(actorId: p.id, type: NightActionType.pass);
       if (action.type == NightActionType.protect) g.protectedTonight.add(action.targetId!);
       if (action.type == NightActionType.alert) g.alertedVeterans.add(p.id);
-      if (action.type == NightActionType.kill || action.type == NightActionType.shoot) {
+      if (action.type == NightActionType.kill) {
+        mafiaKillVotes.putIfAbsent(action.targetId!, () => []).add(p.id);
+      } else if (action.type == NightActionType.shoot) {
         attacks[action.targetId!] = p.id;
-        if (action.type == NightActionType.shoot) g.usedSniperShots.add(p.id);
+        g.usedSniperShots.add(p.id);
       }
+    }
+    // Mafia submits one shared ballot: only a unique plurality produces a kill.
+    if (mafiaKillVotes.isNotEmpty) {
+      final highest = mafiaKillVotes.values.map((v) => v.length).reduce(max);
+      final leaders = mafiaKillVotes.entries.where((e) => e.value.length == highest).toList();
+      if (leaders.length == 1) attacks[leaders.single.key] = leaders.single.value.first;
     }
     final eliminated = <String>{};
     for (final entry in attacks.entries) {
@@ -270,6 +279,9 @@ class MafiaEngine {
     _aliveActor(g, voterId);
     if (!g.players.containsKey(targetId) || !g.players[targetId]!.alive || voterId == targetId) {
       throw ArgumentError('Invalid vote target.');
+    }
+    if (g.phase == MafiaPhase.finalVote && !g.defenseCandidates.contains(targetId)) {
+      throw ArgumentError('Final vote target must be a defense candidate.');
     }
     g.votes[voterId] = targetId;
     _event(g, 'vote_submitted', now, {'voterId': voterId});
