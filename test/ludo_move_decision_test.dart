@@ -90,7 +90,7 @@ void main() {
 
     test('a two-piece blockade rejects the move with a useful reason', () {
       final result = getLegalMoveAnalysis(rolled([
-        [3, -1, -1, -1], [18, 18, 57, 57]
+        [3, -1, -1, -1], [30, 30, 57, 57]
       ], 2), 2);
       expect(result.legalMoves, isEmpty);
       expect(result.rejections.single.reasonCode, 'blocked');
