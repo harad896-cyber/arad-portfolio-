@@ -32,6 +32,10 @@ on:
       - '.github/workflows/ludo-engine-validation.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ludo-validation-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
