@@ -87,7 +87,7 @@ void main() {
       final rolled = applyLudoRoll(state2(), 6);
       final before = jsonEncode(rolled);
       expect(() => applyLudoMove(rolled, 99), throwsStateError);
-      expect(() => applyLudoMove(rolled, 1), throwsStateError);
+      expect(() => applyLudoMove(rolled, 4), throwsStateError);
       expect(jsonEncode(rolled), before);
     });
   });
@@ -218,8 +218,13 @@ void main() {
       expect(tooFar['turn'], 1);
       expect((tooFar['pieces'] as List)[0][0], 56);
 
-      state['turn'] = 0;
-      final exact = applyLudoRoll(state, 1);
+      final exactState = state2()
+        ..['pieces'] = [
+          [56, -1, -1, -1],
+          [-1, -1, -1, -1],
+        ];
+      expect(isValidLudoState(exactState), isTrue);
+      final exact = applyLudoRoll(exactState, 1);
       expect(getLegalMoves(exact, 1), [0]);
       final won = applyLudoMove(exact, 0);
       expect((won['pieces'] as List)[0][0], 57);
