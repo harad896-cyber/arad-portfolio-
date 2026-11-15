@@ -660,7 +660,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      final rail = 32.0;
+      // Reserve a true outer rail for all four dice controls. The old
+      // 32px rail was narrower than the 44px controls, so each control
+      // intruded into the playable cells on common phone widths.
+      const rail = 48.0;
       final boardSize = math.max(220.0, math.min(560.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return SingleChildScrollView(
@@ -772,9 +775,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ),
               ),
             const SizedBox(height: 5),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(width: 210, child: _communicationActions()),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: _communicationActions(),
+              ),
             ),
             if (_winner != null)
               Padding(padding: const EdgeInsets.only(top: 7),
@@ -850,7 +856,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       label: const Text('پیام‌ها'),
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white, side: const BorderSide(color: Color(0xFF64C9E8)),
-        minimumSize: const Size.fromHeight(36), padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        minimumSize: const Size.fromHeight(44), padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     )),
     const SizedBox(width: 9),
