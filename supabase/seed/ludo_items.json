@@ -23,11 +23,12 @@
       "baseModel": "characters/fox/base.riv",
       "unlockedBy": "starter",
       "states": {
-        "idle": "characters/fox/idle.riv",
+        "normal": "characters/fox/idle.riv",
         "happy": "characters/fox/happy.riv",
         "captured": "characters/fox/captured.riv",
         "winner": "characters/fox/winner.riv"
-      }
+      },
+      "personality": "باهوش، چابک و بازیگوش"
     },
     {
       "id": "robot_01",
@@ -38,11 +39,12 @@
       "baseModel": "characters/robot/base.riv",
       "unlockedBy": "level_or_reward:robot_01",
       "states": {
-        "idle": "characters/robot/idle.riv",
+        "normal": "characters/robot/idle.riv",
         "happy": "characters/robot/happy.riv",
         "captured": "characters/robot/captured.riv",
         "winner": "characters/robot/winner.riv"
-      }
+      },
+      "personality": "منظم، کنجکاو و آینده‌نگر"
     },
     {
       "id": "tiger_01",
@@ -53,11 +55,12 @@
       "baseModel": "characters/tiger/base.riv",
       "unlockedBy": "level_or_reward:tiger_01",
       "states": {
-        "idle": "characters/tiger/idle.riv",
+        "normal": "characters/tiger/idle.riv",
         "happy": "characters/tiger/happy.riv",
         "captured": "characters/tiger/captured.riv",
         "winner": "characters/tiger/winner.riv"
-      }
+      },
+      "personality": "جسور، پرانرژی و رقابت‌دوست"
     },
     {
       "id": "astronaut_01",
@@ -68,11 +71,12 @@
       "baseModel": "characters/astronaut/base.riv",
       "unlockedBy": "level_or_reward:astronaut_01",
       "states": {
-        "idle": "characters/astronaut/idle.riv",
+        "normal": "characters/astronaut/idle.riv",
         "happy": "characters/astronaut/happy.riv",
         "captured": "characters/astronaut/captured.riv",
         "winner": "characters/astronaut/winner.riv"
-      }
+      },
+      "personality": "ماجراجو، آرام و خیال‌پرداز"
     },
     {
       "id": "cat_01",
@@ -83,11 +87,12 @@
       "baseModel": "characters/cat/base.riv",
       "unlockedBy": "level_or_reward:cat_01",
       "states": {
-        "idle": "characters/cat/idle.riv",
+        "normal": "characters/cat/idle.riv",
         "happy": "characters/cat/happy.riv",
         "captured": "characters/cat/captured.riv",
         "winner": "characters/cat/winner.riv"
-      }
+      },
+      "personality": "مستقل، کنجکاو و شوخ"
     },
     {
       "id": "dragon_01",
@@ -98,11 +103,12 @@
       "baseModel": "characters/dragon/base.riv",
       "unlockedBy": "level_or_reward:dragon_01",
       "states": {
-        "idle": "characters/dragon/idle.riv",
+        "normal": "characters/dragon/idle.riv",
         "happy": "characters/dragon/happy.riv",
         "captured": "characters/dragon/captured.riv",
         "winner": "characters/dragon/winner.riv"
-      }
+      },
+      "personality": "باابهت، مهربان و آتشین"
     },
     {
       "id": "panda_01",
@@ -113,11 +119,12 @@
       "baseModel": "characters/panda/base.riv",
       "unlockedBy": "level_or_reward:panda_01",
       "states": {
-        "idle": "characters/panda/idle.riv",
+        "normal": "characters/panda/idle.riv",
         "happy": "characters/panda/happy.riv",
         "captured": "characters/panda/captured.riv",
         "winner": "characters/panda/winner.riv"
-      }
+      },
+      "personality": "آرام، مهربان و صبور"
     },
     {
       "id": "owl_01",
@@ -128,11 +135,12 @@
       "baseModel": "characters/owl/base.riv",
       "unlockedBy": "level_or_reward:owl_01",
       "states": {
-        "idle": "characters/owl/idle.riv",
+        "normal": "characters/owl/idle.riv",
         "happy": "characters/owl/happy.riv",
         "captured": "characters/owl/captured.riv",
         "winner": "characters/owl/winner.riv"
-      }
+      },
+      "personality": "خردمند، دقیق و شب‌زنده‌دار"
     }
   ],
   "cosmetics": [
