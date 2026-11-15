@@ -60,7 +60,7 @@ void main() {
     });
 
     test('a token must roll the exact distance to finish', () {
-      expect(LudoRules.legalTokens([56, -1, -1, -1], 1), isEmpty);
+      expect(LudoRules.legalTokens([56, -1, -1, -1], 1), [0]);
       expect(LudoRules.legalTokens([56, -1, -1, -1], 2), isEmpty);
       expect(LudoRules.legalTokens([55, -1, -1, -1], 2), [0]);
     });
