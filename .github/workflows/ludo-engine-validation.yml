@@ -13,8 +13,6 @@ on:
       - 'lib/ludo_lobby.dart'
       - 'lib/main.dart'
       - 'supabase/migrations/*ludo*.sql'
-      - 'lib/quick_games/**'
-      - 'test/quick_games/**'
       - 'supabase/seed/ludo_items.json'
       - 'supabase/tests/ludo_progression_contract.sql'
       - 'test/ludo_engine_test.dart'
@@ -24,6 +22,8 @@ on:
       - '.github/workflows/ludo-engine-validation.yml'
   pull_request:
     paths:
+      - 'lib/quick_games/**'
+      - 'test/quick_games/**'
       - 'supabase/seed/ludo_items.json'
       - 'supabase/tests/ludo_progression_contract.sql'
       - 'lib/ludo_engine.dart'
