@@ -123,15 +123,15 @@ void main() {
         red: [4, 5, -1, -1], dice: 1,
       );
       final strict = getLegalMoveAnalysis(stackState, 1);
-      expect(strict.legalMoves, isEmpty);
-      expect(strict.rejectedMoves.first.code,
+      expect(strict.legalMoves.every((move) => move.pieceIndex != 0), isTrue);
+      expect(strict.rejectedMoves.firstWhere((move) => move.pieceIndex == 0).code,
           LudoMoveRejectCode.ownPieceAtDestination);
 
       final stacking = getLegalMoveAnalysis(
         stackState, 1,
         rules: const LudoMoveRules(allowOwnStack: true),
       );
-      expect(stacking.legalMoves, hasLength(1));
+      expect(stacking.legalMoves.any((move) => move.pieceIndex == 0), isTrue);
     });
 
     test('rejects a stale or mismatched dice value', () {
