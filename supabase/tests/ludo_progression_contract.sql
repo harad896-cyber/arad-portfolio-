@@ -108,9 +108,8 @@ begin
   select level,coins into v_milestone_level,v_milestone_coins
     from public.ludo_player_profiles where user_id=v_milestone_user;
   if v_milestone_level <> 10 or v_milestone_coins <> 250 or
-     not ('title_level_10' = any(
-       select unlocked_titles from public.ludo_player_profiles where user_id=v_milestone_user
-     )) then
+     not exists (select 1 from public.ludo_player_profiles
+       where user_id=v_milestone_user and 'title_level_10'=any(unlocked_titles)) then
     raise exception 'tenth_level_milestone_reward_failed';
   end if;
 
