@@ -853,17 +853,13 @@ class _LudoGamePageState extends State<LudoGamePage> {
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
               ]),
             ),
-            Align(alignment: Alignment.centerRight, child: Container(
-              margin: const EdgeInsets.only(top: 4, bottom: 3),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: const Color(0xFF392D4B), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFB89BFF))),
-              child: Text('$_diamondBalance 💎', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
-            )),
-            const SizedBox(height: 5),
-            _arenaRibbon(),
-            const SizedBox(height: 7),
-            _playerRow(const [0, 1]),
-            const SizedBox(height: 7),
+            const SizedBox(height: 8),
+            _playerRow(_playerCount == 4
+                ? const [3, 2]
+                : _playerCount == 3
+                    ? const [2]
+                    : const [1]),
+            const SizedBox(height: 9),
             Center(
               child: SizedBox(
                 width: frameSize,
@@ -899,10 +895,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ]),
               ),
             ),
-            if (_playerCount > 2) ...[
-              const SizedBox(height: 7),
-              _playerRow(List.generate(_playerCount - 2, (index) => index + 2)),
-            ],
+            const SizedBox(height: 9),
+            _playerRow(_playerCount == 2 ? const [0] : const [0, 1]),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                margin: const EdgeInsets.only(top: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF392D4B),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFB89BFF).withValues(alpha: .7)),
+                ),
+                child: Text('$_diamondBalance 💎',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)),
+              ),
+            ),
             if (_pendingDice.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 7),
@@ -1223,12 +1231,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
         child: Wrap(
           spacing: gap, runSpacing: gap, alignment: WrapAlignment.center,
           children: visible.map((index) => SizedBox(
-            width: cardWidth, height: 82, child: _playerPanel(index),
+            width: cardWidth, height: 88, child: _playerPanel(index),
           )).toList(),
         ),
       );
     },
   );
+
+  Widget _orientedDiceControl(int player) {
+    // Seat directions follow the board: red bottom, blue right,
+    // yellow top, green left. Rotating the complete control makes its
+    // label and die face readable from that player's side.
+    return RotatedBox(
+      quarterTurns: _baseIndex(player),
+      child: _edgeDiceControl(player, compact: true),
+    );
+  }
 
   Widget _playerPanel(int player) {
     final color = _playerColor(player);
@@ -1259,11 +1277,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
         ],
       ),
       child: Row(children: [
+        if (_baseIndex(player) == 0 || _baseIndex(player) == 3) ...[
+          _orientedDiceControl(player),
+          const SizedBox(width: 5),
+        ],
         Container(
-          width: 37, height: 37,
+          width: 39, height: 39,
           decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
-            border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2)),
-          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 21))),
+            border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 8)]),
+          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 22))),
         ),
         const SizedBox(width: 6),
         Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1272,10 +1295,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
             style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
           Text('$count/4 مهره رسیده', maxLines: 1, overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white70, fontSize: 9)),
-          if (active) const Text('نوبت فعلی', style: TextStyle(color: Color(0xFFFFD477), fontSize: 8, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: count / 4, minHeight: 4,
+              backgroundColor: Colors.white.withValues(alpha: .12),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          if (active) const Text('● نوبت فعلی',
+            style: TextStyle(color: Color(0xFFFFD477), fontSize: 8, fontWeight: FontWeight.w900)),
         ])),
-        const SizedBox(width: 4),
-        _edgeDiceControl(player, compact: true),
+        if (_baseIndex(player) == 1 || _baseIndex(player) == 2) ...[
+          const SizedBox(width: 5),
+          _orientedDiceControl(player),
+        ],
       ]),
     );
   }
