@@ -5,10 +5,14 @@ on:
     branches: [feature/gapresan-dice-prototype]
     paths:
       - 'lib/ludo_engine.dart'
+      - 'lib/ludo_character_editor.dart'
+      - 'lib/ludo_customization.dart'
       - 'lib/ludo_lobby.dart'
       - 'lib/main.dart'
       - 'supabase/migrations/*ludo*.sql'
       - 'test/ludo_engine_test.dart'
+      - 'test/ludo_character_editor_test.dart'
+      - 'test/ludo_customization_test.dart'
       - '.github/workflows/ludo-engine-validation.yml'
   pull_request:
     paths:
@@ -36,8 +40,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Format engine and tests
-        run: dart format lib/ludo_engine.dart lib/ludo_lobby.dart lib/main.dart test/ludo_engine_test.dart
+        run: dart format lib/ludo_engine.dart lib/ludo_lobby.dart lib/ludo_character_editor.dart lib/ludo_customization.dart lib/main.dart test/ludo_engine_test.dart test/ludo_character_editor_test.dart test/ludo_customization_test.dart
       - name: Analyze engine, lobby and tests
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/ludo_engine.dart lib/ludo_lobby.dart lib/main.dart test/ludo_engine_test.dart
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/ludo_engine.dart lib/ludo_lobby.dart lib/ludo_character_editor.dart lib/ludo_customization.dart lib/main.dart test/ludo_engine_test.dart test/ludo_character_editor_test.dart test/ludo_customization_test.dart
       - name: Run Ludo engine unit and simulation tests
         run: flutter test test/ludo_engine_test.dart
+      - name: Run Ludo cosmetic editor and customization tests
+        run: flutter test test/ludo_character_editor_test.dart test/ludo_customization_test.dart
