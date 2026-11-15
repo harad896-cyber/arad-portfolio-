@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:arad_messenger/ludo_engine.dart';
+import 'package:arad_messenger/ludo_engine.dart' hide getLegalMoves;
 import 'package:arad_messenger/ludo_move_decision.dart';
 
 void main() {
