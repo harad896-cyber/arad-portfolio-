@@ -32,6 +32,50 @@ void main() {
       ), 60);
     });
 
+    test('abandoned or incomplete matches award no XP', () {
+      expect(LudoXpService.calculateBaseXp(
+        placement: 1, piecesHome: 4, captures: 4, completed: false,
+      ), 0);
+      expect(LudoXpService.calculateBaseXp(
+        placement: 1, piecesHome: 4, captures: 4, abandoned: true,
+      ), 0);
+    });
+
+    test('bot match reduction is not stacked with friend bonus', () {
+      final botOnly = LudoXpService.calculateBaseXp(
+        placement: 1, piecesHome: 0, captures: 0, botMatch: true,
+      );
+      final botAndFriend = LudoXpService.calculateBaseXp(
+        placement: 1, piecesHome: 0, captures: 0,
+        botMatch: true, friendMatch: true,
+      );
+      expect(botAndFriend, botOnly);
+    });
+
+    test('daily cap is safe even if stored counter is already over cap', () {
+      final result = LudoXpService.calculateProgress(
+        currentLevel: 1, xpIntoLevel: 0, totalXp: 900,
+        dailyXp: 700, baseXp: 120,
+      );
+      expect(result.awardedXp, 0);
+      expect(result.totalXp, 900);
+    });
+
+    test('level curve is monotonic until the level cap', () {
+      for (var level = 1; level < 99; level++) {
+        expect(
+          LudoXpService.xpRequiredForLevel(level + 1),
+          greaterThan(LudoXpService.xpRequiredForLevel(level)),
+        );
+      }
+    });
+
+    test('invalid progression state is rejected', () {
+      expect(() => LudoXpService.calculateProgress(
+        currentLevel: 0, xpIntoLevel: 0, totalXp: 0, dailyXp: 0, baseXp: 0,
+      ), throwsArgumentError);
+    });
+
     test('daily XP cap prevents overflow', () {
       final result = LudoXpService.calculateProgress(
         currentLevel: 3, xpIntoLevel: 0, totalXp: 500, dailyXp: 480,
