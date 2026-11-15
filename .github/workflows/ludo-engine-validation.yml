@@ -2,13 +2,14 @@ name: Ludo Engine, Lobby, Invite and Dice Demo Validation
 
 on:
   push:
-    branches: [feature/gapresan-dice-prototype]
+    branches: [feature/gapresan-dice-prototype, feature/gapresan-ludo-league-ui-20261115]
     paths:
       - 'lib/ludo_dice_demo.dart'
       - 'lib/dice_3d_math.dart'
       - 'test/ludo_dice_demo_test.dart'
       - 'lib/quick_games/**'
       - 'test/quick_games/**'
+      - 'lib/ludo_game.dart'
       - 'lib/ludo_engine.dart'
       - 'lib/ludo_move_decision.dart'
       - 'test/ludo_move_decision_test.dart'
@@ -20,6 +21,7 @@ on:
       - 'supabase/migrations/*ludo*.sql'
       - 'supabase/seed/ludo_items.json'
       - 'supabase/tests/ludo_progression_contract.sql'
+      - 'test/ludo_rules_test.dart'
       - 'test/ludo_engine_test.dart'
       - 'test/ludo_xp_service_test.dart'
       - 'test/ludo_character_editor_test.dart'
