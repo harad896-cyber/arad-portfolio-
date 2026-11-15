@@ -5375,6 +5375,22 @@ Future<void> openAradLink(BuildContext context, Uri uri) async {
       ));
       return;
     }
+    if (host == 'ludo') {
+      final token = (uri.queryParameters['token'] ?? '').trim();
+      final code = (uri.queryParameters['code'] ?? '').trim();
+      if (token.isEmpty && code.isEmpty) {
+        showMsg(context, 'لینک دعوت منچ معتبر نیست.');
+        return;
+      }
+      if (!context.mounted) return;
+      await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => LudoLobbyPage(
+          initialInviteToken: token.isEmpty ? null : token,
+          initialRoomCode: code.isEmpty ? null : code,
+        ),
+      ));
+      return;
+    }
     if (host == 'story') {
       if (uri.pathSegments.isEmpty) return;
       final storyId = Uri.decodeComponent(uri.pathSegments.first).trim();
