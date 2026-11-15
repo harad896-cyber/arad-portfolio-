@@ -88,7 +88,7 @@ export const xoGameModule = Object.freeze({
   init(players, options={}) {
     const ids=normalizePlayers(players);
     const variant=options.variant??XO_VARIANTS.CLASSIC;
-    assert([XO_VARIANTS.CLASSIC,XO_VARIANTS.FIVE].includes(variant),'Variant must be classic or five.');
+    assert([XO_VARIANTS.CLASSIC,XO_VARIANTS.FIVE].includes(variant),'Invalid variant: expected classic or five.');
     const boardSize=variant===XO_VARIANTS.CLASSIC?3:5;
     const winLength=variant===XO_VARIANTS.CLASSIC?3:4;
     return {
