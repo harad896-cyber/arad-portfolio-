@@ -860,7 +860,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
               child: Text('$_diamondBalance 💎', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
             )),
             const SizedBox(height: 5),
-            _playerRow(const []),
+            _arenaRibbon(),
+            const SizedBox(height: 7),
+            _playerRow(const [0, 1]),
             const SizedBox(height: 7),
             Center(
               child: SizedBox(
@@ -897,6 +899,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ]),
               ),
             ),
+            if (_playerCount > 2) ...[
+              const SizedBox(height: 7),
+              _playerRow(List.generate(_playerCount - 2, (index) => index + 2)),
+            ],
             if (_pendingDice.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 7),
@@ -956,14 +962,38 @@ class _LudoGamePageState extends State<LudoGamePage> {
     },
   );
 
+  Widget _arenaRibbon() => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(top: 2, bottom: 3),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.centerRight, end: Alignment.centerLeft,
+        colors: [Color(0xCC123D3B), Color(0xCC101C35), Color(0xCC39284B)],
+      ),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: const Color(0x66FFD477)),
+      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 3))],
+    ),
+    child: const Row(children: [
+      Icon(Icons.stadium_rounded, color: Color(0xFFFFD477), size: 17),
+      SizedBox(width: 7),
+      Expanded(child: Text('لیگ منچ گپ‌رسان', style: TextStyle(
+        color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .35,
+      ))),
+      Text('★  LUDO ARENA  ★', textDirection: TextDirection.ltr,
+        style: TextStyle(color: Color(0xFFFFD477), fontSize: 9, fontWeight: FontWeight.w900)),
+    ]),
+  );
+
   Widget _edgeDiceControl(int player, {bool compact = false}) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
     final canRoll = active && _dice == null && (_pendingDice.isEmpty || _bonusRollAvailable) && !_botTurn && !_botBusy && !_moving;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
-    final width = compact ? 48.0 : 62.0;
-    final height = compact ? 54.0 : 72.0;
+    final width = compact ? 54.0 : 68.0;
+    final height = compact ? 60.0 : 78.0;
     final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
     return Semantics(
       button: true,
@@ -999,7 +1029,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: color, fontSize: compact ? 6.5 : 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 28 : 40),
+              _LudoDieFace(value: shownValue, size: compact ? 34 : 46),
             ]),
           ),
         ),
@@ -1183,15 +1213,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _playerRow(List<int> baseSlots) => LayoutBuilder(
     builder: (context, constraints) {
-      const gap = 6.0;
-      final cardWidth = (constraints.maxWidth - gap) / 2;
+      final visible = baseSlots.where((index) => index >= 0 && index < _playerCount).toList();
+      if (visible.isEmpty) return const SizedBox.shrink();
+      const gap = 8.0;
+      final single = visible.length == 1;
+      final cardWidth = single ? math.min(constraints.maxWidth * .78, 310.0) : (constraints.maxWidth - gap) / 2;
       return SizedBox(
         width: constraints.maxWidth,
         child: Wrap(
           spacing: gap, runSpacing: gap, alignment: WrapAlignment.center,
-          children: List.generate(_playerCount, (index) => SizedBox(
-            width: cardWidth, height: 66, child: _playerPanel(index),
-          )),
+          children: visible.map((index) => SizedBox(
+            width: cardWidth, height: 82, child: _playerPanel(index),
+          )).toList(),
         ),
       );
     },
@@ -1200,7 +1233,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
   Widget _playerPanel(int player) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
     final count = _positions[player].where((value) => value == 57).length;
     final look = LudoCustomization.current.value;
     final avatar = player == 0
@@ -1222,47 +1254,22 @@ class _LudoGamePageState extends State<LudoGamePage> {
       ),
       child: Row(children: [
         Container(
-          width: 27, height: 27,
+          width: 37, height: 37,
           decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
             border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2)),
-          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 15))),
+          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 21))),
         ),
         const SizedBox(width: 6),
         Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
             maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
           Text('$count/4 مهره رسیده', maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70, fontSize: 8)),
+            style: const TextStyle(color: Colors.white70, fontSize: 9)),
           if (active) const Text('نوبت فعلی', style: TextStyle(color: Color(0xFFFFD477), fontSize: 8, fontWeight: FontWeight.w900)),
         ])),
         const SizedBox(width: 4),
-        Semantics(
-          button: true, enabled: canRoll,
-          label: canRoll ? 'تاس بینداز برای ${_playerName(player)}' : 'تاس بازیکن ${_playerName(player)}',
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: ValueKey('ludo-die-$player'),
-              borderRadius: BorderRadius.circular(10),
-              onTap: canRoll ? _roll : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 42, height: 42,
-                decoration: BoxDecoration(
-                  color: canRoll ? color : Colors.black.withValues(alpha: .24),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: color.withValues(alpha: canRoll ? 1 : .5)),
-                ),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.casino_rounded, color: Colors.white, size: 16),
-                  Text(canRoll ? 'تاس' : (_diceValues[player]?.toString() ?? '—'),
-                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
-                ]),
-              ),
-            ),
-          ),
-        ),
+        _edgeDiceControl(player, compact: true),
       ]),
     );
   }
