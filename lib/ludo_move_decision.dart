@@ -195,6 +195,23 @@ LudoMoveAnalysis getLegalMoveAnalysis(
       landsOnSafeSquare: safe,
     ));
   }
+  // Fail closed if the detailed explanation and the authoritative engine
+  // ever disagree about which pieces may move.
+  final engineLegal = getLegalMoves(
+    state,
+    dice,
+    allowOwnStack: rules.allowOwnStack,
+    allowPassBlockades: rules.allowPassBlockades,
+  ).toSet();
+  final explainedLegal = legal.map((move) => move.pieceIndex).toSet();
+  if (engineLegal.length != explainedLegal.length ||
+      !engineLegal.containsAll(explainedLegal)) {
+    return const LudoMoveAnalysis(
+      legalMoves: [],
+      rejectedMoves: [],
+      error: 'محاسبهٔ مسیر با اعتبارسنجی موتور بازی هماهنگ نیست.',
+    );
+  }
   return LudoMoveAnalysis(
     legalMoves: List.unmodifiable(legal),
     rejectedMoves: List.unmodifiable(rejected),
