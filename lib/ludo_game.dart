@@ -325,7 +325,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     return _sfxQueue;
   }
 
-  bool get _botTurn => _againstBot && _turn == 1;
+  // In bot mode the human always controls red (player 0); every other seat is automated.
+  bool get _botTurn => _againstBot && _turn != 0;
   int _colorIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   int _baseIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   Color _playerColor(int player) => _colors[_colorIndex(player)];
@@ -479,7 +480,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _dice = value;
       _message = 'تاس $value انتخاب شد';
     });
-    if (options.length == 1) _moveToken(options.first, fromBot: fromBot);
+    // If every legal token is in the same starting state (for example, all
+    // tokens are still in the yard), the choice is equivalent: move one
+    // automatically instead of forcing an unnecessary tap.
+    final sameStartingProgress = options.every(
+      (token) => _positions[_turn][token] == _positions[_turn][options.first],
+    );
+    if (options.length == 1 || sameStartingProgress) {
+      _moveToken(options.first, fromBot: fromBot);
+    }
   }
 
   void _finishNoMove() {
@@ -715,9 +724,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
       const SizedBox(height: 9),
       _modeCard(
         icon: Icons.smart_toy_rounded, title: 'بازی با ربات',
-        subtitle: 'رقابت دونفره با حریف هوشمند',
+        subtitle: 'یک بازیکن انسانی در برابر سه ربات؛ چهار رنگ کامل',
         selected: _againstBot,
-        onTap: () => setState(() { _againstBot = true; _playerCount = 2; }),
+        onTap: () => setState(() { _againstBot = true; _playerCount = 4; }),
       ),
       const SizedBox(height: 9),
       _modeCard(
@@ -738,7 +747,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         const SizedBox(height: 17),
       ],
       FilledButton.icon(
-        onPressed: () => _start(players: _againstBot ? 2 : _playerCount, bot: _againstBot),
+        onPressed: () => _start(players: _againstBot ? 4 : _playerCount, bot: _againstBot),
         icon: const Icon(Icons.play_arrow_rounded),
         label: const Text('شروع بازی'),
         style: FilledButton.styleFrom(
