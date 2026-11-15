@@ -191,7 +191,7 @@ LudoMoveAnalysis getLegalMoveAnalysis(
     legal.add(LudoLegalMove(
       pieceId: pieceId, pieceIndex: pieceIndex, from: from, to: to,
       path: List.unmodifiable(path), captures: List.unmodifiable(captures),
-      entersHome: from < 52 && to >= 52, exits: from == -1,
+      entersHome: to >= 52, exits: from == -1,
       landsOnSafeSquare: safe,
     ));
   }
