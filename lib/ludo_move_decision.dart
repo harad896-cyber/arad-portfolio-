@@ -221,10 +221,17 @@ LudoMoveAnalysis getLegalMoveAnalysis(
 enum LudoAutoAction { passTurn, repeatRoll, moveAutomatically, askPlayer }
 
 class LudoAutoDecision {
-  const LudoAutoDecision({required this.action, this.move, required this.reason});
+  const LudoAutoDecision({
+    required this.action,
+    this.move,
+    required this.reason,
+    this.delay = Duration.zero,
+  });
   final LudoAutoAction action;
   final LudoLegalMove? move;
   final String reason;
+  /// Minimum presentation delay before the controller applies this decision.
+  final Duration delay;
 }
 
 /// Policy only. The chosen move must still be submitted to and validated by
@@ -256,6 +263,7 @@ LudoAutoDecision decideLudoMove(
       return LudoAutoDecision(
         action: LudoAutoAction.moveAutomatically, move: moves.single,
         reason: unfinished == 1 ? 'فقط یک مهره باقی مانده است.' : 'فقط یک حرکت مجاز وجود دارد.',
+        delay: const Duration(milliseconds: 400),
       );
     }
     return const LudoAutoDecision(
@@ -271,6 +279,7 @@ LudoAutoDecision decideLudoMove(
     return LudoAutoDecision(
       action: LudoAutoAction.moveAutomatically, move: chosen,
       reason: 'حرکت چند مهره کاملاً هم‌ارز است؛ یکی به‌صورت خودکار انتخاب شد.',
+      delay: const Duration(milliseconds: 400),
     );
   }
   return const LudoAutoDecision(
