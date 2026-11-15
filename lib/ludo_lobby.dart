@@ -413,7 +413,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
             child: avatar.isEmpty ? Text(initial, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)) : null,
           ),
           title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
-          subtitle: Text(player['is_ready'] == true ? 'آماده' : 'در انتظار آمادگی'),
+          subtitle: Text(player?['is_ready'] == true ? 'آماده' : 'در انتظار آمادگی'),
           trailing: Text(['قرمز', 'آبی', 'زرد', 'سبز'][seat]),
         ));
       },
