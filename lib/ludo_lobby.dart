@@ -23,6 +23,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   bool _private = true;
   bool _fillBots = false;
   String _mode = 'standard';
+  final Map<String, Future<Map<String, dynamic>?>> _profileCache = {};
   String? get _uid => _db.auth.currentUser?.id;
 
   @override
@@ -214,6 +215,17 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     });
   }
 
+  Future<Map<String, dynamic>?> _profileFor(String userId) {
+    return _profileCache.putIfAbsent(userId, () async {
+      final row = await _db.from('profiles')
+          .select('id,display_name,username,avatar_url')
+          .eq('id', userId)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 8));
+      return row == null ? null : Map<String, dynamic>.from(row);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final room = _room;
@@ -311,7 +323,15 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
           for(var seat=0;seat<(room['max_players'] as num).toInt();seat++)
             _seatCard(_playerAtSeat(players,seat),seat),
           const SizedBox(height:14),
-          OutlinedButton.icon(onPressed:_busy?null:()=>_setReady(true),icon:const Icon(Icons.check_circle_outline),label:const Text('من آماده‌ام')),
+          Builder(builder: (context) {
+            final me = players.where((p) => p['user_id']?.toString() == _uid).firstOrNull;
+            final ready = me?['is_ready'] == true;
+            return OutlinedButton.icon(
+              onPressed: _busy || me == null ? null : () => _setReady(!ready),
+              icon: Icon(ready ? Icons.hourglass_bottom_rounded : Icons.check_circle_outline),
+              label: Text(ready ? 'لغو آمادگی' : 'من آماده‌ام'),
+            );
+          }),
           const SizedBox(height:8),
           const Text('وقتی بازیکنان به اتاق بپیوندند، وضعیت آن‌ها در این فهرست زنده به‌روزرسانی می‌شود.',textAlign:TextAlign.center),
           if(snapshot.hasError)const Text('اتصال زنده قطع شده؛ صفحه را دوباره باز کن.',style:TextStyle(color:Colors.orange)),
@@ -332,13 +352,34 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   }
 
   Widget _seatCard(Map<String, dynamic>? player, int seat) {
-    const colors=[Color(0xffe94b61),Color(0xff368be8),Color(0xffefb82f),Color(0xff21a886)];
-    final name=player==null?'جای خالی':'بازیکن ${seat+1}';
-    return Card(child:ListTile(
-      leading:CircleAvatar(backgroundColor:colors[seat],child:Icon(player==null?Icons.person_add_alt_1:Icons.person,color:Colors.white)),
-      title:Text(name,style:const TextStyle(fontWeight:FontWeight.w800)),
-      subtitle:Text(player==null?'منتظر پیوستن':'${player['is_ready']==true?'آماده':'در لابی'}'),
-      trailing:Text(['قرمز','آبی','زرد','سبز'][seat]),
-    ));
+    const colors = [Color(0xffe94b61), Color(0xff368be8), Color(0xffefb82f), Color(0xff21a886)];
+    final userId = player?['user_id']?.toString();
+    if (userId == null) {
+      return Card(child: ListTile(
+        leading: CircleAvatar(backgroundColor: colors[seat], child: const Icon(Icons.person_add_alt_1, color: Colors.white)),
+        title: const Text('جای خالی', style: TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: const Text('منتظر پیوستن بازیکن'),
+        trailing: Text(['قرمز', 'آبی', 'زرد', 'سبز'][seat]),
+      ));
+    }
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _profileFor(userId),
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final name = (profile?['display_name'] ?? profile?['username'] ?? 'بازیکن ${seat + 1}').toString();
+        final avatar = (profile?['avatar_url'] ?? '').toString();
+        final initial = name.trim().isEmpty ? '?' : name.trim().characters.first;
+        return Card(child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: colors[seat],
+            backgroundImage: avatar.isEmpty ? null : NetworkImage(avatar),
+            child: avatar.isEmpty ? Text(initial, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)) : null,
+          ),
+          title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: Text(player['is_ready'] == true ? 'آماده' : 'در انتظار آمادگی'),
+          trailing: Text(['قرمز', 'آبی', 'زرد', 'سبز'][seat]),
+        ));
+      },
+    );
   }
-}
+}}
