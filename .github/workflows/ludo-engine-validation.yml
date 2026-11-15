@@ -1,4 +1,4 @@
-name: Ludo Engine, Lobby and Invite Validation
+name: Ludo Engine, Lobby, Invite and Dice Demo Validation
 
 on:
   push:
