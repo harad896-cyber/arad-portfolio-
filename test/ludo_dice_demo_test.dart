@@ -10,7 +10,7 @@ Future<void> _mountDemo(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await _mountDemo(tester);
+  await tester.pumpWidget(const MaterialApp(home: DiceRollDemo()));
 }
 
 void main() {
@@ -53,7 +53,7 @@ void main() {
 
   group('standalone dice widget', () {
     testWidgets('lands on the face selected by the user', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: DiceRollDemo()));
+      await _mountDemo(tester);
 
       final input = find.byType(TextField);
       await tester.enterText(input, '4');
@@ -72,7 +72,7 @@ void main() {
 
     testWidgets('rejects a value outside 1 to 6 without rolling',
         (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: DiceRollDemo()));
+      await _mountDemo(tester);
 
       await tester.enterText(find.byType(TextField), '9');
       await tester.tap(find.text('پرتاب تاس'));
@@ -84,7 +84,7 @@ void main() {
 
     testWidgets('ignores repeated taps while the die is moving',
         (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: DiceRollDemo()));
+      await _mountDemo(tester);
 
       await tester.tap(find.text('پرتاب تاس'));
       await tester.pump();
@@ -97,7 +97,7 @@ void main() {
 
     testWidgets('renders every possible selected face without exceptions',
         (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: DiceRollDemo()));
+      await _mountDemo(tester);
       final input = find.byType(TextField);
 
       for (var face = 1; face <= 6; face++) {
