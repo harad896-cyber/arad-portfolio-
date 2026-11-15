@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/gapresan-fun-zone, feature/gapresan-fun-zone-polish, feature/gapresan-mafia-engine]
+    branches: [feature/gapresan-fun-zone, feature/gapresan-fun-zone-polish, feature/gapresan-mafia-engine, feature/gapresan-chat-games]
 
 permissions:
   contents: write
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test server/mafia/mafia-engine.test.mjs
+      - run: node --test server/mafia/mafia-engine.test.mjs server/games/*.test.mjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
