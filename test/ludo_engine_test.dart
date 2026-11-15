@@ -115,8 +115,12 @@ void main() {
 
     test('only a six releases a piece from the yard', () {
       final noMove = applyLudoRoll(state2(), 5);
-      expect(noMove['turn'], 1);
-      expect(noMove['phase'], 'awaiting_roll');
+      expect(noMove['turn'], 0);
+      expect(noMove['phase'], 'awaiting_move');
+      expect(getLegalMoves(noMove, 5), isEmpty);
+      final passed = applyLudoNoMoveDecision(noMove);
+      expect(passed['turn'], 1);
+      expect(passed['phase'], 'awaiting_roll');
 
       final six = applyLudoRoll(state2(), 6);
       expect(getLegalMoves(six, 6), [0, 1, 2, 3]);
@@ -245,12 +249,22 @@ void main() {
       expect((moved['pieces'] as List)[0][0], 53);
     });
 
-    test('no legal move automatically passes and records a reason', () {
-      final passed = applyLudoRoll(state2(), 3);
+    test('no legal move waits for the explicit pass decision', () {
+      final pending = applyLudoRoll(state2(), 3);
+      expect(pending['turn'], 0);
+      expect(pending['phase'], 'awaiting_move');
+      expect((pending['dice'] as Map)['legalMoves'], isEmpty);
+      expect((pending['dice'] as Map)['reason'], 'no_legal_move');
+
+      final passed = applyLudoNoMoveDecision(pending);
       expect(passed['turn'], 1);
       expect(passed['phase'], 'awaiting_roll');
-      expect((passed['dice'] as Map)['legalMoves'], isEmpty);
-      expect((passed['dice'] as Map)['reason'], 'no_legal_move');
+      expect((passed['dice'] as Map)['resolvedNoMove'], isTrue);
+    });
+
+    test('cannot resolve a no-move pass when a legal move exists', () {
+      final pending = applyLudoRoll(state2(), 6);
+      expect(() => applyLudoNoMoveDecision(pending), throwsStateError);
     });
 
     test('a six with no legal move keeps the turn for another roll', () {
@@ -259,7 +273,12 @@ void main() {
         [-1, -1, -1, -1],
         [26, 26, -1, -1],
       ];
-      final result = applyLudoRoll(state, 6);
+      final pending = applyLudoRoll(state, 6);
+      expect(pending['turn'], 0);
+      expect(pending['phase'], 'awaiting_move');
+      expect(getLegalMoves(pending, 6), isEmpty);
+
+      final result = applyLudoNoMoveDecision(pending);
       expect(result['turn'], 0);
       expect(result['phase'], 'awaiting_roll');
       expect(result['sixStreak'], 1);
@@ -342,8 +361,11 @@ void main() {
           state = applyLudoRoll(state, random.nextInt(6) + 1);
         } else {
           final legal = currentLegalMoves(state);
-          expect(legal, isNotEmpty, reason: 'game $game action $actions');
-          state = applyLudoMove(state, legal[random.nextInt(legal.length)]);
+          if (legal.isEmpty) {
+            state = applyLudoNoMoveDecision(state);
+          } else {
+            state = applyLudoMove(state, legal[random.nextInt(legal.length)]);
+          }
         }
         expect(isValidLudoState(state), isTrue,
             reason: 'invalid state in game $game action $actions');
