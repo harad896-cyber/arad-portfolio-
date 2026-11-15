@@ -159,11 +159,13 @@ bool _isFinished(LudoState state) {
   return (state['winners'] as List).length >= count - 1;
 }
 
-int _occupiedOnSquare(List<List<int>> pieces, int owner, int square) {
+int _occupiedOnSquare(List<List<int>> pieces, int square) {
   var count = 0;
-  for (final progress in pieces[owner]) {
-    if (ludoTrackIndex(owner, progress, playerCount: pieces.length) == square) {
-      count++;
+  for (var owner = 0; owner < pieces.length; owner++) {
+    for (final progress in pieces[owner]) {
+      if (ludoTrackIndex(owner, progress, playerCount: pieces.length) == square) {
+        count++;
+      }
     }
   }
   return count;
@@ -179,7 +181,7 @@ bool _pathBlocked(List<List<int>> pieces, int player, int piece, int dice) {
   for (var progress = firstStep; progress <= lastStep; progress++) {
     if (progress > ludoPieceHome) break;
     final square = ludoTrackIndex(player, progress, playerCount: pieces.length);
-    if (square != null && _occupiedOnSquare(pieces, player, square) >= 2) return true;
+    if (square != null && _occupiedOnSquare(pieces, square) >= 2) return true;
   }
   return false;
 }
