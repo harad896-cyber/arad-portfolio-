@@ -2,7 +2,7 @@ name: GapResan browser preview
 
 on:
   push:
-    branches: [feature/gapresan-fun-zone]
+    branches: [feature/gapresan-fun-zone, feature/gapresan-ludo-league-ui-20261115]
   workflow_dispatch:
 
 permissions:
