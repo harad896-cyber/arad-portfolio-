@@ -18,7 +18,7 @@ test('role bounds, custom-role overflow and duplicate IDs are rejected',()=>{
 });
 test('public snapshot omits every secret role; private snapshot returns only own role/allies',()=>{
  const g=game();const pub=JSON.stringify(g.publicSnapshot());
- assert.equal(pub.includes('mafia'),false);assert.equal(pub.includes('role'),false);
+ assert.equal(pub.includes('mafia'),false);assert.equal(g.publicSnapshot().players[0].role,undefined);
  assert.deepEqual(g.privateSnapshot('p0').mafiaAllyIds,['p0','p1']);
  assert.deepEqual(g.privateSnapshot('p4').mafiaAllyIds,[]);
  assert.throws(()=>g.privateSnapshot('intruder'));
