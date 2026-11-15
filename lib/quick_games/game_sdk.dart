@@ -35,7 +35,8 @@ class GameResult {
 }
 
 /// Pure game contract. Implementations must not perform I/O or mutate [state].
-abstract interface class GameModule<S, M> {
+abstract class GameModule<S, M> {
+  const GameModule();
   String get id;
   int get schemaVersion;
 
