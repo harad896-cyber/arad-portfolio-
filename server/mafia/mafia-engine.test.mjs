@@ -12,6 +12,11 @@ test('8-player default role composition is exactly 2 mafia, doctor, detective, 4
  assert.equal(roles.filter(x=>x===Role.DOCTOR).length,1);assert.equal(roles.filter(x=>x===Role.DETECTIVE).length,1);
  assert.equal(roles.filter(x=>x===Role.CITIZEN).length,4);
 });
+test('neutral roles stay disabled unless the host explicitly enables them',()=>{
+ const defaults=buildRoleSet(16);
+ assert.equal(defaults.includes(Role.MADMAN),false);assert.equal(defaults.includes(Role.JOKER),false);
+ assert.equal(buildRoleSet(16,{madman:true,joker:true}).includes(Role.MADMAN),true);
+});
 test('role bounds, custom-role overflow and duplicate IDs are rejected',()=>{
  assert.throws(()=>buildRoleSet(5));assert.throws(()=>buildRoleSet(8,{customRoles:{[Role.JOKER]:8}}));
  assert.throws(()=>new MafiaEngine({roster:[...roster,{id:'p0',displayName:'dup'}],roles:Array(9).fill(Role.CITIZEN)}));
@@ -39,6 +44,10 @@ test('detective result is private and not broadcast in public snapshot',()=>{
  const g=game();g.beginNight();g.submitNightAction({actorId:'p3',type:Action.INVESTIGATE,targetId:'p0'});
  const r=g.resolveNight();assert.deepEqual(r.privateResults,{p3:'مافیا'});
  assert.equal(JSON.stringify(g.publicSnapshot()).includes('مافیا'),false);
+});
+test('a detective eliminated that night does not receive a private result',()=>{
+ const g=game();g.beginNight();g.submitNightAction({actorId:'p0',type:Action.KILL,targetId:'p3'});
+ const r=g.resolveNight();assert.equal(g.players.get('p3').alive,false);assert.deepEqual(r.privateResults,{});
 });
 test('missing actions become pass and phase transitions reject out-of-order calls',()=>{
  const g=game();g.beginNight();assert.throws(()=>g.openVoting());assert.deepEqual(g.resolveNight().eliminatedIds,[]);
