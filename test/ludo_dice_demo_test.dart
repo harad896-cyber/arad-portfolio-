@@ -3,6 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:arad_messenger/dice_3d_math.dart';
 import 'package:arad_messenger/ludo_dice_demo.dart';
 
+Future<void> _mountDemo(WidgetTester tester) async {
+  // Exercise a realistic phone-sized viewport instead of Flutter's short
+  // default 800x600 test surface, which places the roll button below the fold.
+  tester.view.physicalSize = const Size(390, 844);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  await _mountDemo(tester);
+}
+
 void main() {
   group('3D dice orientation math', () {
     for (var face = 1; face <= 6; face++) {
