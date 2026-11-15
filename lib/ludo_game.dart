@@ -600,6 +600,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
             ]),
           ),
           const SizedBox(height: 5),
+          _playerStatusStrip(),
+          const SizedBox(height: 5),
           Center(
             child: SizedBox(
               width: frameSize,
@@ -706,6 +708,47 @@ class _LudoGamePageState extends State<LudoGamePage> {
       ),
     );
   }
+
+  Widget _playerStatusStrip() => Row(
+    children: List.generate(_playerCount, (player) {
+      final color = _playerColor(player);
+      final active = _turn == player && _winner == null;
+      final finished = _positions[player].where((value) => value == 57).length;
+      final look = LudoCustomization.current.value;
+      final avatar = player == 0
+          ? LudoCustomization.avatars[look.avatar]
+          : (_againstBot ? '🤖' : ['🙂', '😎', '🦊', '🐼'][_colorIndex(player)]);
+      final name = _againstBot && player != 0
+          ? 'ربات'
+          : player == 0 ? 'تو' : _playerName(player);
+      return Expanded(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: active ? .28 : .12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withValues(alpha: active ? 1 : .42),
+              width: active ? 1.8 : 1,
+            ),
+            boxShadow: active
+                ? [BoxShadow(color: color.withValues(alpha: .22), blurRadius: 8)]
+                : const [],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(avatar, style: const TextStyle(fontSize: 17, height: 1.05)),
+            const SizedBox(height: 2),
+            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+            Text('$finished/۴',
+              style: const TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      );
+    }),
+  );
 
   Widget _communicationActions() => Row(children: [
     Expanded(child: OutlinedButton.icon(
