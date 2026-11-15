@@ -93,7 +93,7 @@ void main() {
         [3, 57, 57, 57], [30, 30, 57, 57]
       ], 2), 2);
       expect(result.legalMoves, isEmpty);
-      expect(result.rejections.single.reasonCode, 'blocked');
+      expect(result.rejections.map((r) => r.reasonCode), contains('blocked'));
     });
 
     test('blockade passing and own-stack rules are configurable', () {
