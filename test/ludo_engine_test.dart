@@ -257,7 +257,7 @@ void main() {
       var state = state2();
       state['pieces'] = [
         [-1, -1, -1, -1],
-        [13, 13, -1, -1],
+        [26, 26, -1, -1],
       ];
       final result = applyLudoRoll(state, 6);
       expect(result['turn'], 0);
