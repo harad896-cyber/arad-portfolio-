@@ -40,7 +40,7 @@ jobs:
         run: flutter pub get
 
       - name: Format Ludo changes
-        run: dart format --output=none --set-exit-if-changed lib/ludo_game.dart lib/ludo_bot_policy.dart test/ludo_bot_policy_test.dart
+        run: dart format lib/ludo_game.dart lib/ludo_bot_policy.dart test/ludo_bot_policy_test.dart
 
       - name: Run Ludo unit tests
         run: flutter test test/ludo_bot_policy_test.dart test/ludo_engine_test.dart test/ludo_move_decision_test.dart test/ludo_rules_test.dart
