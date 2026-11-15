@@ -245,15 +245,19 @@ LudoState applyLudoRoll(LudoState state, int dice) {
   next['sixStreak'] = streak;
   final legal = _calculateLegalMoves(next, dice);
   if (legal.isEmpty) {
-    // A roll with no possible move ends the turn; the UI can announce this.
+    // A six still grants another roll even when no piece can move.
+    // Non-six no-move results pass to the next active player.
     next['dice'] = {
       'value': dice,
       'legalMoves': <int>[],
       'burned': false,
       'reason': 'no_legal_move',
+      'extraRoll': dice == 6,
     };
-    next['sixStreak'] = 0;
-    next['turn'] = _nextActivePlayer(next, player);
+    if (dice != 6) {
+      next['sixStreak'] = 0;
+      next['turn'] = _nextActivePlayer(next, player);
+    }
     next['phase'] = 'awaiting_roll';
     return next;
   }
