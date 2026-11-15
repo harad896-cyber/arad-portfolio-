@@ -308,6 +308,7 @@ declare
   v_reward jsonb;
   v_existing public.ludo_xp_ledger%rowtype;
   v_payload jsonb;
+  v_reward_inserted integer;
 begin
   select * into v_match
     from public.ludo_match_results
@@ -318,6 +319,10 @@ begin
   if not v_match.completed or v_match.abandoned or v_match.completed_at is null then
     return jsonb_build_object('awardedXp', 0, 'reason', 'match_not_completed');
   end if;
+
+  select * into v_existing from public.ludo_xp_ledger
+    where match_id = p_match_id and user_id = p_user_id;
+  if found then return v_existing.result_payload; end if;
 
   insert into public.ludo_players(user_id)
     values (p_user_id) on conflict (user_id) do nothing;
@@ -331,10 +336,6 @@ begin
     on conflict (user_id,preset_slot) do nothing;
   select * into v_profile from public.ludo_player_profiles
     where user_id = p_user_id for update;
-
-  select * into v_existing from public.ludo_xp_ledger
-    where match_id = p_match_id and user_id = p_user_id;
-  if found then return v_existing.result_payload; end if;
 
   v_base := 50 + (v_match.pieces_home * 10) + (v_match.captures * 15)
     + case v_match.placement when 1 then 150 when 2 then 80 when 3 then 40 else 0 end;
@@ -361,19 +362,23 @@ begin
     if mod(v_level, 10) = 0 then
       v_reward := jsonb_build_object('kind','milestone','coins',250,
         'titleId','title_level_' || v_level);
-      update public.ludo_player_profiles
-        set coins = coins + 250,
-            unlocked_titles = case when ('title_level_' || v_level) = any(unlocked_titles)
-              then unlocked_titles else array_append(unlocked_titles, 'title_level_' || v_level) end
-        where user_id = p_user_id;
     else
       v_reward := jsonb_build_object('kind','level','coins',25);
-      update public.ludo_player_profiles set coins = coins + 25 where user_id = p_user_id;
     end if;
 
     insert into public.ludo_player_level_rewards(user_id, level, reward_payload)
       values (p_user_id, v_level, v_reward)
       on conflict (user_id, level) do nothing;
+    get diagnostics v_reward_inserted = row_count;
+    if v_reward_inserted = 1 and mod(v_level, 10) = 0 then
+      update public.ludo_player_profiles
+        set coins = coins + 250,
+            unlocked_titles = case when ('title_level_' || v_level) = any(unlocked_titles)
+              then unlocked_titles else array_append(unlocked_titles, 'title_level_' || v_level) end
+        where user_id = p_user_id;
+    elsif v_reward_inserted = 1 then
+      update public.ludo_player_profiles set coins = coins + 25 where user_id = p_user_id;
+    end if;
   end loop;
   if v_level = 100 then v_xp := 0; end if;
 
