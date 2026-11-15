@@ -245,9 +245,20 @@ class TicTacToeGame implements GameModule<TicTacToeState, int> {
     if (state.currentPlayer != (p0 == p1 ? 0 : 1) && !state.isFinished) {
       throw const FormatException('Current player does not match board.');
     }
-    if (state.winnerId != null &&
-        !state.players.any((player) => player.id == state.winnerId)) {
-      throw const FormatException('Winner is not a game participant.');
+    if (state.winnerId != null) {
+      final winnerIndex = state.players.indexWhere((player) => player.id == state.winnerId);
+      if (winnerIndex < 0) {
+        throw const FormatException('Winner is not a game participant.');
+      }
+      final winnerHasLine = _hasWinningLine(state.board, state.variant, winnerIndex);
+      final turnCountsMatch = winnerIndex == 0 ? p0 == p1 + 1 : p0 == p1;
+      if (!winnerHasLine || !turnCountsMatch) {
+        throw const FormatException('Winner does not match the board.');
+      }
+      final otherIndex = 1 - winnerIndex;
+      if (_hasWinningLine(state.board, state.variant, otherIndex)) {
+        throw const FormatException('Both players cannot win.');
+      }
     }
     if (state.winnerId == null && _hasWinningLineForEither(state)) {
       throw const FormatException('Winning board is missing its winner.');
