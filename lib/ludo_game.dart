@@ -159,7 +159,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final AudioPlayer _sfxPlayer = AudioPlayer();
   bool _soundEnabled = true;
   int _playerCount = 4, _turn = 0, _sixStreak = 0;
-  bool _againstBot = false, _started = false, _botBusy = false, _moving = false, _rolling = false;
+  bool _againstBot = true, _started = false, _botBusy = false, _moving = false, _rolling = false;
   int _rollingFace = 1;
   bool _showFirstGuide = false;
   int _botGeneration = 0;
@@ -516,7 +516,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       Wrap(spacing: 8, children: [2, 3, 4].map((count) => ChoiceChip(
         label: Text('${count == 2 ? '۲' : count == 3 ? '۳' : '۴'} نفر'),
         selected: _playerCount == count,
-        onSelected: (_) => setState(() => _playerCount = count),
+        onSelected: (_) => setState(() { _playerCount = count; _againstBot = false; }),
       )).toList()),
       const SizedBox(height: 12),
       SwitchListTile(
