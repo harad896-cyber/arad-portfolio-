@@ -251,13 +251,15 @@ void main() {
       var state = state2();
       state['pieces'] = [
         [4, -1, -1, -1],
-        [31, -1, -1, -1],
+        [36, -1, -1, -1],
       ];
       final rolled = applyLudoRoll(state, 6);
       final moved = applyLudoMove(rolled, 0);
       expect(moved['turn'], 0);
       expect(moved['phase'], 'awaiting_roll');
-      expect((moved['dice'] as Map)['captured'], isEmpty);
+      expect((moved['dice'] as Map)['captured'], [
+        {'player': 1, 'piece': 0}
+      ]);
     });
 
     test('a player who completes all four pieces is removed from turn rotation', () {
