@@ -15,6 +15,36 @@ alter table public.ludo_cosmetic_catalog
     'capture_effect','board','dice','trail','effect','profile_frame'
   ));
 
+-- Initial server catalog entries. items.json is the authoring source for client/server asset metadata.
+insert into public.ludo_cosmetic_catalog
+  (id,name,category,asset_key,preview,rarity,emoji,color_hex,sort_order,is_active)
+values
+  ('fox_01','روباه','character','characters/fox/base.riv','characters/fox/preview.webp','common','🦊','#F28A35',10,true),
+  ('robot_01','ربات','character','characters/robot/base.riv','characters/robot/preview.webp','rare','🤖','#58B8C9',20,true),
+  ('tiger_01','ببر','character','characters/tiger/base.riv','characters/tiger/preview.webp','epic','🐯','#E99A35',30,true),
+  ('astronaut_01','فضانورد','character','characters/astronaut/base.riv','characters/astronaut/preview.webp','legendary','🧑‍🚀','#91A9D8',40,true),
+  ('cat_01','گربه','character','characters/cat/base.riv','characters/cat/preview.webp','common','🐱','#D5A1A8',50,true),
+  ('dragon_01','اژدها','character','characters/dragon/base.riv','characters/dragon/preview.webp','legendary','🐉','#6B70D6',60,true),
+  ('panda_01','پاندا','character','characters/panda/base.riv','characters/panda/preview.webp','rare','🐼','#D9E0E8',70,true),
+  ('owl_01','جغد','character','characters/owl/base.riv','characters/owl/preview.webp','epic','🦉','#A78BFA',80,true),
+  ('face_happy','چهره شاد','face','faces/happy','faces/happy.webp','common','😊',null,100,true),
+  ('face_cool','چهره باحال','face','faces/cool','faces/cool.webp','rare','😎',null,110,true),
+  ('hat_crown','تاج','hat','hats/crown.webp','hats/crown.webp','legendary','👑',null,120,true),
+  ('hat_space','کلاه فضایی','hat','hats/space.webp','hats/space.webp','epic','🪖',null,130,true),
+  ('glasses_neon','عینک نئونی','glasses','glasses/neon.webp','glasses/neon.webp','rare','🕶️',null,140,true),
+  ('outfit_royal','لباس شاهانه','outfit','outfits/royal.webp','outfits/royal.webp','epic','🥋',null,150,true),
+  ('aura_spark','هاله جرقه‌ای','aura','auras/spark.riv','auras/spark.webp','legendary','✨',null,160,true),
+  ('trail_comet','رد ستاره دنباله‌دار','piece_trail','trails/comet.riv','trails/comet.webp','epic','☄️',null,170,true),
+  ('dice_crystal','تاس کریستالی','dice_skin','dice/crystal.webp','dice/crystal.webp','rare','🎲',null,180,true),
+  ('board_midnight','صفحه نیمه‌شب','board_theme','boards/midnight.webp','boards/midnight.webp','epic','🌌',null,190,true),
+  ('frame_gold','قاب طلایی','frame','frames/gold.webp','frames/gold.webp','legendary','🏅',null,200,true),
+  ('win_fireworks','آتش‌بازی پیروزی','win_effect','effects/fireworks.riv','effects/fireworks.webp','legendary','🎆',null,210,true),
+  ('capture_pop','افکت برخورد','capture_effect','effects/pop.riv','effects/pop.webp','rare','💥',null,220,true)
+on conflict (id) do update set
+  name=excluded.name, category=excluded.category, asset_key=excluded.asset_key,
+  preview=excluded.preview, rarity=excluded.rarity, emoji=excluded.emoji,
+  color_hex=excluded.color_hex, sort_order=excluded.sort_order, is_active=true;
+
 create table if not exists public.ludo_player_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name_override text check (display_name_override is null or char_length(display_name_override) between 1 and 32),
