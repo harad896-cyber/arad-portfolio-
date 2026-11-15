@@ -193,8 +193,9 @@ void main() {
       ];
       final moved = applyLudoMove(applyLudoRoll(state, 1), 0);
       expect((moved['pieces'] as List)[1][0], 34);
-      expect((moved['dice'] as Map)['captured'], isEmpty);
+      expect((moved['pieces'] as List)[1][0], 34);
       expect(moved['turn'], 1);
+      expect(moved['phase'], 'awaiting_roll');
     });
 
     test('a blockade cannot be crossed or landed on', () {
@@ -225,6 +226,8 @@ void main() {
         ];
       expect(isValidLudoState(exactState), isTrue);
       final exact = applyLudoRoll(exactState, 1);
+      expect(exact['phase'], 'awaiting_move');
+      expect((exact['dice'] as Map)['legalMoves'], [0]);
       expect(getLegalMoves(exact, 1), [0]);
       final won = applyLudoMove(exact, 0);
       expect((won['pieces'] as List)[0][0], 57);
