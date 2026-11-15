@@ -61,7 +61,7 @@ class DiceQuaternion {
   factory DiceQuaternion.fromTo(DiceVector3 from, DiceVector3 to) {
     final a = from.normalized();
     final b = to.normalized();
-    final dot = a.dot(b).clamp(-1.0, 1.0);
+    final dot = a.dot(b).clamp(-1.0, 1.0).toDouble();
     if (dot > 1 - 1e-9) return identity;
     if (dot < -1 + 1e-9) {
       var axis = a.cross(const DiceVector3(1, 0, 0));
