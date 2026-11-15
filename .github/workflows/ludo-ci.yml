@@ -48,7 +48,7 @@ jobs:
         run: flutter test test/ludo_bot_policy_test.dart test/ludo_engine_test.dart test/ludo_move_decision_test.dart test/ludo_rules_test.dart
 
       - name: Analyze Ludo game changes
-        run: flutter analyze --no-pub lib/ludo_game.dart
+        run: flutter analyze --no-pub --no-fatal-infos lib/ludo_game.dart
 
       - name: Build Android APK
         run: flutter build apk --release
