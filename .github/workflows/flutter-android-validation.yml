@@ -132,10 +132,12 @@ jobs:
       - name: Install extracted ZIP APK and launch on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 900
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           script: |
             set -eu
             unzip -p build/app/outputs/flutter-apk/gapresan-install-bundle.zip GapResan.apk > /tmp/GapResan.apk
