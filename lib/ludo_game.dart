@@ -210,7 +210,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     _refreshDiamondBalance();
   }
 
-unused guide methods  void _onLookChanged() {
+  void _onLookChanged() {
     if (mounted) setState(() {});
   }
 
