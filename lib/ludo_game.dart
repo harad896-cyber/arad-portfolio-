@@ -889,8 +889,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
               decoration: BoxDecoration(color: const Color(0xFF392D4B), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFB89BFF))),
               child: Text('$_diamondBalance 💎', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
             )),
-            const SizedBox(height: 5),
-            _playerRow(const []),
+            _arenaRibbon(),
+            const SizedBox(height: 7),
+            _playerRow(const [0, 1]),
             const SizedBox(height: 7),
             Center(
               child: SizedBox(
@@ -929,6 +930,10 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 ]),
               ),
             ),
+            if (_playerCount > 2) ...[
+              const SizedBox(height: 7),
+              _playerRow(List.generate(_playerCount - 2, (index) => index + 2)),
+            ],
             if (_pendingDice.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 7),
@@ -986,6 +991,30 @@ class _LudoGamePageState extends State<LudoGamePage> {
         ),
       );
     },
+  );
+
+  Widget _arenaRibbon() => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(top: 2, bottom: 3),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.centerRight, end: Alignment.centerLeft,
+        colors: [Color(0xCC123D3B), Color(0xCC101C35), Color(0xCC39284B)],
+      ),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: const Color(0x66FFD477)),
+      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 3))],
+    ),
+    child: const Row(children: [
+      Icon(Icons.stadium_rounded, color: Color(0xFFFFD477), size: 17),
+      SizedBox(width: 7),
+      Expanded(child: Text('لیگ منچ گپ‌رسان', style: TextStyle(
+        color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .35,
+      ))),
+      Text('★  LUDO LEAGUE  ★', textDirection: TextDirection.ltr,
+        style: TextStyle(color: Color(0xFFFFD477), fontSize: 9, fontWeight: FontWeight.w900)),
+    ]),
   );
 
   Widget _edgeDiceControl(int player, {bool compact = false}) {
@@ -1226,15 +1255,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _playerRow(List<int> baseSlots) => LayoutBuilder(
     builder: (context, constraints) {
-      const gap = 6.0;
-      final cardWidth = (constraints.maxWidth - gap) / 2;
+      final visible = baseSlots.where((index) => index >= 0 && index < _playerCount).toList();
+      if (visible.isEmpty) return const SizedBox.shrink();
+      const gap = 8.0;
+      final single = visible.length == 1;
+      final cardWidth = single ? math.min(constraints.maxWidth * .78, 310.0) : (constraints.maxWidth - gap) / 2;
       return SizedBox(
         width: constraints.maxWidth,
         child: Wrap(
           spacing: gap, runSpacing: gap, alignment: WrapAlignment.center,
-          children: List.generate(_playerCount, (index) => SizedBox(
-            width: cardWidth, height: 66, child: _playerPanel(index),
-          )),
+          children: visible.map((index) => SizedBox(
+            width: cardWidth, height: 82, child: _playerPanel(index),
+          )).toList(),
         ),
       );
     },
@@ -1252,30 +1284,36 @@ class _LudoGamePageState extends State<LudoGamePage> {
       duration: const Duration(milliseconds: 220),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: active ? .30 : .14),
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: color.withValues(alpha: active ? 1 : .42),
-          width: active ? 1.8 : 1,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: active
+              ? [color.withValues(alpha: .38), const Color(0xEE0A1B2D)]
+              : [color.withValues(alpha: .19), const Color(0xDD0A1B2D)],
         ),
-        boxShadow: active
-            ? [BoxShadow(color: color.withValues(alpha: .20), blurRadius: 7)]
-            : const [],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: active ? 1 : .55),
+          width: active ? 2 : 1.1,
+        ),
+        boxShadow: [
+          const BoxShadow(color: Colors.black38, blurRadius: 8, offset: Offset(0, 3)),
+          if (active) BoxShadow(color: color.withValues(alpha: .30), blurRadius: 14, spreadRadius: 1),
+        ],
       ),
       child: Row(children: [
         Container(
-          width: 27, height: 27,
+          width: 37, height: 37,
           decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
             border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2)),
-          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 15))),
+          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 21))),
         ),
         const SizedBox(width: 6),
         Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(_againstBot && player == 1 ? 'ربات' : _playerName(player),
             maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
           Text('$count/4 مهره رسیده', maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70, fontSize: 8)),
+            style: const TextStyle(color: Colors.white70, fontSize: 9)),
           if (active) const Text('نوبت فعلی', style: TextStyle(color: Color(0xFFFFD477), fontSize: 8, fontWeight: FontWeight.w900)),
         ])),
       ]),
