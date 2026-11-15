@@ -145,8 +145,9 @@ void main() {
       // Verify the button rolls the die rather than merely existing.
       await tester.tap(find.byKey(const ValueKey('ludo-die-0')));
       await tester.pump();
-      // The die face is painted graphically; its rolled value is exposed to accessibility.
-      expect(find.bySemanticsLabel(RegExp(r'تاس.*[۱-۶1-6]')), findsOneWidget);
+      // The die face is painted graphically. Its live value is reflected in
+      // the Tooltip's accessible label after the state update is pumped.
+      expect(find.byTooltip(RegExp(r'تاس.*[۱-۶1-6]')), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byTooltip('تنظیمات بازی'));
