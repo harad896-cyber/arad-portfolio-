@@ -4,6 +4,8 @@ on:
   push:
     branches: [feature/gapresan-dice-prototype]
     paths:
+      - 'lib/ludo_dice_demo.dart'
+      - 'test/ludo_dice_demo_test.dart'
       - 'lib/quick_games/**'
       - 'test/quick_games/**'
       - 'lib/ludo_engine.dart'
@@ -56,9 +58,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Format engine and tests
-        run: dart format lib/quick_games/game_sdk.dart lib/quick_games/tic_tac_toe.dart test/quick_games/tic_tac_toe_test.dart lib/ludo_engine.dart lib/ludo_xp_service.dart lib/ludo_lobby.dart lib/ludo_character_editor.dart lib/ludo_customization.dart lib/main.dart test/ludo_engine_test.dart test/ludo_xp_service_test.dart test/ludo_character_editor_test.dart test/ludo_customization_test.dart
+        run: dart format lib/ludo_dice_demo.dart test/ludo_dice_demo_test.dart lib/quick_games/game_sdk.dart lib/quick_games/tic_tac_toe.dart test/quick_games/tic_tac_toe_test.dart lib/ludo_engine.dart lib/ludo_xp_service.dart lib/ludo_lobby.dart lib/ludo_character_editor.dart lib/ludo_customization.dart lib/main.dart test/ludo_engine_test.dart test/ludo_xp_service_test.dart test/ludo_character_editor_test.dart test/ludo_customization_test.dart
       - name: Analyze engine, lobby and tests
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/quick_games/game_sdk.dart lib/quick_games/tic_tac_toe.dart test/quick_games/tic_tac_toe_test.dart lib/ludo_engine.dart lib/ludo_xp_service.dart lib/ludo_lobby.dart lib/ludo_character_editor.dart lib/ludo_customization.dart lib/main.dart test/ludo_engine_test.dart test/ludo_xp_service_test.dart test/ludo_character_editor_test.dart test/ludo_customization_test.dart
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/ludo_dice_demo.dart test/ludo_dice_demo_test.dart lib/quick_games/game_sdk.dart lib/quick_games/tic_tac_toe.dart test/quick_games/tic_tac_toe_test.dart lib/ludo_engine.dart lib/ludo_xp_service.dart lib/ludo_lobby.dart lib/ludo_character_editor.dart lib/ludo_customization.dart lib/main.dart test/ludo_engine_test.dart test/ludo_xp_service_test.dart test/ludo_character_editor_test.dart test/ludo_customization_test.dart
+      - name: Run deterministic dice demo tests
+        run: flutter test test/ludo_dice_demo_test.dart
       - name: Run quick games SDK and tic-tac-toe tests
         run: flutter test test/quick_games/tic_tac_toe_test.dart
       - name: Run Ludo engine unit and simulation tests
