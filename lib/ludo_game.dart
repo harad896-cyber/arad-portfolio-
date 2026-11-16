@@ -378,8 +378,17 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _diceValues[_turn] = value;
       _pendingDice.add(value);
       _bonusRollAvailable = value == 6;
-      _message = 'تاس ${value == 6 ? 'شش؛ یک پرتاب دیگر داری' : 'آماده شد'}';
+      _message = value == 6
+          ? '۶ آوردی! یک بار دیگر تاس خودت را لمس کن.'
+          : 'تاس آماده شد؛ حالا مهرهٔ روشن‌شده را انتخاب کن.';
     });
+
+    // A normal roll is committed to move selection immediately. The player
+    // never has to tap the die a second time just to select the rolled value.
+    // A six still offers the legitimate bonus roll before choosing a token.
+    if (value != 6 && mounted && _pendingDice.isNotEmpty) {
+      _chooseDie(_pendingDice.first, fromBot: fromBot);
+    }
   }
 
   Future<void> _refreshDiamondBalance() async {
@@ -961,7 +970,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
     final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
-    final hasPendingChoice = _pendingDice.isNotEmpty && !_bonusRollAvailable;
+    final awaitingToken = active && _dice != null && _legal.isNotEmpty && !_moving;
+    final needsBonusRoll = active && _bonusRollAvailable && _pendingDice.isNotEmpty;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
     // Compact controls are square so rotating them for each seat never
@@ -980,8 +990,16 @@ class _LudoGamePageState extends State<LudoGamePage> {
         child: InkWell(
           key: ValueKey('ludo-die-$player'),
           borderRadius: BorderRadius.circular(13),
-          onTap: canRoll ? () { if (hasPendingChoice) { _chooseDie(_pendingDice.first); } else { _roll(); } } : null,
-          child: AnimatedContainer(
+          onTap: canRoll ? _roll : null,
+          child: TweenAnimationBuilder<double>(
+            key: ValueKey('ludo-die-motion-$player-${_diceValues[player]}-${_dice == null}'),
+            tween: Tween<double>(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 620),
+            builder: (context, motion, child) => Transform.translate(
+              offset: Offset(math.sin(motion * math.pi * 8) * (1 - motion) * 3.2, 0),
+              child: child,
+            ),
+            child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: width, height: height,
             padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
@@ -996,14 +1014,36 @@ class _LudoGamePageState extends State<LudoGamePage> {
               border: Border.all(color: active ? color : color.withValues(alpha: .78), width: active ? 2.5 : 1.2),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: .42), blurRadius: 7, offset: const Offset(0, 3)),
-                if (active) BoxShadow(color: color.withValues(alpha: .62), blurRadius: 13, spreadRadius: 1),
+                if (active) BoxShadow(color: color.withValues(alpha: awaitingToken ? .95 : .72), blurRadius: awaitingToken ? 22 : 15, spreadRadius: awaitingToken ? 3 : 1),
+                if (awaitingToken) BoxShadow(color: const Color(0xFFFFE08A).withValues(alpha: .78), blurRadius: 26, spreadRadius: 2),
               ],
             ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (!compact) Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
               if (!compact) const SizedBox(height: 1),
-              _LudoDieFace(value: shownValue, size: compact ? 34 : 46),
+              Stack(clipBehavior: Clip.none, children: [
+                _LudoDieFace(value: shownValue, size: compact ? 34 : 46),
+                if (awaitingToken || needsBonusRoll)
+                  Positioned(
+                    top: -8, right: -9,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: awaitingToken ? const Color(0xFFFFD76A) : color,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: color.withValues(alpha: .85), blurRadius: 9, spreadRadius: 1)],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: Icon(
+                          awaitingToken ? Icons.touch_app_rounded : Icons.casino_rounded,
+                          size: compact ? 12 : 15,
+                          color: const Color(0xFF102235),
+                        ),
+                      ),
+                    ),
+                  ),
+              ]),
             ]),
           ),
         ),
