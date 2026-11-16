@@ -1735,17 +1735,18 @@ class _LudoBoardPainter extends CustomPainter {
         }
       }
       if (points.length < 2) continue;
-      final path = Path()..moveTo(points.first.dx, points.first.dy);
-      for (final point in points.skip(1)) { path.lineTo(point.dx, point.dy); }
-      canvas.drawPath(path, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .24
-        ..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..color = color.withValues(alpha: .24));
-      canvas.drawPath(path, Paint()..style = PaintingStyle.stroke..strokeWidth = unit * .075
-        ..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round
-        ..color = Color.lerp(color, Colors.white, .52)!.withValues(alpha: .98));
-      for (var i = 1; i < points.length; i++) {
-        canvas.drawCircle(points[i], unit * .105, Paint()..color = Colors.white);
-        canvas.drawCircle(points[i], unit * .065, Paint()..color = color);
-      }
+      // Keep the board clean: do not draw a long colored route across the
+      // board while the player is choosing. Mark only this token's landing
+      // cell with a subtle pulsing-style halo.
+      final destination = points.last;
+      canvas.drawCircle(destination, unit * .34, Paint()
+        ..color = color.withValues(alpha: .16));
+      canvas.drawCircle(destination, unit * .29, Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = unit * .045
+        ..color = Color.lerp(color, Colors.white, .45)!.withValues(alpha: .92));
+      canvas.drawCircle(destination, unit * .075, Paint()
+        ..color = Colors.white.withValues(alpha: .95));
     }
   }
 
