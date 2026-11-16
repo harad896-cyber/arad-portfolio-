@@ -835,7 +835,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   Widget _gameBody() => LayoutBuilder(
     builder: (context, constraints) {
-      final rail = 12.0;
+      final rail = 15.0;
       final boardSize = math.max(220.0, math.min(620.0, constraints.maxWidth - rail * 2));
       final frameSize = boardSize + rail * 2;
       return SingleChildScrollView(
@@ -876,14 +876,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
                     child: ValueListenableBuilder<FunBackdrop>(
                       valueListenable: FunZoneLook.current,
                       builder: (context, look, _) => ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFD9FFF0), width: 2),
-                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE6FFF7), width: 2.5),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: const [
-                              BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4)),
-                              BoxShadow(color: Color(0x3300F5A0), blurRadius: 18, spreadRadius: 1),
+                              BoxShadow(color: Colors.black54, blurRadius: 16, offset: Offset(0, 6)),
+                              BoxShadow(color: Color(0x6600F5A0), blurRadius: 24, spreadRadius: 2),
+                              BoxShadow(color: Color(0x44FFD477), blurRadius: 9, spreadRadius: 1),
                             ],
                           ),
                           child: Stack(children: [
@@ -976,8 +977,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
     // Compact controls are square so rotating them for each seat never
     // changes their layout footprint or clips inside the player card.
-    final width = compact ? 50.0 : 68.0;
-    final height = compact ? 50.0 : 78.0;
+    final width = compact ? 62.0 : 82.0;
+    final height = compact ? 62.0 : 94.0;
     final accessibleLabel = shownValue == null ? 'تاس $label' : 'تاس $label: $shownValue';
     return Semantics(
       button: true,
@@ -1010,8 +1011,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
                     ? [const Color(0xFF263D53), const Color(0xFF071626)]
                     : [const Color(0xFF172A3C), const Color(0xFF081523)],
               ),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: active ? color : color.withValues(alpha: .78), width: active ? 2.5 : 1.2),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: active ? const Color(0xFFFFE5A0) : color.withValues(alpha: .82), width: active ? 2.8 : 1.5),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: .42), blurRadius: 7, offset: const Offset(0, 3)),
                 if (active) BoxShadow(color: color.withValues(alpha: awaitingToken ? .95 : .72), blurRadius: awaitingToken ? 22 : 15, spreadRadius: awaitingToken ? 3 : 1),
@@ -1023,7 +1024,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
                 style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
               if (!compact) const SizedBox(height: 1),
               Stack(clipBehavior: Clip.none, children: [
-                _LudoDieFace(value: shownValue, size: compact ? 34 : 46),
+                _LudoDieFace(value: shownValue, size: compact ? 44 : 62),
                 if (awaitingToken || needsBonusRoll)
                   Positioned(
                     top: -8, right: -9,
@@ -1253,8 +1254,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
     // yellow faces up, and green faces left. A square hit target keeps all
     // four controls aligned while the complete dice control turns to its seat.
     return SizedBox(
-      width: 50,
-      height: 50,
+      width: 62,
+      height: 62,
       child: RotatedBox(
         quarterTurns: _baseIndex(player),
         child: _edgeDiceControl(player, compact: true),
@@ -1273,7 +1274,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         : const ['🦊', '🐬', '🐥', '🐸'][player];
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft, end: Alignment.bottomRight,
@@ -1298,11 +1299,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
           const SizedBox(width: 5),
         ],
         Container(
-          width: 35, height: 35,
+          width: 38, height: 38,
           decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
             border: Border.all(color: player == 0 ? LudoCustomization.frameColors[look.frame] : color, width: 2.5),
             boxShadow: [BoxShadow(color: color.withValues(alpha: .28), blurRadius: 8)]),
-          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 20))),
+          child: Center(child: Text(avatar, style: const TextStyle(fontSize: 22))),
         ),
         const SizedBox(width: 6),
         Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -1442,26 +1443,51 @@ class _LudoDieFace extends StatelessWidget {
       width: size, height: size,
       padding: EdgeInsets.all(size * .13),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F0E7),
-        borderRadius: BorderRadius.circular(size * .20),
-        border: Border.all(color: const Color(0xFFD7CDBB), width: .8),
-        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1))],
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFFFFFFFF), Color(0xFFF5F2E9), Color(0xFFD9E1E4)],
+        ),
+        borderRadius: BorderRadius.circular(size * .23),
+        border: Border.all(color: const Color(0xFFFFFFFF), width: 1.8),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: .38), blurRadius: size * .16, offset: Offset(0, size * .07)),
+          BoxShadow(color: const Color(0x66FFFFFF), blurRadius: size * .08, offset: Offset(-size * .035, -size * .035)),
+        ],
       ),
-      child: GridView.count(
-        crossAxisCount: 3,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        mainAxisSpacing: size * .035,
-        crossAxisSpacing: size * .035,
-        children: List.generate(9, (index) => Center(
-          child: dots.contains(index)
-              ? Container(
-                  width: size * .16, height: size * .16,
-                  decoration: const BoxDecoration(color: Color(0xFF172638), shape: BoxShape.circle),
-                )
-              : const SizedBox.shrink(),
-        )),
-      ),
+      child: Stack(children: [
+        GridView.count(
+          crossAxisCount: 3,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          mainAxisSpacing: size * .035,
+          crossAxisSpacing: size * .035,
+          children: List.generate(9, (index) => Center(
+            child: dots.contains(index)
+                ? Container(
+                    width: size * .19, height: size * .19,
+                    decoration: BoxDecoration(
+                      gradient: const RadialGradient(
+                        center: Alignment(-.35, -.4),
+                        colors: [Color(0xFF526B7C), Color(0xFF142536), Color(0xFF071522)],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: const Color(0xFF071522).withValues(alpha: .28), blurRadius: size * .035, offset: Offset(0, size * .025))],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          )),
+        ),
+        Positioned(
+          left: size * .08, top: size * .045,
+          child: Container(
+            width: size * .30, height: size * .075,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .72),
+              borderRadius: BorderRadius.circular(size),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }
