@@ -1050,7 +1050,6 @@ class _LudoGamePageState extends State<LudoGamePage> {
       ),
       ),
       ),
-      ),
     );
   }
 
