@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'ludo_game.dart';
 
 /// Social lobby entry point embedded in GapResan chat.
 class LudoLobbyPage extends StatefulWidget {
@@ -274,6 +275,22 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         SizedBox(height: 8), Text('منچ گپ‌رسان', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900)),
         Text('دوستانت را دعوت کن و دور هم بازی کنید', style: TextStyle(color: Colors.white70)),
       ]))),
+      const SizedBox(height: 16),
+      FilledButton.icon(
+        key: const ValueKey('ludo-start-offline'),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const LudoGamePage()),
+        ),
+        icon: const Icon(Icons.play_circle_fill_rounded, size: 25),
+        label: const Text('شروع بازی منچ آفلاین'),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(54),
+          backgroundColor: const Color(0xFF087D68),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+        ),
+      ),
       const SizedBox(height: 20),
       const Text('ساخت اتاق جدید', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
       const SizedBox(height: 8),
