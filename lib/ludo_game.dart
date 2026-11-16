@@ -377,17 +377,18 @@ class _LudoGamePageState extends State<LudoGamePage> {
     setState(() {
       _diceValues[_turn] = value;
       _pendingDice.add(value);
-      _bonusRollAvailable = value == 6;
+      // For a human turn, a six must be played first. The bonus roll becomes
+      // available only after that six-move animation has completed.
+      _bonusRollAvailable = fromBot && value == 6;
       _message = value == 6
-          ? '۶ آوردی! یک بار دیگر تاس خودت را لمس کن.'
+          ? (fromBot ? '۶ آمد؛ نوبت حرکت ربات است.' : '۶ آوردی! اول مهره‌ات را ۶ خانه حرکت بده.')
           : 'تاس آماده شد؛ حالا مهرهٔ روشن‌شده را انتخاب کن.';
     });
 
-    // A normal roll is committed to move selection immediately. The player
-    // never has to tap the die a second time just to select the rolled value.
-    // A six still offers the legitimate bonus roll before choosing a token.
-    if (value != 6 && mounted && _pendingDice.isNotEmpty) {
-      _chooseDie(_pendingDice.first, fromBot: fromBot);
+    // Select the just-rolled die immediately. A human who rolled six moves
+    // that six first, then taps their own die again for the bonus roll.
+    if (mounted && _pendingDice.isNotEmpty && (!fromBot || value != 6)) {
+      _chooseDie(_pendingDice.last, fromBot: fromBot);
     }
   }
 
@@ -578,9 +579,14 @@ class _LudoGamePageState extends State<LudoGamePage> {
         _winner = _turn;
         _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
       } else if (_pendingDice.isNotEmpty) {
-        // Keep the unspent die for another token; do not advance the turn.
+        // Keep any already-rolled die available for another token.
         _message = 'تاس باقی‌مانده: ${_pendingDice.join(' · ')}';
+      } else if (rolledValue == 6) {
+        // The six-move is complete: unlock the same player's bonus roll now.
+        _bonusRollAvailable = true;
+        _message = 'حرکت ۶ تمام شد؛ دوباره تاس خودت را لمس کن.';
       } else {
+        _bonusRollAvailable = false;
         _sixStreak = 0;
         _turn = LudoRules.nextPlayer(_turn, _playerCount);
         _message = 'نوبت ${_playerName(_turn)}';
