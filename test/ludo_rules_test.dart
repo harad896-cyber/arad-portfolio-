@@ -20,6 +20,12 @@ void main() {
       expect(LudoRules.trackIndex(1, 0, playerCount: 4), 39);
     });
 
+    test('the final shared square stays on the track before entering the home lane', () {
+      expect(LudoRules.trackIndex(0, 50, playerCount: 4), 50);
+      expect(LudoRules.trackIndex(0, 51, playerCount: 4), 51);
+      expect(LudoRules.trackIndex(0, 52, playerCount: 4), isNull);
+    });
+
     test('a token leaves the yard only with a six', () {
       expect(LudoRules.legalTokens([-1, -1, -1, -1], 5), isEmpty);
       expect(LudoRules.legalTokens([-1, -1, -1, -1], 6), [0, 1, 2, 3]);
