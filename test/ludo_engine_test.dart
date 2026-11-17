@@ -113,6 +113,18 @@ void main() {
       expect(ludoSafeSquares, hasLength(8));
     });
 
+    test('a piece turns into its home lane after the final shared square', () {
+      var state = state2();
+      state['pieces'] = [
+        [50, -1, -1, -1],
+        [-1, -1, -1, -1],
+      ];
+      final moved = applyLudoMove(applyLudoRoll(state, 1), 0);
+      expect((moved['pieces'] as List)[0][0], 51);
+      expect(ludoTrackIndex(0, 51, playerCount: 2), isNull);
+      expect(moved['turn'], 1);
+    });
+
     test('only a six releases a piece from the yard', () {
       final noMove = applyLudoRoll(state2(), 5);
       expect(noMove['turn'], 0);
