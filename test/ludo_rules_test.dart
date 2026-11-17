@@ -20,10 +20,10 @@ void main() {
       expect(LudoRules.trackIndex(1, 0, playerCount: 4), 39);
     });
 
-    test('the final shared square stays on the track before entering the home lane', () {
+    test('the final shared square is followed by the first home-lane cell', () {
+      expect(LudoRules.trackIndex(0, 49, playerCount: 4), 49);
       expect(LudoRules.trackIndex(0, 50, playerCount: 4), 50);
-      expect(LudoRules.trackIndex(0, 51, playerCount: 4), 51);
-      expect(LudoRules.trackIndex(0, 52, playerCount: 4), isNull);
+      expect(LudoRules.trackIndex(0, 51, playerCount: 4), isNull);
     });
 
     test('a token leaves the yard only with a six', () {
