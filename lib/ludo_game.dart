@@ -562,6 +562,10 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   }
 
   void _roll({bool fromBot = false}) {
+    if (widget.roomId != null) {
+      unawaited(_rollOnline());
+      return;
+    }
     if (!_started || _winner != null || _dice != null || _moving ||
         (_botBusy && !fromBot) || (_pendingDice.isNotEmpty && !_bonusRollAvailable)) return;
     _playSfx('roll');
@@ -740,6 +744,10 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   }
 
   Future<void> _moveToken(int token, {bool fromBot = false}) async {
+    if (widget.roomId != null) {
+      await _moveOnline(token);
+      return;
+    }
     if (_dice == null || _winner != null || _moving || (_botBusy && !fromBot) || !_legal.contains(token)) return;
     final movingPlayer = _turn;
     final rolledValue = _dice!;
@@ -924,12 +932,30 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
               color: Colors.transparent,
               child: DefaultTextStyle(
                 style: const TextStyle(color: Colors.white),
-                child: _started ? _gameBody() : _modePicker(),
+                child: _started ? _gameBody() : widget.roomId != null ? _onlineWaitingView() : _modePicker(),
               ),
             ),
           );
         },
       ),
+    ),
+  );
+
+  Widget _onlineWaitingView() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const CircularProgressIndicator(),
+        const SizedBox(height: 18),
+        const Text('در حال اتصال به مسابقه آنلاین',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        Text(_message, textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70, height: 1.5)),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(onPressed: _refreshOnlineRoom,
+          icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره')),
+      ]),
     ),
   );
 
@@ -1197,8 +1223,8 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   Widget _edgeDiceControl(int player, {bool compact = false}) {
     final color = _playerColor(player);
     final active = _turn == player && _winner == null;
-    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving;
-    final awaitingToken = active && _dice != null && _legal.isNotEmpty && !_moving;
+    final canRoll = active && _dice == null && !_botTurn && !_botBusy && !_moving && !_onlineBusy && (widget.roomId == null || _isMyOnlineTurn);
+    final awaitingToken = active && _dice != null && _legal.isNotEmpty && !_moving && !_onlineBusy && (widget.roomId == null || _isMyOnlineTurn);
     final needsBonusRoll = active && _bonusRollAvailable && _pendingDice.isNotEmpty;
     final shownValue = _diceValues[player];
     final label = _againstBot && player == 1 ? 'ربات' : _playerName(player);
@@ -1415,8 +1441,14 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
         content: const Text('اگر خارج شوی، بازی فعلی پایان می‌یابد.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('ادامه بازی')),
-          FilledButton(onPressed: () { Navigator.pop(dialogContext); _reset(); },
-            child: const Text('خروج')),
+          FilledButton(onPressed: () {
+            Navigator.pop(dialogContext);
+            if (widget.roomId != null) {
+              Navigator.of(context).pop();
+            } else {
+              _reset();
+            }
+          }, child: const Text('خروج')), 
         ],
       ),
     );
