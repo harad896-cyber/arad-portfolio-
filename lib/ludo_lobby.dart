@@ -54,7 +54,12 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         .stream(primaryKey: ['id'])
         .eq('id', roomId)
         .listen((rows) {
-          if (!mounted || rows.isEmpty || rows.first['status'] != 'playing' || _gameOpened) return;
+          if (!mounted || rows.isEmpty) return;
+          final status = rows.first['status']?.toString();
+          if (_room != null && _room!['status'] != status) {
+            setState(() => _room = {..._room!, 'status': status});
+          }
+          if (status != 'playing' || _gameOpened) return;
           _gameOpened = true;
           Navigator.of(context).push<void>(
             MaterialPageRoute<void>(builder: (_) => LudoGamePage(roomId: roomId)),
@@ -273,6 +278,13 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     });
   }
 
+  Future<void> _resumeMatch(String roomId) async {
+    _gameOpened = true;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => LudoGamePage(roomId: roomId)),
+    );
+  }
+
   Future<void> _startMatch(String roomId) async {
     await _run(() async {
       _gameOpened = true;
@@ -433,14 +445,22 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
             final me = mine.isEmpty ? null : mine.first;
             final ready = me?['is_ready'] == true;
             final isHost = me?['is_host'] == true;
-            final canStart = players.length >= 2 && players.every((p) => p['is_ready'] == true);
+            final lobbyOpen = room['status'] == 'lobby';
+            final canStart = lobbyOpen && players.length >= 2 && players.every((p) => p['is_ready'] == true);
             return Column(children: [
               OutlinedButton.icon(
-                onPressed: _busy || me == null ? null : () => _setReady(!ready),
+                onPressed: _busy || me == null || !lobbyOpen ? null : () => _setReady(!ready),
                 icon: Icon(ready ? Icons.hourglass_bottom_rounded : Icons.check_circle_outline),
                 label: Text(ready ? 'لغو آمادگی' : 'من آماده‌ام'),
               ),
-              if (isHost) ...[
+              if (!lobbyOpen) ...[
+                const SizedBox(height: 10),
+                SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: _busy ? null : () => _resumeMatch(id),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('بازگشت به مسابقه آنلاین'),
+                )),
+              ] else if (isHost) ...[
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
