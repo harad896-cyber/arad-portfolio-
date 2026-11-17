@@ -317,6 +317,8 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   }
 
   void _applyOnlineRoom(Map<String, dynamic> row) {
+    final incomingVersion = (row['state_version'] as num?)?.toInt();
+    if (incomingVersion != null && incomingVersion < _onlineVersion) return;
     if (_onlineStreamActive) {
       _onlineReconnectAttempts = 0;
       _onlineReconnectTimer?.cancel();
@@ -347,7 +349,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       if (!mounted) return;
       setState(() {
         _onlinePlayers = players;
-        _onlineVersion = (row['state_version'] as num?)?.toInt() ?? _onlineVersion;
+        _onlineVersion = incomingVersion ?? _onlineVersion;
         _onlineConnected = true;
         _playerCount = players.length;
         _positions = positions;
