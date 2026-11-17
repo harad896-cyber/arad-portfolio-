@@ -5,8 +5,9 @@
 /// All transitions return a fresh JSON-compatible state and never mutate input.
 library ludo_engine;
 
-const int ludoTrackLength = 51;
-const int ludoHomeLength = 7; // six home-lane cells plus the final home square
+const int ludoTrackLength = 52; // board circumference
+const int ludoSharedTrackLength = 51; // per-player route before turning into the home lane
+const int ludoHomeLength = 6;
 const int ludoPieceHome = ludoTrackLength + ludoHomeLength - 1; // 57
 const List<int> ludoStartOffsets = [0, 39, 26, 13];
 
@@ -132,7 +133,7 @@ int? ludoTrackIndex(int player, int progress, {required int playerCount}) {
       player < 0 ||
       player >= playerCount ||
       progress < 0 ||
-      progress >= ludoTrackLength) {
+      progress >= ludoSharedTrackLength) {
     return null;
   }
   final offset = playerCount == 2 && player == 1
