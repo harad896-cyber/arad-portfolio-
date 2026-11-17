@@ -244,6 +244,17 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     });
   }
 
+  Future<void> _startMatch(String roomId) async {
+    await _run(() async {
+      await _db.rpc('start_ludo_match', params: {'p_room_id': roomId})
+          .timeout(const Duration(seconds: 15));
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => LudoGamePage(roomId: roomId)),
+      );
+    });
+  }
+
   Future<Map<String, dynamic>?> _profileFor(String userId) {
     return _profileCache.putIfAbsent(userId, () async {
       final row = await _db.from('profiles')
@@ -384,14 +395,34 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
             final mine = players.where((p) => p['user_id']?.toString() == _uid).toList();
             final me = mine.isEmpty ? null : mine.first;
             final ready = me?['is_ready'] == true;
-            return OutlinedButton.icon(
-              onPressed: _busy || me == null ? null : () => _setReady(!ready),
-              icon: Icon(ready ? Icons.hourglass_bottom_rounded : Icons.check_circle_outline),
-              label: Text(ready ? 'لغو آمادگی' : 'من آماده‌ام'),
-            );
+            final isHost = me?['is_host'] == true;
+            final canStart = players.length >= 2 && players.every((p) => p['is_ready'] == true);
+            return Column(children: [
+              OutlinedButton.icon(
+                onPressed: _busy || me == null ? null : () => _setReady(!ready),
+                icon: Icon(ready ? Icons.hourglass_bottom_rounded : Icons.check_circle_outline),
+                label: Text(ready ? 'لغو آمادگی' : 'من آماده‌ام'),
+              ),
+              if (isHost) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _busy || !canStart ? null : () => _startMatch(id),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: Text(canStart ? 'شروع مسابقه آنلاین' : 'در انتظار آمادگی حداقل دو بازیکن'),
+                  ),
+                ),
+              ] else
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('پس از آماده‌شدن همهٔ بازیکنان، میزبان مسابقه را شروع می‌کند.',
+                    textAlign: TextAlign.center),
+                ),
+            ]);
           }),
           const SizedBox(height:8),
-          const Text('وقتی بازیکنان به اتاق بپیوندند، وضعیت آن‌ها در این فهرست زنده به‌روزرسانی می‌شود.',textAlign:TextAlign.center),
+          const Text('وضعیت بازیکنان به‌صورت زنده به‌روزرسانی می‌شود.',textAlign:TextAlign.center),
           if(snapshot.hasError)const Text('اتصال زنده قطع شده؛ صفحه را دوباره باز کن.',style:TextStyle(color:Colors.orange)),
           if(_error!=null)Text(_error!,style:const TextStyle(color:Colors.red)),
         ]);
