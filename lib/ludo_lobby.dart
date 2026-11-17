@@ -173,6 +173,10 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
     if (value.contains('ludo_room_expired_or_missing')) return 'اتاق پیدا نشد یا مهلت دعوت تمام شده است.';
     if (value.contains('ludo_invite_required')) return 'این اتاق خصوصی است؛ باید دعوت معتبر داشته باشی.';
     if (value.contains('ludo_room_full')) return 'ظرفیت اتاق تکمیل شده است.';
+    if (value.contains('ludo_need_two_players')) return 'برای شروع مسابقه حداقل دو بازیکن لازم است.';
+    if (value.contains('ludo_players_not_ready')) return 'همه بازیکنان باید گزینهٔ «من آماده‌ام» را بزنند.';
+    if (value.contains('ludo_host_only_start')) return 'فقط سازندهٔ اتاق می‌تواند مسابقه را شروع کند.';
+    if (value.contains('ludo_game_mode_not_supported') || value.contains('ludo_bots_not_supported')) return 'این حالت بازی هنوز پشتیبانی نمی‌شود؛ اتاق کلاسیک بساز.';
     if (value.contains('authentication_required')) return 'برای بازی باید وارد حساب شوی.';
     if (value.contains('duplicate key')) return 'این اتاق پر شده؛ یک اتاق دیگر را امتحان کن.';
     return value.replaceFirst('Exception: ', '');
