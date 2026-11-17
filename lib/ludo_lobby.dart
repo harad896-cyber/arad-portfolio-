@@ -340,9 +340,11 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         selected: {_maxPlayers}, onSelectionChanged: (v) => setState(() => _maxPlayers = v.first),
       ),
       const SizedBox(height: 12),
-      SegmentedButton<String>(
-        segments: const [ButtonSegment(value:'standard',label:Text('کلاسیک')),ButtonSegment(value:'one_piece',label:Text('تک‌مهره · ۵ دقیقه'))],
-        selected: {_mode}, onSelectionChanged: (v) => setState(() => _mode = v.first),
+      const ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(Icons.flag_rounded),
+        title: Text('حالت بازی'),
+        subtitle: Text('منچ کلاسیک چهارمهره‌ای'),
       ),
       SwitchListTile(value:_private,onChanged:(v)=>setState(()=>_private=v),title:const Text('اتاق خصوصی'),subtitle:const Text('فقط افراد دعوت‌شده می‌توانند وارد شوند.')),
       const ListTile(
