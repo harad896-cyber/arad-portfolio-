@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ludo-validation-${{ github.ref }}
+  group: ludo-ci-validation-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
