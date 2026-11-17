@@ -317,8 +317,10 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   }
 
   void _applyOnlineRoom(Map<String, dynamic> row) {
-    _onlineReconnectAttempts = 0;
-    if (_onlineStreamActive) _onlineReconnectTimer?.cancel();
+    if (_onlineStreamActive) {
+      _onlineReconnectAttempts = 0;
+      _onlineReconnectTimer?.cancel();
+    }
     final rawState = row['game_state'];
     if (rawState is! Map) {
       if (mounted) setState(() {
