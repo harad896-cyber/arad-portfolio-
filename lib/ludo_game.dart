@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
@@ -162,7 +163,7 @@ class LudoGamePage extends StatefulWidget {
   @override State<LudoGamePage> createState() => _LudoGamePageState();
 }
 
-class _LudoGamePageState extends State<LudoGamePage> {
+class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver {
   static const _colors = [
     Color(0xFFE34D55), Color(0xFF3478E5),
     Color(0xFFF0BD35), Color(0xFF269B70),
@@ -184,6 +185,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
   LudoCharacterAppearance _myCharacter = const LudoCharacterAppearance();
   List<List<int>> _positions = [];
   final List<String> _localChatMessages = [];
+  StreamSubscription<List<Map<String, dynamic>>>? _onlineRoomSubscription;
+  List<Map<String, dynamic>> _onlinePlayers = [];
+  int _onlineVersion = 0;
+  bool _onlineBusy = false;
+  bool _onlineConnected = false;
 
   SupabaseClient? _tryGetSupabaseClient() {
     // Widget tests and offline preview can open Ludo before Supabase.initialize.
@@ -198,6 +204,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     LudoCustomization.current.addListener(_onLookChanged);
     LudoCustomization.load().catchError((_) {});
     final supabaseClient = _tryGetSupabaseClient();
@@ -208,6 +215,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
     _loadFirstGuide();
     _refreshDiamondBalance();
+    if (widget.roomId != null) _connectOnlineRoom();
   }
 
   Future<void> _loadFirstGuide() async {
@@ -224,8 +232,198 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (mounted) setState(() {});
   }
 
+  String? get _onlineUserId => _tryGetSupabaseClient()?.auth.currentUser?.id;
+
+  bool get _isMyOnlineTurn {
+    final userId = _onlineUserId;
+    if (userId == null || _onlinePlayers.isEmpty || _turn < 0 || _turn >= _onlinePlayers.length) {
+      return false;
+    }
+    return _onlinePlayers[_turn]['id']?.toString() == userId;
+  }
+
+  Future<void> _connectOnlineRoom() async {
+    final client = _tryGetSupabaseClient();
+    final roomId = widget.roomId;
+    if (client == null || roomId == null) {
+      if (mounted) setState(() => _message = 'اتصال حساب برای مسابقه آنلاین در دسترس نیست.');
+      return;
+    }
+
+    _onlineRoomSubscription?.cancel();
+    _onlineRoomSubscription = client
+        .from('ludo_rooms')
+        .stream(primaryKey: ['id'])
+        .eq('id', roomId)
+        .listen((rows) {
+          if (rows.isNotEmpty) _applyOnlineRoom(rows.first);
+        }, onError: (Object error) {
+          if (mounted) setState(() {
+            _onlineConnected = false;
+            _message = 'اتصال زنده قطع شد؛ برای بازیابی وضعیت دوباره تلاش می‌کنیم.';
+          });
+        });
+
+    await _refreshOnlineRoom();
+  }
+
+  Future<void> _refreshOnlineRoom() async {
+    final client = _tryGetSupabaseClient();
+    final roomId = widget.roomId;
+    if (client == null || roomId == null) return;
+    try {
+      final row = await client
+          .from('ludo_rooms')
+          .select('id,status,game_state,state_version')
+          .eq('id', roomId)
+          .single()
+          .timeout(const Duration(seconds: 12));
+      _applyOnlineRoom(Map<String, dynamic>.from(row));
+    } catch (error) {
+      if (mounted) setState(() {
+        _onlineConnected = false;
+        _message = 'بازیابی مسابقه ناموفق بود: ${error.toString().replaceFirst('Exception: ', '')}';
+      });
+    }
+  }
+
+  void _applyOnlineRoom(Map<String, dynamic> row) {
+    final rawState = row['game_state'];
+    if (rawState is! Map) {
+      if (mounted) setState(() {
+        _onlineConnected = true;
+        _started = false;
+        _message = 'منتظر شروع مسابقه توسط میزبان هستیم.';
+      });
+      return;
+    }
+    try {
+      final state = Map<String, dynamic>.from(rawState);
+      final players = List<Map<String, dynamic>>.from(state['players'] as List);
+      final positions = (state['pieces'] as List)
+          .map((line) => (line as List).map((value) => (value as num).toInt()).toList())
+          .toList();
+      final phase = state['phase']?.toString() ?? 'awaiting_roll';
+      final dice = state['dice'] is Map ? Map<String, dynamic>.from(state['dice'] as Map) : null;
+      final winners = List<int>.from((state['winners'] as List? ?? const []).map((v) => (v as num).toInt()));
+      final turn = (state['turn'] as num).toInt();
+      final rolled = phase == 'awaiting_move' ? (dice?['value'] as num?)?.toInt() : null;
+      final finished = phase == 'finished';
+      final firstWinner = winners.isEmpty ? null : winners.first;
+
+      if (!mounted) return;
+      setState(() {
+        _onlinePlayers = players;
+        _onlineVersion = (row['state_version'] as num?)?.toInt() ?? _onlineVersion;
+        _onlineConnected = true;
+        _playerCount = players.length;
+        _positions = positions;
+        _turn = turn;
+        _dice = rolled;
+        _sixStreak = (state['sixStreak'] as num?)?.toInt() ?? 0;
+        _finishedPlayers
+          ..clear()
+          ..addAll(winners);
+        _winner = finished ? firstWinner : null;
+        _started = true;
+        _pendingDice.clear();
+        _bonusRollAvailable = false;
+        _moving = false;
+        for (var i = 0; i < _diceValues.length; i++) {
+          _diceValues[i] = null;
+        }
+        if (rolled != null && turn < _diceValues.length) _diceValues[turn] = rolled;
+        if (finished) {
+          _message = 'مسابقه تمام شد؛ برنده ${_playerName(firstWinner ?? turn)} است.';
+        } else if (phase == 'awaiting_move') {
+          _message = 'تاس $rolled آمد؛ مهرهٔ قانونی خود را انتخاب کن.';
+        } else if (dice?['burned'] == true) {
+          _message = 'سه ۶ سوخت؛ نوبت ${_playerName(turn)} است.';
+        } else if (dice?['reason'] == 'no_legal_move') {
+          _message = 'حرکت قانونی نبود؛ نوبت ${_playerName(turn)} است.';
+        } else {
+          _message = _isMyOnlineTurn
+              ? 'نوبت توست؛ تاس بینداز.'
+              : 'نوبت ${_playerName(turn)} است؛ منتظر حرکت بازیکن بمان.';
+        }
+      });
+    } catch (error) {
+      if (mounted) setState(() => _message = 'دادهٔ مسابقه معتبر نیست: $error');
+    }
+  }
+
+  Future<void> _rollOnline() async {
+    final client = _tryGetSupabaseClient();
+    final roomId = widget.roomId;
+    if (client == null || roomId == null || _onlineBusy || _winner != null) return;
+    if (!_isMyOnlineTurn) {
+      setState(() => _message = 'فعلاً نوبت تو نیست.');
+      return;
+    }
+    setState(() => _onlineBusy = true);
+    _playSfx('roll');
+    try {
+      final row = await client.rpc('roll_ludo_dice', params: {
+        'p_room_id': roomId,
+        'p_expected_version': _onlineVersion,
+      }).timeout(const Duration(seconds: 15));
+      if (row is Map) _applyOnlineRoom(Map<String, dynamic>.from(row));
+      else await _refreshOnlineRoom();
+    } catch (error) {
+      if (error.toString().contains('ludo_stale_state')) {
+        await _refreshOnlineRoom();
+      } else if (mounted) {
+        setState(() => _message = 'تاس انداخته نشد: ${error.toString().replaceFirst('Exception: ', '')}');
+      }
+    } finally {
+      if (mounted) setState(() => _onlineBusy = false);
+    }
+  }
+
+  Future<void> _moveOnline(int pieceIndex) async {
+    final client = _tryGetSupabaseClient();
+    final roomId = widget.roomId;
+    if (client == null || roomId == null || _onlineBusy || _winner != null) return;
+    if (!_isMyOnlineTurn) {
+      setState(() => _message = 'این حرکت متعلق به بازیکن دیگری است.');
+      return;
+    }
+    if (!_legal.contains(pieceIndex)) {
+      setState(() => _message = 'این مهره حرکت قانونی ندارد.');
+      return;
+    }
+    setState(() => _onlineBusy = true);
+    try {
+      final row = await client.rpc('move_ludo_piece', params: {
+        'p_room_id': roomId,
+        'p_piece_index': pieceIndex,
+        'p_expected_version': _onlineVersion,
+      }).timeout(const Duration(seconds: 15));
+      if (row is Map) _applyOnlineRoom(Map<String, dynamic>.from(row));
+      else await _refreshOnlineRoom();
+      _playSfx('move');
+    } catch (error) {
+      if (error.toString().contains('ludo_stale_state')) {
+        await _refreshOnlineRoom();
+      } else if (mounted) {
+        setState(() => _message = 'حرکت ثبت نشد: ${error.toString().replaceFirst('Exception: ', '')}');
+      }
+    } finally {
+      if (mounted) setState(() => _onlineBusy = false);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.roomId != null) {
+      _refreshOnlineRoom();
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _onlineRoomSubscription?.cancel();
     LudoCustomization.current.removeListener(_onLookChanged);
     _sfxPlayer.dispose();
     super.dispose();
