@@ -5,12 +5,12 @@
 /// All transitions return a fresh JSON-compatible state and never mutate input.
 library ludo_engine;
 
-const int ludoTrackLength = 52;
-const int ludoHomeLength = 6;
+const int ludoTrackLength = 51;
+const int ludoHomeLength = 7; // six home-lane cells plus the final home square
 const int ludoPieceHome = ludoTrackLength + ludoHomeLength - 1; // 57
 const List<int> ludoStartOffsets = [0, 39, 26, 13];
 
-/// Standard star/safe squares on the shared 52-square route.
+/// Standard star/safe squares on the shared board route.
 const Set<int> ludoSafeSquares = {0, 8, 13, 21, 26, 34, 39, 47};
 
 typedef LudoState = Map<String, dynamic>;
@@ -125,7 +125,7 @@ LudoState createLudoState(List<Map<String, dynamic>> players) {
 }
 
 /// Maps a player's progress to a shared-route square.
-/// Progress 0..51 is on the shared track; 52..57 is the private home lane.
+/// Progress 0..50 is on the shared track; 51..56 is the private home lane and 57 is home.
 int? ludoTrackIndex(int player, int progress, {required int playerCount}) {
   if (playerCount < 2 ||
       playerCount > 4 ||
