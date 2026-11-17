@@ -564,9 +564,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final captured = (diceEvent?['captured'] as List? ?? const []).isNotEmpty;
     final nextWinners = List<int>.from(nextState['winners'] as List);
     final matchFinished = nextState['phase'] == 'finished';
-    final finalWinner = matchFinished
-        ? List<int>.generate(_playerCount, (i) => i).firstWhere((i) => !nextWinners.contains(i))
-        : null;
+    final finalWinner = matchFinished ? nextWinners.first : null;
     setState(() => _moving = true);
     _playSfx('move');
     final current = before[movingPlayer][token];
