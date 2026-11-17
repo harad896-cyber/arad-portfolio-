@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/gapresan-fun-zone, feature/gapresan-fun-zone-polish, feature/gapresan-mafia-engine]
+    branches: [feature/gapresan-dice-prototype, feature/gapresan-fun-zone, feature/gapresan-fun-zone-polish, feature/gapresan-mafia-engine]
 
 permissions:
   contents: write
@@ -39,6 +39,51 @@ jobs:
           if [ ! -f android/app/build.gradle ] && [ ! -f android/app/build.gradle.kts ]; then
             flutter create --platforms=android --org com.gapresan .
           fi
+      - name: Register GapResan deep links in Android manifest
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          android = "http://schemas.android.com/apk/res/android"
+          ET.register_namespace("android", android)
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          activity = next(
+              (node for node in root.iter("activity")
+               if node.get(f"{{{android}}}name", "").endswith("MainActivity")),
+              None,
+          )
+          if activity is None:
+              raise SystemExit("Flutter MainActivity not found in Android manifest")
+
+          intent_filter = next(
+              (node for node in activity.findall("intent-filter")
+               if any(a.get(f"{{{android}}}name") == "android.intent.action.VIEW"
+                      for a in node.findall("action"))),
+              None,
+          )
+          if intent_filter is None:
+              intent_filter = ET.SubElement(activity, "intent-filter")
+              ET.SubElement(intent_filter, "action", {f"{{{android}}}name": "android.intent.action.VIEW"})
+              ET.SubElement(intent_filter, "category", {f"{{{android}}}name": "android.intent.category.DEFAULT"})
+              ET.SubElement(intent_filter, "category", {f"{{{android}}}name": "android.intent.category.BROWSABLE"})
+
+          existing = {
+              node.get(f"{{{android}}}host")
+              for node in intent_filter.findall("data")
+              if node.get(f"{{{android}}}scheme") == "arad"
+          }
+          for host in ("invite", "group", "chat", "story", "ludo"):
+              if host not in existing:
+                  ET.SubElement(intent_filter, "data", {
+                      f"{{{android}}}scheme": "arad",
+                      f"{{{android}}}host": host,
+                  })
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+          print("Registered arad:// deep links: invite, group, chat, story, ludo")
+          PY
       - name: Install persistent GapResan test signing key
         run: |
           mkdir -p "$HOME/.android"
