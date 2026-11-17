@@ -632,7 +632,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
       if (!mounted || !_botTurn || _winner != null) return;
       final usableDice = _pendingDice.where((value) =>
         LudoRules.legalTokensInGame(_positions, _turn, value).isNotEmpty).toList();
-      if (usableDice.isEmpty) { _finishNoMove(); return; }
+      if (usableDice.isEmpty) {
+        final noMoveDice = _pendingDice.contains(6) ? 6 : (_pendingDice.isEmpty ? 1 : _pendingDice.last);
+        _finishNoMove(dice: noMoveDice);
+        return;
+      }
       usableDice.sort((a, b) => b.compareTo(a));
       _chooseDie(usableDice.first, fromBot: true);
       if (!mounted || !_botTurn || _winner != null || _dice == null) return;
