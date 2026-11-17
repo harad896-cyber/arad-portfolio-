@@ -1439,7 +1439,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('خروج از بازی؟'),
-        content: const Text('اگر خارج شوی، بازی فعلی پایان می‌یابد.'),
+        content: Text(widget.roomId != null ? 'با خروج از صفحه، مسابقه برای بازیکنان دیگر ادامه پیدا می‌کند و بعداً می‌توانی دوباره وصل شوی.' : 'اگر خارج شوی، بازی فعلی پایان می‌یابد.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('ادامه بازی')),
           FilledButton(onPressed: () {
