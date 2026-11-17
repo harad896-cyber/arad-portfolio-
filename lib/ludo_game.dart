@@ -12,7 +12,7 @@ import 'ludo_engine.dart' as engine;
 import 'ludo_move_decision.dart' as move_decision;
 import 'ludo_bot_policy.dart' as bot_policy;
 
-/// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
+/// Ludo progress: -1 = yard, 0..51 = shared track, 52..56 = home lane, 57 = home.
 class LudoRules {
   static const startOffsets = [0, 39, 26, 13];
   static const safeSquares = {0, 8, 13, 21, 26, 34, 39, 47};
@@ -97,7 +97,7 @@ class LudoRules {
         player < 0 ||
         player >= playerCount ||
         progress < 0 ||
-        progress > 50) {
+        progress > 51) {
       return null;
     }
     return (offsetFor(player, playerCount) + progress) % 52;
@@ -1437,8 +1437,8 @@ class _LudoGamePageState extends State<LudoGamePage> {
       final offset = homeOffsets[token];
       return Offset((7.5 + offset.dx) / 15 * size, (7.5 + offset.dy) / 15 * size);
     }
-    if (progress >= 51) {
-      final cell = LudoBoardGeometry.homeLanes[_baseIndex(player)][progress - 51];
+    if (progress >= 52) {
+      final cell = LudoBoardGeometry.homeLanes[_baseIndex(player)][progress - 52];
       return LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size);
     }
     if (progress >= 0) {
@@ -1808,8 +1808,8 @@ class _LudoBoardPainter extends CustomPainter {
 
   Offset _pointForProgress(int player, int progress, double size) {
     if (progress == 57) return Offset(size * .5, size * .5);
-    if (progress >= 51) {
-      final cell = LudoBoardGeometry.homeLanes[players == 2 && player == 1 ? 2 : player][progress - 51];
+    if (progress >= 52) {
+      final cell = LudoBoardGeometry.homeLanes[players == 2 && player == 1 ? 2 : player][progress - 52];
       return LudoBoardGeometry.cellCenter(cell.$1, cell.$2, size);
     }
     final index = LudoRules.trackIndex(player, progress, playerCount: players)!;
