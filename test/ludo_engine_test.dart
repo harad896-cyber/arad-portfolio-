@@ -93,21 +93,21 @@ void main() {
   });
 
   group('Ludo engine: route and movement rules', () {
-    test('all 52 shared squares are addressable, including square 51', () {
+    test('each player uses 51 shared progress squares before entering the home lane', () {
       for (var player = 0; player < 4; player++) {
         expect(
           ludoTrackIndex(player, 0, playerCount: 4),
           ludoStartOffsets[player],
         );
-        expect(ludoTrackIndex(player, 51, playerCount: 4), isNotNull);
-        expect(ludoTrackIndex(player, 52, playerCount: 4), isNull);
+        expect(ludoTrackIndex(player, 50, playerCount: 4), isNotNull);
+        expect(ludoTrackIndex(player, 51, playerCount: 4), isNull);
       }
       expect(
         List.generate(
-          52,
+          51,
           (progress) => ludoTrackIndex(0, progress, playerCount: 4),
         ).toSet(),
-        hasLength(52),
+        hasLength(51),
       );
       expect(ludoTrackIndex(1, 0, playerCount: 2), 26);
       expect(ludoSafeSquares, hasLength(8));
