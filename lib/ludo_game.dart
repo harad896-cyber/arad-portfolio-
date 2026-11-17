@@ -1188,8 +1188,9 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
             if (_winner != null)
               Padding(padding: const EdgeInsets.only(top: 7),
                 child: SizedBox(width: double.infinity, child: FilledButton.icon(
-                  onPressed: _reset, icon: const Icon(Icons.replay_rounded),
-                  label: const Text('بازی دوباره')))),
+                  onPressed: widget.roomId == null ? _reset : () => Navigator.of(context).pop(),
+                  icon: Icon(widget.roomId == null ? Icons.replay_rounded : Icons.arrow_back_rounded),
+                  label: Text(widget.roomId == null ? 'بازی دوباره' : 'بازگشت به لابی')))),
           ],
         ),
       );
