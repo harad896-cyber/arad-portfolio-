@@ -23,7 +23,6 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   String? _error;
   int _maxPlayers = 4;
   bool _private = true;
-  bool _fillBots = false;
   String _mode = 'standard';
   final Map<String, Future<Map<String, dynamic>?>> _profileCache = {};
   String? get _uid => _db.auth.currentUser?.id;
@@ -48,7 +47,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         'p_max_players': _maxPlayers,
         'p_is_private': _private,
         'p_game_mode': _mode,
-        'p_fill_with_bots': _fillBots,
+        'p_fill_with_bots': false,
       }).timeout(const Duration(seconds: 12));
       final created = Map<String, dynamic>.from(row as Map);
       if (widget.conversationId != null) {
@@ -304,7 +303,12 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         selected: {_mode}, onSelectionChanged: (v) => setState(() => _mode = v.first),
       ),
       SwitchListTile(value:_private,onChanged:(v)=>setState(()=>_private=v),title:const Text('اتاق خصوصی'),subtitle:const Text('فقط افراد دعوت‌شده می‌توانند وارد شوند.')),
-      SwitchListTile(value:_fillBots,onChanged:(v)=>setState(()=>_fillBots=v),title:const Text('پر کردن جای خالی با ربات'),subtitle:const Text('پس از شروع بازی؛ فعلاً فقط تنظیم لابی است.')),
+      const ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(Icons.smart_toy_outlined),
+        title: Text('ربات‌های بازی'),
+        subtitle: Text('این قابلیت هنوز فعال نشده و فعلاً بازیکن واقعی لازم است.'),
+      ),
       const SizedBox(height: 8),
       FilledButton.icon(onPressed:_busy?null:_createRoom,icon:_busy?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.add_circle_outline),label:const Text('ساخت اتاق و دعوت دوستان')),
       const SizedBox(height: 8),
