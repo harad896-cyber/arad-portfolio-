@@ -186,6 +186,8 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   List<List<int>> _positions = [];
   final List<String> _localChatMessages = [];
   StreamSubscription<List<Map<String, dynamic>>>? _onlineRoomSubscription;
+  Timer? _onlineReconnectTimer;
+  int _onlineReconnectAttempts = 0;
   List<Map<String, dynamic>> _onlinePlayers = [];
   int _onlineVersion = 0;
   bool _onlineBusy = false;
@@ -250,21 +252,43 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       return;
     }
 
+    _onlineReconnectTimer?.cancel();
     _onlineRoomSubscription?.cancel();
+    _onlineConnected = false;
     _onlineRoomSubscription = client
         .from('ludo_rooms')
         .stream(primaryKey: ['id'])
         .eq('id', roomId)
         .listen((rows) {
+          _onlineReconnectAttempts = 0;
+          _onlineReconnectTimer?.cancel();
           if (rows.isNotEmpty) _applyOnlineRoom(rows.first);
         }, onError: (Object error) {
           if (mounted) setState(() {
             _onlineConnected = false;
-            _message = 'اتصال زنده قطع شد؛ برای بازیابی وضعیت دوباره تلاش می‌کنیم.';
+            _message = 'اتصال زنده قطع شد؛ تلاش برای اتصال مجدد ادامه دارد.';
           });
+          _scheduleOnlineReconnect();
+        }, onDone: () {
+          if (!mounted) return;
+          setState(() {
+            _onlineConnected = false;
+            _message = 'ارتباط زنده بسته شد؛ در حال اتصال مجدد…';
+          });
+          _scheduleOnlineReconnect();
         });
 
     await _refreshOnlineRoom();
+  }
+
+  void _scheduleOnlineReconnect() {
+    if (!mounted || widget.roomId == null || _onlineReconnectTimer?.isActive == true) return;
+    final delaySeconds = math.min(30, 1 << _onlineReconnectAttempts);
+    _onlineReconnectAttempts = math.min(_onlineReconnectAttempts + 1, 5);
+    _onlineReconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+      if (!mounted || _onlineConnected) return;
+      unawaited(_connectOnlineRoom());
+    });
   }
 
   Future<void> _refreshOnlineRoom() async {
@@ -284,10 +308,13 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
         _onlineConnected = false;
         _message = 'بازیابی مسابقه ناموفق بود: ${error.toString().replaceFirst('Exception: ', '')}';
       });
+      _scheduleOnlineReconnect();
     }
   }
 
   void _applyOnlineRoom(Map<String, dynamic> row) {
+    _onlineReconnectAttempts = 0;
+    _onlineReconnectTimer?.cancel();
     final rawState = row['game_state'];
     if (rawState is! Map) {
       if (mounted) setState(() {
@@ -416,13 +443,14 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && widget.roomId != null) {
-      _refreshOnlineRoom();
+      unawaited(_connectOnlineRoom());
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _onlineReconnectTimer?.cancel();
     _onlineRoomSubscription?.cancel();
     LudoCustomization.current.removeListener(_onLookChanged);
     _sfxPlayer.dispose();
