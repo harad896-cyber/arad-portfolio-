@@ -25,6 +25,8 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
   bool _private = true;
   String _mode = 'standard';
   final Map<String, Future<Map<String, dynamic>?>> _profileCache = {};
+  StreamSubscription<List<Map<String, dynamic>>>? _roomSubscription;
+  bool _gameOpened = false;
   String? get _uid => _db.auth.currentUser?.id;
 
   @override
@@ -35,8 +37,31 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
 
   @override
   void dispose() {
+    _roomSubscription?.cancel();
     _code.dispose();
     super.dispose();
+  }
+
+  void _setRoom(Map<String, dynamic> room) {
+    setState(() => _room = room);
+    _watchRoom(room['id'].toString());
+  }
+
+  void _watchRoom(String roomId) {
+    _roomSubscription?.cancel();
+    _roomSubscription = _db
+        .from('ludo_rooms')
+        .stream(primaryKey: ['id'])
+        .eq('id', roomId)
+        .listen((rows) {
+          if (!mounted || rows.isEmpty || rows.first['status'] != 'playing' || _gameOpened) return;
+          _gameOpened = true;
+          Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(builder: (_) => LudoGamePage(roomId: roomId)),
+          );
+        }, onError: (Object error) {
+          debugPrint('Ludo room status subscription failed: $error');
+        });
   }
 
   Future<void> _createRoom() async {
@@ -87,7 +112,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
         }
       }
       if (!mounted) return;
-      setState(() => _room = created);
+      _setRoom(created);
     } catch (e) { if (mounted) setState(() => _error = _friendly(e)); }
     finally { if (mounted) setState(() => _busy = false); }
   }
@@ -97,7 +122,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       final row = await _db.rpc('quick_match_ludo_room', params: {
         'p_game_mode': _mode,
       }).timeout(const Duration(seconds: 12));
-      if (mounted) setState(() => _room = Map<String, dynamic>.from(row as Map));
+      if (mounted) _setRoom(Map<String, dynamic>.from(row as Map));
     });
   }
 
@@ -108,7 +133,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       final row = await _db.rpc('join_ludo_room', params: {
         'p_room_code': null, 'p_invite_token': token,
       }).timeout(const Duration(seconds: 12));
-      if (mounted) setState(() => _room = Map<String, dynamic>.from(row as Map));
+      if (mounted) _setRoom(Map<String, dynamic>.from(row as Map));
     });
   }
 
@@ -246,12 +271,18 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
 
   Future<void> _startMatch(String roomId) async {
     await _run(() async {
-      await _db.rpc('start_ludo_match', params: {'p_room_id': roomId})
-          .timeout(const Duration(seconds: 15));
-      if (!mounted) return;
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(builder: (_) => LudoGamePage(roomId: roomId)),
-      );
+      _gameOpened = true;
+      try {
+        await _db.rpc('start_ludo_match', params: {'p_room_id': roomId})
+            .timeout(const Duration(seconds: 15));
+        if (!mounted) return;
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(builder: (_) => LudoGamePage(roomId: roomId)),
+        );
+      } catch (_) {
+        _gameOpened = false;
+        rethrow;
+      }
     });
   }
 
