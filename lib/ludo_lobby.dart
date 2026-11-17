@@ -147,7 +147,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       final row = await _db.rpc('join_ludo_room', params: {
         'p_room_code': code, 'p_invite_token': null,
       }).timeout(const Duration(seconds: 12));
-      if (mounted) setState(() => _room = Map<String, dynamic>.from(row as Map));
+      if (mounted) _setRoom(Map<String, dynamic>.from(row as Map));
     });
   }
 
@@ -156,7 +156,7 @@ class _LudoLobbyPageState extends State<LudoLobbyPage> {
       final row = await _db.rpc('join_ludo_room', params: {
         'p_room_code': null, 'p_invite_token': invite['invite_token'],
       }).timeout(const Duration(seconds: 12));
-      if (mounted) setState(() => _room = Map<String, dynamic>.from(row as Map));
+      if (mounted) _setRoom(Map<String, dynamic>.from(row as Map));
     });
   }
 
