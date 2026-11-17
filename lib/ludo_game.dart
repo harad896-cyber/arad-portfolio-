@@ -178,6 +178,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   int _botGeneration = 0;
   int? _dice, _winner;
   final List<int> _pendingDice = [];
+  final List<int> _finishedPlayers = [];
   final List<int?> _diceValues = List<int?>.filled(4, null);
   String _message = 'بازی را آغاز کن.';
   LudoCharacterAppearance _myCharacter = const LudoCharacterAppearance();
@@ -344,7 +345,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     'dice': _dice == null ? null : {'value': _dice},
     'phase': _dice == null ? 'awaiting_roll' : 'awaiting_move',
     'sixStreak': _sixStreak.clamp(0, 2),
-    'winners': _winner == null ? <int>[] : <int>[_winner!],
+    'winners': List<int>.from(_finishedPlayers),
   };
   List<int> get _legal => _dice == null
       ? const []
@@ -355,7 +356,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _playerCount = players;
       _againstBot = bot;
       _positions = List.generate(players, (_) => List.filled(4, -1));
-      _turn = 0; _dice = null; _winner = null; _sixStreak = 0; _pendingDice.clear(); _bonusRollAvailable = false;
+      _turn = 0; _dice = null; _winner = null; _sixStreak = 0; _pendingDice.clear(); _finishedPlayers.clear(); _bonusRollAvailable = false;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
       _botBusy = false; _moving = false; _botGeneration++; _started = true;
       _message = 'نوبت ${_playerName(_turn)} است؛ تاس بینداز.';
@@ -496,7 +497,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
         _pendingDice.remove(value);
         _message = _pendingDice.isEmpty ? 'حرکت ممکن نیست' : _pendingDice.join(' · ');
       });
-      if (_pendingDice.isEmpty) _finishNoMove();
+      if (_pendingDice.isEmpty) _finishNoMove(dice: value);
       return;
     }
     // Consume only the chosen die. The other rolled value remains available
@@ -521,14 +522,21 @@ class _LudoGamePageState extends State<LudoGamePage> {
     }
   }
 
-  void _finishNoMove() {
+  void _finishNoMove({required int dice}) {
     if (!mounted || _winner != null) return;
     setState(() {
       _dice = null;
       _pendingDice.clear();
-      _sixStreak = 0;
-      _turn = LudoRules.nextPlayer(_turn, _playerCount);
-      _message = 'نوبت ${_playerName(_turn)}';
+      if (dice == 6) {
+        // A six with no legal move still grants the bonus roll.
+        _bonusRollAvailable = true;
+        _message = 'با ۶ حرکت قانونی نداری؛ یک بار دیگر تاس بینداز.';
+      } else {
+        _sixStreak = 0;
+        _bonusRollAvailable = false;
+        _turn = LudoRules.nextPlayer(_turn, _playerCount);
+        _message = 'نوبت ${_playerName(_turn)}';
+      }
     });
     _scheduleBot();
   }
@@ -546,7 +554,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       'dice': {'value': rolledValue},
       'phase': 'awaiting_move',
       'sixStreak': _sixStreak.clamp(0, 2),
-      'winners': <int>[],
+      'winners': List<int>.from(_finishedPlayers),
     };
     final nextState = engine.applyLudoMove(engineState, token);
     final nextPositions = (nextState['pieces'] as List)
@@ -554,7 +562,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
         .toList();
     final diceEvent = nextState['dice'] as Map?;
     final captured = (diceEvent?['captured'] as List? ?? const []).isNotEmpty;
-    final won = (nextState['winners'] as List).contains(movingPlayer);
+    final nextWinners = List<int>.from(nextState['winners'] as List);
+    final matchFinished = nextState['phase'] == 'finished';
+    final finalWinner = matchFinished
+        ? List<int>.generate(_playerCount, (i) => i).firstWhere((i) => !nextWinners.contains(i))
+        : null;
     setState(() => _moving = true);
     _playSfx('move');
     final current = before[movingPlayer][token];
@@ -572,24 +584,33 @@ class _LudoGamePageState extends State<LudoGamePage> {
       _positions = nextPositions;
       _dice = null;
       if (captured) _playSfx('capture');
-      if (won) {
+      _finishedPlayers
+        ..clear()
+        ..addAll(nextWinners);
+      if (matchFinished) {
         _playSfx('win');
         _pendingDice.clear();
         _bonusRollAvailable = false;
-        _winner = _turn;
-        _message = 'بازیکن ${_playerName(_turn)} برنده شد!';
+        _winner = finalWinner;
+        _message = 'بازیکن ${_playerName(finalWinner!)} برنده شد!';
+      } else if (nextWinners.contains(movingPlayer)) {
+        _pendingDice.clear();
+        _bonusRollAvailable = false;
+        _turn = nextState['turn'] as int;
+        _sixStreak = nextState['sixStreak'] as int;
+        _message = 'بازیکن ${_playerName(movingPlayer)} مهره‌هایش را به خانه رساند.';
       } else if (_pendingDice.isNotEmpty) {
         // Keep any already-rolled die available for another token.
         _message = 'تاس باقی‌مانده: ${_pendingDice.join(' · ')}';
-      } else if (rolledValue == 6) {
-        // The six-move is complete: unlock the same player's bonus roll now.
-        _bonusRollAvailable = true;
-        _message = 'حرکت ۶ تمام شد؛ دوباره تاس خودت را لمس کن.';
       } else {
-        _bonusRollAvailable = false;
-        _sixStreak = 0;
-        _turn = LudoRules.nextPlayer(_turn, _playerCount);
-        _message = 'نوبت ${_playerName(_turn)}';
+        _bonusRollAvailable = rolledValue == 6 && nextState['turn'] == movingPlayer;
+        _sixStreak = nextState['sixStreak'] as int;
+        _turn = nextState['turn'] as int;
+        _message = _bonusRollAvailable
+            ? 'حرکت ۶ تمام شد؛ دوباره تاس خودت را لمس کن.'
+            : captured
+                ? 'مهره حریف زده شد؛ نوبت دوباره برای ${_playerName(_turn)} است.'
+                : 'نوبت ${_playerName(_turn)}';
       }
     });
     _scheduleBot();
@@ -633,7 +654,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
 
   void _reset() {
     setState(() {
-      _started = false; _positions = []; _dice = null; _winner = null; _pendingDice.clear(); _bonusRollAvailable = false;
+      _started = false; _positions = []; _dice = null; _winner = null; _pendingDice.clear(); _finishedPlayers.clear(); _bonusRollAvailable = false;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
       _turn = 0; _sixStreak = 0; _botBusy = false; _botGeneration++; _message = 'بازی را آغاز کن.';
     });
