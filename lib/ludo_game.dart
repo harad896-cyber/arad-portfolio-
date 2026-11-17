@@ -188,6 +188,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   StreamSubscription<List<Map<String, dynamic>>>? _onlineRoomSubscription;
   Timer? _onlineReconnectTimer;
   int _onlineReconnectAttempts = 0;
+  bool _onlineStreamActive = false;
   List<Map<String, dynamic>> _onlinePlayers = [];
   int _onlineVersion = 0;
   bool _onlineBusy = false;
@@ -255,6 +256,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
     _onlineReconnectTimer?.cancel();
     _onlineRoomSubscription?.cancel();
     _onlineConnected = false;
+    _onlineStreamActive = true;
     _onlineRoomSubscription = client
         .from('ludo_rooms')
         .stream(primaryKey: ['id'])
@@ -264,12 +266,14 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
           _onlineReconnectTimer?.cancel();
           if (rows.isNotEmpty) _applyOnlineRoom(rows.first);
         }, onError: (Object error) {
+          _onlineStreamActive = false;
           if (mounted) setState(() {
             _onlineConnected = false;
             _message = 'اتصال زنده قطع شد؛ تلاش برای اتصال مجدد ادامه دارد.';
           });
           _scheduleOnlineReconnect();
         }, onDone: () {
+          _onlineStreamActive = false;
           if (!mounted) return;
           setState(() {
             _onlineConnected = false;
@@ -286,7 +290,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
     final delaySeconds = math.min(30, 1 << _onlineReconnectAttempts);
     _onlineReconnectAttempts = math.min(_onlineReconnectAttempts + 1, 5);
     _onlineReconnectTimer = Timer(Duration(seconds: delaySeconds), () {
-      if (!mounted || _onlineConnected) return;
+      if (!mounted || _onlineStreamActive) return;
       unawaited(_connectOnlineRoom());
     });
   }
@@ -314,7 +318,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
 
   void _applyOnlineRoom(Map<String, dynamic> row) {
     _onlineReconnectAttempts = 0;
-    _onlineReconnectTimer?.cancel();
+    if (_onlineStreamActive) _onlineReconnectTimer?.cancel();
     final rawState = row['game_state'];
     if (rawState is! Map) {
       if (mounted) setState(() {
