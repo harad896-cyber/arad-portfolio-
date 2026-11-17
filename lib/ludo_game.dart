@@ -254,7 +254,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
     }
 
     _onlineReconnectTimer?.cancel();
-    _onlineRoomSubscription?.cancel();
+    await _onlineRoomSubscription?.cancel();
     _onlineConnected = false;
     _onlineStreamActive = true;
     _onlineRoomSubscription = client
