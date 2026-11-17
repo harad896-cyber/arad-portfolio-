@@ -1051,8 +1051,8 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       const SizedBox(height: 9),
       _modeCard(
         icon: Icons.public_rounded, title: 'بازی آنلاین',
-        subtitle: 'اتصال حریف و همگام‌سازی نوبت‌ها هنوز به سرور لودو وصل نشده است.',
-        selected: false, enabled: false,
+        subtitle: 'برای دعوت دوستان یا ورود با کد، لابی منچ را از بخش بازی در گفتگو باز کن.',
+        selected: false, enabled: true,
         onTap: () => _showOnlineUnavailable(),
       ),
       const SizedBox(height: 20),
@@ -1116,7 +1116,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('بازی آنلاین لودو'),
-        content: const Text('در نسخهٔ فعلی سرور فقط برای بازی‌های دیگر آماده است. برای جلوگیری از نمایش آنلاینِ غیرواقعی، لودوی آنلاین تا آماده‌شدن همگام‌سازی امن مهره‌ها و تاس غیرفعال است.'),
+        content: const Text('بازی آنلاین منچ فعال است. برای ساخت اتاق، دعوت مخاطبان یا ورود با کد، از بخش منچ در صفحهٔ گفتگو وارد لابی شو.'),
         actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('متوجه شدم'))],
       ),
     );
@@ -1146,6 +1146,15 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
                 const SizedBox(width: 9),
                 Expanded(child: Text(_message, maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+                if (widget.roomId != null) ...[
+                  const SizedBox(width: 7),
+                  Icon(_onlineConnected ? Icons.cloud_done_rounded : Icons.cloud_sync_rounded,
+                    size: 14, color: _onlineConnected ? const Color(0xFF8AF0C4) : const Color(0xFFFFD477)),
+                  const SizedBox(width: 3),
+                  Text(_onlineConnected ? 'آنلاین' : 'اتصال…',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800,
+                      color: _onlineConnected ? const Color(0xFF8AF0C4) : const Color(0xFFFFD477))),
+                ],
               ]),
             ),
             const SizedBox(height: 8),
