@@ -1,5 +1,6 @@
 // Auth OTP flow: email code + owner authorization.
 import 'dart:async';
+import 'ludo_lobby.dart';
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -38,6 +39,7 @@ import 'voice_message_player.dart';
 import 'polish_widgets.dart';
 import 'advanced_features.dart';
 import 'stories.dart';
+import 'fun_zone.dart';
 
 /// Supplied by the build workflows from pubspec.yaml so release UI and APK share one version source.
 const String kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
@@ -1693,10 +1695,22 @@ Future<void> main() async {
       ),
     ),
   );
+  // Restore saved appearance, language and accessibility before the first
+  // real application frame. This prevents the default theme/locale from
+  // flashing briefly on every launch. Preferences are local-only: if Android
+  // storage is slow, continue after two seconds and let the pending reads
+  // notify their controllers when they finish.
+  try {
+    await Future.wait<void>([
+      appTheme.load(),
+      aradLanguageController.load(),
+      appAccessibility.load(),
+    ]).timeout(const Duration(seconds: 2));
+  } catch (settingsError) {
+    debugPrint('گپ‌رسان local settings restore delayed: $settingsError');
+  }
+
   runApp(AradMessenger());
-  unawaited(appTheme.load().catchError((_) {}));
-  unawaited(aradLanguageController.load().catchError((_) {}));
-  unawaited(appAccessibility.load().catchError((_) {}));
 }
 
 class StartupLoadingApp extends StatelessWidget {
@@ -5361,6 +5375,22 @@ Future<void> openAradLink(BuildContext context, Uri uri) async {
       ));
       return;
     }
+    if (host == 'ludo') {
+      final token = (uri.queryParameters['token'] ?? '').trim();
+      final code = (uri.queryParameters['code'] ?? '').trim();
+      if (token.isEmpty && code.isEmpty) {
+        showMsg(context, 'لینک دعوت منچ معتبر نیست.');
+        return;
+      }
+      if (!context.mounted) return;
+      await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => LudoLobbyPage(
+          initialInviteToken: token.isEmpty ? null : token,
+          initialRoomCode: code.isEmpty ? null : code,
+        ),
+      ));
+      return;
+    }
     if (host == 'story') {
       if (uri.pathSegments.isEmpty) return;
       final storyId = Uri.decodeComponent(uri.pathSegments.first).trim();
@@ -6899,7 +6929,9 @@ class _HomePageState extends State<HomePage> {
               ])
             : navIndex == 0
                 ? chatsView()
-                : ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; })),
+                : navIndex == 1
+                    ? ProfilePage(onOpenContacts: () => setState(() { showContacts = true; _contactsFuture = null; _homeChromeVisible = true; _chatTopGlowVisible = true; }))
+                    : const FunZonePage(),
       ))),
       floatingActionButton: navIndex == 0 ? IgnorePointer(ignoring: !_homeChromeVisible, child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: _homeChromeVisible ? 1 : 0, child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _homeChromeVisible ? 1 : .78, child: FloatingActionButton(tooltip: trUi('گفتگوی جدید'), onPressed: createDirect, child: Icon(Icons.edit_rounded))))) : null,
       bottomNavigationBar: AnimatedSize(
@@ -6909,7 +6941,7 @@ class _HomePageState extends State<HomePage> {
         child: ClipRect(
           child: Align(
             alignment: Alignment.bottomCenter,
-            heightFactor: _homeChromeVisible ? 1 : 0,
+            heightFactor: (_homeChromeVisible || navIndex == 2) ? 1 : 0,
             child: SafeArea(
               top: false,
               minimum: const EdgeInsets.fromLTRB(12, 0, 12, 7),
@@ -6947,6 +6979,7 @@ class _HomePageState extends State<HomePage> {
                       destinations: [
                         NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: trUi('گفتگوها')),
                         NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: trUi('پروفایل')),
+                        NavigationDestination(icon: Icon(Icons.sports_esports_outlined), selectedIcon: Icon(Icons.sports_esports_rounded), label: trUi('سرگرمی')),
                       ],
                     ),
                   ),
@@ -7408,6 +7441,16 @@ class _PublicUserProfilePageState extends State<PublicUserProfilePage> {
                 busy || friendRequestPending ? null : () => _sendFriendRequest(),
               )),
           ]),
+          if (!isSelf && isFriend && !isBlocked) ...[
+            SizedBox(height: 10),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(
+              onPressed: busy ? null : () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const LudoLobbyPage(),
+              )),
+              icon: Icon(Icons.casino_rounded),
+              label: Text('دعوت به بازی منچ'),
+            )),
+          ],
           SizedBox(height: 18),
           Card(child: Column(children: [
             if (bio.isNotEmpty) ListTile(
@@ -10801,6 +10844,7 @@ class _ChatPageState extends State<ChatPage> {
                 _attachmentItem(sheetContext, Icons.videocam_rounded, trUi('ویدئو'), () { Navigator.pop(sheetContext); sendVideo(); }),
                 _attachmentItem(sheetContext, Icons.music_note_rounded, trUi('موسیقی / صدا'), () { Navigator.pop(sheetContext); sendFile(); }),
                 _attachmentItem(sheetContext, Icons.emoji_emotions_rounded, 'اموجی', () { Navigator.pop(sheetContext); _showChatEmojiPicker(); }),
+                _attachmentItem(sheetContext, Icons.casino_rounded, 'بازی منچ', () { Navigator.pop(sheetContext); Navigator.push(context, MaterialPageRoute(builder: (_) => LudoLobbyPage(conversationId: widget.id))); }),
               ]),
             ]),
           )),
@@ -12168,8 +12212,34 @@ class _ChatPageState extends State<ChatPage> {
          '${previousTimelineItem['sender_id']}' != '${m['sender_id']}');
 
     Widget content;
+    final ludoInviteMatch = RegExp(r'^\[\[GAPRESAN_LUDO_INVITE\]\]([0-9a-fA-F-]+)\|(\d{6})$').firstMatch(body);
     final stickerMatch = RegExp(r'^\[\[ARAD_STICKER\]\](.*?)\|(.*)$').firstMatch(body);
-    if (stickerMatch != null) {
+    if (ludoInviteMatch != null) {
+      final token = ludoInviteMatch.group(1)!;
+      final code = ludoInviteMatch.group(2)!;
+      content = InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => LudoLobbyPage(initialInviteToken: token, initialRoomCode: code),
+        )),
+        child: Container(
+          width: 245, padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(colors: [Color(0xff083f49), Color(0xff54266e)]),
+            border: Border.all(color: const Color(0xffffd477).withValues(alpha:.8)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Row(children:[Icon(Icons.casino_rounded,color:Color(0xffffd477)),SizedBox(width:8),Text('دعوت بازی منچ',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w900))]),
+            const SizedBox(height:8),
+            Text('کد اتاق: $code',style:const TextStyle(color:Colors.white70)),
+            const SizedBox(height:10),
+            Container(width:double.infinity,padding:const EdgeInsets.symmetric(vertical:9),decoration:BoxDecoration(color:const Color(0xffffd477),borderRadius:BorderRadius.circular(12)),
+              child:const Text('بپیوند به بازی',textAlign:TextAlign.center,style:TextStyle(color:Color(0xff33210b),fontWeight:FontWeight.w900))),
+          ]),
+        ),
+      );
+    } else if (stickerMatch != null) {
       final art = stickerMatch.group(1) ?? '✨';
       final caption = stickerMatch.group(2) ?? '';
       content = Container(

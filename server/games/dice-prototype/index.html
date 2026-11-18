@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101b19">
+<title>نمونهٔ سه‌بعدی تاس | گپ‌رسان</title>
+<style>
+:root{color-scheme:dark;--bg:#101b19;--panel:#172824;--mint:#7cf2c0;--muted:#a6bbb2;--line:#315046}
+*{box-sizing:border-box}
+body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 50% 18%,#23463a 0%,#14251f 42%,var(--bg) 78%);color:#f4fff9;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;padding:20px}
+main{width:min(100%,560px);text-align:center}
+.kicker{color:var(--mint);font-size:12px;letter-spacing:.12em;font-weight:800}
+h1{font-size:clamp(25px,6vw,36px);margin:8px 0}
+.sub{color:var(--muted);font-size:14px;line-height:1.8;margin:0 auto;max-width:430px}
+.stage{position:relative;height:330px;margin:20px 0 12px;border:1px solid #36564a;border-radius:28px;overflow:hidden;background:linear-gradient(145deg,#1d3830,#14251f 65%,#101c19);box-shadow:inset 0 1px #ffffff14,0 20px 55px #0006;touch-action:manipulation}
+.stage:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 70%,#7cf2c01b,transparent 48%);pointer-events:none}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+.settings{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:10px 0;color:var(--muted);font-size:12px}.settings label{display:flex;align-items:center;gap:7px;margin:0}.settings input{width:18px;height:18px;accent-color:var(--mint)}
+.hint{position:absolute;bottom:16px;left:0;right:0;color:#b4c9c0;font-size:12px;pointer-events:none}
+.controls{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;text-align:right}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 7px}
+input{width:100%;height:58px;border:1px solid var(--line);border-radius:16px;background:#0e1b17;color:#fff;padding:0 16px;font:700 20px system-ui;outline:none}
+input:focus{border-color:var(--mint);box-shadow:0 0 0 3px #7cf2c022}
+button{height:58px;border:0;border-radius:16px;background:linear-gradient(135deg,#9affd3,#4ed69d);color:#0b2118;font:800 17px system-ui;box-shadow:0 7px 22px #55e5aa2c;cursor:pointer;touch-action:manipulation}
+button:disabled,input:disabled{opacity:.55;cursor:not-allowed}
+button:active{transform:scale(.98)}
+#status{min-height:48px;margin:15px 0 0;font-size:16px;font-weight:750;color:var(--mint)}
+.note{font-size:11px;color:#829a8f;line-height:1.8;margin-top:12px}
+@media(max-width:390px){.stage{height:290px}.controls{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js"}}
+</script>
+</head>
+<body>
+<main>
+  <div class="kicker">GAPRESAN · GAME FEEL LAB</div>
+  <h1>تاس سه‌بعدی</h1>
+  <p class="sub">عدد مقصد را انتخاب کن؛ روی خود تاس یا دکمه بزن و فرود دقیق همان وجه را ببین.</p>
+  <section class="stage" id="rollSurface" aria-label="سطح پرتاب تاس">
+    <canvas id="scene" aria-label="تاس سه‌بعدی قابل پرتاب"></canvas>
+    <div class="hint">برای پرتاب، روی تاس یا این سینی بزن</div>
+  </section>
+  <div class="controls">
+    <div>
+      <label for="target">عدد مقصد (۱ تا ۶)</label>
+      <input id="target" type="number" min="1" max="6" step="1" value="6" inputmode="numeric">
+    </div>
+    <div>
+      <label for="rollButton">اجرای انیمیشن</label>
+      <button id="rollButton" type="button">بنداز 🎲</button>
+    </div>
+  </div>
+  <div class="settings"><label><input id="soundToggle" type="checkbox" checked> صدای تاس</label><label><input id="hapticsToggle" type="checkbox" checked> لرزش گوشی</label></div>
+  <div id="status" role="status" aria-live="polite">آماده‌ای؟ عدد مقصد را انتخاب کن.</div>
+  <p class="note">نمونهٔ مستقل آزمایشی — عدد از فیلد گرفته می‌شود. در نسخهٔ واقعی، این مقدار فقط از پاسخ سرور می‌آید و کلاینت حق تعیین نتیجه ندارد.</p>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import { faceUpQuaternion, isValidDiceResult } from './dice-logic.mjs';
+
+const canvas = document.querySelector('#scene');
+const surface = document.querySelector('#rollSurface');
+const input = document.querySelector('#target');
+const button = document.querySelector('#rollButton');
+const status = document.querySelector('#status');
+const soundToggle = document.querySelector('#soundToggle');
+const hapticsToggle = document.querySelector('#hapticsToggle');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+camera.position.set(4.8, 5.1, 7.2);
+camera.lookAt(0, 0.15, 0);
+
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.7));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+scene.add(new THREE.HemisphereLight(0xd8fff0, 0x23352d, 2.1));
+const key = new THREE.DirectionalLight(0xffffff, 3.2);
+key.position.set(-3, 7, 5); key.castShadow = true; key.shadow.mapSize.set(512,512);
+scene.add(key);
+const rim = new THREE.PointLight(0x69f5b7, 17, 9);
+rim.position.set(3, 2, -3); scene.add(rim);
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0x203b31,roughness:.88,metalness:.02}));
+floor.rotation.x = -Math.PI/2; floor.position.y = -0.72; floor.receiveShadow = true; scene.add(floor);
+
+const layouts = {
+  1:[[0,0]], 2:[[-.24,.24],[.24,-.24]], 3:[[-.25,.25],[0,0],[.25,-.25]],
+  4:[[-.24,.24],[.24,.24],[-.24,-.24],[.24,-.24]],
+  5:[[-.24,.24],[.24,.24],[0,0],[-.24,-.24],[.24,-.24]],
+  6:[[-.24,.27],[.24,.27],[-.24,0],[.24,0],[-.24,-.27],[.24,-.27]]
+};
+function pipTexture(n){
+  const c=document.createElement('canvas'); c.width=256;c.height=256;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#f4f3e9';ctx.fillRect(0,0,256,256);
+  ctx.fillStyle='#182a24';
+  for(const [x,y] of layouts[n]){
+    ctx.beginPath();ctx.arc(128+x*190,128-y*190,17,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffffff55';ctx.beginPath();ctx.arc(122+x*190,122-y*190,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#182a24';
+  }
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+// BoxGeometry material order: +X, -X, +Y, -Y, +Z, -Z.
+const faceNumbers=[3,4,1,2,5,6];
+const materials=faceNumbers.map(n=>new THREE.MeshStandardMaterial({map:pipTexture(n),roughness:.28,metalness:.08}));
+const die=new THREE.Mesh(new THREE.BoxGeometry(1.35,1.35,1.35),materials);
+die.castShadow=true;die.position.y=-.015;scene.add(die);
+
+const shadow=new THREE.Mesh(new THREE.CircleGeometry(.88,48),new THREE.MeshBasicMaterial({color:0x06100c,transparent:true,opacity:.38,depthWrite:false}));
+shadow.rotation.x=-Math.PI/2;shadow.position.y=-.705;scene.add(shadow);
+
+const clock=new THREE.Clock();
+let audioContext=null;
+function sound(kind,volume=0.12){
+  if(!soundToggle.checked)return;
+  try{
+    audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
+    if(audioContext.state==='suspended')audioContext.resume();
+    const osc=audioContext.createOscillator(),gain=audioContext.createGain();
+    const now=audioContext.currentTime;
+    osc.type=kind==='tap'?'triangle':'sine';
+    osc.frequency.setValueAtTime(kind==='tap'?180:kind==='bounce'?115:kind==='six'?520:75,now);
+    osc.frequency.exponentialRampToValueAtTime(kind==='tap'?90:kind==='six'?260:42,now+.09);
+    gain.gain.setValueAtTime(volume,now);gain.gain.exponentialRampToValueAtTime(.001,now+.11);
+    osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+.12);
+  }catch{}
+}
+function haptic(pattern){
+  if(hapticsToggle.checked && navigator.vibrate)navigator.vibrate(pattern);
+}
+let rolling=false;
+let idleTime=0;
+let animation=null;
+const tempEuler=new THREE.Euler();
+const tempQ=new THREE.Quaternion();
+const endQ=new THREE.Quaternion();
+const correctionStart=new THREE.Quaternion();
+const yawQ=new THREE.Quaternion();
+const yAxis=new THREE.Vector3(0,1,0);
+const startQ=new THREE.Quaternion();
+
+function resize(){
+  const w=surface.clientWidth,h=surface.clientHeight;
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(surface);resize();
+
+function beginRoll(){
+  if(rolling)return;
+  const result=Number(input.value);
+  if(!isValidDiceResult(result)){
+    status.textContent='لطفاً یک عدد صحیح بین ۱ تا ۶ وارد کن.';
+    input.focus();return;
+  }
+  rolling=true;button.disabled=true;input.disabled=true;
+  status.textContent='تاس در حال چرخش است…';
+  sound('tap',.16);haptic(12);
+  const now=performance.now();
+  startQ.copy(die.quaternion);
+  const base=faceUpQuaternion(result);
+  const yaw=(Math.random()*Math.PI*2);
+  yawQ.setFromAxisAngle(yAxis,yaw);
+  endQ.set(base.x,base.y,base.z,base.w).premultiply(yawQ).normalize();
+  const duration=reducedMotion?420:1320;
+  animation={start:now,duration,result,correctionStart:null,fromY:die.position.y,lastBounce:0};
+  if(reducedMotion){
+    animation.duration=420;
+  }
+}
+
+function easeOut(t){return 1-Math.pow(1-t,3)}
+function animate(now){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.04);
+  if(!rolling){
+    idleTime+=dt;
+    die.rotation.y += dt*.22;
+    die.position.y=-.015+Math.sin(idleTime*1.4)*.018;
+    const pulse=1+Math.sin(idleTime*2.2)*.025;
+    trayGlow.material.opacity=.09+Math.sin(idleTime*2)*.035;
+    shadow.scale.set(pulse,pulse,1);
+  }else if(animation){
+    const a=animation;
+    const t=Math.min(1,(now-a.start)/a.duration);
+    if(reducedMotion){
+      die.quaternion.slerp(endQ,.16);
+      die.position.y=-.015;
+    }else{
+      if(t<.70){
+        const p=t/.70;
+        tempEuler.set(p*Math.PI*5.2,p*Math.PI*6.4,p*Math.PI*4.6,'XYZ');
+        tempQ.setFromEuler(tempEuler).multiply(startQ);
+        die.quaternion.copy(tempQ);
+      }else{
+        if(!a.correctionStart){a.correctionStart=true;correctionStart.copy(die.quaternion);}
+        const p=easeOut((t-.70)/.30);
+        die.quaternion.copy(correctionStart).slerp(endQ,p);
+      }
+      const flight=Math.sin(Math.PI*t);
+      const bounce=t>.82?Math.sin((t-.82)/.18*Math.PI*2)*.09*(1-(t-.82)/.18):0;
+      const landingBounce=t>.78?Math.abs(Math.sin((t-.78)/.22*Math.PI*3))*Math.pow(1-(t-.78)/.22,1.2)*.16:0;
+      die.position.y=-.015+Math.max(0,flight)*1.32+bounce+landingBounce;
+      const bounceIndex=t>.78?Math.min(3,Math.floor((t-.78)/.073)+1):0;
+      if(bounceIndex>a.lastBounce){a.lastBounce=bounceIndex;sound('bounce',.11/(bounceIndex));haptic(bounceIndex===1?18:8);}
+      const s=.72+flight*.48;
+      shadow.scale.set(s,s,1);
+      shadow.material.opacity=.48-flight*.28;
+    }
+    if(t>=1){
+      die.quaternion.copy(endQ);
+      die.position.y=-.015;
+      shadow.scale.set(1,1,1);shadow.material.opacity=.38;
+      rolling=false;animation=null;button.disabled=false;input.disabled=false;
+      status.textContent=a.result===6?'۶ آوردی! دوباره بنداز 🎉':'نتیجه: '+a.result+' — تاس دقیقاً روی همان وجه فرود آمد.';
+      sound(a.result===6?'six':'stop',a.result===6 ? 0.2 : 0.12);if(a.result===6)haptic([35,25,55]);
+    }
+  }
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+
+surface.addEventListener('pointerdown',beginRoll);
+button.addEventListener('click',beginRoll);
+window.addEventListener('keydown',e=>{if(e.key==='Enter'&&!rolling)beginRoll()});
+</script>
+</body>
+</html>

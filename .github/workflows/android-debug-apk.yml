@@ -1,0 +1,54 @@
+name: GapResan Android Installable APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/gapresan-dice-prototype]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
+      - '.github/workflows/android-debug-apk.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gapresan-android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout Project 2
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Generate Android platform files
+        run: flutter create --platforms=android --org com.gapresan --project-name arad_messenger .
+      - name: Build ABI-specific profile APKs
+        run: flutter build apk --profile --split-per-abi --build-number=${{ github.run_number }}
+      - name: Verify APK outputs
+        run: |
+          set -euo pipefail
+          ls -lh build/app/outputs/flutter-apk/
+          test -s build/app/outputs/flutter-apk/app-arm64-v8a-profile.apk
+          file build/app/outputs/flutter-apk/app-arm64-v8a-profile.apk
+          unzip -t build/app/outputs/flutter-apk/app-arm64-v8a-profile.apk >/dev/null
+      - name: Upload installable Android APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapresan-android-profile-apks
+          path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+          retention-days: 14
