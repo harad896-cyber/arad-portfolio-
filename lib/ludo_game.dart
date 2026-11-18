@@ -10,7 +10,6 @@ import 'ludo_character_editor.dart';
 import 'fun_game_room_chat.dart';
 import 'fun_game_voice_call.dart';
 import 'ludo_engine.dart' as engine;
-import 'ludo_move_decision.dart' as move_decision;
 import 'ludo_bot_policy.dart' as bot_policy;
 
 /// Ludo progress: -1 = yard, 0..50 = shared track, 51..56 = home lane, 57 = home.
@@ -616,17 +615,17 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
     setState(() {
       _diceValues[_turn] = value;
       _pendingDice.add(value);
-      // For a human turn, a six must be played first. The bonus roll becomes
-      // available only after that six-move animation has completed.
-      _bonusRollAvailable = fromBot && value == 6;
+      // A bonus roll is earned only after the current six has been moved.
+      // Clear the flag when the next die is actually rolled.
+      _bonusRollAvailable = false;
       _message = value == 6
           ? (fromBot ? '۶ آمد؛ نوبت حرکت ربات است.' : '۶ آوردی! اول مهره‌ات را ۶ خانه حرکت بده.')
           : 'تاس آماده شد؛ حالا مهرهٔ روشن‌شده را انتخاب کن.';
     });
 
-    // Select the just-rolled die immediately. A human who rolled six moves
-    // that six first, then taps their own die again for the bonus roll.
-    if (mounted && _pendingDice.isNotEmpty && (!fromBot || value != 6)) {
+    // Resolve each roll independently. Bots must move a six before rolling
+    // their bonus die; skipping this step could leave an unplayable die pending.
+    if (mounted && _pendingDice.isNotEmpty) {
       _chooseDie(_pendingDice.last, fromBot: fromBot);
     }
   }
@@ -724,12 +723,10 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       'dice': {'value': value},
       'phase': 'awaiting_move',
     };
-    final analysis = move_decision.getLegalMoveAnalysis(analysisState, value);
-    if (!analysis.isValid) {
-      setState(() => _message = analysis.error ?? 'وضعیت حرکت معتبر نیست.');
-      return;
-    }
-    final options = analysis.legalMoves.map((move) => move.pieceIndex).toList();
+    // Use the same pure engine for highlighting, selection and applying moves.
+    // A second rule implementation could disagree and make a highlighted
+    // piece impossible to move.
+    final options = engine.getLegalMoves(analysisState, value);
     if (options.isEmpty) {
       setState(() {
         _pendingDice.remove(value);
@@ -745,15 +742,16 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       _dice = value;
       _message = 'تاس $value انتخاب شد';
     });
-    // Human players always choose a token themselves by default.
-    // Bots keep their automatic decision flow; the optional setting only
-    // applies to a human turn with exactly one legal token.
-    if (fromBot || (options.length == 1 && _autoMoveSinglePiece)) {
+    // The bot controller awaits the complete move animation before deciding
+    // whether it has earned another roll. Do not launch a second, detached
+    // move timer for bots.
+    if (fromBot) return;
+    if (options.length == 1 && _autoMoveSinglePiece) {
       final generation = _botGeneration;
       setState(() => _message = 'حرکت خودکار مهرهٔ ${options.first + 1} تا لحظه‌ای دیگر…');
       Future<void>.delayed(const Duration(milliseconds: 400), () {
         if (!mounted || generation != _botGeneration || _dice != value || _winner != null) return;
-        _moveToken(options.first, fromBot: fromBot);
+        _moveToken(options.first);
       });
     } else {
       setState(() => _message = 'یک مهره را برای حرکت انتخاب کن.');
@@ -860,40 +858,95 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
     if (!_botTurn || _winner != null || _botBusy || !mounted) return;
     _botBusy = true;
     final generation = _botGeneration;
-    Future<void>.delayed(const Duration(milliseconds: 650), () {
-      if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) { _botBusy = false; return; }
+    unawaited(_runBotTurns(generation));
+  }
+
+  /// Runs bot actions sequentially. In particular, a six is moved before its
+  /// bonus roll, and the next bot action waits until the previous animation
+  /// has completed. This prevents overlapping moves and stranded dice.
+  Future<void> _runBotTurns(int generation) async {
+    try {
+      while (mounted &&
+          generation == _botGeneration &&
+          _botTurn &&
+          _winner == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 650));
+        if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) {
+          break;
+        }
+
+        if (_dice == null) {
+          _roll(fromBot: true);
+        }
+        if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) {
+          break;
+        }
+
+        // A six with no legal piece is consumed by _chooseDie and grants
+        // another roll. Continue the same bot turn instead of leaving it idle.
+        if (_dice == null) {
+          if (_bonusRollAvailable && _pendingDice.isEmpty) continue;
+          if (_pendingDice.isNotEmpty) {
+            _chooseDie(_pendingDice.last, fromBot: true);
+          }
+        }
+        if (_dice == null) {
+          if (_bonusRollAvailable && _pendingDice.isEmpty) continue;
+          break;
+        }
+
+        final options = _legal;
+        if (options.isEmpty) {
+          final noMoveDice = _dice!;
+          _finishNoMove(dice: noMoveDice);
+          continue;
+        }
+        final ranked = List<int>.from(options)
+          ..sort((a, b) => _botScore(b).compareTo(_botScore(a)));
+        await _moveToken(ranked.first, fromBot: true);
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Ludo bot turn failed: $error\n$stackTrace');
+      if (mounted && generation == _botGeneration && _botTurn && _winner == null) {
+        // Never leave the board locked if an unexpected bot decision fails.
+        setState(() {
+          _moving = false;
+          _dice = null;
+          _pendingDice.clear();
+          _bonusRollAvailable = false;
+          _sixStreak = 0;
+          _turn = LudoRules.nextPlayer(_turn, _playerCount);
+          _message = 'حرکت ربات با خطا روبه‌رو شد؛ نوبت بازیکن بعدی است.';
+        });
+      }
+    } finally {
       _botBusy = false;
-      _roll(fromBot: true);
-      if (!mounted || !_botTurn || _winner != null) return;
-      for (var extra = 0; extra < 2 && _bonusRollAvailable; extra++) {
-        _roll(fromBot: true);
-        if (!mounted || !_botTurn || _winner != null) return;
+      if (mounted &&
+          generation == _botGeneration &&
+          _botTurn &&
+          _winner == null &&
+          !_moving) {
+        _scheduleBot();
       }
-      if (!mounted || !_botTurn || _winner != null) return;
-      final usableDice = _pendingDice.where((value) =>
-        LudoRules.legalTokensInGame(_positions, _turn, value).isNotEmpty).toList();
-      if (usableDice.isEmpty) {
-        final noMoveDice = _pendingDice.contains(6) ? 6 : (_pendingDice.isEmpty ? 1 : _pendingDice.last);
-        _finishNoMove(dice: noMoveDice);
-        return;
-      }
-      usableDice.sort((a, b) => b.compareTo(a));
-      _chooseDie(usableDice.first, fromBot: true);
-      if (!mounted || !_botTurn || _winner != null || _dice == null) return;
-      final options = _legal;
-      if (options.isEmpty) return;
-      final ranked = List<int>.from(options)..sort((a, b) => _botScore(b).compareTo(_botScore(a)));
-      _moveToken(ranked.first, fromBot: true);
-    });
+    }
   }
 
   int _botScore(int token) {
-    final result = LudoRules.move(
-      positions: _positions, player: _turn, token: token, dice: _dice!,
-    );
-    final old = _positions[_turn][token], next = result.positions[_turn][token];
-    return (result.won ? 10000 : 0) + (result.captured ? 1000 : 0) +
-        (result.finished ? 500 : 0) + (old == -1 ? 100 : 0) + next;
+    final state = <String, dynamic>{
+      ..._engineState,
+      'dice': {'value': _dice!},
+      'phase': 'awaiting_move',
+    };
+    final result = engine.applyLudoMove(state, token);
+    final old = _positions[_turn][token];
+    final next = ((result['pieces'] as List)[_turn] as List)[token] as int;
+    final diceEvent = result['dice'] as Map?;
+    final captured = (diceEvent?['captured'] as List? ?? const []).isNotEmpty;
+    final winners = List<int>.from(result['winners'] as List);
+    final finished = next == 57;
+    final won = winners.contains(_turn);
+    return (won ? 10000 : 0) + (captured ? 1000 : 0) +
+        (finished ? 500 : 0) + (old == -1 ? 100 : 0) + next;
   }
 
   void _reset() {
