@@ -571,6 +571,17 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   int _baseIndex(int player) => _playerCount == 2 && player == 1 ? 2 : player;
   Color _playerColor(int player) => _colors[_colorIndex(player)];
   String _playerName(int player) => _names[_colorIndex(player)];
+
+  // Skip players who have already brought all four pieces home. The engine
+  // does this for normal moves; no-move and three-six paths must do the same.
+  int _nextActivePlayer(int current) {
+    for (var step = 1; step <= _playerCount; step++) {
+      final candidate = (current + step) % _playerCount;
+      if (!_finishedPlayers.contains(candidate)) return candidate;
+    }
+    return current;
+  }
+
   engine.LudoState get _engineState => {
     'players': List.generate(_playerCount, (i) => {'id': 'player-$i'}),
     'pieces': _positions.map((row) => List<int>.from(row)).toList(),
@@ -709,7 +720,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       _pendingDice.clear();
       _sixStreak = 0;
       _bonusRollAvailable = false;
-      _turn = LudoRules.nextPlayer(_turn, _playerCount);
+      _turn = _nextActivePlayer(_turn);
       _message = 'سه ۶ سوخت؛ نوبت ${_playerName(_turn)}';
     });
     _scheduleBot();
@@ -770,7 +781,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       } else {
         _sixStreak = 0;
         _bonusRollAvailable = false;
-        _turn = LudoRules.nextPlayer(_turn, _playerCount);
+        _turn = _nextActivePlayer(_turn);
         _message = 'نوبت ${_playerName(_turn)}';
       }
     });
@@ -915,7 +926,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
           _pendingDice.clear();
           _bonusRollAvailable = false;
           _sixStreak = 0;
-          _turn = LudoRules.nextPlayer(_turn, _playerCount);
+          _turn = _nextActivePlayer(_turn);
           _message = 'حرکت ربات با خطا روبه‌رو شد؛ نوبت بازیکن بعدی است.';
         });
       }
