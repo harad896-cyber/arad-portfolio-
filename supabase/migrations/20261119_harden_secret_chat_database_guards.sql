@@ -19,9 +19,8 @@ begin
 
   select c.type,
          count(cm.user_id)::integer,
-         coalesce(bool_or(cm.user_id = new.sender_id), false),
-         null::uuid
-    into v_type, v_member_count, v_sender_is_member, v_peer_id
+         coalesce(bool_or(cm.user_id = new.sender_id), false)
+    into v_type, v_member_count, v_sender_is_member
     from public.conversations c
     left join public.conversation_members cm on cm.conversation_id = c.id
    where c.id = new.conversation_id
@@ -61,10 +60,11 @@ begin
     raise exception 'invalid_secret_reply_reference' using errcode = '23503';
   end if;
 
+  -- Dart base64UrlEncode emits optional '=' padding; preserve compatibility.
   if new.ciphertext is null
      or char_length(new.ciphertext) < 38
      or char_length(new.ciphertext) > 262144
-     or new.ciphertext !~ '^[A-Za-z0-9_-]+={0,2} then
+     or new.ciphertext !~ '^[A-Za-z0-9_-]+={0,2}$' then
     raise exception 'invalid_secret_ciphertext' using errcode = '22023';
   end if;
 
@@ -79,7 +79,7 @@ create trigger secret_messages_security_guard
 before insert on public.secret_messages
 for each row execute function public.enforce_secret_message_security();
 
--- X25519 public keys are 32 bytes, represented as unpadded base64url (43 chars).
+-- X25519 public keys are 32 bytes, represented as base64url with optional padding.
 do $$
 begin
   if not exists (
@@ -89,85 +89,10 @@ begin
   ) then
     alter table public.e2ee_identity_keys
       add constraint e2ee_identity_public_key_format
-      check (public_key ~ '^[A-Za-z0-9_-]{43}=?
+      check (public_key ~ '^[A-Za-z0-9_-]{43}=?$') not valid;
   end if;
 end
 $$;
 
 alter table public.e2ee_identity_keys
   validate constraint e2ee_identity_public_key_format;
-
- then
-    raise exception 'invalid_secret_ciphertext' using errcode = '22023';
-  end if;
-
-  return new;
-end;
-$$;
-
-revoke all on function public.enforce_secret_message_security() from public, anon, authenticated;
-
-drop trigger if exists secret_messages_security_guard on public.secret_messages;
-create trigger secret_messages_security_guard
-before insert on public.secret_messages
-for each row execute function public.enforce_secret_message_security();
-
--- X25519 public keys are 32 bytes, represented as unpadded base64url (43 chars).
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint
-     where conrelid = 'public.e2ee_identity_keys'::regclass
-       and conname = 'e2ee_identity_public_key_format'
-  ) then
-    alter table public.e2ee_identity_keys
-      add constraint e2ee_identity_public_key_format
-      check (public_key ~ '^[A-Za-z0-9_-]{43}$') not valid;
-  end if;
-end
-$$;
-
-alter table public.e2ee_identity_keys
-  validate constraint e2ee_identity_public_key_format;
-
-) not valid;
-  end if;
-end
-$$;
-
-alter table public.e2ee_identity_keys
-  validate constraint e2ee_identity_public_key_format;
-
- then
-    raise exception 'invalid_secret_ciphertext' using errcode = '22023';
-  end if;
-
-  return new;
-end;
-$$;
-
-revoke all on function public.enforce_secret_message_security() from public, anon, authenticated;
-
-drop trigger if exists secret_messages_security_guard on public.secret_messages;
-create trigger secret_messages_security_guard
-before insert on public.secret_messages
-for each row execute function public.enforce_secret_message_security();
-
--- X25519 public keys are 32 bytes, represented as unpadded base64url (43 chars).
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint
-     where conrelid = 'public.e2ee_identity_keys'::regclass
-       and conname = 'e2ee_identity_public_key_format'
-  ) then
-    alter table public.e2ee_identity_keys
-      add constraint e2ee_identity_public_key_format
-      check (public_key ~ '^[A-Za-z0-9_-]{43}$') not valid;
-  end if;
-end
-$$;
-
-alter table public.e2ee_identity_keys
-  validate constraint e2ee_identity_public_key_format;
-
