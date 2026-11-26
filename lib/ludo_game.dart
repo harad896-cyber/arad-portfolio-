@@ -159,9 +159,11 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   final AudioPlayer _sfxPlayer = AudioPlayer();
   bool _soundEnabled = true;
-  int _moveStepMs = 205; // Gentle default; player preference survives app restarts.
+  int _moveStepMs = 250; // Extra-gentle token animation by default.
+  int _botThinkMs = 2000; // Give the bot a visible pause before each turn.
   static const _soundPrefKey = 'ludo_sound_enabled_v2';
   static const _motionPrefKey = 'ludo_motion_step_ms_v2';
+  static const _botThinkPrefKey = 'ludo_bot_think_ms_v2';
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false;
   bool _showFirstGuide = false;
@@ -186,10 +188,12 @@ class _LudoGamePageState extends State<LudoGamePage> {
       final prefs = await SharedPreferences.getInstance();
       final sound = prefs.getBool(_soundPrefKey);
       final motion = prefs.getInt(_motionPrefKey);
+      final botThink = prefs.getInt(_botThinkPrefKey);
       if (!mounted) return;
       setState(() {
         if (sound != null) _soundEnabled = sound;
-        if (motion == 105 || motion == 145 || motion == 205) _moveStepMs = motion!;
+        if (motion == 105 || motion == 145 || motion == 205 || motion == 250) _moveStepMs = motion!;
+        if (botThink == 1200 || botThink == 1600 || botThink == 2000) _botThinkMs = botThink!;
       });
     } catch (_) {
       // Keep smooth, safe defaults if local storage is unavailable.
@@ -207,9 +211,15 @@ class _LudoGamePageState extends State<LudoGamePage> {
   }
 
   void _setMotion(int milliseconds) {
-    if (![105, 145, 205].contains(milliseconds)) return;
+    if (![105, 145, 205, 250].contains(milliseconds)) return;
     setState(() => _moveStepMs = milliseconds);
     _saveGamePreference(_motionPrefKey, milliseconds);
+  }
+
+  void _setBotThink(int milliseconds) {
+    if (![1200, 1600, 2000].contains(milliseconds)) return;
+    setState(() => _botThinkMs = milliseconds);
+    _saveGamePreference(_botThinkPrefKey, milliseconds);
   }
 
   Future<void> _loadFirstGuide() async {
@@ -389,15 +399,29 @@ class _LudoGamePageState extends State<LudoGamePage> {
     if (!_botTurn || _winner != null || _botBusy || !mounted) return;
     _botBusy = true;
     final generation = _botGeneration;
-    Future<void>.delayed(const Duration(milliseconds: 650), () {
-      if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) { _botBusy = false; return; }
+    // A deliberate thinking pause prevents the bot from rolling and moving instantly.
+    Future<void>.delayed(Duration(milliseconds: _botThinkMs), () {
+      if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) {
+        if (mounted && generation == _botGeneration) _botBusy = false;
+        return;
+      }
       _botBusy = false;
       _roll(fromBot: true);
-      if (!mounted || !_botTurn || _winner != null || _dice == null) return;
+      if (!mounted || generation != _botGeneration || !_botTurn || _winner != null || _dice == null) return;
       final options = _legal;
       if (options.isEmpty) return;
-      final ranked = List<int>.from(options)..sort((a, b) => _botScore(b).compareTo(_botScore(a)));
-      _moveToken(ranked.first, fromBot: true);
+      // Keep input locked while the bot considers its move, then animate it.
+      _botBusy = true;
+      Future<void>.delayed(const Duration(milliseconds: 650), () {
+        if (!mounted || generation != _botGeneration || !_botTurn || _winner != null || _dice == null) {
+          if (mounted && generation == _botGeneration) _botBusy = false;
+          return;
+        }
+        final ranked = List<int>.from(_legal)..sort((a, b) => _botScore(b).compareTo(_botScore(a)));
+        if (ranked.isEmpty) { _botBusy = false; return; }
+        _botBusy = false;
+        _moveToken(ranked.first, fromBot: true);
+      });
     });
   }
 
@@ -414,7 +438,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
     setState(() {
       _started = false; _positions = []; _dice = null; _winner = null;
       for (var i = 0; i < _diceValues.length; i++) { _diceValues[i] = null; }
-      _turn = 0; _sixStreak = 0; _botBusy = false; _botGeneration++; _message = 'بازی را آغاز کن.';
+      _turn = 0; _sixStreak = 0; _botBusy = false; _moving = false; _botGeneration++; _message = 'بازی را آغاز کن.';
     });
   }
 
@@ -432,18 +456,25 @@ class _LudoGamePageState extends State<LudoGamePage> {
               setState(() => _soundEnabled = enabled);
               _saveGamePreference(_soundPrefKey, enabled);
             }
-            if (value == 'motion-soft') _setMotion(205);
+            if (value == 'motion-soft') _setMotion(250);
             if (value == 'motion-balanced') _setMotion(145);
             if (value == 'motion-fast') _setMotion(105);
+            if (value == 'bot-calm') _setBotThink(2000);
+            if (value == 'bot-balanced') _setBotThink(1600);
+            if (value == 'bot-normal') _setBotThink(1200);
             if (value == 'look') LudoCustomizationButton.open(context);
             if (value == 'rules') _showRules();
             if (value == 'reset') _confirmExit();
           },
           itemBuilder: (_) => [
             PopupMenuItem(value: 'sound', child: Text(_soundEnabled ? 'خاموش‌کردن صدا ✓' : 'روشن‌کردن صدا')),
-            const PopupMenuItem(value: 'motion-soft', child: Text('حرکت مهره: خیلی نرم')),
-            const PopupMenuItem(value: 'motion-balanced', child: Text('حرکت مهره: متعادل')),
-            const PopupMenuItem(value: 'motion-fast', child: Text('حرکت مهره: سریع')),
+            PopupMenuItem(value: 'motion-soft', child: Text('حرکت مهره: خیلی نرم${_moveStepMs == 250 ? ' ✓' : ''}')),
+            PopupMenuItem(value: 'motion-balanced', child: Text('حرکت مهره: متعادل${_moveStepMs == 145 ? ' ✓' : ''}')),
+            PopupMenuItem(value: 'motion-fast', child: Text('حرکت مهره: سریع${_moveStepMs == 105 ? ' ✓' : ''}')),
+            const PopupMenuDivider(),
+            PopupMenuItem(value: 'bot-calm', child: Text('سرعت ربات: آرام${_botThinkMs == 2000 ? ' ✓' : ''}')),
+            PopupMenuItem(value: 'bot-balanced', child: Text('سرعت ربات: متعادل${_botThinkMs == 1600 ? ' ✓' : ''}')),
+            PopupMenuItem(value: 'bot-normal', child: Text('سرعت ربات: عادی${_botThinkMs == 1200 ? ' ✓' : ''}')),
             const PopupMenuItem(value: 'look', child: Text('شخصی‌سازی تخته')),
             const PopupMenuItem(value: 'rules', child: Text('قوانین بازی')),
             const PopupMenuItem(value: 'reset', child: Text('پایان بازی')),
