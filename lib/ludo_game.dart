@@ -192,7 +192,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
       if (!mounted) return;
       setState(() {
         if (sound != null) _soundEnabled = sound;
-        if (motion == 105 || motion == 145 || motion == 205 || motion == 250) _moveStepMs = motion!;
+        if (motion == 105 || motion == 145) _moveStepMs = motion!;
+        // Upgrade the previous soft preset (205ms) to the gentler new default.
+        if (motion == 205 || motion == 250) _moveStepMs = 250;
         if (botThink == 1200 || botThink == 1600 || botThink == 2000) _botThinkMs = botThink!;
       });
     } catch (_) {
