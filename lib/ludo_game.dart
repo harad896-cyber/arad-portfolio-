@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'fun_zone_theme.dart';
 import 'ludo_customization.dart';
 import 'fun_game_room_chat.dart';
@@ -158,6 +159,9 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   final AudioPlayer _sfxPlayer = AudioPlayer();
   bool _soundEnabled = true;
+  int _moveStepMs = 145; // Softer, less abrupt token movement by default.
+  static const _soundPrefKey = 'ludo_sound_enabled_v2';
+  static const _motionPrefKey = 'ludo_motion_step_ms_v2';
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
   bool _againstBot = false, _started = false, _botBusy = false, _moving = false;
   bool _showFirstGuide = false;
@@ -174,6 +178,38 @@ class _LudoGamePageState extends State<LudoGamePage> {
     LudoCustomization.current.addListener(_onLookChanged);
     LudoCustomization.load().catchError((_) {});
     _loadFirstGuide();
+    _loadGamePreferences();
+  }
+
+  Future<void> _loadGamePreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sound = prefs.getBool(_soundPrefKey);
+      final motion = prefs.getInt(_motionPrefKey);
+      if (!mounted) return;
+      setState(() {
+        if (sound != null) _soundEnabled = sound;
+        if (motion == 105 || motion == 145 || motion == 205) _moveStepMs = motion!;
+      });
+    } catch (_) {
+      // Keep smooth, safe defaults if local storage is unavailable.
+    }
+  }
+
+  Future<void> _saveGamePreference(String key, Object value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (value is bool) await prefs.setBool(key, value);
+      if (value is int) await prefs.setInt(key, value);
+    } catch (_) {
+      // Preference persistence must not interrupt a match.
+    }
+  }
+
+  void _setMotion(int milliseconds) {
+    if (![105, 145, 205].contains(milliseconds)) return;
+    setState(() => _moveStepMs = milliseconds);
+    _saveGamePreference(_motionPrefKey, milliseconds);
   }
 
   Future<void> _loadFirstGuide() async {
@@ -326,7 +362,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
       final animatedPositions = _positions.map((row) => List<int>.from(row)).toList();
       animatedPositions[movingPlayer][token] = progress;
       setState(() => _positions = animatedPositions);
-      await Future<void>.delayed(const Duration(milliseconds: 115));
+      await Future<void>.delayed(Duration(milliseconds: _moveStepMs));
     }
     if (!mounted || generation != _botGeneration) return;
     setState(() {
@@ -391,13 +427,23 @@ class _LudoGamePageState extends State<LudoGamePage> {
         PopupMenuButton<String>(
           tooltip: 'تنظیمات بازی',
           onSelected: (value) {
-            if (value == 'sound') setState(() => _soundEnabled = !_soundEnabled);
+            if (value == 'sound') {
+              final enabled = !_soundEnabled;
+              setState(() => _soundEnabled = enabled);
+              _saveGamePreference(_soundPrefKey, enabled);
+            }
+            if (value == 'motion-soft') _setMotion(205);
+            if (value == 'motion-balanced') _setMotion(145);
+            if (value == 'motion-fast') _setMotion(105);
             if (value == 'look') LudoCustomizationButton.open(context);
             if (value == 'rules') _showRules();
             if (value == 'reset') _confirmExit();
           },
           itemBuilder: (_) => [
-            PopupMenuItem(value: 'sound', child: Text(_soundEnabled ? 'خاموش‌کردن صدا' : 'روشن‌کردن صدا')),
+            PopupMenuItem(value: 'sound', child: Text(_soundEnabled ? 'خاموش‌کردن صدا ✓' : 'روشن‌کردن صدا')),
+            const PopupMenuItem(value: 'motion-soft', child: Text('حرکت مهره: خیلی نرم')),
+            const PopupMenuItem(value: 'motion-balanced', child: Text('حرکت مهره: متعادل')),
+            const PopupMenuItem(value: 'motion-fast', child: Text('حرکت مهره: سریع')),
             const PopupMenuItem(value: 'look', child: Text('شخصی‌سازی تخته')),
             const PopupMenuItem(value: 'rules', child: Text('قوانین بازی')),
             const PopupMenuItem(value: 'reset', child: Text('پایان بازی')),
