@@ -159,7 +159,7 @@ class _LudoGamePageState extends State<LudoGamePage> {
   final _random = math.Random();
   final AudioPlayer _sfxPlayer = AudioPlayer();
   bool _soundEnabled = true;
-  int _moveStepMs = 145; // Softer, less abrupt token movement by default.
+  int _moveStepMs = 205; // Gentle default; player preference survives app restarts.
   static const _soundPrefKey = 'ludo_sound_enabled_v2';
   static const _motionPrefKey = 'ludo_motion_step_ms_v2';
   int _playerCount = 2, _turn = 0, _sixStreak = 0;
