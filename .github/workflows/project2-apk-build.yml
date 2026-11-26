@@ -1,5 +1,5 @@
 name: Project 2 APK Build
-# Rebuild latest Project 2 branding changes after cancelled run
+# Build and validate the isolated Project 2 security-hardening branch only.
 
 concurrency:
   group: project2-apk-build
@@ -8,7 +8,7 @@ concurrency:
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [project2/security-hardening-20261119]
 
 jobs:
   build:
@@ -160,10 +160,11 @@ jobs:
           flutter build apk --release --no-pub \
             --dart-define="APP_VERSION=$APP_VERSION" \
             --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_CLIENT_ID"
-      - name: Verify release APK
+      - name: Verify release APK and record exact source revision
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
           sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app/outputs/flutter-apk/app-release.apk.sha256
+          git rev-parse HEAD | tee build/app/outputs/flutter-apk/source-commit.txt
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
@@ -172,5 +173,6 @@ jobs:
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/flutter-apk/app-release.apk.sha256
+            build/app/outputs/flutter-apk/source-commit.txt
           if-no-files-found: error
           retention-days: 14
