@@ -825,7 +825,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       final animatedPositions = _positions.map((row) => List<int>.from(row)).toList();
       animatedPositions[movingPlayer][token] = progress;
       setState(() => _positions = animatedPositions);
-      await Future<void>.delayed(const Duration(milliseconds: 205));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
     }
     if (!mounted || generation != _botGeneration) return;
     setState(() {
@@ -881,7 +881,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
           generation == _botGeneration &&
           _botTurn &&
           _winner == null) {
-        await Future<void>.delayed(const Duration(milliseconds: 650));
+        await Future<void>.delayed(const Duration(milliseconds: 1150));
         if (!mounted || generation != _botGeneration || !_botTurn || _winner != null) {
           break;
         }
@@ -1418,20 +1418,20 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
   }
 
   Widget _communicationActions() => Row(mainAxisSize: MainAxisSize.min, children: [
-    Tooltip(message: 'پیام‌های بازی', child: SizedBox(width: 42, height: 42,
+    Tooltip(message: 'پیام‌های بازی', child: SizedBox(width: 34, height: 34,
       child: OutlinedButton(
         key: const ValueKey('ludo-chat-action'), onPressed: _openChat,
         style: OutlinedButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: Colors.white,
           side: const BorderSide(color: Color(0xFF64C9E8)), shape: const CircleBorder()),
-        child: const Icon(Icons.chat_bubble_outline_rounded, size: 19),
+        child: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
       ))),
-    const SizedBox(width: 7),
-    Tooltip(message: 'میکروفن', child: SizedBox(width: 42, height: 42,
+    const SizedBox(width: 4),
+    Tooltip(message: 'میکروفن', child: SizedBox(width: 34, height: 34,
       child: FilledButton(
         key: const ValueKey('ludo-mic-action'), onPressed: _openVoice,
         style: FilledButton.styleFrom(padding: EdgeInsets.zero, backgroundColor: const Color(0xFF087D68),
           foregroundColor: Colors.white, shape: const CircleBorder()),
-        child: const Icon(Icons.mic_none_rounded, size: 20),
+        child: const Icon(Icons.mic_none_rounded, size: 16),
       ))),
   ]);
 
