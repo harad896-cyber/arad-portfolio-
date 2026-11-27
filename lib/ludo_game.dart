@@ -431,9 +431,48 @@ class _LudoGamePageState extends State<LudoGamePage> {
     final result = LudoRules.move(
       positions: _positions, player: _turn, token: token, dice: _dice!,
     );
-    final old = _positions[_turn][token], next = result.positions[_turn][token];
-    return (result.won ? 10000 : 0) + (result.captured ? 1000 : 0) +
-        (result.finished ? 500 : 0) + (old == -1 ? 100 : 0) + next;
+    final old = _positions[_turn][token];
+    final next = result.positions[_turn][token];
+
+    // Prefer winning/capturing first, then safe progress over risky advances.
+    var score = (result.won ? 10000 : 0) +
+        (result.captured ? 1400 : 0) +
+        (result.finished ? 600 : 0) +
+        (old == -1 ? 120 : 0) +
+        next * 2;
+
+    if (next >= 0 && next <= 50) {
+      final landing = LudoRules.trackIndex(_turn, next, playerCount: _playerCount);
+      if (landing != null && LudoRules.safeSquares.contains(landing)) {
+        score += 320;
+      } else if (_isExposedAfterMove(result.positions, _turn, token)) {
+        score -= 260;
+      }
+    }
+    return score;
+  }
+
+  bool _isExposedAfterMove(List<List<int>> positions, int player, int token) {
+    final progress = positions[player][token];
+    if (progress < 0 || progress > 50) return false;
+    final target = LudoRules.trackIndex(player, progress, playerCount: positions.length);
+    if (target == null || LudoRules.safeSquares.contains(target)) return false;
+
+    // In a normal Ludo turn an opponent can roll 1..6. Avoid ending
+    // immediately in front of an enemy when a safer legal move exists.
+    for (var opponent = 0; opponent < positions.length; opponent++) {
+      if (opponent == player) continue;
+      for (final enemyProgress in positions[opponent]) {
+        if (enemyProgress < 0 || enemyProgress > 50) continue;
+        final enemySquare = LudoRules.trackIndex(
+          opponent, enemyProgress, playerCount: positions.length,
+        );
+        if (enemySquare == null) continue;
+        final distance = (target - enemySquare + 52) % 52;
+        if (distance >= 1 && distance <= 6) return true;
+      }
+    }
+    return false;
   }
 
   void _reset() {
