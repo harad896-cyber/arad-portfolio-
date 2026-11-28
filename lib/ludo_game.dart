@@ -664,7 +664,11 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
     await _refreshDiamondBalance();
     if (!mounted) return;
     var paid = false;
-    if (_diamondBalance >= 2 && Supabase.instance.client.auth.currentUser != null) {
+    // Offline play and widget previews may run before Supabase is initialized.
+    // Resolve the optional client once so the third-six flow cannot crash
+    // while checking whether a signed-in player may spend diamonds.
+    final client = _tryGetSupabaseClient();
+    if (_diamondBalance >= 2 && client?.auth.currentUser != null) {
       final choice = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
@@ -686,7 +690,7 @@ class _LudoGamePageState extends State<LudoGamePage> with WidgetsBindingObserver
       );
       if (choice == true) {
         try {
-          final result = await Supabase.instance.client.rpc(
+          final result = await client!.rpc(
             'spend_ludo_diamonds', params: {'p_amount': 2},
           ).timeout(const Duration(seconds: 12));
           paid = result == true;
