@@ -196,6 +196,7 @@ jobs:
       # Emulator smoke test is a separate gate; artifact availability does not mean it passed.
       # Install the exact APK bytes extracted from the ZIP users download.
       - name: Install extracted ZIP APK and launch on Android emulator
+        if: github.event_name == 'push'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
